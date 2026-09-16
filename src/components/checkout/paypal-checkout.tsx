@@ -81,21 +81,31 @@ export function PayPalCheckoutProvider({ clientId, children }: { clientId: strin
 export type PayPalClientConfig = {
   clientId: string;
   environment: 'sandbox' | 'live';
+  /** Active le bouton "Payer avec PayPal" */
+  enablePaypal: boolean;
+  /** Active le bouton "Payer par carte" */
   enableCardPayments: boolean;
+  /** ClientId à utiliser pour le mode carte (peut être identique à clientId) */
+  cardClientId: string;
+  /** Environnement du mode carte */
+  cardEnvironment: 'sandbox' | 'live';
   loading: boolean;
 };
 
 /**
- * Récupère la configuration PayPal depuis le backend (settings/paypal) : le
- * clientId, l'environnement et l'activation du paiement par carte. Permet de
- * passer de sandbox → live sans recompiler. Retombe sur l'env var si l'API
- * échoue ou si rien n'est configuré.
+ * Récupère la configuration PayPal depuis le backend (settings/paypal) :
+ * les deux modes (compte PayPal + carte bancaire), leur activation et leur
+ * environnement. Permet de passer de sandbox → live sans recompiler.
+ * Retombe sur les env vars si l'API échoue ou si rien n'est configuré.
  */
 export function usePayPalConfig(): PayPalClientConfig {
   const [config, setConfig] = useState<PayPalClientConfig>({
     clientId: process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || '',
     environment: 'sandbox',
+    enablePaypal: true,
     enableCardPayments: true,
+    cardClientId: process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || '',
+    cardEnvironment: 'sandbox',
     loading: true,
   });
 
@@ -105,10 +115,14 @@ export function usePayPalConfig(): PayPalClientConfig {
       .then((r) => r.json())
       .then((data) => {
         if (!active) return;
+        const mainClientId = data?.clientId || process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || '';
         setConfig({
-          clientId: data?.clientId || process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || '',
+          clientId: mainClientId,
           environment: data?.environment === 'live' ? 'live' : 'sandbox',
+          enablePaypal: data?.enablePaypal !== false,
           enableCardPayments: data?.enableCardPayments !== false,
+          cardClientId: data?.cardClientId || mainClientId,
+          cardEnvironment: data?.cardEnvironment === 'live' ? 'live' : 'sandbox',
           loading: false,
         });
       })

@@ -23,6 +23,8 @@
 # misc
 .DS_Store
 *.pem
+*.exe
+**/bin/
 
 # debug
 npm-debug.log*
@@ -72,3 +74,13 @@ tsc_errors.txt
 # python bytecode (skill helpers)
 __pycache__/
 *.pyc
+
+# scratch & temporary dev artifacts
+dump-*.js
+/scratch/
+/client/
+/metadata.json
+/index.html
+/vite.config.ts
+/.codex/
+.claude/settings.local.json

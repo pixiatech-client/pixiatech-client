@@ -90,6 +90,7 @@ import en from '@/lib/locales/en.json';
 import { getQuoteStats, updateStatsOnStatusChange, updateStatsOnDelete, resyncStats } from '@/lib/statsService';
 import { getSmtpSettings as getSmtpSettingsDb, updateSmtpSettings as updateSmtpSettingsDb, getSmtpTransport } from '@/lib/smtpService';
 import { getPayPalSettings as getPayPalSettingsDb, updatePayPalSettings as updatePayPalSettingsDb } from '@/lib/paypal-settings-service';
+import type { PayPalSettingsUpdate } from '@/lib/paypal-settings-service';
 
 type Locale = 'fr' | 'en';
 const translations = { fr, en };
@@ -1463,32 +1464,89 @@ export async function getInvoiceRequests(): Promise<InvoiceRequestSummary[]> {
       };
     });
 
-    // Join client profile photos (collection `users/<customerId>.photoURL`) so l'admin
-    // peut identifier qui a demandé la facture. Requêtes `in` groupées par lots de 10.
+    // Join client profile photos so l'admin peut identifier qui a demandé la facture.
+    // Vérifie d'abord la collection `customers` (avatarUrl), puis `users` (photoURL/avatarUrl),
+    // par ID puis par email en fallback.
     const uniqueCustomerIds = Array.from(new Set(items.map((it) => it.customerId).filter(Boolean)));
+    const photos = new Map<string, string>();
+    const CHUNK = 10;
+
     if (uniqueCustomerIds.length > 0) {
-      const photos = new Map<string, string>();
-      const CHUNK = 10;
       try {
         for (let i = 0; i < uniqueCustomerIds.length; i += CHUNK) {
           const chunk = uniqueCustomerIds.slice(i, i + CHUNK);
-          const userSnap = await adminDb
-            .collection('users')
-            .where('__name__', 'in', chunk)
-            .select('photoURL')
-            .get();
-          userSnap.forEach((us) => {
-            const u = us.data() || {};
-            photos.set(us.id, String(u.photoURL || ''));
-          });
+          // 1. Recherche dans `customers` (espace boutique)
+          try {
+            const custSnap = await adminDb
+              .collection('customers')
+              .where('__name__', 'in', chunk)
+              .get();
+            custSnap.forEach((cs) => {
+              const c = cs.data() || {};
+              const photo = String(c.avatarUrl || c.photoURL || '');
+              if (photo) photos.set(cs.id, photo);
+            });
+          } catch {}
+
+          // 2. Recherche dans `users`
+          try {
+            const userSnap = await adminDb
+              .collection('users')
+              .where('__name__', 'in', chunk)
+              .get();
+            userSnap.forEach((us) => {
+              const u = us.data() || {};
+              const photo = String(u.photoURL || u.avatarUrl || u.avatar || u.picture || '');
+              if (photo && !photos.has(us.id)) {
+                photos.set(us.id, photo);
+              }
+            });
+          } catch {}
         }
       } catch (joinErr: any) {
         console.warn('Could not join customer photos for invoice requests:', joinErr?.message || joinErr);
       }
+
       if (photos.size > 0) {
         for (const it of items) {
           if (it.customerId && photos.has(it.customerId)) {
             it.customerPhoto = photos.get(it.customerId) || '';
+          }
+        }
+      }
+    }
+
+    // 3. Fallback par email si la photo n'est pas encore trouvée
+    const missingEmailItems = items.filter((it) => !it.customerPhoto && it.customerEmail);
+    if (missingEmailItems.length > 0) {
+      const uniqueEmails = Array.from(new Set(missingEmailItems.map((it) => it.customerEmail.toLowerCase().trim()).filter(Boolean)));
+      const emailPhotos = new Map<string, string>();
+      for (let i = 0; i < uniqueEmails.length; i += CHUNK) {
+        const chunk = uniqueEmails.slice(i, i + CHUNK);
+        try {
+          const custSnap = await adminDb.collection('customers').where('email', 'in', chunk).get();
+          custSnap.forEach((cs) => {
+            const c = cs.data() || {};
+            const photo = String(c.avatarUrl || c.photoURL || '');
+            const email = String(c.email || '').toLowerCase().trim();
+            if (photo && email) emailPhotos.set(email, photo);
+          });
+        } catch {}
+        try {
+          const userSnap = await adminDb.collection('users').where('email', 'in', chunk).get();
+          userSnap.forEach((us) => {
+            const u = us.data() || {};
+            const photo = String(u.photoURL || u.avatarUrl || u.avatar || '');
+            const email = String(u.email || '').toLowerCase().trim();
+            if (photo && email && !emailPhotos.has(email)) emailPhotos.set(email, photo);
+          });
+        } catch {}
+      }
+      for (const it of items) {
+        if (!it.customerPhoto && it.customerEmail) {
+          const email = it.customerEmail.toLowerCase().trim();
+          if (emailPhotos.has(email)) {
+            it.customerPhoto = emailPhotos.get(email) || '';
           }
         }
       }
@@ -1542,9 +1600,9 @@ export async function markInvoiceInProgress(id: string): Promise<{ success: bool
  * Action « Générer » côté admin : attribue le numéro officiel (PIX-YYYY-NNNNN),
  * génère le PDF et le stocke dans le document Firestore de la demande.
  */
-export async function adminGenerateInvoice(
+export async function resetInvoiceToInProgress(
   id: string
-): Promise<{ success: boolean; invoiceNumber?: string; error?: string; alreadyGenerated?: boolean }> {
+): Promise<{ success: boolean; error?: string }> {
   await requireRole('admin', 'commercial');
   const { adminDb } = getFirebaseAdmin();
   if (!adminDb) {
@@ -1561,175 +1619,110 @@ export async function adminGenerateInvoice(
     if (!snap.exists) {
       return { success: false, error: 'Demande de facture introuvable.' };
     }
-    const d = snap.data() || {};
-
-    if (d.status === 'completed' && typeof d.pdfContent === 'string' && d.pdfContent) {
-      return { success: false, alreadyGenerated: true, error: 'Une facture a déjà été générée pour cette demande.' };
-    }
-    if (d.status === 'archived') {
-      return { success: false, error: 'Impossible de générer une facture archivée.' };
-    }
-
-    const orderType = d.orderType === 'rental' ? 'rental' : 'sale';
-    const orderId = typeof d.orderId === 'string' && d.orderId ? d.orderId : id.replace(/^(sale|rental)_/, '');
-    const customerId = String(d.customerId || d.userId || '');
-
-    const orderColl = orderType === 'sale' ? 'sale_orders' : 'rental_orders';
-    let order: Record<string, unknown> | null = null;
-    try {
-      const orderSnap = await adminDb.collection(orderColl).doc(orderId).get();
-      if (orderSnap.exists) order = orderSnap.data() || null;
-    } catch (err) {
-      console.warn(`[AdminGenerateInvoice] Could not load order ${orderColl}/${orderId}:`, err);
-    }
-
-    const billing = d.billing && typeof d.billing === 'object' ? d.billing : {};
-
-    const profInfo = customerId ? await getProfessionalInfo(customerId).catch(() => null) : null;
-
-    const buyerCompany =
-      orderType === 'sale'
-        ? String((order as any)?.customerCompany || billing.companyName || d.customerCompany || d.companyName || '')
-        : String((order as any)?.renterCompany || billing.companyName || d.renterCompany || d.companyName || '');
-
-    const isB2B = !!profInfo || !!buyerCompany;
-    const vatValidated = !!(profInfo?.vatValidated && profInfo?.vatNumber);
-    const vatNumber = profInfo?.vatNumber || d.vatNumber || '';
-
-    // Taux de TVA admin (pourcentage entier, ex: 19 → décimal 0.19). Fallback 0.19 si absent.
-    let adminTaxRate = 19;
-    try {
-      const settingsSnap = await adminDb.collection('settings').doc('main').get();
-      const s = settingsSnap.exists ? settingsSnap.data() || {} : {};
-      if (typeof (s as any)?.estimationFlow?.taxRate === 'number' && (s as any).estimationFlow.taxRate >= 0) {
-        adminTaxRate = (s as any).estimationFlow.taxRate;
-      }
-    } catch (err) {
-      console.warn('[AdminGenerateInvoice] Could not load settings, defaulting tax rate:', err);
-    }
-
-    const items: InvoiceItem[] = order
-      ? buildInvoiceItems(order)
-      : Array.isArray(d.items) && d.items.length > 0
-        ? (d.items as InvoiceItem[])
-        : [];
-
-    const amounts = order
-      ? computeInvoiceAmounts(order, { vatValidated, vatNumber, vatRate: adminTaxRate / 100 })
-      : {
-          subtotal: Number(d.subtotal) || 0,
-          discount: Number(d.discount) || 0,
-          deliveryCost: Number(d.deliveryCost) || 0,
-          vat: Number(d.vat) || 0,
-          vatRate: Number(d.vatRate) >= 0 ? Number(d.vatRate) : adminTaxRate / 100,
-          totalTtc: Number(d.totalTtc) || 0,
-        };
-
-    if (items.length === 0) {
-      return { success: false, error: 'Impossible de déterminer les articles de la facture.' };
-    }
-
-    const company = await getCompanySnapshot(adminDb);
-
-    const customerName = String(
-      (order as any)?.customerName ||
-        (order as any)?.renterRepresentative ||
-        d.customerName ||
-        d.clientName ||
-        billing.fullName ||
-        billing.name ||
-        'Client'
-    );
-    const customerEmail = String((order as any)?.customerEmail || (order as any)?.renterEmail || d.customerEmail || billing.email || '');
-
-    const buyer: InvoicePdfBuyer = {
-      name: customerName,
-      company: buyerCompany || profInfo?.companyName || undefined,
-      address:
-        String((order as any)?.customerAddress || (order as any)?.renterAddress || d.address || billing.address || '') ||
-        profInfo?.address ||
-        undefined,
-      city:
-        String((order as any)?.customerCity || (order as any)?.renterCity || d.city || billing.city || '') ||
-        profInfo?.city ||
-        undefined,
-      postcode:
-        String((order as any)?.customerPostcode || (order as any)?.renterPostcode || d.postcode || billing.postcode || '') ||
-        profInfo?.postcode ||
-        undefined,
-      country:
-        String((order as any)?.customerCountry || (order as any)?.renterCountry || d.country || billing.country || '') ||
-        profInfo?.country ||
-        undefined,
-      siren:
-        String(
-          (order as any)?.customerSiren || d.siren || (profInfo?.siret ? profInfo.siret.slice(0, 9) : '')
-        ) || undefined,
-      vatNumber: String((order as any)?.customerVatNumber || d.vatNumber || profInfo?.vatNumber || '') || undefined,
-      email: customerEmail || undefined,
-    };
-
-    const { invoiceNumber } = await allocateInvoiceNumber(adminDb);
-
-    const orderDate = String(
-      (order as any)?.createdAt || d.orderDate || d.requestedAt || d.createdAt || new Date().toISOString()
-    );
-    const generatedAt = new Date().toISOString();
-
-    const pdfContent = generateInvoicePdf({
-      invoiceNumber,
-      orderType,
-      orderDate,
-      company,
-      buyer,
-      isB2B,
-      vatValidated,
-      rentalStartDate: (order as any)?.rentalStartDate || d.rentalStartDate || undefined,
-      rentalEndDate: (order as any)?.rentalEndDate || d.rentalEndDate || undefined,
-      items,
-      subtotal: amounts.subtotal,
-      discount: amounts.discount,
-      deliveryCost: amounts.deliveryCost,
-      vat: amounts.vat,
-      vatRate: amounts.vatRate,
-      totalTtc: amounts.totalTtc,
-      promoCode:
-        (typeof (order as any)?.promoCode === 'string' && (order as any).promoCode
-          ? (order as any).promoCode
-          : typeof d.promoCode === 'string' && d.promoCode
-            ? d.promoCode
-            : undefined),
-    });
 
     await invoiceRef.update({
-      orderId,
-      orderType,
-      customerId,
-      customerEmail,
-      customerName,
-      invoiceNumber,
-      status: 'completed',
-      isB2B,
-      vatValidated,
-      items,
-      subtotal: amounts.subtotal,
-      discount: amounts.discount,
-      deliveryCost: amounts.deliveryCost,
-      vat: amounts.vat,
-      vatRate: amounts.vatRate,
-      totalTtc: amounts.totalTtc,
-      orderDate,
-      generatedAt,
-      // TODO: Migrer vers Firebase Storage quand les factures dépassent 500 Ko.
-      pdfContent,
-      pdfSize: Buffer.byteLength(Buffer.from(pdfContent, 'base64')),
+      status: 'in_progress',
+      updatedAt: new Date().toISOString(),
     });
+
+    revalidatePath('/admin/factures');
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error resetting invoice request to in_progress:', error);
+    return { success: false, error: error?.message || 'Une erreur est survenue.' };
+  }
+}
+
+/**
+ * Action « Bouton 3 — Publication Client » côté admin :
+ * Valide et publie la facture certifiée au client :
+ * 1. Vérifie qu'un PDF certifié existe et a été téléversé (Étape 2).
+ * 2. Empêche les doubles envois accidentels si déjà publiée.
+ * 3. Attribue le numéro officiel (PIX-YYYY-NNNNN) si non défini.
+ * 4. Change le statut métier à 'completed' ("Disponible").
+ * 5. Rend le PDF certifié disponible au client et lui envoie une notification.
+ */
+export async function adminGenerateInvoice(
+  id: string
+): Promise<{ success: boolean; invoiceNumber?: string; error?: string; alreadyGenerated?: boolean }> {
+  await requireRole('admin', 'commercial');
+  const { adminDb, FieldValue } = getFirebaseAdmin();
+  if (!adminDb) {
+    return { success: false, error: 'Service de base de données indisponible.' };
+  }
+
+  if (!id || !/^(sale|rental)_/.test(id)) {
+    return { success: false, error: 'Identifiant de facture invalide.' };
+  }
+
+  try {
+    const invoiceRef = adminDb.collection('invoices').doc(id);
+    const snap = await invoiceRef.get();
+    if (!snap.exists) {
+      return { success: false, error: 'Demande de facture introuvable.' };
+    }
+    const d = snap.data() || {};
+
+    // RÈGLE MÉTIER CRITIQUE 1 : Empêcher les doubles envois accidentels
+    if (d.status === 'completed') {
+      return {
+        success: false,
+        alreadyGenerated: true,
+        error: 'Cette facture officielle a déjà été publiée et envoyée au client.',
+      };
+    }
+    if (d.status === 'archived') {
+      return { success: false, error: 'Impossible de publier une facture archivée.' };
+    }
+
+    // RÈGLE MÉTIER CRITIQUE 2 : Bouton 3 bloqué si aucun PDF certifié n'a été téléversé
+    if (!d.hasCustomCertPdf || !d.pdfContent) {
+      return {
+        success: false,
+        error:
+          "Impossible de publier : aucun PDF certifié n'a été téléversé. Veuillez d'abord certifier le document dans votre outil externe (Pinyline) et téléverser le PDF certifié (Étape 2).",
+      };
+    }
+
+    // Attribution du numéro officiel (PIX-YYYY-NNNNN) si non déjà défini
+    let invoiceNumber = typeof d.invoiceNumber === 'string' && d.invoiceNumber ? d.invoiceNumber : '';
+    if (!invoiceNumber) {
+      const allocated = await allocateInvoiceNumber(adminDb);
+      invoiceNumber = allocated.invoiceNumber;
+    }
+
+    const nowIso = new Date().toISOString();
+    await invoiceRef.update({
+      status: 'completed',
+      invoiceNumber,
+      publishedAt: nowIso,
+      generatedAt: d.generatedAt || nowIso,
+      updatedAt: nowIso,
+    });
+
+    // Notifier le client dans son centre de notifications
+    const customerId = String(d.customerId || d.userId || '');
+    if (customerId) {
+      try {
+        await adminDb.collection('notifications').add({
+          userId: customerId,
+          type: 'invoice',
+          title: 'Facture certifiée disponible',
+          description: `Votre facture officielle certifiée ${invoiceNumber} est désormais disponible au téléchargement dans votre espace client.`,
+          href: '/mon-compte/factures',
+          read: false,
+          createdAt: FieldValue ? FieldValue.serverTimestamp() : nowIso,
+        });
+      } catch (notifErr) {
+        console.warn('[adminGenerateInvoice] Failed to notify client:', notifErr);
+      }
+    }
 
     revalidatePath('/admin/factures');
     return { success: true, invoiceNumber };
   } catch (error: any) {
-    console.error('Error generating invoice:', error);
-    return { success: false, error: error?.message || 'Une erreur est survenue lors de la génération.' };
+    console.error('Error publishing certified invoice:', error);
+    return { success: false, error: error?.message || 'Une erreur est survenue lors de la publication.' };
   }
 }
 
@@ -3697,26 +3690,51 @@ export async function updateSmtpSettings(data: any) {
 export async function getPayPalSettings() {
   await requireAdminFresh();
   const data = await getPayPalSettingsDb();
-  const { clientSecret: _, ...safeData } = data;
-  return { ...safeData, hasClientSecret: Boolean(data.clientSecret) };
+  // Ne jamais retourner les secrets complets au frontend
+  return {
+    clientId: data.clientId,
+    environment: data.environment,
+    enablePaypal: data.enablePaypal,
+    enableCardPayments: data.enableCardPayments,
+    hasClientSecret: Boolean(data.clientSecret),
+    // Sous-config carte (sans les secrets)
+    card: {
+      clientId: data.card.clientId,
+      environment: data.card.environment,
+      hasClientSecret: Boolean(data.card.clientSecret),
+    },
+  };
 }
 
-export async function updatePayPalSettings(data: any) {
+export async function updatePayPalSettings(data: PayPalSettingsUpdate) {
   await requireAdminFresh();
   const { adminDb } = getFirebaseAdmin();
   if (!adminDb) return { success: false, error: 'Database service unavailable' };
 
   try {
+    const existing = await adminDb.collection('settings').doc('paypal').get();
+    const existingData = existing.exists ? (existing.data() || {}) : {};
+
+    // Préserver le secret PayPal existant si le nouveau champ est vide
     if (!data.clientSecret) {
-      const existing = await adminDb.collection('settings').doc('paypal').get();
-      if (existing.exists) {
-        data.clientSecret = existing.data()?.clientSecret || '';
+      data.clientSecret = existingData.clientSecret || '';
+    }
+
+    // Préserver le secret carte existant si le nouveau champ est vide
+    if (data.card !== undefined) {
+      if (!data.card.clientSecret) {
+        data.card.clientSecret = existingData.card?.clientSecret || '';
       }
     }
+
     const res = await updatePayPalSettingsDb(data);
     if (res.success) {
       revalidatePath('/admin/settings', 'layout');
-      return { ...res, hasClientSecret: Boolean(data.clientSecret) };
+      return {
+        ...res,
+        hasClientSecret: Boolean(data.clientSecret),
+        hasCardSecret: Boolean(data.card?.clientSecret),
+      };
     }
     return res;
   } catch (error: any) {

@@ -88,17 +88,27 @@ export default function DeliveryPaymentStep({
   const [outOfStockProductIds, setOutOfStockProductIds] = useState<string[]>([]);
 
   // Config PayPal depuis le backend (settings/paypal) : permet de basculer
-  // sandbox → live et d'activer/désactiver le paiement par carte sans recompiler.
+  // sandbox → live et d'activer/désactiver les deux modes indépendamment.
   const paypalConfig = usePayPalConfig();
   const paypalClientId = paypalConfig.clientId;
+  // ClientId à utiliser pour le mode carte (peut être distinct du clientId PayPal)
+  const cardClientId = paypalConfig.cardClientId || paypalConfig.clientId;
+  const paypalEnabled = paypalConfig.enablePaypal;
   const cardPaymentsEnabled = paypalConfig.enableCardPayments;
 
-  // Si la carte est désactivée côté admin, force le mode PayPal.
+  // Sélection intelligente du mode par défaut selon ce qui est activé
   useEffect(() => {
+    if (paypalConfig.loading) return;
     if (!cardPaymentsEnabled && paymentMethod === 'card') {
       setPaymentMethod('paypal');
+    } else if (!paypalEnabled && paymentMethod === 'paypal') {
+      setPaymentMethod('card');
+    } else if (cardPaymentsEnabled && paymentMethod === 'card') {
+      // garder carte si déjà sélectionnée et active
+    } else if (!cardPaymentsEnabled && !paypalEnabled) {
+      // les deux désactivés : rien à faire, l'UI le signale
     }
-  }, [cardPaymentsEnabled, paymentMethod]);
+  }, [cardPaymentsEnabled, paypalEnabled, paymentMethod, paypalConfig.loading]);
 
   // Modes de livraison pour l'adresse confirmée (config réelle, aucun tarif inventé).
   useEffect(() => {
@@ -290,12 +300,31 @@ export default function DeliveryPaymentStep({
     );
   }
 
+  // Les deux modes sont désactivés
+  if (!paypalEnabled && !cardPaymentsEnabled) {
+    return (
+      <div className="text-center py-8 px-4 bg-amber-50 rounded-xl border border-amber-200">
+        <p className="text-sm font-semibold text-amber-800 mb-1">Paiement temporairement indisponible</p>
+        <p className="text-xs text-amber-600">
+          Aucun moyen de paiement n&apos;est actuellement activé. Contactez l&apos;administrateur.
+        </p>
+      </div>
+    );
+  }
+
   if (!paypalClientId) {
     return <PayPalConfigBanner configured={false} />;
   }
 
+  // Détermine quel clientId utiliser pour le Provider :
+  // - En mode carte avec un clientId distinct : utiliser cardClientId
+  // - Sinon : utiliser le clientId principal
+  const activeClientId = paymentMethod === 'card' && cardClientId !== paypalClientId
+    ? cardClientId
+    : paypalClientId;
+
   return (
-    <PayPalCheckoutProvider clientId={paypalClientId}>
+    <PayPalCheckoutProvider clientId={activeClientId}>
       <div className="grid w-full grid-cols-1 gap-6 lg:grid-cols-5 lg:gap-8">
         {/* ======= COLONNE GAUCHE (60 %) ======= */}
         <div className="space-y-6 lg:col-span-3">
@@ -388,7 +417,7 @@ export default function DeliveryPaymentStep({
               <h2 className="text-lg font-bold text-gray-900">{t('checkout.paymentMethod')}</h2>
             </div>
 
-            <div className={cn('mt-5 grid grid-cols-1 gap-3', cardPaymentsEnabled && 'sm:grid-cols-2')}>
+            <div className={cn('mt-5 grid grid-cols-1 gap-3', cardPaymentsEnabled && paypalEnabled && 'sm:grid-cols-2')}>
               {cardPaymentsEnabled && (
                 <button
                   type="button"
@@ -418,31 +447,33 @@ export default function DeliveryPaymentStep({
                 </button>
               )}
 
-              <button
-                type="button"
-                onClick={() => setPaymentMethod('paypal')}
-                aria-pressed={paymentMethod === 'paypal'}
-                className={cn(
-                  'flex w-full items-center gap-3 rounded-2xl border p-4 text-left transition-all',
-                  paymentMethod === 'paypal' ? 'border-gray-900 bg-gray-50' : 'border-gray-200 bg-white hover:border-gray-300'
-                )}
-              >
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white ring-1 ring-gray-200">
-                  <img className="h-5 w-auto object-contain" src="/bot-avatars/PayPal.png" alt="PayPal" />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-bold text-gray-900">{t('checkout.paypal')}</span>
-                  <span className="mt-0.5 block text-xs text-gray-500">{t('checkout.paypalSub')}</span>
-                </span>
-                <span
+              {paypalEnabled && (
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod('paypal')}
+                  aria-pressed={paymentMethod === 'paypal'}
                   className={cn(
-                    'ml-1 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 transition-colors',
-                    paymentMethod === 'paypal' ? 'border-gray-900' : 'border-gray-300'
+                    'flex w-full items-center gap-3 rounded-2xl border p-4 text-left transition-all',
+                    paymentMethod === 'paypal' ? 'border-gray-900 bg-gray-50' : 'border-gray-200 bg-white hover:border-gray-300'
                   )}
                 >
-                  {paymentMethod === 'paypal' && <span className="h-2 w-2 rounded-full bg-gray-900" />}
-                </span>
-              </button>
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white ring-1 ring-gray-200">
+                    <img className="h-5 w-auto object-contain" src="/bot-avatars/PayPal.png" alt="PayPal" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-bold text-gray-900">{t('checkout.paypal')}</span>
+                    <span className="mt-0.5 block text-xs text-gray-500">{t('checkout.paypalSub')}</span>
+                  </span>
+                  <span
+                    className={cn(
+                      'ml-1 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 transition-colors',
+                      paymentMethod === 'paypal' ? 'border-gray-900' : 'border-gray-300'
+                    )}
+                  >
+                    {paymentMethod === 'paypal' && <span className="h-2 w-2 rounded-full bg-gray-900" />}
+                  </span>
+                </button>
+              )}
             </div>
 
             <div className="mt-5">

@@ -1,7 +1,7 @@
-// Suppression ONE-SHOT (supprimé du repo après exécution) : retire le mot "PennyLane"
-// des SEULES valeurs visibles (admin.factures.*) des 3 locales.
-// Chaque ancien tuple doit matcher EXACTEMENT 1 occurrence, sinon → skip (pas de
-// remplacement partiel risqué). Tout le reste (clés, logique, serveur) est intact.
+// strip-pennylane.js — ONE-SHOT real strip
+// Retire le mot "PennyLane" des SEULES valeurs visibles admin.factures.* (fr/en/zh-CN).
+// Sécurité : chaque ancien tuple doit matcher EXACTEMENT 1 occurrence — sinon SKIP
+// (jamais de remplacement partiel). Clés/logique/serveur intacts.
 const fs = require('fs');
 
 const repl = {
@@ -13,17 +13,17 @@ const repl = {
     ['Ouvrir le panneau d\'instruction PennyLane', 'Ouvrir le panneau d\'instruction d\'homologation'],
     ['Traitement PennyLane en cours', 'Traitement d\'homologation en cours'],
     ['Gestion Fiscale PennyLane • {number}', 'Gestion Fiscale • {number}'],
-    ['Téléchargez le modèle auto-généré, certifiez-le sur votre compte PennyLane, puis téléversez-le ici pour écraser le projet et le publier.', 'Téléchargez le modèle auto-généré, certifiez-le sur votre outil de gestion fiscale, puis téléversez-le ici pour écraser le projet et le publier.'],
+    ['Téléchargez le modèle auto-généré, certifiez-le sur votre compte PennyLane, puis téléversez-le ici pour écraser le projet et le publier.', 'Téléchargez le modèle auto-généré, certifiez-le fiscalement, puis téléversez-le ici pour écraser le projet et le publier.'],
     ['HOMOLOGUÉE PENNYLANE', 'HOMOLOGUÉE'],
     ['Exportez le projet auto-généré contenant le SIRET client et les montants pour certification sur PennyLane.', 'Exportez le projet auto-généré contenant le SIRET client et les montants pour certification fiscale.'],
     ['Téléversez la facture officielle issue de PennyLane pour écraser le projet.', 'Téléversez la facture officielle certifiée pour écraser le projet.'],
     ['Étape 1 : Télécharger la Facture Projet (Modèle PennyLane)', 'Étape 1 : Télécharger la Facture Projet (Modèle d\'homologation)'],
-    ['Ce document auto-généré reprend toutes les mentions légales et le SIRET client. Importez-le sur votre compte PennyLane pour éditer votre facture certifiée avec numéro d\'homologation fiscale.', 'Ce document auto-généré reprend toutes les mentions légales et le SIRET client. Importez-le dans votre outil de gestion fiscale pour éditer votre facture certifiée avec numéro d\'homologation fiscale.'],
+    ['Ce document auto-généré reprend toutes les mentions légales et le SIRET client. Importez-le sur votre compte PennyLane pour éditer votre facture certifiée avec numéro d\'homologation fiscale.', 'Ce document auto-généré reprend toutes les mentions légales et le SIRET client. Importez-le dans votre outil d\'homologation fiscale pour éditer votre facture certifiée avec numéro d\'homologation.'],
     ['Étape 2 : Uploader la Facture Certifiée PennyLane', 'Étape 2 : Uploader la Facture Certifiée'],
     ['Modèle PennyLane • {number}', 'Modèle d\'homologation • {number}'],
-    ['Ce document contient toutes les métadonnées pour importation sur votre compte PennyLane.', 'Ce document contient toutes les métadonnées pour importation dans votre outil de gestion fiscale.'],
+    ['Ce document contient toutes les métadonnées pour importation sur votre compte PennyLane.', 'Ce document contient toutes les métadonnées pour importation dans votre outil d\'homologation fiscale.'],
     ['⚠️ PROJET DE FACTURE AUTO-GÉNÉRÉ — À HOMOLOGUER SUR PENNYLANE POUR CERTIFICATION FISCALE', '⚠️ PROJET DE FACTURE AUTO-GÉNÉRÉ — À HOMOLOGUER POUR CERTIFICATION FISCALE'],
-    ['Le téléversement PennyLane sera disponible dans une prochaine étape.', 'Le téléversement de la facture certifiée sera disponible dans une prochaine étape.'],
+    ['Le téléversement PennyLane sera disponible dans une prochaine étape.', 'Le téléversement certifié sera disponible dans une prochaine étape.'],
   ],
   'en.json': [
     ['Fiscal control, PennyLane certification & secure invoice publishing for the client portal.', 'Fiscal control, certification & secure invoice publishing for the client portal.'],
@@ -33,15 +33,15 @@ const repl = {
     ['Open the PennyLane processing panel', 'Open the fiscal approval panel'],
     ['PennyLane processing in progress', 'Approval processing in progress'],
     ['PennyLane Fiscal Management • {number}', 'Fiscal Management • {number}'],
-    ['Download the auto-generated template, certify it on your PennyLane account, then upload it here to overwrite the draft and publish it.', 'Download the auto-generated template, certify it on your fiscal software account, then upload it here to overwrite the draft and publish it.'],
+    ['Download the auto-generated template, certify it on your PennyLane account, then upload it here to overwrite the draft and publish it.', 'Download the auto-generated template, certify it fiscally, then upload it here to overwrite the draft and publish it.'],
     ['PENNYLANE APPROVED', 'APPROVED'],
     ['Export the auto-generated draft containing the client SIRET and amounts for PennyLane certification.', 'Export the auto-generated draft containing the client SIRET and amounts for fiscal certification.'],
     ['Upload the official PennyLane invoice to overwrite the draft.', 'Upload the certified official invoice to overwrite the draft.'],
     ['Step 1: Download the Draft Invoice (PennyLane Template)', 'Step 1: Download the Draft Invoice (Approval Template)'],
-    ['This auto-generated document contains all legal mentions and the client SIRET. Import it on your PennyLane account to edit your certified invoice with fiscal approval number.', 'This auto-generated document contains all legal mentions and the client SIRET. Import it into your fiscal software account to edit your certified invoice with fiscal approval number.'],
+    ['This auto-generated document contains all legal mentions and the client SIRET. Import it on your PennyLane account to edit your certified invoice with fiscal approval number.', 'This auto-generated document contains all legal mentions and the client SIRET. Import it into your fiscal approval tool to edit your certified invoice with fiscal approval number.'],
     ['Step 2: Upload the Certified PennyLane Invoice', 'Step 2: Upload the Certified Invoice'],
     ['PennyLane Template • {number}', 'Approval Template • {number}'],
-    ['This document contains all the metadata for import into your PennyLane account.', 'This document contains all the metadata for import into your fiscal software account.'],
+    ['This document contains all the metadata for import into your PennyLane account.', 'This document contains all the metadata for import into your fiscal approval tool.'],
     ['⚠️ AUTO-GENERATED INVOICE DRAFT — TO BE APPROVED ON PENNYLANE FOR FISCAL CERTIFICATION', '⚠️ AUTO-GENERATED INVOICE DRAFT — TO BE APPROVED FOR FISCAL CERTIFICATION'],
     ['PennyLane upload will be available in a future step.', 'Certified invoice upload will be available in a future step.'],
   ],
@@ -67,28 +67,26 @@ const repl = {
   ],
 };
 
-const base = 'src/lib/locales/';
 let total = 0;
 let failed = false;
-
 for (const [file, pairs] of Object.entries(repl)) {
-  const p = base + file;
-  let s = fs.readFileSync(p, 'utf8');
+  const p = 'src/lib/locales/' + file;
+  const original = fs.readFileSync(p, 'utf8');
+  let s = original;
   let count = 0;
   for (const [oldS, newS] of pairs) {
-    const idx = s.indexOf(oldS);
-    const nOcc = s.split(oldS).length - 1;
-    if (nOcc !== 1) {
-      console.log('SKIP [' + file + '] occ=' + nOcc + ' :: ' + JSON.stringify(oldS));
+    const n = s.split(oldS).length - 1;
+    if (n !== 1) {
+      console.log('[SKIP ' + file + '] occ=' + n + ' :: ' + JSON.stringify(oldS));
       failed = true;
       continue;
     }
-    s = s.substring(0, idx) + newS + s.substring(idx + oldS.length);
+    s = s.replace(oldS, newS);
     count++;
     total++;
   }
   fs.writeFileSync(p, s, 'utf8');
   console.log('[' + file + '] ' + count + '/' + pairs.length + ' remplacements appliqués');
 }
-
-console.log('TOTAL=' + total + (failed ? ' — ATTENTION: skips présents, revérifier' : ' — OK, aucun skip'));
+console.log('TOTAL=' + total + (failed ? ' — DES SKIPS À CORRIGER' : ' — OK'));
+if (failed) process.exitCode = 1;
