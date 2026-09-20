@@ -1,20 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { decrypt } from '@/lib/auth';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
+import { getClientSessionCustomerId } from '@/lib/client-session';
 
 export async function GET(req: NextRequest) {
   try {
-    const sessionCookie = req.cookies.get('client_session')?.value;
-    if (!sessionCookie) {
+    const customerId = await getClientSessionCustomerId(req);
+    if (!customerId) {
       return NextResponse.json({ error: 'Non connecté' }, { status: 401 });
-    }
-
-    let customerId = '';
-    try {
-      const payload = await decrypt(sessionCookie);
-      customerId = payload.customerId;
-    } catch {
-      return NextResponse.json({ error: 'Session invalide' }, { status: 401 });
     }
 
     const { adminDb } = getFirebaseAdmin();

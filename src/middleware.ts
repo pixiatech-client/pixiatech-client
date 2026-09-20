@@ -91,7 +91,7 @@ export async function middleware(request: NextRequest) {
   // Client espace routes: check client_session cookie
   const clientLoginUrl = `${baseUrl}/mon-compte/connexion`;
   const isClientAuthPage = pathname === '/mon-compte/connexion' || pathname.startsWith('/mon-compte/valider');
-  const isClientRoute = pathname.startsWith('/mon-compte/');
+  const isClientRoute = pathname === '/mon-compte' || pathname.startsWith('/mon-compte/');
 
   if (isClientRoute && !isClientAuthPage) {
     if (!clientSession) {

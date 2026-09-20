@@ -62,12 +62,55 @@ const DESC_PATTERNS: Record<string, [RegExp, string][]> = {
   estimation_unarchived: [[/Your estimate for (.+) has been unarchived/, 'Votre devis pour $1 a été désarchivé']],
 };
 
+// Maps raw Firestore reason codes to human-readable French labels.
+// Covers all codes used in dispute creation & reply routes.
+const DISPUTE_REASON_LABELS: Record<string, string> = {
+  // Standard codes from the client form
+  delay: 'Retard de livraison',
+  damaged: 'Produit endommagé',
+  missing: 'Produit manquant',
+  wrong: 'Produit différent de la commande',
+  quality: 'Problème de qualité',
+  invoice: 'Problème de facturation',
+  other: 'Autre demande',
+  // Legacy / alternate codes that can appear in Firestore
+  missing_item: 'Article manquant',
+  produit_non_recu: 'Produit non reçu',
+  produit_endommage: 'Produit endommagé',
+  produit_non_conforme: 'Produit non conforme',
+  livraison_tardive: 'Livraison tardive',
+  probleme_paiement: 'Problème de paiement',
+  service_client: 'Service client',
+  autre: 'Autre demande',
+};
+
+/**
+ * Replaces raw reason codes (e.g. "missing_item") embedded inside a
+ * notification description string with their French label.
+ * Called by NotificationBell before rendering each notification.
+ */
+function translateReasonCodes(desc: string): string {
+  return desc.replace(
+    /:\s*([a-z][a-z0-9_]*)\s*$/i,
+    (_, code) => {
+      const label = DISPUTE_REASON_LABELS[code.toLowerCase()];
+      return label ? ` : ${label}` : ` : ${code}`;
+    }
+  );
+}
+
 export function translateNotificationDesc(type: string, desc: string): string {
+  // First apply type-specific pattern translations
   const rules = DESC_PATTERNS[type];
+  let result = desc;
   if (rules) {
     for (const [regex, replacement] of rules) {
-      if (regex.test(desc)) return desc.replace(regex, replacement);
+      if (regex.test(result)) {
+        result = result.replace(regex, replacement);
+        break;
+      }
     }
   }
-  return desc;
+  // Then always translate any trailing raw reason code (covers message & order_created types)
+  return translateReasonCodes(result);
 }

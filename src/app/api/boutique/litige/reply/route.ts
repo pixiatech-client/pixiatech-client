@@ -1,20 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { decrypt } from '@/lib/auth';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
+import { getClientSessionCustomerId } from '@/lib/client-session';
+import { getReasonLabel } from '@/lib/client-status';
 
 export async function POST(req: NextRequest) {
   try {
-    const sessionCookie = req.cookies.get('client_session')?.value;
-    if (!sessionCookie) {
+    const customerId = await getClientSessionCustomerId(req);
+    if (!customerId) {
       return NextResponse.json({ error: 'Non connecté' }, { status: 401 });
-    }
-
-    let customerId = '';
-    try {
-      const payload = await decrypt(sessionCookie);
-      customerId = payload.customerId;
-    } catch {
-      return NextResponse.json({ error: 'Session invalide' }, { status: 401 });
     }
 
     const { disputeId, text } = await req.json();
@@ -47,6 +40,20 @@ export async function POST(req: NextRequest) {
       const notifBatch = adminDb.batch();
       const disputeData = dispute.data()!;
       const customerEmail = disputeData.customerEmail || customerId;
+      let customerName = customerEmail;
+      try {
+        const custDoc = await adminDb.collection('customers').doc(customerId).get();
+        if (custDoc.exists && custDoc.data()?.displayName) {
+          customerName = custDoc.data()!.displayName;
+        }
+      } catch {}
+
+      const productInfo = disputeData.productName
+        ? ` [${disputeData.productName}]`
+        : (disputeData.orderNumber ? ` [Cmd ${disputeData.orderNumber}]` : '');
+
+      const truncatedMsg = text.length > 100 ? `${text.slice(0, 97)}...` : text;
+
       let notifCount = 0;
       adminsSnap.forEach(adminDoc => {
         const notifRef = adminDb.collection('notifications').doc();
@@ -54,7 +61,7 @@ export async function POST(req: NextRequest) {
           userId: adminDoc.id,
           type: 'message',
           title: 'Nouvelle réponse client',
-          description: `${customerEmail} a répondu au litige : ${disputeData.reason}`,
+          description: `${customerName}${productInfo} : "${truncatedMsg}"`,
           href: '/admin/litiges',
           read: false,
           createdAt: FieldValue.serverTimestamp(),

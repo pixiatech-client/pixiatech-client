@@ -151,6 +151,9 @@ export interface DisputeMessage {
   date: string;
   time: string;
   attachment?: string;
+  mediaUrl?: string | null;
+  mediaType?: 'image' | 'video' | 'file' | null;
+  mediaName?: string | null;
 }
 
 export interface Dispute {

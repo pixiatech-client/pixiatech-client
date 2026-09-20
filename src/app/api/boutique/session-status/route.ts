@@ -58,48 +58,59 @@ export async function GET(req: NextRequest) {
       try {
         const { adminDb } = getFirebaseAdmin();
         const snap = await adminDb.collection('customers').doc(customerId).get();
-        if (snap.exists) {
-          const d = snap.data() || {};
-          profile = {
-            displayName: typeof d.displayName === 'string' ? d.displayName : '',
-            companyName: typeof d.companyName === 'string' ? d.companyName : '',
-            phone: typeof d.phone === 'string' ? d.phone : '',
-            officePhone: typeof d.officePhone === 'string' ? d.officePhone : '',
-            companyAddress: typeof d.companyAddress === 'string' ? d.companyAddress : (typeof d.addressLine1 === 'string' ? d.addressLine1 : ''),
-            addressLine2: typeof d.addressLine2 === 'string' ? d.addressLine2 : '',
-            country: typeof d.country === 'string' ? d.country : '',
-            city: typeof d.city === 'string' ? d.city : '',
-            zipCode: typeof d.zipCode === 'string' ? d.zipCode : (typeof d.postcode === 'string' ? d.postcode : ''),
-            civility: typeof d.civility === 'string' ? d.civility : '',
-          };
-          extras = {
-            siret: typeof d.siret === 'string' ? d.siret : '',
-            siretVerified: d.siretVerified === true,
-            vatNumber: typeof d.vatNumber === 'string' ? d.vatNumber : '',
-            vatValidated: d.vatValidated === true,
-            emailVerified: d.emailVerified === true,
-            hasPassword: !!d.passwordHash,
-            avatarUrl: typeof d.avatarUrl === 'string' ? d.avatarUrl : '',
-            legalStatus: typeof d.legalStatus === 'string' ? d.legalStatus : '',
-            nafCode: typeof d.nafCode === 'string' ? d.nafCode : '',
-            createdAt: typeof d.createdAt === 'string' ? d.createdAt : '',
-            lastLoginAt: typeof d.lastLoginAt === 'string' ? d.lastLoginAt : '',
-          };
+        if (!snap.exists) {
+          // Compte supprimé : la session n'est plus valide.
+          return NextResponse.json(EMPTY_PROFILE);
         }
+        const d = snap.data() || {};
+        if (d.status !== undefined && d.status !== 'active') {
+          // Compte désactivé : la session n'est plus valide.
+          return NextResponse.json(EMPTY_PROFILE);
+        }
+        profile = {
+          displayName: typeof d.displayName === 'string' ? d.displayName : '',
+          companyName: typeof d.companyName === 'string' ? d.companyName : '',
+          phone: typeof d.phone === 'string' ? d.phone : '',
+          officePhone: typeof d.officePhone === 'string' ? d.officePhone : '',
+          companyAddress: typeof d.companyAddress === 'string' ? d.companyAddress : (typeof d.addressLine1 === 'string' ? d.addressLine1 : ''),
+          addressLine2: typeof d.addressLine2 === 'string' ? d.addressLine2 : '',
+          country: typeof d.country === 'string' ? d.country : '',
+          city: typeof d.city === 'string' ? d.city : '',
+          zipCode: typeof d.zipCode === 'string' ? d.zipCode : (typeof d.postcode === 'string' ? d.postcode : ''),
+          civility: typeof d.civility === 'string' ? d.civility : '',
+        };
+        extras = {
+          siret: typeof d.siret === 'string' ? d.siret : '',
+          siretVerified: d.siretVerified === true,
+          vatNumber: typeof d.vatNumber === 'string' ? d.vatNumber : '',
+          vatValidated: d.vatValidated === true,
+          emailVerified: d.emailVerified === true,
+          hasPassword: !!d.passwordHash,
+          avatarUrl: typeof d.avatarUrl === 'string' ? d.avatarUrl : '',
+          legalStatus: typeof d.legalStatus === 'string' ? d.legalStatus : '',
+          nafCode: typeof d.nafCode === 'string' ? d.nafCode : '',
+          createdAt: typeof d.createdAt === 'string' ? d.createdAt : '',
+          lastLoginAt: typeof d.lastLoginAt === 'string' ? d.lastLoginAt : '',
+        };
 
-        const profInfo = await getProfessionalInfo(customerId);
-        if (profInfo) {
-          extras = {
-            ...extras,
-            siret: extras.siret || String(profInfo.siret || ''),
-            siretVerified: extras.siretVerified || (!!profInfo.siret && !!profInfo.validatedAt),
-            vatNumber: extras.vatNumber || String(profInfo.vatNumber || ''),
-            vatValidated: profInfo.vatValidated === true,
-            nafCode: String(profInfo.nafCode || ''),
-          };
+        try {
+          const profInfo = await getProfessionalInfo(customerId);
+          if (profInfo) {
+            extras = {
+              ...extras,
+              siret: extras.siret || String(profInfo.siret || ''),
+              siretVerified: extras.siretVerified || (!!profInfo.siret && !!profInfo.validatedAt),
+              vatNumber: extras.vatNumber || String(profInfo.vatNumber || ''),
+              vatValidated: profInfo.vatValidated === true,
+              nafCode: String(profInfo.nafCode || ''),
+            };
+          }
+        } catch {
+          // Infos pro optionnelles : on pré-remplit simplement moins de champs.
         }
       } catch {
-        // Le profil est optionnel : on pré-remplit simplement moins de champs.
+        // Erreur Firestore inattendue : impossible de confirmer la session → fail-closed.
+        return NextResponse.json(EMPTY_PROFILE);
       }
     }
 

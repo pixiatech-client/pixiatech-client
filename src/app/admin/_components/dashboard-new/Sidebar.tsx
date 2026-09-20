@@ -29,6 +29,7 @@ import {
   Image as ImageIcon,
   Type,
   Receipt,
+  ShieldAlert,
 } from 'lucide-react';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import { UserRole } from './dashboard-new-types';
@@ -233,7 +234,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     }
   };
 
-  const PLUS_SUBITEM_IDS = ['history', 'codes-promo', 'alertes-systeme', 'profile'];
+  const PLUS_SUBITEM_IDS = ['history', 'codes-promo', 'alertes-systeme', 'litigesSub', 'profile'];
 
   useEffect(() => {
     if (PLUS_SUBITEM_IDS.includes(activeView)) {
@@ -263,6 +264,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       subItems: [
         { id: 'history', label: t('admin.history'), icon: Clock, color: 'text-cyan-400' },
         { id: 'codes-promo', label: t('admin.navCodesPromo'), icon: Tag, color: 'text-emerald-500' },
+        { id: 'litigesSub', label: t('admin.navLitiges'), icon: ShieldAlert, color: 'text-rose-500' },
         { id: 'alertes-systeme', label: t('admin.systemAlerts.title'), icon: AlertTriangle, color: 'text-red-500' },
         { id: 'profile', label: t('admin.myProfile'), icon: UserIcon, color: 'text-purple-500' },
       ],

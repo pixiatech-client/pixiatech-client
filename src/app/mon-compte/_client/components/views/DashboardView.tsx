@@ -209,12 +209,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </div>
             ) : (
               <div className="divide-y divide-neutral-100">
-                {orders.slice(0, 3).map((order) => {
+                {orders.slice(0, 3).map((order, oidx) => {
                   const firstItem = order.items[0];
                   if (!firstItem) return null;
                   return (
                     <div
-                      key={order.id}
+                      key={order.id || `order-${oidx}`}
                       className="py-4.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 group"
                     >
                       <div className="flex items-center gap-3.5 min-w-0">
@@ -318,9 +318,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
-                {invoices.slice(0, 2).map((invoice) => (
+                {invoices.slice(0, 2).map((invoice, idx) => (
                   <div
-                    key={invoice.id}
+                    key={invoice.id || `invoice-${idx}`}
                     onClick={() => onViewInvoiceDetails(invoice)}
                     className="p-4 rounded-2xl border border-neutral-200 hover:border-neutral-300 hover:shadow-md transition-all cursor-pointer bg-neutral-50/50"
                   >

@@ -96,7 +96,18 @@ export function mapApiOrder(o: any): Order {
 
 export function mapApiOrders(raw: any[]): Order[] {
   if (!Array.isArray(raw)) return [];
-  return raw.map(mapApiOrder);
+  const seen = new Set<string>();
+  return raw.map((o, idx) => {
+    const mapped = mapApiOrder(o);
+    const base = String(mapped.id || mapped.orderNumber || `order-${idx}`);
+    let id = base;
+    let n = 1;
+    while (seen.has(id)) {
+      id = `${base}-${n++}`;
+    }
+    seen.add(id);
+    return { ...mapped, id };
+  });
 }
 
 // ─── INVOICE MAPPER ──────────────────────────────────────────────────────────
@@ -168,7 +179,18 @@ export function mapApiInvoice(inv: any): Invoice {
 
 export function mapApiInvoices(raw: any[]): Invoice[] {
   if (!Array.isArray(raw)) return [];
-  return raw.map(mapApiInvoice);
+  const seen = new Set<string>();
+  return raw.map((inv, idx) => {
+    const mapped = mapApiInvoice(inv);
+    const base = String(mapped.id || mapped.invoiceNumber || `invoice-${idx}`);
+    let id = base;
+    let n = 1;
+    while (seen.has(id)) {
+      id = `${base}-${n++}`;
+    }
+    seen.add(id);
+    return { ...mapped, id };
+  });
 }
 
 // ─── DISPUTE MAPPER ──────────────────────────────────────────────────────────
@@ -191,6 +213,10 @@ export function mapApiDispute(d: any): Dispute {
         message:    m.message || m.text || '',
         date:       m.date || '',
         time:       m.time || '',
+        attachment: m.attachment || undefined,
+        mediaUrl:   m.mediaUrl || null,
+        mediaType:  m.mediaType || (m.mediaUrl && /\.(mp4|webm|mov)$/i.test(m.mediaUrl) ? 'video' : m.mediaUrl ? 'image' : null),
+        mediaName:  m.mediaName || null,
       }))
     : [];
 

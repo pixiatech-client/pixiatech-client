@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState, useRef } from 'react';
+import Link from 'next/link';
 import { toast } from 'sonner';
 import { useI18n } from '@/lib/i18n';
 import {
@@ -26,8 +27,11 @@ import {
   Eye,
   FileX,
   AlertCircle,
+  Trash2,
+  AlertTriangle,
+  ShieldAlert,
 } from 'lucide-react';
-import { adminGenerateInvoice, markInvoiceInProgress, resetInvoiceToInProgress } from '@/app/admin/actions';
+import { adminGenerateInvoice, markInvoiceInProgress, resetInvoiceToInProgress, moveInvoiceToTrash, deleteInvoicePermanently } from '@/app/admin/actions';
 import type { InvoiceItem, InvoiceRequestSummary } from '@/lib/invoices';
 
 function CustomerAvatar({
@@ -70,7 +74,7 @@ function CustomerAvatar({
   );
 }
 
-type StatusKey = 'ALL' | 'pending' | 'in_progress' | 'completed' | 'archived' | 'generated' | 'sent';
+type StatusKey = 'ALL' | 'pending' | 'in_progress' | 'completed' | 'archived' | 'generated' | 'sent' | 'trash';
 
 interface AdminInvoicesViewProps {
   requests: InvoiceRequestSummary[];
@@ -109,6 +113,7 @@ const STATUS_BADGE: Record<string, string> = {
   archived: 'text-neutral-600 bg-neutral-50 border-neutral-200 dark:bg-white/5 dark:text-neutral-400 dark:border-white/10',
   generated: 'text-violet-800 bg-violet-50 border-violet-200 dark:bg-violet-500/10 dark:text-violet-400 dark:border-violet-500/30',
   sent: 'text-teal-800 bg-teal-50 border-teal-200 dark:bg-teal-500/10 dark:text-teal-400 dark:border-teal-500/30',
+  trash: 'text-rose-800 bg-rose-50 border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/30',
 };
 
 function statusBadgeClass(status: string): string {
@@ -121,6 +126,7 @@ function StatusBadgeIcon({ status }: { status: string }) {
   if (status === 'archived') return <CheckCircle2 className="w-3.5 h-3.5 text-neutral-500" />;
   if (status === 'generated') return <FileText className="w-3.5 h-3.5 text-violet-600 dark:text-violet-400" />;
   if (status === 'sent') return <FileCheck className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />;
+  if (status === 'trash') return <Trash2 className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />;
   return <Clock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 animate-pulse" />;
 }
 
@@ -132,6 +138,7 @@ export function AdminInvoicesView({ requests, loading, error, onRefresh }: Admin
   const [selectedInvoice, setSelectedInvoice] = useState<InvoiceRequestSummary | null>(null);
   const [showPrintModal, setShowPrintModal] = useState(false);
   const [actionId, setActionId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const money = (value: number): string =>
     (value || 0).toLocaleString(LOCALE_MAP[locale] || 'fr-FR', {
@@ -143,7 +150,7 @@ export function AdminInvoicesView({ requests, loading, error, onRefresh }: Admin
 
   const counts = useMemo(
     () =>
-      (['pending', 'in_progress', 'completed', 'archived', 'generated', 'sent'] as const).reduce<Record<string, number>>(
+      (['pending', 'in_progress', 'completed', 'archived', 'generated', 'sent', 'trash'] as const).reduce<Record<string, number>>(
         (acc, s) => {
           acc[s] = requests.filter((r) => r.status === s).length;
           return acc;
@@ -157,6 +164,8 @@ export function AdminInvoicesView({ requests, loading, error, onRefresh }: Admin
     const q = searchQuery.trim().toLowerCase();
     return requests.filter((inv) => {
       if (filterStatus !== 'ALL' && inv.status !== filterStatus) return false;
+      // Par défaut (ALL) masquer la corbeille — seul le filtre explicite 'trash' les montre
+      if (filterStatus === 'ALL' && inv.status === 'trash') return false;
       if (!q) return true;
       return (
         inv.invoiceNumber.toLowerCase().includes(q) ||
@@ -283,6 +292,43 @@ export function AdminInvoicesView({ requests, loading, error, onRefresh }: Admin
     }
   };
 
+  const handleMoveToTrash = async (inv: InvoiceRequestSummary) => {
+    if (actionId) return;
+    setActionId(inv.id);
+    try {
+      const res = await moveInvoiceToTrash(inv.id);
+      if (res?.success) {
+        toast.success('Facture déplacée dans la corbeille.');
+        onRefresh();
+      } else {
+        toast.error(res?.error || t('admin.factures.actionError'));
+      }
+    } catch {
+      toast.error(t('admin.factures.actionError'));
+    } finally {
+      setActionId(null);
+    }
+  };
+
+  const handleDeletePermanently = async (inv: InvoiceRequestSummary) => {
+    if (actionId) return;
+    setActionId(inv.id);
+    try {
+      const res = await deleteInvoicePermanently(inv.id);
+      if (res?.success) {
+        toast.success('Facture supprimée définitivement.');
+        setConfirmDeleteId(null);
+        onRefresh();
+      } else {
+        toast.error(res?.error || t('admin.factures.actionError'));
+      }
+    } catch {
+      toast.error(t('admin.factures.actionError'));
+    } finally {
+      setActionId(null);
+    }
+  };
+
   const handleMoveInProgress = async (inv: InvoiceRequestSummary) => {
     if (actionId) return;
     setActionId(inv.id);
@@ -320,6 +366,8 @@ export function AdminInvoicesView({ requests, loading, error, onRefresh }: Admin
         return 'Générée';
       case 'sent':
         return 'Envoyée';
+      case 'trash':
+        return 'Corbeille';
       default:
         return status;
     }
@@ -374,6 +422,18 @@ export function AdminInvoicesView({ requests, loading, error, onRefresh }: Admin
         </div>
 
         <div className="flex items-center gap-2.5 flex-wrap">
+          <Link
+            href="/admin/litiges"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-rose-950 to-neutral-900 hover:from-rose-900 hover:to-neutral-800 text-white text-xs font-bold border border-rose-500/30 transition-all cursor-pointer shadow-sm group shrink-0"
+            title={t('admin.factures.litigesTooltip')}
+          >
+            <ShieldAlert className="w-3.5 h-3.5 text-rose-400 group-hover:scale-110 transition-transform" />
+            <span className="tracking-wide">{t('admin.factures.litigesBtn')}</span>
+            <span className="text-[9px] bg-rose-500/20 text-rose-300 border border-rose-500/30 px-1.5 py-0.5 rounded font-mono font-bold">
+              {t('admin.factures.litigesNew')}
+            </span>
+          </Link>
+
           <button
             id="btn-pixiatech-connect"
             type="button"
@@ -519,8 +579,23 @@ export function AdminInvoicesView({ requests, loading, error, onRefresh }: Admin
               filterStatus === 'sent' ? 'bg-teal-600 text-white shadow-sm' : 'text-teal-700 hover:bg-teal-50 dark:hover:bg-teal-500/10'
             }`}
           >
-            <span>Envoyées</span>
+            <span className="text-xs">Envoyées</span>
             <span className="px-1.5 rounded-full text-[10px] bg-teal-700/60 text-white">{counts.sent ?? 0}</span>
+          </button>
+          {/* Séparateur + Corbeille */}
+          <span className="w-px h-5 bg-neutral-200 dark:bg-white/10 mx-1 shrink-0" />
+          <button
+            type="button"
+            onClick={() => setFilterStatus(filterStatus === 'trash' ? 'ALL' : 'trash')}
+            className={`px-3.5 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+              filterStatus === 'trash' ? 'bg-rose-600 text-white shadow-sm' : 'text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-500/10'
+            }`}
+          >
+            <Trash2 className="w-3 h-3" />
+            <span>Corbeille</span>
+            {(counts.trash ?? 0) > 0 && (
+              <span className="px-1.5 rounded-full text-[10px] bg-rose-700/60 text-white">{counts.trash}</span>
+            )}
           </button>
         </div>
 
@@ -535,6 +610,17 @@ export function AdminInvoicesView({ requests, loading, error, onRefresh }: Admin
           />
         </div>
       </div>
+
+      {/* Bannière corbeille */}
+      {filterStatus === 'trash' && (
+        <div className="flex items-center gap-3 px-5 py-3.5 rounded-2xl bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 text-rose-800 dark:text-rose-300 text-xs font-semibold">
+          <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
+          <span>
+            <strong>Corbeille :</strong> Les factures ci-dessous ont été supprimées de l&apos;espace client.
+            Cliquez sur &quot;Supprimer définitivement&quot; pour les effacer de façon irréversible depuis Firestore.
+          </span>
+        </div>
+      )}
 
       {/* 4. Tableau des factures avec dépliage */}
       <div className="bg-white dark:bg-zinc-900 border border-neutral-200/80 dark:border-white/10 rounded-3xl overflow-hidden shadow-sm">
@@ -663,18 +749,50 @@ export function AdminInvoicesView({ requests, loading, error, onRefresh }: Admin
                               )}
                             </button>
 
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedInvoice(inv);
-                              }}
-                              className="px-3.5 py-1.5 rounded-xl bg-neutral-900 dark:bg-zinc-800 hover:bg-black text-white font-bold text-xs transition-colors inline-flex items-center gap-1.5 cursor-pointer shadow-sm border border-transparent dark:border-white/10"
-                              title={t('admin.factures.instructTooltip')}
-                            >
-                              <EyeIcon />
-                              <span>{t('admin.factures.btnInstruct')}</span>
-                            </button>
+                            {inv.status === 'trash' ? (
+                              /* Vue corbeille : bouton supprimer définitivement */
+                              <button
+                                type="button"
+                                disabled={isBusy(inv.id)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setConfirmDeleteId(inv.id);
+                                }}
+                                className="px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition-colors inline-flex items-center gap-1.5 cursor-pointer shadow-sm border border-rose-500/50 disabled:opacity-60"
+                                title="Supprimer définitivement cette facture"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                <span>Supprimer définitivement</span>
+                              </button>
+                            ) : (
+                              /* Vue normale : bouton Instruire + bouton corbeille */
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedInvoice(inv);
+                                  }}
+                                  className="px-3.5 py-1.5 rounded-xl bg-neutral-900 dark:bg-zinc-800 hover:bg-black text-white font-bold text-xs transition-colors inline-flex items-center gap-1.5 cursor-pointer shadow-sm border border-transparent dark:border-white/10"
+                                  title={t('admin.factures.instructTooltip')}
+                                >
+                                  <EyeIcon />
+                                  <span>{t('admin.factures.btnInstruct')}</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={isBusy(inv.id)}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleMoveToTrash(inv);
+                                  }}
+                                  className="p-1.5 rounded-xl text-neutral-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors cursor-pointer disabled:opacity-40"
+                                  title="Mettre à la corbeille"
+                                >
+                                  {isBusy(inv.id) ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                                </button>
+                              </>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -1137,6 +1255,73 @@ export function AdminInvoicesView({ requests, loading, error, onRefresh }: Admin
           </table>
         </div>
       </div>
+
+      {/* Modal confirmation suppression définitive */}
+      {confirmDeleteId && (() => {
+        const inv = requests.find((r) => r.id === confirmDeleteId);
+        if (!inv) return null;
+        return (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-in fade-in duration-150">
+            <div className="bg-white dark:bg-zinc-900 rounded-3xl max-w-md w-full p-6 shadow-2xl border border-rose-300 dark:border-rose-500/40 space-y-5">
+              {/* Header */}
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-rose-100 dark:bg-rose-500/20 flex items-center justify-center shrink-0">
+                  <Trash2 className="w-6 h-6 text-rose-600 dark:text-rose-400" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-neutral-900 dark:text-white">Suppression définitive</h3>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">Cette action est <strong className="text-rose-600">irréversible</strong></p>
+                </div>
+              </div>
+
+              {/* Détails */}
+              <div className="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 text-xs space-y-1.5">
+                <div className="flex items-center gap-2 text-rose-800 dark:text-rose-300 font-semibold">
+                  <AlertTriangle className="w-4 h-4 shrink-0" />
+                  <span>La facture sera supprimée définitivement de Firestore.</span>
+                </div>
+                <ul className="list-disc list-inside text-rose-700 dark:text-rose-400 space-y-1 pl-1">
+                  <li>Le document sera effacé de la base de données</li>
+                  <li>La facture ne sera plus accessible ni côté admin, ni côté client</li>
+                  <li>Cette opération ne peut pas être annulée</li>
+                </ul>
+              </div>
+
+              {/* Infos de la facture */}
+              <div className="p-3 rounded-xl bg-neutral-50 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-xs text-neutral-600 dark:text-neutral-400 space-y-1">
+                <div><span className="font-semibold text-neutral-900 dark:text-white">Facture :</span> {inv.invoiceNumber || '—'}</div>
+                <div><span className="font-semibold text-neutral-900 dark:text-white">Commande :</span> {inv.orderNumber}</div>
+                <div><span className="font-semibold text-neutral-900 dark:text-white">Client :</span> {inv.customerName}</div>
+                <div><span className="font-semibold text-neutral-900 dark:text-white">Montant TTC :</span> {money(inv.totalTtc)} €</div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setConfirmDeleteId(null)}
+                  className="flex-1 py-2.5 rounded-xl text-xs font-semibold border border-neutral-200 dark:border-white/10 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="button"
+                  disabled={isBusy(inv.id)}
+                  onClick={() => handleDeletePermanently(inv)}
+                  className="flex-1 py-2.5 rounded-xl text-xs font-extrabold bg-rose-600 hover:bg-rose-700 text-white transition-colors cursor-pointer shadow-md shadow-rose-500/20 inline-flex items-center justify-center gap-1.5 disabled:opacity-60"
+                >
+                  {isBusy(inv.id) ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Trash2 className="w-3.5 h-3.5" />
+                  )}
+                  <span>Supprimer définitivement</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* 5. Modal d'instruction */}
       {selectedInvoice && !showPrintModal && (

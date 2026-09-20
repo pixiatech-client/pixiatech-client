@@ -62,6 +62,9 @@ export function ClientPortal({ initialTab, initialDisputeId }: ClientPortalProps
   const router = useRouter();
   const { addItem } = useCart();
 
+  // Session lifecycle: 'loading' | 'authenticated' | 'expired'
+  const [sessionState, setSessionState] = useState<'loading' | 'authenticated' | 'expired'>('loading');
+
   // Active view tab
   const [activeTab, setActiveTabState] = useState<ActiveTab>(() => {
     const t = (initialTab || 'dashboard') as ActiveTab;
@@ -105,45 +108,101 @@ export function ClientPortal({ initialTab, initialDisputeId }: ClientPortalProps
     [router]
   );
 
+  // Expire the session client-side: wipe every data state so stale/cross-user data
+  // can never be shown, and stop rendering the authenticated shell.
+  const expireSession = useCallback(() => {
+    setUser(EMPTY_USER);
+    setOrders([]);
+    setInvoices([]);
+    setDisputes([]);
+    setNotifications([]);
+    setSessionState('expired');
+  }, []);
+
   // Load real data from APIs with fallback to demo data
   const refreshData = useCallback(async () => {
-    try {
-      const [ordersRes, invoicesRes, disputesRes] = await Promise.all([
-        clientApi.orders().catch(() => null),
-        clientApi.invoices().catch(() => null),
-        clientApi.disputes().catch(() => null),
-      ]);
-
-      let loadedInvoices: Invoice[] | null = null;
-      if (invoicesRes?.invoices && Array.isArray(invoicesRes.invoices)) {
-        loadedInvoices = mapApiInvoices(invoicesRes.invoices);
-        setInvoices(loadedInvoices);
-      }
-
-      if (ordersRes?.orders && Array.isArray(ordersRes.orders) && ordersRes.orders.length > 0) {
-        const mappedOrders = mapApiOrders(ordersRes.orders);
-        if (loadedInvoices) {
-          mappedOrders.forEach((ord) => {
-            const inv = loadedInvoices?.find(
-              (i) => i.orderId === ord.id || i.orderNumber === ord.orderNumber
-            );
-            if (inv) {
-              ord.hasInvoice = true;
-              ord.invoiceId = inv.id;
-              ord.invoiceStatus = inv.status;
-            }
-          });
+    let sessionExpired = false;
+    const fetchSafely = async <T,>(p: Promise<T>): Promise<T | null> => {
+      try {
+        return await p;
+      } catch (e) {
+        if (e && typeof e === 'object' && 'status' in e && (e as { status?: number }).status === 401) {
+          sessionExpired = true;
         }
-        setOrders(mappedOrders);
+        return null;
       }
+    };
 
-      if (disputesRes?.disputes && Array.isArray(disputesRes.disputes) && disputesRes.disputes.length > 0) {
-        setDisputes(mapApiDisputes(disputesRes.disputes));
-      }
-    } catch (err) {
-      console.warn('[ClientPortal] Refresh data error:', err);
+    const [ordersRes, invoicesRes, disputesRes] = await Promise.all([
+      fetchSafely(clientApi.orders()),
+      fetchSafely(clientApi.invoices()),
+      fetchSafely(clientApi.disputes()),
+    ]);
+
+    if (sessionExpired) {
+      expireSession();
+      return;
     }
-  }, []);
+
+    let loadedInvoices: Invoice[] | null = null;
+    if (invoicesRes?.invoices && Array.isArray(invoicesRes.invoices)) {
+      loadedInvoices = mapApiInvoices(invoicesRes.invoices);
+      setInvoices(loadedInvoices);
+    }
+
+    if (ordersRes?.orders && Array.isArray(ordersRes.orders) && ordersRes.orders.length > 0) {
+      const mappedOrders = mapApiOrders(ordersRes.orders);
+      if (loadedInvoices) {
+        mappedOrders.forEach((ord) => {
+          const inv = loadedInvoices?.find(
+            (i) => i.orderId === ord.id || i.orderNumber === ord.orderNumber
+          );
+          if (inv) {
+            ord.hasInvoice = true;
+            ord.invoiceId = inv.id;
+            ord.invoiceStatus = inv.status;
+          }
+        });
+      }
+      setOrders(mappedOrders);
+    }
+
+    if (disputesRes?.disputes && Array.isArray(disputesRes.disputes) && disputesRes.disputes.length > 0) {
+      const mapped = mapApiDisputes(disputesRes.disputes);
+      setDisputes(mapped);
+
+      // Inject admin-reply notifications for unread disputes into the notification bell.
+      // We use disputeId as a stable dedup key so each dispute only generates one notif.
+      const unreadDisputes = mapped.filter((d) => d.unreadByClient);
+      if (unreadDisputes.length > 0) {
+        setNotifications((prev) => {
+          const existingDisputeIds = new Set(prev.map((n) => n.disputeId).filter(Boolean));
+          const newNotifs: NotificationItem[] = unreadDisputes
+            .filter((d) => !existingDisputeIds.has(d.id))
+            .map((d) => {
+              const lastMsg = d.messages && d.messages.length > 0 ? d.messages[d.messages.length - 1] : null;
+              const lastAdminMsg = lastMsg?.sender === 'admin' ? lastMsg.message : '';
+              const snippet = lastAdminMsg.length > 80 ? `${lastAdminMsg.slice(0, 77)}...` : lastAdminMsg;
+              const productStr = d.productName ? ` [${d.productName}]` : '';
+
+              return {
+                id: `notif-dispute-reply-${d.id}`,
+                title: 'Réponse à votre litige',
+                message: snippet
+                  ? `Support PIXIATECH${productStr} : "${snippet}"`
+                  : `Le support PIXIATECH a répondu à votre réclamation « ${d.reasonLabel || d.reason} »${productStr}.`,
+                date: "À l'instant",
+                read: false,
+                type: 'dispute' as const,
+                linkTab: 'disputes' as const,
+                disputeId: d.id,
+              };
+            });
+          return newNotifs.length > 0 ? [...newNotifs, ...prev] : prev;
+        });
+      }
+    }
+  }, [expireSession]);
 
   // Load real data from backend when authenticated. Server is the authoritative source.
   useEffect(() => {
@@ -153,6 +212,7 @@ export function ClientPortal({ initialTab, initialDisputeId }: ClientPortalProps
       .then((session) => {
         if (!isMounted) return;
         if (session.loggedIn) {
+          setSessionState('authenticated');
           setUser((prev) => ({
             ...prev,
             id: session.customerId || prev.id,
@@ -173,25 +233,32 @@ export function ClientPortal({ initialTab, initialDisputeId }: ClientPortalProps
           }));
 
           refreshData();
+        } else {
+          // Not logged in or session invalid — clear everything and show the login screen.
+          expireSession();
         }
       })
       .catch(() => {
-        // Keep the neutral empty profile — do not fabricate demo data.
+        // Session status lookup failed — do not fabricate data, show login screen.
         if (isMounted) {
-          setUser(EMPTY_USER);
+          expireSession();
         }
       });
 
-    // Gentle polling every 30 seconds to keep invoices and disputes up to date with admin
-    const timer = setInterval(() => {
-      refreshData();
-    }, 30000);
-
     return () => {
       isMounted = false;
-      clearInterval(timer);
     };
-  }, [refreshData]);
+  }, [refreshData, expireSession]);
+
+  // Gentle polling every 15 seconds to keep invoices and disputes up to date with admin replies.
+  // Only runs while the session is authenticated.
+  useEffect(() => {
+    if (sessionState !== 'authenticated') return;
+    const timer = setInterval(() => {
+      refreshData();
+    }, 15000);
+    return () => clearInterval(timer);
+  }, [sessionState, refreshData]);
 
   // Handle initial dispute deep linking
   useEffect(() => {
@@ -363,63 +430,6 @@ export function ClientPortal({ initialTab, initialDisputeId }: ClientPortalProps
     }
   };
 
-  // Administration workflow: process invoice request (EN ATTENTE -> EN COURS)
-  const handleProcessInvoice = (invoiceId: string) => {
-    setInvoices((prev) =>
-      prev.map((inv) => (inv.id === invoiceId ? { ...inv, status: 'EN COURS' } : inv))
-    );
-    setOrders((prev) =>
-      prev.map((ord) => (ord.invoiceId === invoiceId ? { ...ord, invoiceStatus: 'EN COURS' } : ord))
-    );
-    const notif: NotificationItem = {
-      id: 'notif-inv-proc-' + Date.now(),
-      title: 'Facture en cours de traitement',
-      message:
-        "Votre demande de facture est actuellement en cours d'instruction par le service comptable.",
-      date: "À l'instant",
-      read: false,
-      type: 'invoice',
-      linkTab: 'invoices'
-    };
-    setNotifications((prev) => [notif, ...prev]);
-    showToast('success', 'Statut passé à : EN COURS DE TRAITEMENT');
-  };
-
-  // Administration workflow: validate and upload certified document (EN COURS -> FACTURE DISPONIBLE)
-  const handleValidateInvoice = (invoiceId: string) => {
-    const inv = invoices.find((i) => i.id === invoiceId);
-    setInvoices((prev) =>
-      prev.map((i) =>
-        i.id === invoiceId
-          ? {
-              ...i,
-              status: 'FACTURE DISPONIBLE',
-              definitiveDocumentUploaded: true,
-              uploadedAt: new Date().toISOString()
-            }
-          : i
-      )
-    );
-    setOrders((prev) =>
-      prev.map((ord) =>
-        ord.invoiceId === invoiceId
-          ? { ...ord, invoiceStatus: 'FACTURE DISPONIBLE' }
-          : ord
-      )
-    );
-    const notif: NotificationItem = {
-      id: 'notif-inv-val-' + Date.now(),
-      title: 'Facture certifiée disponible',
-      message: `Le document fiscal officiel pour la commande ${inv?.orderNumber || ''} a été validé et associé. Vous pouvez le télécharger.`,
-      date: "À l'instant",
-      read: false,
-      type: 'invoice',
-      linkTab: 'invoices'
-    };
-    setNotifications((prev) => [notif, ...prev]);
-    showToast('success', 'Facture validée et disponible au téléchargement !');
-  };
-
   // Submit dispute
   const handleSubmitDispute = async (disputeData: Omit<Dispute, 'id' | 'date' | 'status'>) => {
     try {
@@ -571,6 +581,27 @@ export function ClientPortal({ initialTab, initialDisputeId }: ClientPortalProps
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
   };
 
+  // Mark a specific dispute as read by the client (clears unreadByClient on the server and
+  // removes the corresponding notification from the bell so it doesn't keep re-appearing).
+  const handleMarkDisputeAsRead = useCallback(async (disputeId: string) => {
+    // Optimistically clear local state first
+    setDisputes((prev) =>
+      prev.map((d) => (d.id === disputeId ? { ...d, unreadByClient: false } : d))
+    );
+    setNotifications((prev) => prev.filter((n) => n.disputeId !== disputeId));
+
+    try {
+      await fetch('/api/boutique/litige/read', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ disputeId }),
+      });
+    } catch (err) {
+      console.warn('[handleMarkDisputeAsRead] Could not mark dispute as read:', err);
+      // No rollback needed — the next refreshData() will restore the correct state
+    }
+  }, []);
+
   const handleDeleteAccount = () => {
     localStorage.removeItem('pixiatech_client_profile');
     showToast('error', 'Compte client supprimé');
@@ -579,10 +610,23 @@ export function ClientPortal({ initialTab, initialDisputeId }: ClientPortalProps
     }, 1200);
   };
 
-  const handleLogout = () => {
-    fetch('/api/boutique/logout', { method: 'POST' }).catch(() => undefined);
-    window.location.href = '/mon-compte/connexion';
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/boutique/logout', { method: 'POST' });
+    } catch {
+      // Server may be unreachable — navigate anyway; the cookie is cleared on next session check.
+    } finally {
+      window.location.href = '/mon-compte/connexion';
+    }
   };
+
+  if (sessionState === 'expired') {
+    return <SessionExpiredScreen onLogin={() => router.push('/mon-compte/connexion')} />;
+  }
+
+  if (sessionState === 'loading') {
+    return <SessionLoadingScreen />;
+  }
 
   return (
     <div className="w-full flex min-h-screen flex-col bg-[#F4F6F8] font-sans text-neutral-900 antialiased selection:bg-[#38E044] selection:text-black">
@@ -608,7 +652,7 @@ export function ClientPortal({ initialTab, initialDisputeId }: ClientPortalProps
           setDisputePreselectedOrder(null);
           setShowDisputeModal(true);
         }}
-        onOpenStore={() => setShowBoutiqueModal(true)}
+        onOpenStore={() => router.push('/boutique')}
         onLogout={handleLogout}
         user={user}
       />
@@ -635,7 +679,7 @@ export function ClientPortal({ initialTab, initialDisputeId }: ClientPortalProps
                   setDisputePreselectedOrder(null);
                   setShowDisputeModal(true);
                 }}
-                onOpenStore={() => setShowBoutiqueModal(true)}
+                onOpenStore={() => router.push('/boutique')}
                 onViewInvoiceDetails={(inv) => setSelectedInvoiceForModal(inv)}
               />
             )}
@@ -659,8 +703,6 @@ export function ClientPortal({ initialTab, initialDisputeId }: ClientPortalProps
                 orders={orders}
                 invoices={invoices}
                 onCreateInvoice={handleCreateInvoice}
-                onProcessInvoice={handleProcessInvoice}
-                onValidateInvoice={handleValidateInvoice}
                 onOpenStore={() => router.push('/boutique')}
                 onOpenSiretModal={() => setShowSiretModal(true)}
                 onOpenEmailModal={() => setShowEmailModal(true)}
@@ -684,6 +726,8 @@ export function ClientPortal({ initialTab, initialDisputeId }: ClientPortalProps
                   setShowDisputeModal(true);
                 }}
                 onSendMessage={handleSendMessageInDispute}
+                onMarkAsRead={handleMarkDisputeAsRead}
+                initialDisputeId={initialDisputeId}
               />
             )}
 
@@ -763,6 +807,52 @@ export function ClientPortal({ initialTab, initialDisputeId }: ClientPortalProps
       />
 
       <ToastView toast={toast} />
+    </div>
+  );
+}
+
+function SessionLoadingScreen() {
+  return (
+    <div className="flex min-h-screen w-full flex-col items-center justify-center bg-[#F4F6F8] px-4 font-sans">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="flex items-center gap-6"
+      >
+        <span className="relative inline-flex h-2.5 w-2.5">
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#38E044] opacity-75" />
+          <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#38E044]" />
+        </span>
+        <p className="text-sm font-medium text-neutral-500">Chargement de votre espace client…</p>
+      </motion.div>
+    </div>
+  );
+}
+
+function SessionExpiredScreen({ onLogin }: { onLogin: () => void }) {
+  return (
+    <div className="flex min-h-screen w-full items-center justify-center bg-[#F4F6F8] px-4 font-sans">
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.25 }}
+        className="w-full max-w-sm rounded-3xl border border-neutral-200/80 bg-white p-8 text-center shadow-xl shadow-neutral-200/60"
+      >
+        <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-neutral-900">
+          <XCircle size={26} className="text-white" />
+        </div>
+        <h1 className="text-lg font-bold text-neutral-900">Session expirée</h1>
+        <p className="mt-2 text-sm leading-relaxed text-neutral-500">
+          Votre session n'est plus valide ou vous avez été déconnecté. Reconnectez-vous pour
+          accéder à vos commandes et factures.
+        </p>
+        <button
+          onClick={onLogin}
+          className="mt-6 inline-flex h-11 w-full items-center justify-center rounded-xl bg-neutral-900 px-6 text-sm font-semibold text-white transition-colors hover:bg-neutral-700"
+        >
+          Se connecter
+        </button>
+      </motion.div>
     </div>
   );
 }

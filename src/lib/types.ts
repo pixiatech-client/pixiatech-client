@@ -696,6 +696,9 @@ export interface DisputeMessage {
   sender: 'customer' | 'admin';
   text: string;
   createdAt: string;
+  mediaUrl?: string | null;
+  mediaType?: 'image' | 'video' | 'file' | null;
+  mediaName?: string | null;
 }
 
 export interface Dispute {
@@ -709,4 +712,9 @@ export interface Dispute {
   updatedAt: string;
   messages?: DisputeMessage[];
   unreadByClient?: boolean;
+  orderId?: string | null;
+  orderNumber?: string | null;
+  orderType?: 'sale' | 'rental' | null;
+  productName?: string | null;
+  productImage?: string | null;
 }

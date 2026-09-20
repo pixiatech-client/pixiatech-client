@@ -8,6 +8,7 @@ export const SALE_NUMBER_PREFIX = 'PX';
 export const RENTAL_NUMBER_PREFIX = 'RL';
 
 export const DISPUTE_REASON_LABELS: Record<string, string> = {
+  // Current codes from the client dispute form
   delay: 'Retard de livraison',
   damaged: 'Produit endommagé',
   missing: 'Produit manquant',
@@ -15,6 +16,15 @@ export const DISPUTE_REASON_LABELS: Record<string, string> = {
   quality: 'Problème de qualité',
   invoice: 'Problème de facturation',
   other: 'Autre demande',
+  // Legacy codes (older form versions or external submissions)
+  missing_item: 'Article manquant',
+  produit_non_recu: 'Produit non reçu',
+  produit_endommage: 'Produit endommagé',
+  produit_non_conforme: 'Produit non conforme',
+  livraison_tardive: 'Livraison tardive',
+  probleme_paiement: 'Problème de paiement',
+  service_client: 'Service client',
+  autre: 'Autre demande',
 };
 
 export const DISPUTE_STATUS_LABELS: Record<string, string> = {

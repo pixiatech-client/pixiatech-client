@@ -22,9 +22,9 @@ export interface CompanySnapshot {
   companyEmail: string;
 }
 
-export type InvoiceStatus = 'draft' | 'generated' | 'sent' | 'failed' | 'pending' | 'in_progress' | 'completed' | 'archived';
+export type InvoiceStatus = 'draft' | 'generated' | 'sent' | 'failed' | 'pending' | 'in_progress' | 'completed' | 'archived' | 'trash';
 
-export type InvoiceRequestStatus = 'pending' | 'in_progress' | 'completed' | 'archived';
+export type InvoiceRequestStatus = 'pending' | 'in_progress' | 'completed' | 'archived' | 'trash';
 
 export interface InvoiceRequestSummary {
   id: string;

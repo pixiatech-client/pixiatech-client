@@ -13,6 +13,7 @@ import type { DocumentReference, DocumentSnapshot, Firestore, Query } from 'fire
 import { createHash } from 'crypto';
 import nodemailer from 'nodemailer';
 import { buildSupplierEmailHtml } from '@/lib/email-templates';
+import { getReasonLabel } from '@/lib/client-status';
 
 import type { Product, Settings, DeliverySettings, LaborSettings, PdfSettings, ProductSpec, QuoteRequest, City, Locations, UserProfile, Theme, QuoteHistoryEntry, UserRole, QuoteDetails, WizardSettings, ActivityLogEntry, Dispute, PriceSnapshot } from '@/lib/types';
 import { normalizePrice, computeDeliveryCost, computeLaborCost } from '@/lib/pricing-engine';
@@ -1405,7 +1406,7 @@ export async function getInvoiceRequests(): Promise<InvoiceRequestSummary[]> {
   try {
     const snap = await adminDb
       .collection('invoices')
-      .where('status', 'in', ['pending', 'in_progress', 'completed', 'archived', 'generated', 'sent'])
+      .where('status', 'in', ['pending', 'in_progress', 'completed', 'archived', 'generated', 'sent', 'trash'])
       .get();
 
     const items: InvoiceRequestSummary[] = snap.docs.map((docSnap) => {
@@ -1724,6 +1725,88 @@ export async function adminGenerateInvoice(
   } catch (error: any) {
     console.error('Error publishing certified invoice:', error);
     return { success: false, error: error?.message || 'Une erreur est survenue lors de la publication.' };
+  }
+}
+
+/**
+ * Action « Mettre à la corbeille » côté admin :
+ * Soft delete — passe le statut à 'trash'. La facture disparaît de l'espace client
+ * mais reste visible dans l'onglet Corbeille de l'admin.
+ */
+export async function moveInvoiceToTrash(
+  id: string
+): Promise<{ success: boolean; error?: string }> {
+  await requireRole('admin', 'commercial');
+  const { adminDb } = getFirebaseAdmin();
+  if (!adminDb) {
+    return { success: false, error: 'Service de base de données indisponible.' };
+  }
+
+  if (!id || !/^(sale|rental)_/.test(id)) {
+    return { success: false, error: 'Identifiant de facture invalide.' };
+  }
+
+  try {
+    const invoiceRef = adminDb.collection('invoices').doc(id);
+    const snap = await invoiceRef.get();
+    if (!snap.exists) {
+      return { success: false, error: 'Facture introuvable.' };
+    }
+
+    await invoiceRef.update({
+      status: 'trash',
+      trashedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+
+    revalidatePath('/admin/factures');
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error moving invoice to trash:', error);
+    return { success: false, error: error?.message || 'Une erreur est survenue.' };
+  }
+}
+
+/**
+ * Action « Supprimer définitivement » côté admin :
+ * Hard delete — supprime le document Firestore. Irréversible.
+ * Uniquement disponible depuis la corbeille (statut === 'trash').
+ */
+export async function deleteInvoicePermanently(
+  id: string
+): Promise<{ success: boolean; error?: string }> {
+  await requireRole('admin', 'commercial');
+  const { adminDb } = getFirebaseAdmin();
+  if (!adminDb) {
+    return { success: false, error: 'Service de base de données indisponible.' };
+  }
+
+  if (!id || !/^(sale|rental)_/.test(id)) {
+    return { success: false, error: 'Identifiant de facture invalide.' };
+  }
+
+  try {
+    const invoiceRef = adminDb.collection('invoices').doc(id);
+    const snap = await invoiceRef.get();
+    if (!snap.exists) {
+      return { success: false, error: 'Facture introuvable.' };
+    }
+
+    const currentStatus = String(snap.data()?.status || '');
+    if (currentStatus !== 'trash') {
+      return {
+        success: false,
+        error: 'Seules les factures dans la corbeille peuvent être supprimées définitivement.',
+      };
+    }
+
+    await invoiceRef.delete();
+
+    revalidatePath('/admin/factures');
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error permanently deleting invoice:', error);
+    return { success: false, error: error?.message || 'Une erreur est survenue.' };
   }
 }
 
@@ -4464,6 +4547,13 @@ export async function getDisputeById(id: string): Promise<Dispute | null> {
   return { id: snap.id, ...snap.data() as Omit<Dispute, 'id'> };
 }
 
+export async function deleteDispute(id: string): Promise<void> {
+  await requireAdminFresh();
+  const { adminDb } = getFirebaseAdmin();
+  if (!adminDb) throw new Error('Database service unavailable');
+  await adminDb.collection('disputes').doc(id).delete();
+}
+
 export async function replyToDispute(id: string, text: string): Promise<void> {
   await requireAdminFresh();
   if (!text || typeof text !== 'string' || text.trim().length === 0) {
@@ -4505,6 +4595,11 @@ export async function replyToDispute(id: string, text: string): Promise<void> {
   const adminsSnap = await adminDb.collection('users').get();
   if (!adminsSnap.empty) {
     const notifBatch = adminDb.batch();
+    const truncatedText = text.length > 100 ? `${text.slice(0, 97)}...` : text;
+    const productInfo = disputeData.productName
+      ? ` [${disputeData.productName}]`
+      : (disputeData.orderNumber ? ` [Cmd ${disputeData.orderNumber}]` : '');
+
     adminsSnap.forEach(adminDoc => {
       if (adminDoc.id === currentAdminUid) return;
       const notifRef = adminDb.collection('notifications').doc();
@@ -4512,7 +4607,7 @@ export async function replyToDispute(id: string, text: string): Promise<void> {
         userId: adminDoc.id,
         type: 'message',
         title: 'Réponse admin sur un litige',
-        description: `Un administrateur a répondu au litige de ${disputeData.customerEmail || 'un client'} : ${disputeData.reason}`,
+        description: `Réponse à ${disputeData.customerEmail || 'un client'}${productInfo} : "${truncatedText}"`,
         href: '/admin/litiges',
         read: false,
         createdAt: FieldValue.serverTimestamp(),

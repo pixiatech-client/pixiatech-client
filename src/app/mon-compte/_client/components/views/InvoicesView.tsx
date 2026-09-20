@@ -22,7 +22,6 @@ import {
   Lock,
   Tag,
   Sparkles,
-  RefreshCw,
   Eye,
   ImageIcon,
   Mail,
@@ -42,8 +41,6 @@ interface InvoicesViewProps {
   orders: Order[];
   invoices: Invoice[];
   onCreateInvoice: (order: Order, item: OrderItem, billingType: BillingType) => void;
-  onProcessInvoice?: (invoiceId: string) => void;
-  onValidateInvoice?: (invoiceId: string) => void;
   onOpenStore?: () => void;
   onOpenSiretModal: () => void;
   onOpenEmailModal?: () => void;
@@ -62,8 +59,6 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
   orders,
   invoices,
   onCreateInvoice,
-  onProcessInvoice,
-  onValidateInvoice,
   onOpenStore,
   onOpenSiretModal,
   onOpenEmailModal,
@@ -438,47 +433,37 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                     </div>
                   </div>
 
-                  {/* Administrative Simulation / Workflow Controller */}
+                  {/* Workflow Status */}
                   {(invoice.status === 'EN ATTENTE' || invoice.status === 'EN COURS') && (
-                    <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sm">
-                      <div className="flex items-start gap-2 text-amber-900">
-                        <Clock className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+                    <div
+                      className={`p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sm ${
+                        invoice.status === 'EN COURS'
+                          ? 'bg-sky-50/70 border-sky-200'
+                          : 'bg-amber-50/70 border-amber-200'
+                      }`}
+                    >
+                      <div
+                        className={`flex items-start gap-2 ${
+                          invoice.status === 'EN COURS' ? 'text-sky-900' : 'text-amber-900'
+                        }`}
+                      >
+                        <Clock
+                          className={`w-4 h-4 mt-0.5 shrink-0 ${
+                            invoice.status === 'EN COURS' ? 'text-sky-600' : 'text-amber-600'
+                          }`}
+                        />
                         <div>
                           <strong className="block font-semibold">
                             {invoice.status === 'EN ATTENTE'
                               ? "Demande soumise à l'administration"
                               : 'Service comptabilité en cours de traitement'}
                           </strong>
-                          <span className="text-amber-800">
+                          <span className={invoice.status === 'EN COURS' ? 'text-sky-800' : 'text-amber-800'}>
                             {invoice.status === 'EN ATTENTE'
                               ? 'En attente de prise en charge par le service comptabilité PIXIATECH.'
                               : 'Vérification légale effectuée. En attente de dépôt du PDF certifié.'}
                           </span>
                         </div>
-                      </div>
-
-                      <div className="flex items-center gap-2 shrink-0">
-                        {invoice.status === 'EN ATTENTE' && onProcessInvoice && (
-                          <button
-                            type="button"
-                            onClick={() => onProcessInvoice(invoice.id)}
-                            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition-colors cursor-pointer shadow-xs"
-                          >
-                            <RefreshCw className="w-3.5 h-3.5" />
-                            <span>Passer en "EN COURS" (Admin)</span>
-                          </button>
-                        )}
-
-                        {invoice.status === 'EN COURS' && onValidateInvoice && (
-                          <button
-                            type="button"
-                            onClick={() => onValidateInvoice(invoice.id)}
-                            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-colors cursor-pointer shadow-xs"
-                          >
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            <span>Valider & associer le PDF définitif</span>
-                          </button>
-                        )}
                       </div>
                     </div>
                   )}

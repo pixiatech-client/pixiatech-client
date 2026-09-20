@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { decrypt } from '@/lib/auth';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { getClientSessionCustomerId } from '@/lib/client-session';
 import {
@@ -31,7 +30,19 @@ function toDisplayTime(value: unknown): string {
   return isNaN(d.getTime()) ? '' : timeFormatter.format(d);
 }
 
-function formatMessage(id: string, raw: { sender?: string; text?: string; createdAt?: unknown }, customerLabel: string) {
+function formatMessage(
+  id: string,
+  raw: {
+    sender?: string;
+    text?: string;
+    createdAt?: unknown;
+    mediaUrl?: string;
+    mediaType?: string;
+    mediaName?: string;
+    attachment?: string;
+  },
+  customerLabel: string
+) {
   const sender = raw.sender === 'admin' ? 'admin' : 'customer';
   return {
     id,
@@ -40,6 +51,10 @@ function formatMessage(id: string, raw: { sender?: string; text?: string; create
     message: String(raw.text || ''),
     date: toDisplayDate(raw.createdAt),
     time: toDisplayTime(raw.createdAt).replace(':', 'h'),
+    mediaUrl: raw.mediaUrl || null,
+    mediaType: raw.mediaType || (raw.mediaUrl && /\.(mp4|webm|mov)$/i.test(raw.mediaUrl) ? 'video' : raw.mediaUrl ? 'image' : null),
+    mediaName: raw.mediaName || null,
+    attachment: raw.attachment || undefined,
   };
 }
 
@@ -127,20 +142,17 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const sessionCookie = req.cookies.get('client_session')?.value;
-    if (!sessionCookie) {
+    const customerId = await getClientSessionCustomerId(req);
+    if (!customerId) {
       return NextResponse.json({ error: 'Non connecté' }, { status: 401 });
     }
 
-    let customerId = '';
-    let customerEmail = '';
-    try {
-      const payload = await decrypt(sessionCookie);
-      customerId = payload.customerId;
-      customerEmail = payload.email;
-    } catch {
-      return NextResponse.json({ error: 'Session invalide' }, { status: 401 });
-    }
+    const { adminDb, FieldValue } = getFirebaseAdmin();
+    const customerSnapForEmail = await adminDb.collection('customers').doc(customerId).get();
+    const customerEmail =
+      typeof customerSnapForEmail.data()?.email === 'string'
+        ? String(customerSnapForEmail.data()?.email)
+        : '';
 
     const body = await req.json();
     const { reason, description } = body;
@@ -153,8 +165,6 @@ export async function POST(req: NextRequest) {
       typeof body.orderType === 'string' && (body.orderType === 'sale' || body.orderType === 'rental')
         ? body.orderType
         : undefined;
-
-    const { adminDb, FieldValue } = getFirebaseAdmin();
 
     // Contexte commande (facultatif) : vérifie la propriété si un orderId est fourni
     // et copie les métadonnées produit pour l'affichage côté client.
@@ -205,13 +215,19 @@ export async function POST(req: NextRequest) {
       const customerSnap = await adminDb.collection('customers').doc(customerId).get();
       const customerName = customerSnap.exists ? (customerSnap.data()?.displayName || customerEmail) : customerEmail;
 
+      const productInfo = productName
+        ? ` [${productName}]`
+        : (orderNumber ? ` [Cmd ${orderNumber}]` : '');
+      const reasonLabel = getReasonLabel(reason);
+      const truncatedDesc = description.length > 90 ? `${description.slice(0, 87)}...` : description;
+
       adminsSnap.forEach(adminDoc => {
         const notifRef = adminDb.collection('notifications').doc();
         notifBatch.set(notifRef, {
           userId: adminDoc.id,
-          type: 'order_created',
+          type: 'message',
           title: 'Nouveau litige client',
-          description: `${customerName} a ouvert un litige : ${reason}`,
+          description: `${customerName}${productInfo} (${reasonLabel}) : "${truncatedDesc}"`,
           href: '/admin/litiges',
           read: false,
           createdAt: FieldValue.serverTimestamp(),

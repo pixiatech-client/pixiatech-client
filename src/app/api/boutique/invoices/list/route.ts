@@ -21,6 +21,9 @@ export async function GET(req: NextRequest) {
 
     let invoices = snap.docs.map((d) => ({ id: d.id, ...d.data() }) as any);
 
+    // Exclure les factures mises à la corbeille par l'admin
+    invoices = invoices.filter((i: any) => i.status !== 'trash');
+
     if (orderId && orderType) {
       invoices = invoices.filter((i) => i.orderId === orderId && i.orderType === orderType);
     }

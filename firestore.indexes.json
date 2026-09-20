@@ -1,6 +1,14 @@
 {
   "indexes": [
     {
+      "collectionGroup": "disputes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "customerId", "order": "ASCENDING" },
+        { "fieldPath": "updatedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "sale_orders",
       "queryScope": "COLLECTION",
       "fields": [

@@ -16,7 +16,8 @@ import {
   Building2,
   User,
   Paperclip,
-  ExternalLink
+  ExternalLink,
+  ImageIcon
 } from 'lucide-react';
 import type { Dispute, DisputeMessage, Order, UserProfile, DisputeStatus } from '../../types';
 
@@ -28,6 +29,8 @@ interface DisputesViewProps {
   onSendMessage: (disputeId: string, text: string) => void;
   onSelectDispute?: (id: string) => void;
   onNewDispute?: () => void;
+  onMarkAsRead?: (disputeId: string) => void;
+  initialDisputeId?: string;
 }
 
 export const DisputesView: React.FC<DisputesViewProps> = ({
@@ -44,14 +47,24 @@ export const DisputesView: React.FC<DisputesViewProps> = ({
   onOpenDisputeModal,
   onSendMessage,
   onSelectDispute,
-  onNewDispute
+  onNewDispute,
+  onMarkAsRead,
+  initialDisputeId,
 }) => {
   const [filter, setFilter] = useState<'all' | 'open' | 'resolved'>('all');
   const [selectedDisputeId, setSelectedDisputeId] = useState<string>(
-    disputes[0]?.id || ''
+    initialDisputeId || disputes[0]?.id || ''
   );
   const [replyText, setReplyText] = useState<string>('');
   const [isSending, setIsSending] = useState<boolean>(false);
+
+  // If initialDisputeId arrives after mount (disputes loaded async), sync it.
+  React.useEffect(() => {
+    if (initialDisputeId && initialDisputeId !== selectedDisputeId) {
+      setSelectedDisputeId(initialDisputeId);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialDisputeId]);
 
   const handleOpenModal = () => {
     if (onOpenDisputeModal) {
@@ -72,6 +85,15 @@ export const DisputesView: React.FC<DisputesViewProps> = ({
   });
 
   const activeDispute = disputes.find((d) => d.id === selectedDisputeId) || filteredDisputes[0];
+
+  // Auto-mark the currently viewed dispute as read when it becomes active and is unread.
+  React.useEffect(() => {
+    if (activeDispute?.unreadByClient && onMarkAsRead) {
+      onMarkAsRead(activeDispute.id);
+    }
+  // We only want to trigger this when the active dispute ID changes, not on every render.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeDispute?.id]);
 
   const handleSendReply = (e: React.FormEvent) => {
     e.preventDefault();
@@ -272,17 +294,24 @@ export const DisputesView: React.FC<DisputesViewProps> = ({
                 filteredDisputes.map((dispute) => {
                   const isSelected = activeDispute?.id === dispute.id;
                   const messageCount = dispute.messages?.length || 0;
+                  const isUnread = Boolean(dispute.unreadByClient);
                   return (
                     <div
                       key={dispute.id}
                       onClick={() => {
                         setSelectedDisputeId(dispute.id);
                         onSelectDispute?.(dispute.id);
+                        // Auto-mark as read when client clicks to view the dispute
+                        if (isUnread && onMarkAsRead) {
+                          onMarkAsRead(dispute.id);
+                        }
                       }}
                       className={`p-4 rounded-2xl border transition-all cursor-pointer space-y-3 ${
                         isSelected
                           ? 'bg-white border-[#0A0D0E] ring-2 ring-black/10 shadow-sm'
-                          : 'bg-white border-neutral-200/80 hover:border-neutral-300 hover:bg-neutral-50/50'
+                          : isUnread
+                            ? 'bg-amber-50/40 border-amber-300 hover:border-amber-400 hover:bg-amber-50/60'
+                            : 'bg-white border-neutral-200/80 hover:border-neutral-300 hover:bg-neutral-50/50'
                       }`}
                     >
                       <div className="flex items-center justify-between gap-2">
@@ -292,15 +321,29 @@ export const DisputesView: React.FC<DisputesViewProps> = ({
                           </span>
                           <span className="text-[11px] text-neutral-400">• {dispute.date}</span>
                         </div>
-                        {getStatusBadge(dispute.status)}
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {isUnread && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200 animate-pulse">
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block" />
+                              Réponse admin
+                            </span>
+                          )}
+                          {getStatusBadge(dispute.status)}
+                        </div>
                       </div>
 
                       <div className="flex items-start gap-3">
-                        <img
-                          src={dispute.productImage}
-                          alt={dispute.productName}
-                          className="w-12 h-12 rounded-xl object-cover border border-neutral-200 shrink-0"
-                        />
+                        {dispute.productImage ? (
+                          <img
+                            src={dispute.productImage}
+                            alt={dispute.productName}
+                            className="w-12 h-12 rounded-xl object-cover border border-neutral-200 shrink-0"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 rounded-xl bg-neutral-100 border border-neutral-200 shrink-0 flex items-center justify-center">
+                            <ImageIcon className="w-5 h-5 text-neutral-400" />
+                          </div>
+                        )}
                         <div className="min-w-0 flex-1">
                           <div className="font-bold text-xs text-neutral-900 truncate">
                             {dispute.reasonLabel}
@@ -409,22 +452,22 @@ export const DisputesView: React.FC<DisputesViewProps> = ({
                   {/* Thread messages */}
                   {activeDispute.messages && activeDispute.messages.length > 0 ? (
                     activeDispute.messages.map((msg) => {
-                      const isClient = msg.sender === 'client';
+                      const isAdmin = msg.sender === 'admin';
                       return (
                         <div
                           key={msg.id}
-                          className={`flex flex-col ${isClient ? 'items-end' : 'items-start'} space-y-1`}
+                          className={`flex flex-col ${!isAdmin ? 'items-end' : 'items-start'} space-y-1`}
                         >
-                          <div className="flex items-center gap-2 text-[11px] text-neutral-400 px-1">
-                            <span className="font-semibold text-neutral-600">
+                          <div className="flex items-center gap-2 text-[11px] px-1">
+                            <span className={`font-semibold ${isAdmin ? 'text-blue-600 font-bold' : 'text-neutral-600'}`}>
                               {msg.senderName}
                             </span>
-                            <span>•</span>
-                            <span>
+                            <span className="text-neutral-400">•</span>
+                            <span className="text-neutral-400">
                               {msg.date} à {msg.time}
                             </span>
-                            {!isClient && (
-                              <span className="px-1.5 py-0.2 bg-[#0A0D0E] text-white text-[9px] font-bold rounded">
+                            {isAdmin && (
+                              <span className="px-1.5 py-0.5 bg-blue-600 text-white text-[9px] font-bold rounded tracking-wider shadow-xs">
                                 OFFICIEL
                               </span>
                             )}
@@ -432,14 +475,14 @@ export const DisputesView: React.FC<DisputesViewProps> = ({
 
                           <div
                             className={`max-w-[85%] sm:max-w-[75%] p-4 rounded-2xl text-xs leading-relaxed ${
-                              isClient
+                              !isAdmin
                                 ? 'bg-[#0A0D0E] text-white rounded-tr-xs shadow-xs'
-                                : 'bg-white border border-neutral-200/90 text-neutral-800 rounded-tl-xs shadow-xs'
+                                : 'bg-blue-50/20 border border-blue-200/90 text-blue-900 rounded-tl-xs shadow-xs'
                             }`}
                           >
-                            <p className="whitespace-pre-wrap">{msg.message}</p>
+                            <p className={`whitespace-pre-wrap ${isAdmin ? 'text-blue-900 font-medium' : ''}`}>{msg.message}</p>
                             {msg.attachment && (
-                              <div className="mt-2 pt-2 border-t border-white/20 text-[10px] flex items-center gap-1 opacity-80">
+                              <div className={`mt-2 pt-2 border-t text-[10px] flex items-center gap-1 ${!isAdmin ? 'border-white/20 opacity-80' : 'border-blue-200/60 text-blue-800'}`}>
                                 <Paperclip className="w-3 h-3" />
                                 <span>Pièce jointe : {msg.attachment}</span>
                               </div>
