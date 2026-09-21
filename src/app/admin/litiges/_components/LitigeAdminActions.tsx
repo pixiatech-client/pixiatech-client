@@ -1,21 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
-import {
-  Clock,
-  CheckCircle2,
-  XCircle,
-  AlertCircle,
-  RotateCcw,
-  Trash2,
-  ChevronDown,
-  Loader2,
-  ShieldCheck,
-} from 'lucide-react';
+import { Trash2, ChevronDown, Loader2, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useI18n } from '@/lib/i18n';
 import type { Dispute } from '@/lib/types';
+import { DISPUTE_STATUSES, DISPUTE_STATUS_META, getDisputeStatusMeta } from './disputeStatusConfig';
 
 interface LitigeAdminActionsProps {
   dispute: Dispute;
@@ -24,36 +15,6 @@ interface LitigeAdminActionsProps {
   isUpdatingStatus: boolean;
   isDeleting: boolean;
 }
-
-const STATUS_DETAILS: Record<
-  Dispute['status'],
-  { labelKey: string; actionKey: string; icon: any; color: string }
-> = {
-  open: {
-    labelKey: 'admin.litiges.statusOpen',
-    actionKey: 'admin.litiges.actionOpen',
-    icon: Clock,
-    color: 'text-amber-700 bg-amber-50 hover:bg-amber-100 border-amber-200',
-  },
-  in_progress: {
-    labelKey: 'admin.litiges.statusInProgress',
-    actionKey: 'admin.litiges.actionResolve',
-    icon: CheckCircle2,
-    color: 'text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border-emerald-200',
-  },
-  resolved: {
-    labelKey: 'admin.litiges.statusResolved',
-    actionKey: 'admin.litiges.actionClose',
-    icon: XCircle,
-    color: 'text-neutral-700 bg-neutral-100 hover:bg-neutral-200 border-neutral-300',
-  },
-  closed: {
-    labelKey: 'admin.litiges.statusClosed',
-    actionKey: 'admin.litiges.actionReopen',
-    icon: RotateCcw,
-    color: 'text-blue-700 bg-blue-50 hover:bg-blue-100 border-blue-200',
-  },
-};
 
 export function LitigeAdminActions({
   dispute,
@@ -66,28 +27,7 @@ export function LitigeAdminActions({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
 
-  const getNextStatus = (current: Dispute['status']): Dispute['status'] => {
-    switch (current) {
-      case 'open':
-        return 'in_progress';
-      case 'in_progress':
-        return 'resolved';
-      case 'resolved':
-        return 'closed';
-      case 'closed':
-        return 'open';
-      default:
-        return 'in_progress';
-    }
-  };
-
-  const nextStatus = getNextStatus(dispute.status);
-  const nextConfig = STATUS_DETAILS[nextStatus];
-  const NextIcon = nextConfig.icon;
-
-  const handleQuickNext = async () => {
-    await onStatusChange(dispute.id, nextStatus);
-  };
+  const currentMeta = getDisputeStatusMeta(dispute.status);
 
   const handleSelectStatus = async (status: Dispute['status']) => {
     setShowStatusDropdown(false);
@@ -98,43 +38,36 @@ export function LitigeAdminActions({
 
   return (
     <div className="flex items-center flex-wrap gap-2">
-      {/* Quick primary action button */}
-      <Button
-        size="sm"
-        onClick={handleQuickNext}
-        disabled={isUpdatingStatus}
-        className={`h-9 px-3.5 rounded-xl border text-xs font-bold transition-all shadow-xs gap-1.5 cursor-pointer ${nextConfig.color}`}
-      >
-        {isUpdatingStatus ? (
-          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-        ) : (
-          <NextIcon className="w-3.5 h-3.5" />
-        )}
-        <span>{t(nextConfig.actionKey)}</span>
-      </Button>
-
-      {/* Dropdown for direct status selection */}
+      {/* Unique status menu */}
       <div className="relative">
         <Button
           variant="outline"
           size="sm"
           onClick={() => setShowStatusDropdown((prev) => !prev)}
           disabled={isUpdatingStatus}
-          className="h-9 px-3 rounded-xl border-neutral-200 bg-white hover:bg-neutral-50 text-xs font-semibold text-neutral-700 shadow-xs gap-1 cursor-pointer"
+          className="h-9 px-3 rounded-xl border-neutral-200 bg-white hover:bg-neutral-50 text-xs font-bold text-neutral-900 shadow-xs gap-1.5 cursor-pointer min-w-[7rem] justify-between"
+          title={t('admin.litiges.changeStatusTitle')}
         >
-          <span>{t('admin.litiges.statusLabel')}</span>
-          <span className="font-bold text-neutral-900">{t(STATUS_DETAILS[dispute.status]?.labelKey)}</span>
-          <ChevronDown className={`w-3.5 h-3.5 text-neutral-400 transition-transform ${showStatusDropdown ? 'rotate-180' : ''}`} />
+          {isUpdatingStatus ? (
+            <Loader2 className="w-3.5 h-3.5 text-neutral-500 animate-spin" />
+          ) : (
+            <span className={`w-2 h-2 rounded-full ${currentMeta.dot}`} />
+          )}
+          <span>{t(currentMeta.labelKey)}</span>
+          <ChevronDown
+            className={`w-3.5 h-3.5 text-neutral-400 transition-transform ${showStatusDropdown ? 'rotate-180' : ''}`}
+          />
         </Button>
 
         {showStatusDropdown && (
-          <div className="absolute right-0 mt-1.5 w-48 bg-white rounded-2xl border border-neutral-200 shadow-lg py-1.5 z-30 space-y-0.5">
+          <div className="absolute right-0 mt-1.5 w-52 bg-white rounded-2xl border border-neutral-200 shadow-lg py-1.5 z-50 space-y-0.5">
             <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-neutral-400">
               {t('admin.litiges.changeStatusTitle')}
             </div>
-            {(['open', 'in_progress', 'resolved', 'closed'] as const).map((st) => {
+            {DISPUTE_STATUSES.map((st) => {
               const isCurrent = dispute.status === st;
-              const Icon = STATUS_DETAILS[st].icon;
+              const meta = DISPUTE_STATUS_META[st];
+              const Icon = meta.icon;
               return (
                 <button
                   key={st}
@@ -146,11 +79,12 @@ export function LitigeAdminActions({
                       : 'hover:bg-neutral-50 text-neutral-700'
                   }`}
                 >
-                  <div className="flex items-center gap-2">
-                    <Icon className="w-3.5 h-3.5 opacity-70" />
-                    <span>{t(STATUS_DETAILS[st].labelKey)}</span>
-                  </div>
-                  {isCurrent && <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />}
+                  <span className="flex items-center gap-2.5">
+                    <span className={`w-2 h-2 rounded-full ${meta.dot}`} />
+                    <Icon className={`w-3.5 h-3.5 ${isCurrent ? meta.itemText : 'text-neutral-400'}`} />
+                    <span>{t(meta.labelKey)}</span>
+                  </span>
+                  {isCurrent && <Check className="w-3.5 h-3.5 text-neutral-900" />}
                 </button>
               );
             })}

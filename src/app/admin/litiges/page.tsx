@@ -93,23 +93,38 @@ export default function AdminLitigesPage() {
 
   // Actions
   const handleStatusChange = async (disputeId: string, nextStatus: Dispute['status']) => {
+    if (isUpdatingStatus) return;
+    const previous = disputes.find((d) => d.id === disputeId);
+    if (!previous || previous.status === nextStatus) return;
+    const previousStatus = previous.status;
+    const previousUpdatedAt = previous.updatedAt;
+    const now = new Date().toISOString();
+
+    // Optimistic update : refléter le changement immédiatement, rollback si erreur.
     setIsUpdatingStatus(true);
+    setDisputes((prev) =>
+      prev.map((d) => (d.id === disputeId ? { ...d, status: nextStatus, updatedAt: now } : d))
+    );
+
     try {
       await updateDisputeStatus(disputeId, nextStatus);
-      const now = new Date().toISOString();
-      setDisputes((prev) =>
-        prev.map((d) => (d.id === disputeId ? { ...d, status: nextStatus, updatedAt: now } : d))
-      );
-
       const statusLabels: Record<Dispute['status'], string> = {
         open: t('admin.litiges.statusOpen'),
-        in_progress: t('admin.litiges.statusProcessing'),
+        in_progress: t('admin.litiges.statusInProgress'),
         resolved: t('admin.litiges.statusResolved'),
         closed: t('admin.litiges.statusClosed'),
       };
       toast.success(t('admin.litiges.statusUpdated', { label: statusLabels[nextStatus] }));
     } catch (err) {
       console.error('[AdminLitigesPage] Status update error:', err);
+      // Rollback de l'optimistic update.
+      setDisputes((prev) =>
+        prev.map((d) =>
+          d.id === disputeId
+            ? { ...d, status: previousStatus, updatedAt: previousUpdatedAt || d.updatedAt }
+            : d
+        )
+      );
       toast.error(t('admin.litiges.updateError'));
     } finally {
       setIsUpdatingStatus(false);

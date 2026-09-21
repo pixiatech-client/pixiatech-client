@@ -6,10 +6,6 @@ import {
   ExternalLink,
   User,
   Package,
-  Clock,
-  CheckCircle2,
-  AlertCircle,
-  XCircle,
   ImageIcon,
   ShieldAlert,
 } from 'lucide-react';
@@ -17,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { useI18n, IntlHelpers } from '@/lib/i18n';
 import { LitigeAdminActions } from './LitigeAdminActions';
 import { LitigeConversation } from './LitigeConversation';
+import { getDisputeStatusMeta } from './disputeStatusConfig';
 import type { Dispute } from '@/lib/types';
 
 interface LitigeDetailsPanelProps {
@@ -29,16 +26,6 @@ interface LitigeDetailsPanelProps {
   isDeleting: boolean;
   isSending: boolean;
 }
-
-const STATUS_CONFIG: Record<
-  Dispute['status'],
-  { labelKey: string; color: string; icon: any }
-> = {
-  open: { labelKey: 'admin.litiges.statusOpenCase', color: 'bg-blue-50 text-blue-800 border-blue-200', icon: AlertCircle },
-  in_progress: { labelKey: 'admin.litiges.statusProcessing', color: 'bg-sky-50 text-sky-800 border-sky-200', icon: Clock },
-  resolved: { labelKey: 'admin.litiges.statusResolved', color: 'bg-emerald-50 text-emerald-800 border-emerald-200', icon: CheckCircle2 },
-  closed: { labelKey: 'admin.litiges.statusClosedCase', color: 'bg-neutral-100 text-neutral-600 border-neutral-200', icon: XCircle },
-};
 
 function formatDate(iso?: string, locale?: string) {
   if (!iso) return '-';
@@ -78,8 +65,8 @@ export function LitigeDetailsPanel({
     );
   }
 
-  const StatusIcon = STATUS_CONFIG[dispute.status]?.icon || AlertCircle;
-  const statusCfg = STATUS_CONFIG[dispute.status] || STATUS_CONFIG.open;
+  const statusMeta = getDisputeStatusMeta(dispute.status);
+  const StatusIcon = statusMeta.icon;
 
   return (
     <div className="bg-white rounded-3xl border border-neutral-200/80 shadow-xs overflow-hidden flex flex-col min-h-[640px]">
@@ -94,10 +81,10 @@ export function LitigeDetailsPanel({
               </h2>
               <Badge
                 variant="outline"
-                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${statusCfg.color}`}
+                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${statusMeta.badge}`}
               >
                 <StatusIcon className="w-3.5 h-3.5" />
-                <span>{t(statusCfg.labelKey)}</span>
+                <span>{t(statusMeta.labelKey)}</span>
               </Badge>
             </div>
             <p className="text-xs text-neutral-500 mt-0.5">

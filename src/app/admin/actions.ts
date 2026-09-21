@@ -68,6 +68,7 @@ export interface Member {
   createdAt: string;
   lastLoginAt: string;
   status: string;
+  statusReason?: string;
 }
 
 export async function getMembers(): Promise<Member[]> {
@@ -82,7 +83,323 @@ export async function getMembers(): Promise<Member[]> {
     createdAt: d.data().createdAt as string,
     lastLoginAt: d.data().lastLoginAt as string,
     status: d.data().status as string,
+    statusReason: (d.data().statusReason as string) || '',
   }));
+}
+
+export interface MembersCursor {
+  id: string;
+  createdAt: string;
+}
+
+export interface MembersSlice {
+  items: Member[];
+  /** Total de la collection, uniquement renseigné sur la 1re page. */
+  total?: number;
+  /** Passe à null quand il n'y a plus rien à charger. */
+  cursor: MembersCursor | null;
+  done: boolean;
+}
+
+function toMember(d: { id: string; data: () => Record<string, unknown> }): Member {
+  const data = d.data();
+  return {
+    id: d.id,
+    email: (data.email as string) || '',
+    displayName: (data.displayName as string) || '',
+    phone: (data.phone as string) || '',
+    createdAt: (data.createdAt as string) || '',
+    lastLoginAt: (data.lastLoginAt as string) || '',
+    status: (data.status as string) || '',
+    statusReason: (data.statusReason as string) || '',
+  };
+}
+
+function buildMembersSlice(
+  docs: Array<{ id: string; data: () => Record<string, unknown> }>,
+  total: number | undefined,
+  pageSize: number,
+): MembersSlice {
+  const items = docs.map(toMember);
+  if (items.length === 0) return { items, total, cursor: null, done: true };
+  const reachedKnownEnd = total !== undefined && items.length >= total;
+  const done = items.length < pageSize || reachedKnownEnd;
+  const last = items[items.length - 1];
+  return {
+    items,
+    total,
+    cursor: done ? null : { id: last.id, createdAt: last.createdAt || '' },
+    done,
+  };
+}
+
+/**
+ * 1re page des membres : requête ciblée (limit + ordre chronologique), curseur
+ * opaque pour la page suivante + décompte total. Ne charge jamais toute la
+ * collection `customers` en mémoire.
+ */
+export async function getMembersFirstPage(params: { pageSize?: number } = {}): Promise<MembersSlice> {
+  await requireAdminFresh();
+  const { adminDb } = getFirebaseAdmin();
+  const pageSize = Math.min(50, Math.max(1, params.pageSize ?? 20));
+  const [pageSnap, countSnap] = await Promise.all([
+    adminDb.collection('customers').orderBy('createdAt', 'desc').limit(pageSize).get(),
+    adminDb.collection('customers').count().get(),
+  ]);
+  return buildMembersSlice(pageSnap.docs, countSnap.data().count, pageSize);
+}
+
+/**
+ * Pages suivantes : le curseur référence le dernier membre chargé. On
+ * re-cherche ce document pour servir d'ancre `startAfter` (snapshot exact, sans
+ * index composite). Si le membre a été supprimé entre-temps, on retombe sur une
+ * borne stricte `createdAt <` ; le client dé-duplique les id éventuellement
+ * répétés.
+ */
+export async function getMembersNextPage(params: { pageSize?: number; cursor: MembersCursor }): Promise<MembersSlice> {
+  await requireAdminFresh();
+  const { adminDb } = getFirebaseAdmin();
+  const pageSize = Math.min(50, Math.max(1, params.pageSize ?? 20));
+
+  let query: Query = adminDb.collection('customers').orderBy('createdAt', 'desc');
+  const anchor = await adminDb.collection('customers').doc(params.cursor.id).get();
+  if (anchor.exists) {
+    query = query.startAfter(anchor);
+  } else {
+    query = query.where('createdAt', '<', params.cursor.createdAt);
+  }
+
+  const pageSnap = await query.limit(pageSize).get();
+  return buildMembersSlice(pageSnap.docs, undefined, pageSize);
+}
+
+/**
+ * Recherche ciblée sur Firestore (préfixe email minuscule / displayName, index
+ * mono-champ automatiques). N'est appelée que lorsque la liste déjà chargée ne
+ * suffit pas à satisfaire la recherche (sinon on filtre localement, voir le
+ * composant page).
+ */
+export async function searchMembers(params: { query?: string; limit?: number } = {}): Promise<{ items: Member[]; total: number }> {
+  await requireAdminFresh();
+  const { adminDb } = getFirebaseAdmin();
+  const q = (params.query ?? '').trim();
+  const limit = Math.min(100, Math.max(1, params.limit ?? 50));
+  if (!q) return { items: [], total: 0 };
+
+  const qEmail = q.toLowerCase();
+  const end = (s: string) => s + '\uf8ff';
+  const [byEmail, byName] = await Promise.all([
+    adminDb.collection('customers')
+      .where('email', '>=', qEmail).where('email', '<=', end(qEmail)).limit(limit).get(),
+    adminDb.collection('customers')
+      .where('displayName', '>=', q).where('displayName', '<=', end(q)).limit(limit).get(),
+  ]);
+
+  const map = new Map<string, Member>();
+  for (const d of byEmail.docs) map.set(d.id, toMember(d));
+  for (const d of byName.docs) map.set(d.id, toMember(d));
+  const items = Array.from(map.values()).sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+  return { items, total: items.length };
+}
+
+export async function getOpenDisputeEmails(): Promise<string[]> {
+  const { adminDb } = getFirebaseAdmin();
+  if (!adminDb) return [];
+  // Ne rapatrie que les champs utiles : évite de charger les messages des litiges
+  // sur la page membres (gros payload auparavant).
+  const snap = await adminDb
+    .collection('disputes')
+    .where('status', 'in', ['open', 'in_progress'])
+    .select('customerEmail')
+    .get();
+  const emails = new Set<string>();
+  for (const d of snap.docs) {
+    const email = d.data().customerEmail as string | undefined;
+    if (email) emails.add(email);
+  }
+  return Array.from(emails);
+}
+
+export type CustomerStatus = 'active' | 'blocked' | 'disabled';
+
+async function getRequesterEmail(): Promise<string> {
+  const sessionCookie = (await cookies()).get('session')?.value;
+  if (!sessionCookie) return '';
+  try {
+    const { adminAuth } = getFirebaseAdmin();
+    const decoded = await adminAuth.verifySessionCookie(sessionCookie, true);
+    return decoded.email || decoded.uid || '';
+  } catch {
+    return '';
+  }
+}
+
+export async function updateCustomerStatus(
+  customerId: string,
+  status: CustomerStatus,
+  reason?: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    await requireRole('admin', 'super_admin');
+    const { adminDb, FieldValue } = getFirebaseAdmin();
+
+    const customerRef = adminDb.collection('customers').doc(customerId);
+    const snap = await customerRef.get();
+    if (!snap.exists) return { success: false, error: 'Client introuvable.' };
+
+    const by = await getRequesterEmail();
+    const now = new Date().toISOString();
+
+    const payload: Record<string, unknown> = { status, statusUpdatedAt: now };
+    if (status === 'active') {
+      payload.statusReason = FieldValue.delete();
+      payload.statusUpdatedByEmail = FieldValue.delete();
+    } else {
+      payload.statusReason = (reason || '').trim() || null;
+      payload.statusUpdatedByEmail = by || null;
+    }
+    await customerRef.update(payload);
+
+    await logAdminActivity({
+      action: status === 'blocked' ? 'Blocage client' : status === 'disabled' ? 'Désactivation client' : 'Réactivation client',
+      category: 'user',
+      details: `Client ${customerId} -> ${status}${by ? ` par ${by}` : ''}`,
+    });
+
+    revalidatePath('/admin/membres');
+    return { success: true };
+  } catch (error: any) {
+    console.error('[updateCustomerStatus]', error);
+    return { success: false, error: error.message || 'Erreur serveur.' };
+  }
+}
+
+async function deleteDocsWhere(collectionName: string, field: string, value: string) {
+  const { adminDb } = getFirebaseAdmin();
+  const snap = await adminDb.collection(collectionName).where(field, '==', value).select().get();
+  const docs = snap.docs;
+  for (let i = 0; i < docs.length; i += 450) {
+    const batch = adminDb.batch();
+    for (const d of docs.slice(i, i + 450)) {
+      batch.delete(d.ref);
+    }
+    await batch.commit();
+  }
+}
+
+type AdminDb = ReturnType<typeof getFirebaseAdmin>['adminDb'];
+
+async function deleteCustomerData(adminDb: NonNullable<AdminDb>, id: string, email: string) {
+  await deleteDocsWhere('sale_orders', 'customerId', id);
+  await deleteDocsWhere('rental_orders', 'customerId', id);
+  await deleteDocsWhere('invoices', 'customerId', id);
+  await deleteDocsWhere('invoices', 'userId', id);
+  if (email) {
+    await deleteDocsWhere('disputes', 'customerEmail', email);
+  }
+  await adminDb.collection('customers').doc(id).delete();
+}
+
+export async function deleteCustomer(customerId: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    await requireRole('admin', 'super_admin');
+    const { adminDb } = getFirebaseAdmin();
+
+    const customerRef = adminDb.collection('customers').doc(customerId);
+    const snap = await customerRef.get();
+    if (!snap.exists) return { success: false, error: 'Client introuvable.' };
+    const email = (snap.data()?.email as string) || '';
+
+    await deleteCustomerData(adminDb, customerId, email);
+
+    await logAdminActivity({
+      action: 'Suppression définitive client',
+      category: 'user',
+      details: `Client ${customerId}${email ? ` (${email})` : ''} supprimé avec ses données liées`,
+    });
+
+    revalidatePath('/admin/membres');
+    return { success: true };
+  } catch (error: any) {
+    console.error('[deleteCustomer]', error);
+    return { success: false, error: error.message || 'Erreur serveur.' };
+  }
+}
+
+export async function bulkUpdateCustomerStatus(
+  customerIds: string[],
+  status: CustomerStatus
+): Promise<{ success: boolean; updated: number; error?: string }> {
+  try {
+    await requireRole('admin', 'super_admin');
+    const { adminDb, FieldValue } = getFirebaseAdmin();
+    const ids = Array.from(new Set(customerIds)).filter(Boolean);
+    if (ids.length === 0) return { success: true, updated: 0 };
+
+    const by = await getRequesterEmail();
+    const now = new Date().toISOString();
+
+    for (let i = 0; i < ids.length; i += 450) {
+      const batch = adminDb.batch();
+      for (const id of ids.slice(i, i + 450)) {
+        const payload: Record<string, unknown> = { status, statusUpdatedAt: now };
+        if (status === 'active') {
+          payload.statusReason = FieldValue.delete();
+          payload.statusUpdatedByEmail = FieldValue.delete();
+        } else {
+          payload.statusReason = null;
+          payload.statusUpdatedByEmail = by || null;
+        }
+        batch.update(adminDb.collection('customers').doc(id), payload);
+      }
+      await batch.commit();
+    }
+
+    await logAdminActivity({
+      action: status === 'blocked' ? 'Blocage groupé de clients' : status === 'disabled' ? 'Désactivation groupée de clients' : 'Réactivation groupée de clients',
+      category: 'user',
+      details: `${ids.length} clients -> ${status}${by ? ` par ${by}` : ''}`,
+    });
+
+    revalidatePath('/admin/membres');
+    return { success: true, updated: ids.length };
+  } catch (error: any) {
+    console.error('[bulkUpdateCustomerStatus]', error);
+    return { success: false, updated: 0, error: error.message || 'Erreur serveur.' };
+  }
+}
+
+export async function bulkDeleteCustomers(customerIds: string[]): Promise<{ success: boolean; deleted: number; error?: string }> {
+  try {
+    await requireRole('admin', 'super_admin');
+    const { adminDb } = getFirebaseAdmin();
+    const ids = Array.from(new Set(customerIds)).filter(Boolean);
+    if (ids.length === 0) return { success: true, deleted: 0 };
+
+    const refs = ids.map(id => adminDb.collection('customers').doc(id));
+    const snaps = await adminDb.getAll(...refs);
+    const by = await getRequesterEmail();
+
+    let deleted = 0;
+    for (const snap of snaps) {
+      if (!snap.exists) continue;
+      const email = (snap.data()?.email as string) || '';
+      await deleteCustomerData(adminDb, snap.id, email);
+      deleted++;
+    }
+
+    await logAdminActivity({
+      action: 'Suppression groupée de clients',
+      category: 'user',
+      details: `${deleted} clients supprimés avec leurs données liées${by ? ` par ${by}` : ''}`,
+    });
+
+    revalidatePath('/admin/membres');
+    return { success: true, deleted };
+  } catch (error: any) {
+    console.error('[bulkDeleteCustomers]', error);
+    return { success: false, deleted: 0, error: error.message || 'Erreur serveur.' };
+  }
 }
 import { DEFAULT_PALETTES } from '@/lib/color-palettes';
 import { DocumentData, Timestamp, QueryDocumentSnapshot, FieldPath } from 'firebase-admin/firestore';
@@ -300,19 +617,24 @@ export async function revertImpersonation() {
 }
 
 export async function connectAsClient(customerId: string, customerEmail: string) {
-  await requireRole('super_admin');
-  const { encrypt } = await import('@/lib/auth');
-  const sessionToken = await encrypt(
-    { customerId, email: customerEmail, type: 'client' },
-    '12h'
-  );
-  (await cookies()).set('client_session', sessionToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    path: '/',
-    maxAge: 60 * 60 * 12,
-  });
+  try {
+    await requireRole('admin', 'super_admin');
+    const { encrypt } = await import('@/lib/auth');
+    const sessionToken = await encrypt(
+      { customerId, email: customerEmail, type: 'client' },
+      '12h'
+    );
+    (await cookies()).set('client_session', sessionToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 60 * 60 * 12,
+    });
+  } catch (err) {
+    console.error('[connectAsClient] Impossible de créer la session client:', err);
+    redirect('/admin/membres');
+  }
   redirect('/mon-compte/tableau-de-bord');
 }
 

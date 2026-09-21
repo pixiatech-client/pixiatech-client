@@ -27,6 +27,16 @@ export async function POST(req: NextRequest) {
     const customerData = fresh.data()!;
     const hash = customerData.passwordHash || null;
 
+    // Compte bloqué / désactivé : refus de connexion.
+    const customerStatus = customerData.status;
+    if (customerStatus !== undefined && customerStatus !== 'active') {
+      return NextResponse.json({
+        error: customerStatus === 'blocked'
+          ? 'Ce compte a été bloqué. Contactez le support.'
+          : 'Ce compte est temporairement désactivé. Contactez le support.',
+      }, { status: 403 });
+    }
+
     if (!hash) {
       return NextResponse.json({
         error: 'Aucun mot de passe défini. Utilisez la connexion par lien magique.',

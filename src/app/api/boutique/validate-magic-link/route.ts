@@ -17,6 +17,14 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ valid: false, reason: result.reason }, { status: 400 });
     }
 
+    // Compte bloqué / désactivé : refus de connexion même avec un lien valide.
+    const { adminDb } = await import('@/lib/firebase-admin').then(m => m.getFirebaseAdmin());
+    const fresh = await adminDb.collection('customers').doc(result.customerId!).get();
+    const customerStatus = fresh.data()?.status;
+    if (customerStatus !== undefined && customerStatus !== 'active') {
+      return NextResponse.json({ valid: false, reason: 'Ce compte est indisponible. Contactez le support.' }, { status: 403 });
+    }
+
     // Update lastLoginAt
     await updateCustomer(result.customerId!, { lastLoginAt: new Date().toISOString() });
 

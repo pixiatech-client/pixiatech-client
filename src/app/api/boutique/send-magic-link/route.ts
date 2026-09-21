@@ -84,6 +84,14 @@ export async function POST(req: NextRequest) {
 
     const hasPassword = !!(customer as any).passwordHash;
 
+    // Compte bloqué / désactivé : on ne génère ni n'envoie de lien (réponse générique).
+    const customerStatus = (customer as any).status;
+    if (customerStatus !== undefined && customerStatus !== 'active') {
+      return NextResponse.json({
+        message: 'Si un compte correspondant existe, un lien de connexion vous sera envoyé à cette adresse.',
+      });
+    }
+
     // Create magic link
     const origin = process.env.NEXT_PUBLIC_SITE_URL || req.nextUrl.origin;
     const { url } = await createMagicLink(normalizedEmail, customer.id!, origin);
