@@ -11,6 +11,8 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import dynamic from 'next/dynamic';
+import type { Product } from '@/lib/types';
+import { getScreenTypeAvailability, type ScreenType, type ScreenTypeAvailability } from '@/lib/configurator-compatibility';
 
 const ScreenViewer = dynamic(() => import('./Screen3D'), {
   ssr: false,
@@ -32,6 +34,9 @@ interface ConfigState {
   cabinetAngle: number;
   envColor: string;
   gridColor: string;
+  environment?: 'interieur' | 'semi-exterieur' | 'exterieur';
+  viewingDistance?: string;
+  pixelPitch?: string;
 }
 
 interface StepDimensionsProps {
@@ -44,6 +49,7 @@ interface StepDimensionsProps {
   settings?: any;
   projectType?: 'vente' | 'location';
   isInChat?: boolean;
+  products?: Product[];
 }
 
 export default function StepDimensions({
@@ -55,7 +61,8 @@ export default function StepDimensions({
   t,
   settings,
   projectType = 'vente',
-  isInChat = false
+  isInChat = false,
+  products
 }: StepDimensionsProps) {
 
   // Local state fallback for dark mode (e.g. inside chatbot wizard flow)
@@ -116,6 +123,80 @@ export default function StepDimensions({
     updateState(updates);
   };
 
+  // Availability of PLAT / INCURVÉ / 360° based on the products compatible with
+  // the criteria already selected (mode, environment, viewing distance, pitch).
+  // An option without any compatible product stays visible but is disabled.
+  const screenTypeAvailability: ScreenTypeAvailability | null = React.useMemo(() => {
+    if (!products || products.length === 0) return null;
+    return getScreenTypeAvailability({
+      projectType,
+      environment: state.environment ?? 'interieur',
+      viewingDistance: state.viewingDistance ?? '',
+      pixelPitch: state.pixelPitch ?? '',
+    }, products);
+  }, [products, projectType, state.environment, state.viewingDistance, state.pixelPitch]);
+
+  const currentScreenType: ScreenType = state.is360 ? '360' : state.isCurved ? 'curved' : 'flat';
+  const flatDisabled = screenTypeAvailability ? !screenTypeAvailability.flat : false;
+  const curvedDisabled = screenTypeAvailability ? !screenTypeAvailability.curved : false;
+  const is360Disabled = screenTypeAvailability ? !screenTypeAvailability.is360 : false;
+
+  // If the currently selected screen type is no longer compatible with the
+  // selected criteria, switch to the first available type instead of keeping an
+  // impossible configuration.
+  React.useEffect(() => {
+    if (!screenTypeAvailability) return;
+    if (screenTypeAvailability[currentScreenType]) return;
+    const order: ScreenType[] = ['flat', 'curved', '360'];
+    const firstAvailable = order.find(t => screenTypeAvailability[t]);
+    if (!firstAvailable) return;
+
+    if (firstAvailable === '360') {
+      const defaultD = 1.0;
+      const modulesX = Math.round((Math.PI * defaultD) / 0.5);
+      const angleStepDeg = 360 / modulesX;
+      handleUpdateState({
+        isCurved: false,
+        is360: true,
+        height: Math.min(2.5, maxHeight),
+        diameter: defaultD,
+        cabinetAngle: -angleStepDeg,
+        curveLeft: 0,
+        curveRight: 0
+      });
+    } else if (firstAvailable === 'curved') {
+      handleUpdateState({ isCurved: true, is360: false, width: Math.min(12.0, maxWidth), height: Math.min(6.5, maxHeight) });
+    } else {
+      handleUpdateState({ isCurved: false, is360: false, curveLeft: 0, curveRight: 0, width: Math.min(12.0, maxWidth), height: Math.min(6.5, maxHeight) });
+    }
+  }, [screenTypeAvailability, currentScreenType, maxWidth, maxHeight, handleUpdateState]);
+
+  // Guarded click handlers: an unavailable type is NEVER selectable. Clicking
+  // it must have zero effect — no state change, no recompute, no flicker.
+  const selectFlat = () => {
+    if (flatDisabled) return;
+    handleUpdateState({ isCurved: false, is360: false, curveLeft: 0, curveRight: 0, width: Math.min(12.0, maxWidth), height: Math.min(6.5, maxHeight) });
+  };
+  const selectCurved = () => {
+    if (curvedDisabled) return;
+    handleUpdateState({ isCurved: true, is360: false, width: Math.min(12.0, maxWidth), height: Math.min(6.5, maxHeight) });
+  };
+  const select360 = () => {
+    if (is360Disabled) return;
+    const defaultD = 1.0;
+    const modulesX = Math.round((Math.PI * defaultD) / 0.5);
+    const angleStepDeg = 360 / modulesX;
+    handleUpdateState({
+      isCurved: false,
+      is360: true,
+      height: Math.min(2.5, maxHeight),
+      diameter: defaultD,
+      cabinetAngle: -angleStepDeg,
+      curveLeft: 0,
+      curveRight: 0
+    });
+  };
+
   return (
     <div className={`flex flex-col space-y-4 bg-transparent w-full mx-auto ${
       isInChat 
@@ -153,52 +234,72 @@ export default function StepDimensions({
                 {t('wizard.dimensions.screenConfig')}
               </label>
               <div className="p-1 bg-slate-900/5 backdrop-blur-md rounded-xl border border-slate-900/10 flex gap-1">
-                <button
-                  type="button"
-                  onClick={() => handleUpdateState({ isCurved: false, is360: false, curveLeft: 0, curveRight: 0, width: Math.min(12.0, maxWidth), height: Math.min(6.5, maxHeight) })}
-                  className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg transition-all duration-300 font-bold text-[10px] sm:text-xs ${!state.isCurved && !state.is360
-                      ? 'bg-white text-slate-900 shadow-sm border border-slate-200'
-                      : 'text-slate-400 hover:bg-white/50'
+                <div className={`flex-1 ${flatDisabled ? 'cursor-not-allowed' : ''}`}>
+                  <button
+                    type="button"
+                    onClick={selectFlat}
+                    disabled={flatDisabled}
+                    aria-disabled={flatDisabled}
+                    className={`w-full flex items-center justify-center gap-1 py-1.5 rounded-lg font-bold text-[10px] sm:text-xs ${
+                      flatDisabled
+                        ? 'opacity-50 text-slate-300 pointer-events-none select-none transition-none'
+                        : 'transition-all duration-300'
+                    } ${
+                      flatDisabled
+                        ? ''
+                        : !state.isCurved && !state.is360
+                          ? 'bg-white text-slate-900 shadow-sm border border-slate-200'
+                          : 'text-slate-400 hover:bg-white/50'
                     }`}
-                >
-                  <LayoutIcon className="w-3 h-3" />
-                  {t('wizard.dimensions.flat')}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleUpdateState({ isCurved: true, is360: false, width: Math.min(12.0, maxWidth), height: Math.min(6.5, maxHeight) })}
-                  className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg transition-all duration-300 font-bold text-[10px] sm:text-xs ${state.isCurved && !state.is360
-                      ? 'bg-white text-slate-900 shadow-sm border border-slate-200'
-                      : 'text-slate-400 hover:bg-white/50'
+                  >
+                    <LayoutIcon className="w-3 h-3" />
+                    {t('wizard.dimensions.flat')}
+                  </button>
+                </div>
+                <div className={`flex-1 ${curvedDisabled ? 'cursor-not-allowed' : ''}`}>
+                  <button
+                    type="button"
+                    onClick={selectCurved}
+                    disabled={curvedDisabled}
+                    aria-disabled={curvedDisabled}
+                    className={`w-full flex items-center justify-center gap-1 py-1.5 rounded-lg font-bold text-[10px] sm:text-xs ${
+                      curvedDisabled
+                        ? 'opacity-50 text-slate-300 pointer-events-none select-none transition-none'
+                        : 'transition-all duration-300'
+                    } ${
+                      curvedDisabled
+                        ? ''
+                        : state.isCurved && !state.is360
+                          ? 'bg-white text-slate-900 shadow-sm border border-slate-200'
+                          : 'text-slate-400 hover:bg-white/50'
                     }`}
-                >
-                  <RotateCcw className="w-3.5 h-3.5 rotate-45" />
-                  {t('wizard.dimensions.curved')}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const defaultD = 1.0;
-                    const modulesX = Math.round((Math.PI * defaultD) / 0.5);
-                    const angleStepDeg = 360 / modulesX;
-                    handleUpdateState({
-                      isCurved: false,
-                      is360: true,
-                      height: Math.min(2.5, maxHeight),
-                      diameter: defaultD,
-                      cabinetAngle: -angleStepDeg,
-                      curveLeft: 0,
-                      curveRight: 0
-                    });
-                  }}
-                  className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg transition-all duration-300 font-bold text-[10px] sm:text-xs ${state.is360
-                      ? 'bg-white text-slate-900 shadow-sm border border-slate-200'
-                      : 'text-slate-400 hover:bg-white/50'
+                  >
+                    <RotateCcw className="w-3.5 h-3.5 rotate-45" />
+                    {t('wizard.dimensions.curved')}
+                  </button>
+                </div>
+                <div className={`flex-1 ${is360Disabled ? 'cursor-not-allowed' : ''}`}>
+                  <button
+                    type="button"
+                    onClick={select360}
+                    disabled={is360Disabled}
+                    aria-disabled={is360Disabled}
+                    className={`w-full flex items-center justify-center gap-1 py-1.5 rounded-lg font-bold text-[10px] sm:text-xs ${
+                      is360Disabled
+                        ? 'opacity-50 text-slate-300 pointer-events-none select-none transition-none'
+                        : 'transition-all duration-300'
+                    } ${
+                      is360Disabled
+                        ? ''
+                        : state.is360
+                          ? 'bg-white text-slate-900 shadow-sm border border-slate-200'
+                          : 'text-slate-400 hover:bg-white/50'
                     }`}
-                >
-                  <Circle className="w-3 h-3" />
-                  {t('wizard.dimensions.360') || '360°'}
-                </button>
+                  >
+                    <Circle className="w-3 h-3" />
+                    {t('wizard.dimensions.360') || '360°'}
+                  </button>
+                </div>
               </div>
             </div>
 

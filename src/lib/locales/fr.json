@@ -784,6 +784,15 @@
       "stepSession": "Déconnexion et purge de session",
       "stepReload": "Chargement de la nouvelle version"
     },
+    "siteWeb": {
+      "title": "Site Web",
+      "moduleButton": "PIXIATECH SITE WEB",
+      "backToAdmin": "PIXIATECH ADMIN",
+      "navDashboard": "Tableau de bord",
+      "navMenu": "Menu",
+      "navContact": "Contact",
+      "navProduits": "Produits"
+    },
     "siteAccess": "Accéder au site",
     "boutique": "Boutique",
     "navOrders": "Commandes",

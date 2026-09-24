@@ -30,6 +30,7 @@ export function FloatingChatWrapper() {
   const [shifted, setShifted] = useState(false);
 
   const shouldShow = !EXCLUDED_PATHS.some((p) => pathname.startsWith(p));
+  const elevated = pathname.startsWith('/web');
 
   useEffect(() => {
     const onShow = () => setShifted(true);
@@ -84,6 +85,7 @@ export function FloatingChatWrapper() {
       deliverySettings={data.deliverySettings}
       locations={data.locations}
       shifted={shifted}
+      elevated={elevated}
     />
   );
 }

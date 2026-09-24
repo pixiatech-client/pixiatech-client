@@ -1,0 +1,6 @@
+{
+  "name": "PIXIATECH - Systèmes LED Architecturaux & PXT Fine",
+  "description": "PIXIATECH conçoit et fabrique des systèmes d'affichage LED architecturaux de pointe. Découvrez la gamme PXT Fine, le Showreel 3D immersif et nos technologies propriétaires.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,198 @@
+{
+  "pages": {
+    "home": {
+      "id": "home",
+      "name": "Page d'Accueil & Showreel",
+      "slug": "/",
+      "updatedAt": "2026-09-23T12:00:00.000Z",
+      "meta": {
+        "title": "PIXIATECH - Systèmes LED Architecturaux & PXT Fine",
+        "description": "PIXIATECH conçoit et fabrique des systèmes d'affichage LED architecturaux de pointe. Showreel 3D immersif et technologies propriétaires."
+      },
+      "sections": {
+        "hero": {
+          "title": "PIXIATECH",
+          "tagline": "SYSTEMS & ARCHITECTURE",
+          "subtitle": "Ingénierie visuelle grand format, écrans LED haute précision et technologies immersives.",
+          "ctaText": "DÉCOUVRIR LE SHOWREEL 3D",
+          "badge": "01 / INNOVATION",
+          "primaryImage": "/assets/hero/hero-1.jpg"
+        },
+        "showreel": {
+          "eyebrow": "02 / SHOWREEL",
+          "title": "De la diode unitaire au monumental",
+          "subtitle": "Une immersion de l'échelle microscopique du pixel jusqu'au sommet du gratte-ciel urbain.",
+          "billboardImage": "/assets/showreel-content.jpg",
+          "tagline": "Science Behind The LED"
+        },
+        "markets": {
+          "eyebrow": "03 / MARCHÉS",
+          "title": "Conçu pour chaque environnement.",
+          "items": [
+            {
+              "id": "corporate",
+              "num": "01",
+              "name": "CORPORATE",
+              "desc": "Des écrans de précision pour les espaces où chaque détail compte.",
+              "cta": "EXPLORER CORPORATE →",
+              "img": "/assets/about/market-corporate.jpg"
+            },
+            {
+              "id": "retail",
+              "num": "02",
+              "name": "RETAIL",
+              "desc": "Des affichages qui transforment les visiteurs en audiences captivées.",
+              "cta": "EXPLORER RETAIL →",
+              "img": "/assets/about/market-retail.jpg"
+            },
+            {
+              "id": "dooh",
+              "num": "03",
+              "name": "DOOH",
+              "desc": "La toile urbaine monumentale — ultra-lumineuse, audacieuse et parée contre les éléments.",
+              "cta": "EXPLORER DOOH →",
+              "img": "/assets/about/market-dooh.jpg"
+            },
+            {
+              "id": "rental",
+              "num": "04",
+              "name": "RENTAL & TOURING",
+              "desc": "Rapide à monter, sûr en tournée, impossible à ignorer sur scène.",
+              "cta": "EXPLORER RENTAL →",
+              "img": "/assets/about/market-rental.jpg"
+            },
+            {
+              "id": "xr",
+              "num": "05",
+              "name": "XR & VIRTUAL PRODUCTION",
+              "desc": "Conçu avec une précision millimétrique pour les caméras broadcast et plateaux virtuels.",
+              "cta": "EXPLORER XR →",
+              "img": "/assets/about/market-xr.jpg"
+            },
+            {
+              "id": "sports",
+              "num": "06",
+              "name": "STADES & ARENAS",
+              "desc": "Écrans géants pour tribunes et rubans de coursives résistant aux intempéries.",
+              "cta": "EXPLORER SPORTS →",
+              "img": "/assets/about/market-sports.jpg"
+            }
+          ]
+        },
+        "kinetic": {
+          "eyebrow": "04 / FEATURED — SPKI-250 KINETIC",
+          "title1": "L'écran s'anime.",
+          "title2": "La profondeur devient",
+          "title3": "partie intégrante de l'image.",
+          "stepText": "05 — CHÂSSIS MOULÉ SOUS PRESSION",
+          "accentColor": "#C3F910"
+        },
+        "manifesto": {
+          "eyebrow": "MANIFESTE & PHILOSOPHIE",
+          "title": "Au-delà de l'affichage conventionnel.",
+          "body": "Nous concevons l'écran LED non pas comme un périphérique d'affichage, mais comme une composante architecturale intégrée au bâti. Notre recherche est guidée par l'exigence d'une planéité parfaite, d'un contraste sans réflexion parasite et d'une durabilité industrielle sans compromis."
+        }
+      }
+    },
+    "product_wp": {
+      "id": "product_wp",
+      "name": "Produit : PXT Fine (Série WP)",
+      "slug": "/produit/pxt-fine",
+      "updatedAt": "2026-09-23T12:00:00.000Z",
+      "meta": {
+        "title": "PXT Fine - Écran LED Haute Précision · PIXIATECH",
+        "description": "Cabinet aluminium usiné 600x337.5 mm, pitch ultra-fin, calibrage 16-bit et rafraîchissement 7680 Hz."
+      },
+      "sections": {
+        "hero": {
+          "badge": "CHÂSSIS PXT FINE — 600×337,5 mm",
+          "title": "PXT Fine",
+          "subtitle": "L'alliance absolue de la précision millimétrique et de l'intensité visuelle.",
+          "primaryCta": "RECEVOIR UNE ÉTUDE TECHNIQUE",
+          "secondaryCta": "TÉLÉCHARGER LA FICHE TECHNIQUE",
+          "heroImage": "/assets/products/wp.jpg",
+          "heroBgColor": "#080808"
+        },
+        "overview": {
+          "eyebrow": "01 / APERÇU",
+          "title": "La pureté visuelle sans compromis.",
+          "description": "Chaque détail de la série PXT Fine a été pensé pour les environnements de prestige : salles de commande critiques, halls d'accueil corporate, studios broadcast et résidences privées d'exception.",
+          "image": "/uploads/products/wp/wp-cabinet.jpg",
+          "stats": [
+            { "val": "0.05 mm", "label": "PLANÉITÉ STRUCTURELLE" },
+            { "val": "7 680 Hz", "label": "TAUX DE RAFRAÎCHISSEMENT" },
+            { "val": "100 000 h", "label": "DURÉE DE VIE OPÉRATIONNELLE" },
+            { "val": "ColdLED™", "label": "REFROIDISSEMENT PASSIF SILENCIEUX" }
+          ]
+        },
+        "design": {
+          "eyebrow": "02 / CONCEPTION ARCHITECTURALE",
+          "title": "Usinage d'orfèvrerie & Châssis Monobloc",
+          "cabinetDim": "600 × 337,5 × 29,7 mm",
+          "weight": "5.8 kg / cabinet",
+          "material": "Aluminium Die-Cast Haute Densité",
+          "image": "/uploads/products/wp/feature-1.jpg"
+        },
+        "features": {
+          "eyebrow": "03 / CARACTÉRISTIQUES DE POINTE",
+          "title": "Technologies Propriétaires Brevetées",
+          "stages": [
+            {
+              "id": "coldled",
+              "title": "Dissipation Thermique ColdLED™",
+              "desc": "Conduction passive sur structure aluminium moulé, sans ventilateur, zéro décibel.",
+              "media": "/assets/about/tech-coldled.jpg"
+            },
+            {
+              "id": "armorled",
+              "title": "Revêtement Protecteur ArmorLED™",
+              "desc": "Barrière nanopolymère anti-poussière, anti-chocs et imperméable aux micro-particules.",
+              "media": "/assets/about/tech-armorled.jpg"
+            },
+            {
+              "id": "cbsf",
+              "title": "Calibrage Dynamique CBSF™",
+              "desc": "Étalonnage couleur 16-bit assurant une fidélité chromatique parfaite même à 10% de luminosité.",
+              "media": "/assets/about/tech-cbsf.jpg"
+            }
+          ]
+        },
+        "fieldwork": {
+          "eyebrow": "05 / SUR LE TERRAIN",
+          "title": "Installations & Réalisations",
+          "projects": [
+            {
+              "title": "Centre de Contrôle Stratégique",
+              "location": "Paris La Défense",
+              "pitch": "P1.2 Fine Pitch",
+              "img": "/uploads/projects/westfield-paris-retail-led-screen.jpg"
+            },
+            {
+              "title": "Ministère de la Culture & Pavillon XR",
+              "location": "Riyad, KSA",
+              "pitch": "P1.5 XR Studio",
+              "img": "/uploads/projects/xeron-led-screens-for-saudi-arabias-ministry-of-culture.jpg"
+            }
+          ]
+        }
+      }
+    },
+    "contact": {
+      "id": "contact",
+      "name": "Contact & Paramètres Généraux",
+      "slug": "#contact",
+      "updatedAt": "2026-09-23T12:00:00.000Z",
+      "settings": {
+        "companyName": "PIXIATECH",
+        "tagline": "Systèmes LED Architecturaux de Pointe",
+        "email": "contact@pixiatech.com",
+        "phone": "+33 1 89 70 42 00",
+        "address": "75008 Paris, France",
+        "officeHours": "Lun - Ven, 09h00 - 19h00 CET",
+        "accentColor": "#C3F910",
+        "backendName": "Pixel Tech Web",
+        "backendApiUrl": "/api/pixel-tech-web"
+      }
+    }
+  }
+}

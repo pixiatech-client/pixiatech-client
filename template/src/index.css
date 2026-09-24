@@ -1,0 +1,97 @@
+@import "tailwindcss";
+@import "./xeron.css";
+
+/* Additional polish and responsiveness */
+:root {
+  --accent: #C3F910;
+  --accent-rgb: 195, 249, 16;
+  font-family: var(--font);
+}
+
+body {
+  background: var(--black);
+  color: var(--dark-text);
+  overflow-x: hidden;
+}
+
+/* Custom scrollbar for specs horizontal table */
+.spec-scroll::-webkit-scrollbar {
+  height: 6px;
+}
+.spec-scroll::-webkit-scrollbar-track {
+  background: #111;
+}
+.spec-scroll::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 3px;
+}
+.spec-scroll::-webkit-scrollbar-thumb:hover {
+  background: #C3F910;
+}
+
+/* Slot video / image styling */
+.slot-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.slot-contain {
+  object-fit: contain !important;
+}
+
+/* Hover transitions */
+.hov-white:hover {
+  color: #fff !important;
+}
+.hov-acc:hover {
+  color: var(--accent) !important;
+  border-color: var(--accent) !important;
+}
+.hov-border-acc:hover {
+  border-color: var(--accent) !important;
+}
+
+/* FStage animations */
+.fstage-step {
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  opacity: 0.45;
+}
+.fstage-step.on {
+  opacity: 1;
+}
+
+/* Prevent any yellow highlight or underlines from browser translation extensions and search */
+mark {
+  background-color: transparent !important;
+  color: inherit !important;
+}
+
+::target-text {
+  background-color: transparent !important;
+  color: inherit !important;
+}
+
+::search-text {
+  background-color: transparent !important;
+  color: inherit !important;
+}
+
+::search-text:current {
+  background-color: transparent !important;
+  color: inherit !important;
+}
+
+.translated-ltr, .translated-rtl {
+  background-color: transparent !important;
+  border: none !important;
+  text-decoration: none !important;
+  border-bottom: none !important;
+}
+
+/* Ensure no unwanted text underlines on buttons or nav items */
+header a, header button {
+  text-decoration: none !important;
+}
+

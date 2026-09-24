@@ -30,6 +30,7 @@ import {
   Type,
   Receipt,
   ShieldAlert,
+  LayoutTemplate,
 } from 'lucide-react';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import { UserRole } from './dashboard-new-types';
@@ -70,6 +71,10 @@ const VIEW_TO_ROUTE: Record<string, string> = {
   alertesSysteme: '/admin/alertes-systeme',
   litigesSub: '/admin/litiges',
   paypal: '/admin/settings/paypal',
+  sitewebDashboard: '/admin/site-web',
+  sitewebMenu: '/admin/site-web/menu',
+  sitewebContact: '/admin/site-web/contact',
+  sitewebProduits: '/admin/site-web/produits',
 };
 
 const ROUTE_TO_VIEW: Record<string, string> = {
@@ -97,6 +102,10 @@ const ROUTE_TO_VIEW: Record<string, string> = {
   '/admin/notification': 'notifications',
   '/admin/alertes-systeme': 'alertes-systeme',
   '/admin/litiges': 'litigesSub',
+  '/admin/site-web': 'sitewebDashboard',
+  '/admin/site-web/menu': 'sitewebMenu',
+  '/admin/site-web/contact': 'sitewebContact',
+  '/admin/site-web/produits': 'sitewebProduits',
 };
 
 export type SettingsSection = 'general' | 'images' | 'appearance' | 'wizard' | 'livraison' | 'main-doeuvre' | 'pdf' | 'emergency' | 'messaging' | 'software' | 'email-verification' | 'flow' | 'content';
@@ -244,7 +253,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
     }
   }, [activeView]);
 
-  const initialItems = useMemo(() => [
+  const isSiteWeb = pathname.startsWith('/admin/site-web');
+
+  const SITE_WEB_ITEMS = useMemo(() => [
+    { id: 'sitewebDashboard', label: t('admin.siteWeb.navDashboard'), icon: LayoutDashboard, color: 'text-blue-500', roles: [UserRole.ADMINISTRATEUR] },
+    { id: 'sitewebMenu', label: t('admin.siteWeb.navMenu'), icon: LayoutTemplate, color: 'text-orange-500', roles: [UserRole.ADMINISTRATEUR] },
+    { id: 'sitewebContact', label: t('admin.siteWeb.navContact'), icon: MessageSquare, color: 'text-emerald-500', roles: [UserRole.ADMINISTRATEUR] },
+    { id: 'sitewebProduits', label: t('admin.siteWeb.navProduits'), icon: Box, color: 'text-yellow-500', roles: [UserRole.ADMINISTRATEUR] },
+  ], [t]);
+
+  const initialItems = useMemo(() => {
+    if (isSiteWeb) {
+      return SITE_WEB_ITEMS;
+    }
+    return [
     { id: 'dashboard', label: t('admin.dashboard'), icon: LayoutDashboard, color: 'text-blue-500', roles: [UserRole.ADMINISTRATEUR, UserRole.FOURNISSEUR, UserRole.COMMERCIAL] },
     { id: 'users', label: t('admin.users'), icon: Users, color: 'text-emerald-500', roles: [UserRole.ADMINISTRATEUR] },
     { id: 'estimations', label: t('admin.estimations'), icon: FileText, color: 'text-orange-500', roles: [UserRole.ADMINISTRATEUR, UserRole.FOURNISSEUR, UserRole.COMMERCIAL] },
@@ -269,7 +291,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { id: 'profile', label: t('admin.myProfile'), icon: UserIcon, color: 'text-purple-500' },
       ],
     },
-  ], [t]);
+  ];
+  }, [t, isSiteWeb, SITE_WEB_ITEMS]);
 
   const [items, setItems] = useState(() => {
     if (initialOrder && initialOrder.length > 0) {
@@ -942,7 +965,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 {t('admin.mainMenu')}
               </span>
             )}
-            {role === UserRole.ADMINISTRATEUR && (
+            {role === UserRole.ADMINISTRATEUR && !isSiteWeb && (
               <button
                 onClick={handleToggleEditOrder}
                 className={`p-1.5 rounded-lg transition-colors ${isEditingOrder

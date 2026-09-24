@@ -1,0 +1,6 @@
+{
+  "name": "PixiaTech PXT Fine - Indoor LED Display",
+  "description": "Official product template for PixiaTech PXT Fine indoor LED display, featuring animated LED canvas, ColdLED technology, interactive architectural specs, and 3D cabinet visualization.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

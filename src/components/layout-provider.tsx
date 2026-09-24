@@ -47,12 +47,14 @@ export function LayoutProvider({
   const router = useRouter();
   const isAdminPage = pathname.startsWith('/admin');
   const isEmbedPage = pathname.startsWith('/embed') || pathname.startsWith('/chat-widget');
+  const isWebPage = pathname.startsWith('/web');
   const isQuotePage = pathname.startsWith('/quote');
-  const isFrontendPage = !isAdminPage && !isEmbedPage;
+  const isFrontendPage = !isAdminPage && !isEmbedPage && !isWebPage;
   const isBoutiquePage = pathname.startsWith('/boutique');
   const isHomePage = pathname === '/';
   const isMonComptePage = pathname.startsWith('/mon-compte');
-  const showBottomNav = isFrontendPage && !isHomePage;
+  const isContactPage = pathname.startsWith('/contact');
+  const showBottomNav = isFrontendPage && !isHomePage && !isContactPage;
   const isMonCompteProtected = pathname.startsWith('/mon-compte/tableau-de-bord') || pathname.startsWith('/mon-compte/commandes') || pathname.startsWith('/mon-compte/parametres') || pathname.startsWith('/mon-compte/litiges');
 
   const bottomNavTabs = isMonCompteProtected
@@ -105,7 +107,7 @@ export function LayoutProvider({
                   className={cn(
                     'flex-1 flex items-start justify-center w-full bg-[#F5F5F5]',
                     isHomePage && 'px-4 pb-4 pt-8 md:px-6 md:pb-6 md:pt-8',
-                    !isHomePage && !isQuotePage && !isBoutiquePage && !isMonComptePage && 'px-4 pb-4 md:px-6 md:pb-6',
+                    !isHomePage && !isQuotePage && !isBoutiquePage && !isMonComptePage && !isContactPage && 'px-4 pb-4 md:px-6 md:pb-6',
                   )}
                 >
                   {children}
@@ -125,7 +127,7 @@ export function LayoutProvider({
                 />
               </div>
             )}
-            {isFrontendPage && <FloatingChatWrapper />}
+            {(isFrontendPage || isWebPage) && <FloatingChatWrapper />}
           </div>
           </CartProvider>
           </ProfileProvider>

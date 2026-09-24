@@ -90,6 +90,15 @@
     "trendDown": "趋势下降",
     "waitingApproval": "等待批准",
     "memberSpace": "会员空间",
+    "siteWeb": {
+      "title": "网站",
+      "moduleButton": "PIXIATECH 网站",
+      "backToAdmin": "PIXIATECH 管理后台",
+      "navDashboard": "仪表盘",
+      "navMenu": "菜单",
+      "navContact": "联系我们",
+      "navProduits": "产品"
+    },
     "siteAccess": "访问网站",
     "floatingCalculator": "计算器",
     "about": {

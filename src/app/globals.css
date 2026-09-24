@@ -1376,3 +1376,82 @@ img, video {
   }
 }
 
+
+/* ===== PIXIATECH SITE WEB module ===== */
+.font-tech {
+  font-family: var(--font-orbitron, 'Orbitron'), monospace, sans-serif;
+  letter-spacing: 0.15em;
+}
+
+/* App.pixiatech custom angled badge/button cut */
+.btn-pixia-clip {
+  clip-path: polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 0.6px) calc(100% - 14px), calc(100% - 2px) calc(100% - 12px), calc(100% - 10px) calc(100% - 4px), calc(100% - 12px) calc(100% - 2px), calc(100% - 14px) calc(100% - 0.6px), calc(100% - 16px) 100%, 0 100%, 0 16px, 0.6px 14px, 2px 12px, 10px 4px, 12px 2px, 14px 0.6px);
+  border-radius: 0 16px 0 16px;
+}
+
+/* ===== Transitions de navigation directionnelles (PIXIATECH SITE WEB ↔ ADMIN) ===== */
+/* Pilotées par slideNavigate (src/lib/navigation-transition.ts) via une classe
+   sur <html>. « forward » : nouvelle interface depuis la droite. « back » :
+   depuis la gauche. */
+html.vt-forward::view-transition-old(root),
+html.vt-back::view-transition-old(root),
+html.vt-forward::view-transition-new(root),
+html.vt-back::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+html.vt-forward::view-transition-old(root) {
+  animation:
+    vt-push-right-out 180ms cubic-bezier(0.4, 0, 0.2, 1) both,
+    vt-fade-out 180ms ease both;
+}
+html.vt-forward::view-transition-new(root) {
+  animation:
+    vt-push-right-in 320ms cubic-bezier(0.22, 1, 0.36, 1) 60ms both,
+    vt-fade-in 320ms ease both;
+}
+html.vt-back::view-transition-old(root) {
+  animation:
+    vt-push-left-out 180ms cubic-bezier(0.4, 0, 0.2, 1) both,
+    vt-fade-out 180ms ease both;
+}
+html.vt-back::view-transition-new(root) {
+  animation:
+    vt-push-left-in 320ms cubic-bezier(0.22, 1, 0.36, 1) 60ms both,
+    vt-fade-in 320ms ease both;
+}
+
+@keyframes vt-push-left-out {
+  from { transform: translateX(0); }
+  to { transform: translateX(-7%); opacity: 0.2; }
+}
+@keyframes vt-push-left-in {
+  from { transform: translateX(7%); opacity: 0.4; }
+  to { transform: translateX(0); opacity: 1; }
+}
+@keyframes vt-push-right-out {
+  from { transform: translateX(0); }
+  to { transform: translateX(7%); opacity: 0.2; }
+}
+@keyframes vt-push-right-in {
+  from { transform: translateX(-7%); opacity: 0.4; }
+  to { transform: translateX(0); opacity: 1; }
+}
+@keyframes vt-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes vt-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0.2; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.vt-forward::view-transition-old(root),
+  html.vt-back::view-transition-old(root),
+  html.vt-forward::view-transition-new(root),
+  html.vt-back::view-transition-new(root) {
+    animation: none;
+  }
+}

@@ -21,9 +21,10 @@ interface FloatingChatButtonProps {
   locations: Locations | null;
   onHome?: () => void;
   shifted?: boolean;
+  elevated?: boolean;
 }
 
-export function FloatingChatButton({ allProducts, settings, laborSettings, deliverySettings, locations, onHome, shifted }: FloatingChatButtonProps) {
+export function FloatingChatButton({ allProducts, settings, laborSettings, deliverySettings, locations, onHome, shifted, elevated }: FloatingChatButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const constraintsRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
@@ -57,7 +58,8 @@ export function FloatingChatButton({ allProducts, settings, laborSettings, deliv
         whileHover={{ cursor: "grab", scale: 1.05 }}
         whileDrag={{ cursor: "grabbing", scale: 1.08 }}
         className={cn(
-          "fixed z-[101] pointer-events-auto touch-none will-change-transform transition-[bottom,left,right] duration-500 ease-out",
+          "fixed pointer-events-auto touch-none will-change-transform transition-[bottom,left,right] duration-500 ease-out",
+          elevated ? "z-[290]" : "z-[101]",
           isMobile ? "bottom-24 left-2" : shifted ? "bottom-[38%] right-[440px]" : "bottom-[38%] right-12"
         )}
         style={{ touchAction: "none" }}

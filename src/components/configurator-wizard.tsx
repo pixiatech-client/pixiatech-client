@@ -46,6 +46,12 @@ import {
 import { BlurredPrice } from './ui/blurred-price';
 import { cn } from '@/lib/utils';
 import { ConfigState, INITIAL_STATE, ProjectType, Environment, ViewingDistance, PixelPitch } from '@/lib/configurator-wizard-types';
+import {
+  normalizeDistance,
+  normalizePitch,
+  getProductPitchesForDistance,
+  isProductCompatible,
+} from '@/lib/configurator-compatibility';
 import { Button } from './ui/button';
 import { ConfiguredProduct, Product, Settings, UserProfile, WizardSettings } from '@/lib/types';
 import { getBlockedPeriods, getProductRentalAvailabilityAction, getProductBlockedPeriodsAction } from '@/app/actions/quote-actions';
@@ -168,73 +174,6 @@ function resolveMaxDimensions(
 /** Clamp a value to [min, max]. */
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
-}
-
-/** Normalize distance string for resilient comparison (handles dashes, commas, spaces, units). */
-export function normalizeDistance(val?: string | null): string {
-  if (!val) return '';
-  return val
-    .toLowerCase()
-    .replace(/m[eèé]tres?/g, 'm')
-    .replace(/\b[àa]\b/g, '-')
-    .replace(/[\u2013\u2014\u2212]/g, '-')
-    .replace(/(\d+),(\d+)/g, '$1.$2')
-    .replace(/\s+/g, '')
-    .replace(/m(?=-|$)/g, '')
-    .replace(/m/g, '');
-}
-
-/** Normalize pixel pitch string for strict comparison (e.g. 'P2.5', 'p 2.5' -> 'P2.5'). */
-export function normalizePitch(val?: string | null): string {
-  if (!val) return '';
-  return val.trim().replace(/\s+/g, '').toUpperCase();
-}
-
-/** Retrieve only the pitches associated with a specific viewing distance for a product. */
-export function getProductPitchesForDistance(p: Product, targetDistance: string): string[] {
-  if (!targetDistance || !targetDistance.trim()) return [];
-  const normalizedTarget = normalizeDistance(targetDistance);
-  const result = new Set<string>();
-
-  // 1. Structured distancePitches (primary source of truth)
-  if (p.distancePitches && typeof p.distancePitches === 'object') {
-    for (const [distKey, pitches] of Object.entries(p.distancePitches)) {
-      if (!Array.isArray(pitches) || pitches.length === 0) continue;
-      if (distKey.trim() === targetDistance.trim() || normalizeDistance(distKey) === normalizedTarget) {
-        pitches.forEach(pitch => {
-          if (pitch && pitch.trim()) result.add(pitch.trim());
-        });
-      }
-    }
-    if (Object.keys(p.distancePitches).length > 0) {
-      return Array.from(result);
-    }
-  }
-
-  // 2. Legacy fallback: requires both non-empty distance AND non-empty pitch
-  if (p.distance && p.pitch) {
-    const distances = p.distance.split(',').map(s => s.trim()).filter(Boolean);
-    const matchesDistance = distances.some(d => d === targetDistance.trim() || normalizeDistance(d) === normalizedTarget);
-    if (matchesDistance) {
-      const pitches = p.pitch.split(',').map(s => s.trim()).filter(Boolean);
-      pitches.forEach(pitch => result.add(pitch));
-    }
-  }
-
-  return Array.from(result);
-}
-
-/** Check if product's screenType matches the client's screen selection ('flat' | 'curved' | '360'). */
-export function matchProductScreenType(productScreenType?: string | string[] | null, selectedScreenType?: 'flat' | 'curved' | '360'): boolean {
-  const target = selectedScreenType || 'flat';
-  if (Array.isArray(productScreenType)) {
-    return productScreenType.map(s => String(s).toLowerCase().trim()).includes(target);
-  }
-  const rawType = String(productScreenType || 'flat').toLowerCase().trim();
-  if (rawType.includes(',')) {
-    return rawType.split(',').map(s => s.trim()).includes(target);
-  }
-  return rawType === target;
 }
 
 export function ConfiguratorWizard({ onComplete, onBack, allProducts, settings, wizardSettings, initialStep = 1, initialConfiguredProduct }: ConfiguratorWizardProps) {
@@ -725,7 +664,7 @@ function renderStep(state: ConfigState, updateState: (updates: Partial<ConfigSta
     case 2: return <StepEnvironment state={state} updateState={updateState} wizardSettings={wizardSettings} products={products} t={t} />;
     case 3: return <StepViewingDistance state={state} updateState={updateState} userProfile={userProfile} wizardSettings={wizardSettings} products={products} t={t} locale={locale} />;
     case 4: return <StepPixelPitch state={state} updateState={updateState} userProfile={userProfile} wizardSettings={wizardSettings} products={products} t={t} locale={locale} />;
-    case 5: return <StepDimensions state={state} updateState={updateState} settings={settings} setIsInteracting={setIsInteracting} projectType={state.projectType} t={t} />;
+    case 5: return <StepDimensions state={state} updateState={updateState} settings={settings} setIsInteracting={setIsInteracting} projectType={state.projectType} t={t} products={products} />;
     case 6: return state.projectType === 'location' ? <StepRentalDatesAndPhoto state={state} updateState={updateState} products={products} t={t} locale={locale} /> : <StepInstallationPhoto state={state} updateState={updateState} t={t} />;
     case 7: return <StepSummary state={state} t={t} locale={locale} />;
     case 8: return <StepFinal state={state} updateState={updateState} products={products} settings={settings} t={t} locale={locale!} hideBackButton={true} />;
@@ -1660,47 +1599,12 @@ export function StepFinal({ state, updateState, products, settings, t, locale, h
   const area = state.width * state.height;
   const maxPerQuote = settings.estimationFlow?.sale?.maxProductsPerQuote ?? settings.maxProductsPerQuote ?? 5;
 
-  // Map environment wizard values to product type values
-  const targetEnvType: 'indoor' | 'outdoor' | 'showcase' =
-    state.environment === 'interieur' ? 'indoor'
-      : state.environment === 'semi-exterieur' ? 'showcase'
-        : 'outdoor';
-
-  // Map projectType to availableFor value
-  const targetMode: 'sale' | 'rental' = state.projectType === 'location' ? 'rental' : 'sale';
-
   // Selected screen type from Step 5 (Plat / Incurvé / 360)
   const selectedScreenType: 'flat' | 'curved' | '360' =
     state.is360 ? '360' : state.isCurved ? 'curved' : 'flat';
 
   // Helper: check if a product strictly satisfies all 4 cumulative filters (AND logic)
-  const isCompatible = (p: Product): boolean => {
-    if (p.isHidden) return false;
-
-    // Mode check (sale / rental)
-    if (!p.availableFor?.includes(targetMode)) return false;
-
-    // 1. FILTRE 1 — Environnement (Intérieur -> indoor, Semi-intérieur -> showcase, Extérieur -> outdoor)
-    if (!Array.isArray(p.type) || !p.type.includes(targetEnvType)) return false;
-
-    // 2 & 3. FILTRE 2 (Distance) & FILTRE 3 (Pixel Pitch)
-    // Distance and pitch must be selected and explicitly matched in product data
-    if (!state.viewingDistance || !state.pixelPitch) return false;
-
-    const pitchesForSelectedDistance = getProductPitchesForDistance(p, state.viewingDistance);
-    if (pitchesForSelectedDistance.length === 0) return false;
-
-    const targetPitchNorm = normalizePitch(state.pixelPitch);
-    const hasMatchingPitch = pitchesForSelectedDistance.some(
-      pitch => normalizePitch(pitch) === targetPitchNorm
-    );
-    if (!hasMatchingPitch) return false;
-
-    // 4. FILTRE 4 — Type d'écran (Plat -> flat, Incurvé -> curved, 360 -> 360)
-    if (!matchProductScreenType(p.screenType, selectedScreenType)) return false;
-
-    return true;
-  };
+  const isCompatible = (p: Product): boolean => isProductCompatible(state, p, selectedScreenType);
 
   const filteredProducts = (products || []).filter(isCompatible);
   const hasMatchingProducts = filteredProducts.length > 0;

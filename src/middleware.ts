@@ -62,6 +62,11 @@ function applySecurityHeaders(response: NextResponse, isHttps: boolean, isEmbedd
 }
 
 export async function middleware(request: NextRequest) {
+  // Server actions execute their own authorization checks; never intercept or corrupt their responses
+  if (request.headers.has('next-action')) {
+    return NextResponse.next();
+  }
+
   const { pathname } = request.nextUrl;
   const sessionCookie = request.cookies.get('session')?.value;
   const clientSession = request.cookies.get('client_session')?.value;
@@ -78,10 +83,38 @@ export async function middleware(request: NextRequest) {
     requestUrl = requestUrl.replace('://0.0.0.0', '://localhost');
   }
 
+  // ── Univers Web : routage par domaine (ajout additif, ne touche pas aux routes app) ──
+  // app.pixiatech.com (défaut) → application actuelle (comportement inchangé).
+  // pixiatech.com → réécriture interne vers /web/..., sans changer l'URL publique.
+  const WEB_HOSTS = (process.env.WEB_HOSTS || 'pixiatech.com,www.pixiatech.com')
+    .split(',')
+    .map((host) => host.trim().toLowerCase())
+    .filter(Boolean);
+  // Chemins réservés à l'application : jamais réécrits vers /web, même sur un hôte Web.
+  const APP_ONLY_PREFIXES = ['/admin', '/mon-compte', '/boutique', '/quote', '/api', '/_next', '/embed', '/chat-widget', '/test-admin', '/test-db', '/contact'];
+
+  const rawHost = request.headers.get('x-forwarded-host') ?? request.headers.get('host') ?? request.nextUrl.host;
+  const hostname = rawHost.split(':')[0].toLowerCase().trim();
+  const isWebHost = WEB_HOSTS.includes(hostname);
+
   // Public pages: cache on CDN
-  const publicPages = ['/', '/embed', '/chat-widget', '/quote/success', '/quote/verify'];
+  const publicPages = ['/', '/embed', '/chat-widget', '/quote/success', '/quote/verify', '/contact'];
   const isEmbeddable = IFRAME_ROUTES.includes(pathname);
   const isHttps = (request.headers.get('x-forwarded-proto') ?? request.nextUrl.protocol.replace(':', '')) === 'https';
+
+  if (isWebHost && !pathname.startsWith('/web')) {
+    const isAppOnly = APP_ONLY_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(prefix + '/'));
+    const lastSegment = pathname.split('/').pop() || '';
+    const isStaticAsset = lastSegment.includes('.');
+    if (!isAppOnly && !isStaticAsset) {
+      const webPath = pathname === '/' ? '/web' : `/web${pathname}`;
+      const targetUrl = new URL(webPath + request.nextUrl.search, requestUrl);
+      const response = NextResponse.rewrite(targetUrl);
+      response.headers.set('Cache-Control', 'public, max-age=60, s-maxage=120');
+      return applySecurityHeaders(response, isHttps, isEmbeddable);
+    }
+  }
+
   if (publicPages.includes(pathname)) {
     const response = NextResponse.next();
     response.headers.set('Cache-Control', 'public, max-age=60, s-maxage=120');
@@ -116,6 +149,13 @@ export async function middleware(request: NextRequest) {
   }
 
   if (sessionCookie && pathname.startsWith('/admin')) {
+    // In-app client RSC navigation: let Next.js client router handle transitions instantly (0ms latency).
+    // AdminLayout already verifies session continuously on the client.
+    if (request.headers.get('rsc') === '1') {
+      const response = NextResponse.next();
+      return applySecurityHeaders(response, isHttps, isEmbeddable);
+    }
+
     const MAX_RETRIES = 0;
     const TIMEOUT_MS = process.env.NODE_ENV === 'development' ? 10000 : 4000;
 
@@ -157,5 +197,22 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/', '/embed', '/chat-widget', '/quote/success', '/quote/verify', '/admin', '/admin/:path*', '/mon-compte', '/mon-compte/:path*', '/api/:path*'],
+  matcher: [
+    '/',
+    '/web',
+    '/web/:path*',
+    '/embed',
+    '/chat-widget',
+    '/quote/success',
+    '/quote/verify',
+    '/contact',
+    '/admin/:path*',
+    '/mon-compte/:path*',
+    '/api/:path*',
+    // Toute autre route publique (notamment l'univers Web après réécriture par
+    // domaine : /produits/..., /services/..., etc.). Les ressources internes
+    // Next et les API restent exclues du terme générique (elles sont couvertes
+    // par les entrées explicites ci-dessus).
+    '/((?!api|_next/static|_next/image).*)',
+  ],
 };

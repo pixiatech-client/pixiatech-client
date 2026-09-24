@@ -8,6 +8,7 @@ import {
   Package,
   Settings,
   Users,
+  UserCog,
   LayoutGrid,
   User,
   History,
@@ -42,6 +43,7 @@ import { AnimatedButton } from '@/components/ui/animated-button';
 import { cn } from '@/lib/utils';
 import { useUser, useFirestore, useAuth, useCollection, useMemoFirebase } from '@/firebase';
 import { canAccessRoute } from '@/lib/permissions';
+import { slideNavigate } from '@/lib/navigation-transition';
 import type { Settings as AppSettings, UserProfile, UserRole } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/lib/i18n';
@@ -103,6 +105,21 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
   }, [isProfileOpen]);
   const pathname = usePathname();
   const router = useRouter();
+  const isSiteWeb = pathname.startsWith('/admin/site-web');
+
+  // Prefetch both module roots so switching is instant
+  useEffect(() => {
+    try { router.prefetch('/admin'); router.prefetch('/admin/site-web'); } catch {}
+  }, [router]);
+
+  // Resolve the View Transition only after the new page has actually mounted
+  const pendingNavResolveRef = useRef<(() => void) | null>(null);
+  useEffect(() => {
+    if (pendingNavResolveRef.current) {
+      pendingNavResolveRef.current();
+      pendingNavResolveRef.current = null;
+    }
+  }, [pathname]);
 
   const [sidebarState, setSidebarState] = useState<SidebarState>(() => {
     if (typeof window !== 'undefined') {
@@ -463,6 +480,55 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
             </div>
 
             <div className="flex items-center justify-end gap-3">
+
+              {/* Module PIXIATECH SITE WEB / ADMIN toggle */}
+              {roleId === 'admin' && (
+                <button
+                  type="button"
+                  onMouseEnter={() => { try { router.prefetch(isSiteWeb ? '/admin' : '/admin/site-web'); } catch {} }}
+                  onFocus={() => { try { router.prefetch(isSiteWeb ? '/admin' : '/admin/site-web'); } catch {} }}
+                  onClick={() => {
+                    const target = isSiteWeb ? '/admin' : '/admin/site-web';
+                    slideNavigate(isSiteWeb ? 'back' : 'forward', () =>
+                      new Promise<void>((resolve) => {
+                        pendingNavResolveRef.current = resolve;
+                        setTimeout(() => {
+                          if (pendingNavResolveRef.current === resolve) {
+                            pendingNavResolveRef.current = null;
+                            resolve();
+                          }
+                        }, 400);
+                        router.push(target);
+                      })
+                    );
+                  }}
+                  title={isSiteWeb ? t('admin.siteWeb.backToAdmin') : t('admin.siteWeb.moduleButton')}
+                  aria-label={isSiteWeb ? t('admin.siteWeb.backToAdmin') : t('admin.siteWeb.moduleButton')}
+                  className={cn(
+                    "hidden md:inline-flex items-center gap-2 px-4 h-11 rounded-xl text-white text-xs font-bold transition-all cursor-pointer shadow-sm group shrink-0",
+                    isSiteWeb
+                      ? "bg-gradient-to-r from-rose-950 to-neutral-900 hover:from-rose-900 hover:to-neutral-800 border border-rose-500/30 hover:border-rose-500/60"
+                      : "bg-gradient-to-r from-[#0d2a10] to-neutral-900 hover:from-[#133d18] hover:to-neutral-800 border border-[#38E044]/30 hover:border-[#38E044]/60"
+                  )}
+                >
+                  {isSiteWeb ? (
+                    <UserCog className="w-3.5 h-3.5 text-rose-400 group-hover:scale-110 transition-transform" />
+                  ) : (
+                    <Globe className="w-3.5 h-3.5 text-[#38E044] group-hover:scale-110 transition-transform" />
+                  )}
+                  <span className="tracking-wide text-white">PIXIATECH</span>
+                  <span
+                    className={cn(
+                      "text-[9px] px-1.5 py-0.5 rounded font-mono font-bold text-white",
+                      isSiteWeb
+                        ? "bg-rose-500/20 border border-rose-500/30"
+                        : "bg-[#1a3821] border border-[#38E044]/30"
+                    )}
+                  >
+                    {isSiteWeb ? 'ADMIN' : 'SITE WEB'}
+                  </span>
+                </button>
+              )}
 
               {/* 0. Réinitialiser / Mettre à jour l'application */}
               <AnimatedButton

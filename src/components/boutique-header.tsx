@@ -220,15 +220,16 @@ export function BoutiqueHeader({ boutiqueEnabled = true }: { boutiqueEnabled?: b
                 >
                   {t('header.guidedConfig')}
                 </Link>
-                <a
-                  href="https://pixiatech.com/contact"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <Link
+                  href="/contact"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="py-3 text-2xl font-medium text-white/60 hover:text-white transition-colors"
+                  className={cn(
+                    "py-3 text-2xl font-medium transition-colors",
+                    pathname === '/contact' ? 'text-white font-bold' : 'text-white/60 hover:text-white'
+                  )}
                 >
                   {t('header.contactUs')}
-                </a>
+                </Link>
                 <Link
                   href="/admin/login"
                   onClick={() => setMobileMenuOpen(false)}
@@ -300,14 +301,15 @@ export function BoutiqueHeader({ boutiqueEnabled = true }: { boutiqueEnabled?: b
           >
             {t('header.guidedConfig')}
           </Link>
-          <a
-            href="https://pixiatech.com/contact"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-medium nav-link text-sm text-white hover:opacity-80 transition-opacity"
+          <Link
+            href="/contact"
+            className={cn(
+              "font-medium nav-link text-sm transition-colors",
+              pathname === '/contact' ? 'text-[#007bff]' : 'text-white hover:opacity-80'
+            )}
           >
             {t('header.contactUs')}
-          </a>
+          </Link>
         </div>
 
         {/* Right side */}

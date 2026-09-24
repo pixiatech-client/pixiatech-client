@@ -1,0 +1,228 @@
+export interface CatalogProduct {
+  slug: string;
+  name: string;
+  menuLabel: string;
+  menuGroup: string;
+  menuGroupFr: string;
+  menuTag: string;
+  pitch: string;
+  brightness: string;
+  cabinet: string;
+  shortDescEn: string;
+  shortDescFr: string;
+  img: string;
+}
+
+export const CATALOG_PRODUCTS: CatalogProduct[] = [
+  // FIXED INSTALLATION / INDOOR
+  {
+    slug: "wp",
+    name: "PXT Fine",
+    menuLabel: "PXT Fine",
+    menuGroup: "FIXED INSTALLATION / INDOOR",
+    menuGroupFr: "INSTALLATION FIXE / INTÉRIEUR",
+    menuTag: "FINE PITCH 16:9",
+    pitch: "1.2 – 3.1 mm",
+    brightness: "800 – 1 500 nits",
+    cabinet: "600 × 337.5 mm",
+    shortDescEn: "The wallpaper-thin LED display engineered for executive spaces where thermal control, reliability and architectural integration are critical.",
+    shortDescFr: "L'écran LED ultra-fin conçu pour les espaces d'exception où contrôle thermique, fiabilité sans compromis et intégration architecturale sont primordiaux.",
+    img: "/uploads/products/wp/front.jpg",
+  },
+  {
+    slug: "wt",
+    name: "PXT Ultra",
+    menuLabel: "PXT Ultra",
+    menuGroup: "FIXED INSTALLATION / INDOOR",
+    menuGroupFr: "INSTALLATION FIXE / INTÉRIEUR",
+    menuTag: "MICRO-PITCH 0.78mm",
+    pitch: "0.78 – 1.5 mm",
+    brightness: "600 – 1 000 nits",
+    cabinet: "600 × 337.5 mm",
+    shortDescEn: "Micro-pitch LED display engineered for mission-critical command centers, broadcast rooms and luxury boardrooms requiring absolute pixel permanence.",
+    shortDescFr: "Écran LED micro-pitch pour salles de contrôle critiques et régies broadcast exigeant une densité de pixels absolue et une protection de surface COB.",
+    img: "/uploads/products/wt/front.jpg",
+  },
+  {
+    slug: "wpwrap",
+    name: "PXT Wrap",
+    menuLabel: "PXT Wrap",
+    menuGroup: "FIXED INSTALLATION / INDOOR",
+    menuGroupFr: "INSTALLATION FIXE / INTÉRIEUR",
+    menuTag: "COURBE PANORAMIQUE",
+    pitch: "1.2 – 2.5 mm",
+    brightness: "1 000 nits",
+    cabinet: "300 × 337.5 mm",
+    shortDescEn: "Curved and faceted LED cabinets designed to wrap seamlessly around architectural columns, concave control rooms and panoramic studios.",
+    shortDescFr: "Châssis LED courbés et biseautés conçus pour épouser les colonnes architecturales, régies concaves et auditoriums panoramiques sans raccord visible.",
+    img: "/uploads/products/wpwrap/front.jpg",
+  },
+  {
+    slug: "wv",
+    name: "PXT Seamless",
+    menuLabel: "PXT Seamless",
+    menuGroup: "FIXED INSTALLATION / INDOOR",
+    menuGroupFr: "INSTALLATION FIXE / INTÉRIEUR",
+    menuTag: "SALLE DE CONTRÔLE 8K",
+    pitch: "1.25 – 1.56 mm",
+    brightness: "800 nits",
+    cabinet: "1200 × 675 mm",
+    shortDescEn: "Large-format 1.2m display blocks with remote power units, delivering native 4K/8K resolution with zero ambient noise and zero heat emissions.",
+    shortDescFr: "Grands modules de 1.2m avec alimentation déportée, garantissant un affichage 4K/8K natif sans aucun bruit ni dissipation de chaleur dans la pièce.",
+    img: "/uploads/products/wv/front.jpg",
+  },
+
+  // CREATIVE / XR & VP
+  {
+    slug: "gemini",
+    name: "PXT Twin XR",
+    menuLabel: "PXT Twin XR",
+    menuGroup: "CREATIVE / XR & VP",
+    menuGroupFr: "PRODUCTION VIRTUELLE & XR",
+    menuTag: "CINEMA VIRTUAL PROD",
+    pitch: "1.9 – 2.6 mm",
+    brightness: "1 800 nits",
+    cabinet: "500 × 500 mm",
+    shortDescEn: "Cinematic LED wall for in-camera visual effects (ICVFX) with 7,680 Hz refresh rate, DCI-P3 color gamut and genlock phase-locking.",
+    shortDescFr: "Mur LED cinéma pour effets virtuels temps réel (ICVFX) avec rafraîchissement 7 680 Hz, gamut DCI-P3 et synchronisation genlock au pixel près.",
+    img: "/uploads/products/gemini/front.jpg",
+  },
+  {
+    slug: "orion",
+    name: "PXT Studio XR",
+    menuLabel: "PXT Studio XR",
+    menuGroup: "CREATIVE / XR & VP",
+    menuGroupFr: "PRODUCTION VIRTUELLE & XR",
+    menuTag: "PLATEAU BROADCAST",
+    pitch: "1.5 – 1.9 mm",
+    brightness: "1 500 nits",
+    cabinet: "500 × 500 mm",
+    shortDescEn: "High-spec broadcast studio backdrops engineered to eliminate camera moiré, off-axis color shifting and flicker on 4K/8K sensor rigs.",
+    shortDescFr: "Écrans d'arrière-plan studio conçus pour éliminer les effets de moiré caméra, les dérives colorimétriques d'angle et le scintillement à haute fréquence.",
+    img: "/uploads/products/orion/front.jpg",
+  },
+
+  // OUTDOOR / DOOH & KINETIC
+  {
+    slug: "mv",
+    name: "PXT Vision",
+    menuLabel: "PXT Vision",
+    menuGroup: "OUTDOOR / DOOH",
+    menuGroupFr: "EXTÉRIEUR & DOOH",
+    menuTag: "DOOH 10 000 NITS",
+    pitch: "3.9 – 10.0 mm",
+    brightness: "10 000 nits",
+    cabinet: "500 × 1000 mm",
+    shortDescEn: "Monumental outdoor DOOH display with IP68 hermetic sealing, ultra-low power consumption and direct sunlight readability up to 10,000 nits.",
+    shortDescFr: "Affichage DOOH extérieur monumental avec étanchéité IP68, consommation d'énergie optimisée et lisibilité plein soleil jusqu'à 10 000 nits.",
+    img: "/uploads/products/mv/front.jpg",
+  },
+  {
+    slug: "mvedge",
+    name: "PXT Edge",
+    menuLabel: "PXT Edge",
+    menuGroup: "OUTDOOR / DOOH",
+    menuGroupFr: "EXTÉRIEUR & DOOH",
+    menuTag: "ANGLE 90° SANS BORD",
+    pitch: "4.0 – 6.0 mm",
+    brightness: "7 500 nits",
+    cabinet: "Custom 90°",
+    shortDescEn: "Seamless 90-degree corner displays engineered for iconic naked-eye 3D anamorphic installations on flagship building corners.",
+    shortDescFr: "Écrans d'angle à 90° sans joint apparent pour installations anamorphiques 3D en trompe-l'œil sur les façades urbaines les plus visibles.",
+    img: "/uploads/products/mvedge/front.jpg",
+  },
+  {
+    slug: "mvmesh",
+    name: "PXT Air Mesh",
+    menuLabel: "PXT Air Mesh",
+    menuGroup: "OUTDOOR / DOOH",
+    menuGroupFr: "EXTÉRIEUR & DOOH",
+    menuTag: "FAÇADE TRANSPARENTE",
+    pitch: "10.0 – 20.0 mm",
+    brightness: "8 000 nits",
+    cabinet: "Modular Mesh",
+    shortDescEn: "Lightweight, wind-permeable architectural LED mesh transforming entire building envelopes into glowing media facades.",
+    shortDescFr: "Grille LED architecturale ultra-légère et perméable au vent transformant les façades de verre entières en écrans médiatiques lumineux.",
+    img: "/uploads/products/mvmesh/front.jpg",
+  },
+  {
+    slug: "spki",
+    name: "PXT Matrice Cinétique",
+    menuLabel: "PXT Cinétique (SPKI)",
+    menuGroup: "KINETIC & INNOVATION",
+    menuGroupFr: "CINÉTIQUE & INNOVATION",
+    menuTag: "3D MOTORISÉ 250MM",
+    pitch: "2.6 – 3.9 mm",
+    brightness: "3 000 nits",
+    cabinet: "500 × 500 mm",
+    shortDescEn: "The screen moves. Depth becomes part of the image. Motorized physical modules with 248.5 mm stroke and synchronized motion control.",
+    shortDescFr: "L'écran s'anime. La profondeur devient partie de l'image. Modules motorisés avec course physique de 248.5 mm et contrôle de mouvement synchrone.",
+    img: "/uploads/products/spki/front.jpg",
+  },
+  {
+    slug: "sports",
+    name: "PXT Stadium Ribbon",
+    menuLabel: "PXT Stadium Ribbon",
+    menuGroup: "SPORTS & ARENA",
+    menuGroupFr: "STADES & ARÉNAS",
+    menuTag: "BANDEAUX & COURSIVES",
+    pitch: "6.0 – 10.0 mm",
+    brightness: "6 500 nits",
+    cabinet: "Fascia Ribbon",
+    shortDescEn: "Impact-absorbing perimeter boards and continuous arena fascia displays certified for international sports federation broadcasts.",
+    shortDescFr: "Bandeaux de coursive continus et tours de terrain certifiés avec protections souples pour retransmissions sportives internationales.",
+    img: "/uploads/site/market-sports.jpg",
+  },
+  {
+    slug: "rental",
+    name: "PXT Tour Pro",
+    menuLabel: "PXT Tour Pro",
+    menuGroup: "RENTAL & STAGING",
+    menuGroupFr: "RENTAL & ÉVÉNEMENTIEL",
+    menuTag: "MONTAGE RAPIDE QUICK-LOCK",
+    pitch: "1.9 – 3.9 mm",
+    brightness: "4 500 nits",
+    cabinet: "500 × 500 mm",
+    shortDescEn: "Rugged, featherweight die-cast touring frames engineered for lightning-fast setup, curve locks from -10° to +10° and touring durability.",
+    shortDescFr: "Châssis magnésium ultra-légers pour tournées de concerts et salons, dotés de verrous rapides et d'angles d'incurvation de -10° à +10°.",
+    img: "/uploads/site/market-rental.jpg",
+  },
+  {
+    slug: "transparent",
+    name: "PXT Crystal Glass",
+    menuLabel: "PXT Crystal Glass",
+    menuGroup: "TRANSPARENT",
+    menuGroupFr: "TRANSPARENT & VERRE",
+    menuTag: "TRANSPARENCE 85%",
+    pitch: "3.9 – 7.8 mm",
+    brightness: "5 500 nits",
+    cabinet: "1000 × 500 mm",
+    shortDescEn: "High-transparency film and glass displays that maintain architectural daylight while projecting vibrant visuals in luxury vitrines.",
+    shortDescFr: "Film et verre LED haute transparence laissant passer 85% de la lumière du jour tout en projetant des animations intenses en vitrine.",
+    img: "/uploads/site/market-retail.jpg",
+  },
+];
+
+export interface MegaColumn {
+  titleEn: string;
+  titleFr: string;
+  slugs: string[];
+}
+
+export const MEGA_COLUMNS: MegaColumn[] = [
+  {
+    titleEn: "FIXED INSTALLATION / INDOOR",
+    titleFr: "INSTALLATION FIXE / INTÉRIEUR",
+    slugs: ["wp", "wt", "wpwrap", "wv"],
+  },
+  {
+    titleEn: "CREATIVE & KINETIC",
+    titleFr: "CRÉATIF, XR & CINÉTIQUE",
+    slugs: ["gemini", "orion", "spki"],
+  },
+  {
+    titleEn: "OUTDOOR & ARCHITECTURAL",
+    titleFr: "EXTÉRIEUR & ARCHITECTURAL",
+    slugs: ["mv", "mvedge", "mvmesh", "sports", "rental", "transparent"],
+  },
+];
