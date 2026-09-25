@@ -62,9 +62,6 @@ export const XerFooter: React.FC<XerFooterProps> = ({
         borderTop: '1px solid #1A1A1A',
       }}
     >
-      {/* ── Animated WebGL Fluid background (helloshivam.com) ── */}
-      <OrbCanvas />
-
       {/* ── Scoped rule: allow clicking links/buttons while letting canvas catch background mousemove ── */}
       <style>{`
         #site-footer a, #site-footer button, #site-footer input {
@@ -73,6 +70,10 @@ export const XerFooter: React.FC<XerFooterProps> = ({
         #site-footer a:hover, #site-footer button:hover {
           color: #C3F910 !important;
           transform: translateX(3px);
+        }
+        #site-footer .footer-legal-link:hover {
+          color: #000000 !important;
+          transform: none !important;
         }
       `}</style>
 
@@ -104,7 +105,7 @@ export const XerFooter: React.FC<XerFooterProps> = ({
               {t.products}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, fontSize: 14 }}>
-              <a href="/web/pxt-fine" style={{ color: 'var(--dark-text-2, #c9c7c1)', transition: 'all .2s ease', textDecoration: 'none' }}>
+              <a href="/web/product/pxt-fine" style={{ color: 'var(--dark-text-2, #c9c7c1)', transition: 'all .2s ease', textDecoration: 'none' }}>
                 XR Fine (WP Series)
               </a>
               <a href="/web/products" style={{ color: 'var(--dark-text-2, #c9c7c1)', transition: 'all .2s ease', textDecoration: 'none' }}>
@@ -343,89 +344,118 @@ export const XerFooter: React.FC<XerFooterProps> = ({
             </div>
           </div>
         </div>
-
-        {/* Bottom Sub-bar */}
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            gap: 24,
-            padding: '26px 0',
-            fontSize: 11.5,
-            letterSpacing: '.14em',
-            color: 'var(--dark-muted, #7a7a76)',
-            flexWrap: 'wrap',
-            fontFamily: 'monospace',
-          }}
-        >
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-            <span
-              style={{
-                width: 6,
-                height: 6,
-                borderRadius: '50%',
-                background: '#C3F910',
-                boxShadow: '0 0 8px #C3F910',
-                display: 'inline-block',
-              }}
-            />
-            {t.location}
-          </span>
-          <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
-            <a href="/politique-confidentialite" style={{ color: 'inherit', transition: 'color .2s', textDecoration: 'none' }}>
-              {t.privacy}
-            </a>
-            <a href="/gestion-cookies" style={{ color: 'inherit', transition: 'color .2s', textDecoration: 'none' }}>
-              {t.cookies}
-            </a>
-            <a href="/mentions-legales" style={{ color: 'inherit', transition: 'color .2s', textDecoration: 'none' }}>
-              {t.legal}
-            </a>
-          </div>
-          <span style={{ color: '#C3F910', fontWeight: 700 }}>{lang === 'FR' ? 'FR' : 'EN'}</span>
-        </div>
       </div>
 
-      {/* Footer Giant Text Logo spanning the footer width */}
+      {/* ── Zone Inférieure : Animation Fluid WebGL (OrbCanvas) contenue strictement ici ── */}
       <div
+        className="footer-bottom-zone"
         style={{
           position: 'relative',
-          zIndex: 1,
-          padding: '8px 0 30px',
           overflow: 'hidden',
-          userSelect: 'none',
-          lineHeight: 0,
+          background: 'transparent',
         }}
       >
-        <a
-          href="https://pixiatech.com/"
-          target="_blank"
-          rel="noopener noreferrer"
+        {/* ── Animated WebGL Fluid background (helloshivam.com) ── */}
+        <OrbCanvas />
+
+        {/* Bottom Sub-bar */}
+        <div className="wrap" style={{ position: 'relative', zIndex: 1, pointerEvents: 'none' }}>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              gap: 24,
+              padding: '26px 0',
+              fontSize: 11.5,
+              letterSpacing: '.14em',
+              color: 'var(--dark-muted, #7a7a76)',
+              flexWrap: 'wrap',
+              fontFamily: 'monospace',
+            }}
+          >
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+              <span
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: '50%',
+                  background: '#C3F910',
+                  boxShadow: '0 0 8px #C3F910',
+                  display: 'inline-block',
+                }}
+              />
+              {t.location}
+            </span>
+            <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+              <a
+                href="/politique-confidentialite"
+                className="footer-legal-link"
+                style={{ color: 'inherit', transition: 'color .2s', textDecoration: 'none' }}
+              >
+                {t.privacy}
+              </a>
+              <a
+                href="/gestion-cookies"
+                className="footer-legal-link"
+                style={{ color: 'inherit', transition: 'color .2s', textDecoration: 'none' }}
+              >
+                {t.cookies}
+              </a>
+              <a
+                href="/mentions-legales"
+                className="footer-legal-link"
+                style={{ color: 'inherit', transition: 'color .2s', textDecoration: 'none' }}
+              >
+                {t.legal}
+              </a>
+            </div>
+            <span style={{ color: '#C3F910', fontWeight: 700 }}>{lang === 'FR' ? 'FR' : 'EN'}</span>
+          </div>
+        </div>
+
+        {/* Footer Giant Text Logo spanning the footer width */}
+        <div
           style={{
-            display: 'block',
-            width: '100%',
-            textAlign: 'center',
-            whiteSpace: 'nowrap',
-            fontSize: 'clamp(64px, 12.5vw, 230px)',
-            lineHeight: 1,
-            letterSpacing: '0.08em',
-            color: '#C3F910',
-            opacity: 0.05,
-            textDecoration: 'none',
-            transition: 'all .4s ease',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.opacity = '0.12';
-            e.currentTarget.style.textShadow = '0 0 50px rgba(195, 249, 16, 0.5)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.opacity = '0.05';
-            e.currentTarget.style.textShadow = 'none';
+            position: 'relative',
+            zIndex: 1,
+            padding: '8px 0 30px',
+            overflow: 'hidden',
+            userSelect: 'none',
+            lineHeight: 0,
+            pointerEvents: 'none',
           }}
         >
-          PIXIATECH
-        </a>
+          <a
+            href="https://pixiatech.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: 'block',
+              width: '100%',
+              textAlign: 'center',
+              whiteSpace: 'nowrap',
+              fontSize: 'clamp(64px, 12.5vw, 230px)',
+              lineHeight: 1,
+              letterSpacing: '0.08em',
+              color: '#FFFFFF',
+              opacity: 0.03,
+              textDecoration: 'none',
+              transition: 'all .4s ease',
+              pointerEvents: 'auto',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.opacity = '0.08';
+              e.currentTarget.style.textShadow = '0 0 50px rgba(255, 255, 255, 0.4)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.opacity = '0.03';
+              e.currentTarget.style.textShadow = 'none';
+            }}
+          >
+            PIXIATECH
+          </a>
+        </div>
       </div>
     </footer>
   );

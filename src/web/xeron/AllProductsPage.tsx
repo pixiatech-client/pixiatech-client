@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useMemo, useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import '../xeron.css';
 import { XerHeader } from './XerHeader';
 import { XerFooter } from './XerFooter';
@@ -9,6 +10,9 @@ import { ConsultationModal } from './ConsultationModal';
 import { BackToTopButton } from './BackToTopButton';
 import { Language } from '../xeron-translations';
 import { useCms } from '@/lib/site-web/cms-context';
+import { ProductsProvider, useProducts } from '@/lib/products/products-context';
+import type { ProductRecord } from '@/lib/products/types';
+import seedData from '../../../data/mega-menu-seed.json';
 
 interface AllProductsPageProps {
   lang?: Language;
@@ -68,10 +72,127 @@ const APP_FILTERS = [
   'XR / VP', 'Control Room', 'Creative', 'Kinetic', 'Transparent',
 ];
 
-export const AllProductsPage: React.FC<AllProductsPageProps> = ({
+// ─── Fusion legacy → produits Firestore (source de vérité) ──────────────────
+// Un seul produit, une seule carte : si un catalogSlug legacy possède un
+// équivalent Firestore connu (mapping du seed), la carte légacy est remplacée
+// par le produit réel — jamais affichée en double.
+
+const LEGACY_TO_PRODUCT: Record<string, string> = (() => {
+  const map: Record<string, string> = {};
+  const menu = (
+    seedData as {
+      menu: {
+        columns: Array<{
+          items: Array<{ catalogSlug?: string | null; productSlug?: string | null }>;
+        }>;
+      };
+    }
+  ).menu;
+  menu.columns.forEach((c) =>
+    c.items.forEach((i) => {
+      if (i.catalogSlug && i.productSlug) map[i.catalogSlug] = i.productSlug;
+    })
+  );
+  return map;
+})();
+
+interface CatalogCard {
+  key: string;
+  slug: string;
+  name: string;
+  isReal: boolean;
+  img: string | null;
+  imgBack: string | null;
+  env: string;
+  apps: string[];
+  sub: string;
+  pitch: string;
+  brightness: string;
+  cabinet: string;
+}
+
+function mainImageOf(p: ProductRecord): string | null {
+  return p.media?.photos?.find((ph) => ph.url)?.url ?? p.hero?.image ?? null;
+}
+
+function envLabel(e?: ProductRecord['environment']): string {
+  switch (e) {
+    case 'outdoor':
+      return 'OUTDOOR';
+    case 'both':
+      return 'IN / OUT';
+    case 'showcase':
+      return 'INDOOR';
+    default:
+      return 'INDOOR';
+  }
+}
+
+function appsOf(p: ProductRecord): string[] {
+  const list: string[] = [];
+  const tag = p.hero?.tags?.[0];
+  if (tag) list.push(tag);
+  return list;
+}
+
+function subOf(p: ProductRecord, lang: Language): string {
+  return lang === 'FR'
+    ? p.description?.shortFr ?? p.hero?.subtitle ?? ''
+    : p.description?.shortEn ?? p.hero?.subtitle ?? '';
+}
+
+function specValue(p: ProductRecord, index: number): string {
+  const values = (p.hero?.specs ?? []).map((s) => s.value).filter(Boolean);
+  if (values.length >= index + 1) return values[index];
+  return '—';
+}
+
+function realCard(p: ProductRecord, lang: Language): CatalogCard {
+  return {
+    key: `product-${p.slug}`,
+    slug: p.slug,
+    name: p.name,
+    isReal: true,
+    img: mainImageOf(p),
+    imgBack: null,
+    env: envLabel(p.environment),
+    apps: appsOf(p),
+    sub: subOf(p, lang),
+    pitch: specValue(p, 0),
+    brightness: specValue(p, 1),
+    cabinet: specValue(p, 2),
+  };
+}
+
+function legacyCard(legacy: (typeof ALL_PRODUCTS)[number]): CatalogCard {
+  return {
+    key: `legacy-${legacy.slug}`,
+    slug: legacy.slug,
+    name: legacy.name,
+    isReal: false,
+    img: `/uploads/products/${legacy.slug}/front.jpg`,
+    imgBack: `/uploads/products/${legacy.slug}/back.jpg`,
+    env: legacy.env,
+    apps: legacy.apps,
+    sub: legacy.sub,
+    pitch: legacy.pitch,
+    brightness: legacy.brightness,
+    cabinet: legacy.cabinet,
+  };
+}
+
+export const AllProductsPage: React.FC<AllProductsPageProps> = (props) => (
+  <ProductsProvider>
+    <AllProductsView {...props} />
+  </ProductsProvider>
+);
+
+function AllProductsView({
   lang: initialLang = 'FR',
   onOpenConsultation,
-}) => {
+}: AllProductsPageProps) {
+  const router = useRouter();
+  const { products } = useProducts();
   const [lang, setLang] = useState<Language>(initialLang);
   const [consultOpen, setConsultOpen] = useState(false);
   const [envFilter, setEnvFilter] = useState('All');
@@ -108,8 +229,30 @@ export const AllProductsPage: React.FC<AllProductsPageProps> = ({
     cabinet: 'CABINET',
   };
 
+  const merged = useMemo(() => {
+    const published = products.filter((p) => p.status === 'published');
+    const realBySlug = new Map(published.map((p) => [p.slug, p]));
+    const cards: CatalogCard[] = [];
+    const usedReal = new Set<string>();
+    for (const legacy of ALL_PRODUCTS) {
+      const realSlug =
+        LEGACY_TO_PRODUCT[legacy.slug] ?? (realBySlug.has(legacy.slug) ? legacy.slug : null);
+      const real = realSlug ? realBySlug.get(realSlug) ?? null : null;
+      if (real) {
+        usedReal.add(real.slug);
+        cards.push(realCard(real, lang));
+      } else {
+        cards.push(legacyCard(legacy));
+      }
+    }
+    for (const real of published) {
+      if (!usedReal.has(real.slug)) cards.push(realCard(real, lang));
+    }
+    return cards;
+  }, [products, lang]);
+
   const filtered = useMemo(() => {
-    return ALL_PRODUCTS.filter((p) => {
+    return merged.filter((p) => {
       const matchEnv =
         envFilter === 'All' ||
         (envFilter === 'Indoor' && (p.env === 'INDOOR' || p.env === 'IN / OUT')) ||
@@ -117,7 +260,7 @@ export const AllProductsPage: React.FC<AllProductsPageProps> = ({
       const matchApp = appFilter === 'All' || p.apps.includes(appFilter);
       return matchEnv && matchApp;
     });
-  }, [envFilter, appFilter]);
+  }, [merged, envFilter, appFilter]);
 
   return (
     <RevealRoot className="xer-site" style={{ background: '#F5F4F0' }}>
@@ -314,14 +457,21 @@ export const AllProductsPage: React.FC<AllProductsPageProps> = ({
             }}
           >
             {filtered.map((p) => {
-              const isHov = hovered === p.slug;
+              const isHov = hovered === p.key;
               return (
                 <article
-                  key={p.slug}
+                  key={p.key}
                   className="card"
-                  onMouseEnter={() => setHovered(p.slug)}
+                  onMouseEnter={() => setHovered(p.key)}
                   onMouseLeave={() => setHovered(null)}
-                  onClick={onOpenConsultation}
+                  onClick={() => {
+                    if (p.isReal) {
+                      router.push(`/web/product/${p.slug}`);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    } else {
+                      handleOpenConsultation();
+                    }
+                  }}
                   style={{
                     background: '#fff',
                     border: '1px solid #DFDDD5',
@@ -344,37 +494,11 @@ export const AllProductsPage: React.FC<AllProductsPageProps> = ({
                       background: '#EDEAE2',
                     }}
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={`/uploads/products/${p.slug}/front.jpg`}
-                      alt={p.name}
-                      className="slot-img slot-contain"
-                      loading="lazy"
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'contain',
-                        padding: 20,
-                        opacity: isHov ? 0 : 1,
-                        transition: 'opacity .35s ease',
-                      }}
-                      onError={(e) => {
-                        (e.target as HTMLElement).style.opacity = '0';
-                      }}
-                    />
-                    <div
-                      className="card-alt filled"
-                      style={{
-                        position: 'absolute',
-                        inset: 0,
-                        opacity: isHov ? 1 : 0,
-                        transition: 'opacity .35s ease',
-                      }}
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                    {p.img && (
+                      // eslint-disable-next-line @next/next/no-img-element
                       <img
-                        src={`/uploads/products/${p.slug}/back.jpg`}
-                        alt={`${p.name} — rear view`}
+                        src={p.img}
+                        alt={p.name}
                         className="slot-img slot-contain"
                         loading="lazy"
                         style={{
@@ -382,12 +506,42 @@ export const AllProductsPage: React.FC<AllProductsPageProps> = ({
                           height: '100%',
                           objectFit: 'contain',
                           padding: 20,
+                          opacity: p.imgBack ? (isHov ? 0 : 1) : 1,
+                          transition: 'opacity .35s ease',
                         }}
                         onError={(e) => {
-                          (e.target as HTMLElement).style.display = 'none';
+                          (e.target as HTMLElement).style.opacity = '0';
                         }}
                       />
-                    </div>
+                    )}
+                    {p.imgBack && (
+                      <div
+                        className="card-alt filled"
+                        style={{
+                          position: 'absolute',
+                          inset: 0,
+                          opacity: isHov ? 1 : 0,
+                          transition: 'opacity .35s ease',
+                        }}
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={p.imgBack}
+                          alt={`${p.name} — rear view`}
+                          className="slot-img slot-contain"
+                          loading="lazy"
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'contain',
+                            padding: 20,
+                          }}
+                          onError={(e) => {
+                            (e.target as HTMLElement).style.display = 'none';
+                          }}
+                        />
+                      </div>
+                    )}
                   </div>
 
                   {/* Card body */}

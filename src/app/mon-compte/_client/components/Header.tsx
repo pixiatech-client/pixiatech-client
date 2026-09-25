@@ -71,7 +71,7 @@ export function Header({ user, notifications, onNavigate, onLogout, onMarkNotifi
         <div className="flex items-center gap-2 sm:gap-2.5">
           <a
             id="btn-access-site"
-            href="/boutique"
+            href="/web"
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#141B1E] hover:bg-[#1C2529] border border-neutral-800 text-xs text-neutral-300 hover:text-white transition-colors cursor-pointer"
             title="Accéder au site PIXIATECH"
           >

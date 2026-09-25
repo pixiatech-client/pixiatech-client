@@ -28,9 +28,10 @@ import {
   Eye,
   EyeOff,
   GripVertical,
+  Image as ImageIcon,
   Link2,
   Loader2,
-  Menu as MenuIcon,
+  Globe,
   Plus,
   RefreshCw,
   RotateCcw,
@@ -45,12 +46,14 @@ import {
   menuSummary,
   sanitizeMegaMenu,
 } from '@/lib/products/mega-menu';
-import { isValidSlug, type MegaMenu, type MegaMenuItem, type MegaMenuColumn } from '@/lib/products/types';
+import { isValidSlug, type MegaMenu, type MegaMenuItem, type MegaMenuColumn, type Product } from '@/lib/products/types';
 
 interface ProductListItem {
   slug: string;
   name: string;
   status: 'draft' | 'published' | 'deleted';
+  /** URL de l'image principale (media.photos[0].url) — source unique Firestore. */
+  img?: string;
 }
 
 type SaveState = 'idle' | 'dirty' | 'saving' | 'saved' | 'error';
@@ -166,9 +169,19 @@ export function MenuEditor() {
         setActiveColumnId('');
         setSavedRef(null);
       }
-      const prodJson = (await productsRes.json()) as { success: boolean; products?: ProductListItem[] };
+      const prodJson = (await productsRes.json()) as {
+        success: boolean;
+        products?: Array<ProductListItem & { media?: Product['media'] }>;
+      };
       if (prodJson.success && Array.isArray(prodJson.products)) {
-        setProducts(prodJson.products);
+        setProducts(
+          prodJson.products.map((p) => ({
+            slug: p.slug,
+            name: p.name,
+            status: p.status,
+            img: p.media?.photos?.find((ph) => ph.url)?.url ?? undefined,
+          }))
+        );
       }
       setSaveState('saved');
     } catch (err) {
@@ -528,12 +541,12 @@ export function MenuEditor() {
       text: 'Modifications non enregistrées',
       className: 'bg-amber-500/15 text-amber-400 border border-amber-500/40',
     },
-    saving: { text: 'Enregistrement…', className: 'bg-zinc-500/20 text-zinc-300' },
+    saving: { text: 'Enregistrement en cours', className: 'bg-zinc-500/20 text-zinc-300' },
     saved: {
       text: 'Enregistré sur le site',
       className: 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/40',
     },
-    error: { text: 'Erreur', className: 'bg-rose-500/15 text-rose-400 border border-rose-500/40' },
+    error: { text: 'Erreur d’enregistrement', className: 'bg-rose-500/15 text-rose-400 border border-rose-500/40' },
   };
 
   if (saveState === 'idle' && columns === null) {
@@ -552,14 +565,11 @@ export function MenuEditor() {
       <div className="bg-[#0A0D0E] border border-neutral-800 rounded-3xl p-5 sm:p-6 text-white">
         <div className="flex items-center gap-4 min-w-0">
           <div className="w-12 h-12 rounded-2xl bg-[#141B1E] border border-neutral-700 flex items-center justify-center shrink-0">
-            <MenuIcon className="w-6 h-6 text-[#38E044]" />
+            <Globe className="w-6 h-6 text-[#38E044]" />
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-xl font-bold tracking-tight">Méga-menu du site</h1>
-              <span className="text-[10px] font-mono font-extrabold bg-[#38E044] text-black px-2.5 py-0.5 rounded-full shadow-[0_0_10px_rgba(56,224,68,0.4)]">
-                BACKOFFICE
-              </span>
               <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold ${statusPill[saveState].className}`}>
                 {saveState === 'saving' && <Loader2 className="w-3 h-3 animate-spin" />}
                 {saveState === 'saved' && <CheckCircle2 className="w-3 h-3" />}
@@ -572,12 +582,14 @@ export function MenuEditor() {
             </p>
           </div>
         </div>
+      </div>
 
-        <div className="flex items-center gap-2.5 flex-wrap shrink-0 mt-4 sm:mt-0 sm:ml-auto">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={() => void loadAll()}
-            className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-neutral-800/80 hover:bg-neutral-700 text-white text-xs font-bold border border-white/10 transition-all cursor-pointer shadow-sm active:scale-95"
+            className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-neutral-100 hover:bg-[#111110] hover:text-white text-neutral-700 dark:bg-white/5 dark:hover:bg-black dark:text-neutral-100 text-xs font-bold border border-neutral-300/80 dark:border-white/15 transition-all cursor-pointer shadow-sm active:scale-95"
             title="Recharger depuis Firestore"
           >
             <RefreshCw className={`w-3.5 h-3.5 text-[#38E044] ${saveState === 'idle' ? 'animate-spin' : ''}`} />
@@ -586,7 +598,8 @@ export function MenuEditor() {
           <button
             type="button"
             onClick={openSeedConfirm}
-            className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-neutral-800/80 hover:bg-neutral-700 text-white text-xs font-bold border border-white/10 transition-all cursor-pointer shadow-sm active:scale-95"
+            className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-neutral-100 hover:bg-[#111110] hover:text-white text-neutral-700 dark:bg-white/5 dark:hover:bg-black dark:text-neutral-100 text-xs font-bold border border-neutral-300/80 dark:border-white/15 transition-all cursor-pointer shadow-sm active:scale-95"
+            title="Remplacer le menu par la référence de base"
           >
             <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
             <span>Réinitialiser depuis la référence</span>
@@ -600,21 +613,22 @@ export function MenuEditor() {
                 body: 'Le site public retombera sur le méga-menu de référence (MEGA_COLUMNS), non cliquable pour les références sans produit. Action réversible : vous pourrez ré-enregistrer un menu.',
               })
             }
-            className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-neutral-800/80 hover:bg-rose-900/60 text-white text-xs font-bold border border-white/10 transition-all cursor-pointer shadow-sm active:scale-95"
+            className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-neutral-100 hover:bg-[#111110] hover:text-white text-neutral-700 dark:bg-white/5 dark:hover:bg-black dark:text-neutral-100 text-xs font-bold border border-neutral-300/80 dark:border-white/15 transition-all cursor-pointer shadow-sm active:scale-95"
+            title="Supprimer le menu : le public retombe sur le fallback"
           >
             <Trash2 className="w-3.5 h-3.5 text-rose-400" />
             <span>Retour au fallback</span>
           </button>
-          <button
-            type="button"
-            onClick={() => void save()}
-            disabled={saveState === 'saving' || saveState === 'idle'}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#38E044] hover:bg-[#2fcb3c] text-black text-xs font-extrabold transition-all cursor-pointer shadow-[0_0_16px_rgba(56,224,68,0.35)] active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            {saveState === 'saving' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            <span>{saveState === 'saving' ? 'Enregistrement…' : 'Enregistrer sur le site'}</span>
-          </button>
         </div>
+        <button
+          type="button"
+          onClick={() => void save()}
+          disabled={saveState === 'saving' || saveState === 'idle'}
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#38E044] hover:bg-[#2fcb3c] text-black text-xs font-extrabold transition-all cursor-pointer shadow-[0_0_16px_rgba(56,224,68,0.35)] active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          {saveState === 'saving' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+          <span>{saveState === 'saving' ? 'Enregistrement en cours…' : 'Enregistrer sur le site'}</span>
+        </button>
       </div>
 
       {error && (
@@ -649,8 +663,9 @@ export function MenuEditor() {
       {columns !== null && columns.length === 0 && savedRef === null && (
         <div className="flex flex-col items-center gap-4 py-14 rounded-3xl bg-white dark:bg-zinc-900 border border-neutral-200/80 dark:border-white/10 text-center px-6">
           <p className="text-sm text-neutral-600 dark:text-neutral-300 max-w-lg">
-            Aucun méga-menu enregistré sur ce site. Le public voit actuellement le menu de référence
-            (<span className="font-mono">MEGA_COLUMNS</span>), dont les entrées sans produit sont grisées.
+            <span className="font-bold">Le site utilise actuellement le menu de référence.</span> Aucun
+            méga-menu enregistré sur ce site : le public voit le menu de base (
+            <span className="font-mono">MEGA_COLUMNS</span>), dont les entrées sans produit sont grisées.
             Initialisez depuis la référence ou partez d’un menu vide.
           </p>
           <div className="flex flex-wrap justify-center gap-3">
@@ -674,7 +689,7 @@ export function MenuEditor() {
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-neutral-800/80 hover:bg-neutral-700 text-white text-xs font-bold border border-white/10 transition-all cursor-pointer active:scale-95"
             >
               <Plus className="w-4 h-4" />
-              <span>Menu vide</span>
+              <span>Créer un menu vide</span>
             </button>
           </div>
         </div>
@@ -769,36 +784,57 @@ export function MenuEditor() {
                   const placed = placements.length > 0;
                   return (
                     <div key={p.slug} className="p-4 flex items-start justify-between gap-3">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-sm font-bold text-neutral-800 dark:text-white truncate">
-                            {p.name}
-                          </span>
-                          {p.status === 'published' && (
-                            <span className="px-1.5 py-0.5 rounded-full text-[9px] font-mono font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 uppercase">
-                              Publié
-                            </span>
-                          )}
-                          {p.status === 'draft' && (
-                            <span className="px-1.5 py-0.5 rounded-full text-[9px] font-mono font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 uppercase">
-                              Brouillon
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-[11px] font-mono text-neutral-400">{p.slug}</div>
-                        {placed && (
-                          <div className="mt-1.5 flex flex-wrap gap-1.5">
-                            {placements.map((pl) => (
-                              <span
-                                key={pl.itemId}
-                                className="px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25"
-                              >
-                                {pl.columnTitle}
-                                {pl.visible ? '' : ' · masqué'}
-                              </span>
-                            ))}
+                      <div className="flex items-start gap-3 min-w-0 flex-1">
+                        {p.img ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={p.img}
+                            alt=""
+                            loading="lazy"
+                            className="w-16 h-16 shrink-0 rounded-lg object-cover bg-white dark:bg-zinc-800 border border-neutral-200 dark:border-white/10"
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).style.display = 'none';
+                            }}
+                          />
+                        ) : (
+                          <div className="w-16 h-16 shrink-0 rounded-lg bg-neutral-200/70 dark:bg-white/5 border border-neutral-200 dark:border-white/10 flex items-center justify-center text-neutral-400">
+                            <ImageIcon className="w-5 h-5" />
                           </div>
                         )}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-sm font-bold text-neutral-800 dark:text-white truncate">
+                              {p.name}
+                            </span>
+                            {p.status === 'published' && (
+                              <span className="px-1.5 py-0.5 rounded-full text-[9px] font-mono font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 uppercase">
+                                Publié
+                              </span>
+                            )}
+                            {p.status === 'draft' && (
+                              <span className="px-1.5 py-0.5 rounded-full text-[9px] font-mono font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 uppercase">
+                                Brouillon
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-[11px] font-mono text-neutral-400">{p.slug}</div>
+                          {placed ? (
+                            <div className="mt-1.5 flex items-start gap-1.5 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+                              <CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                              <span>
+                                Déjà placé —{' '}
+                                {placements
+                                  .map((pl) => pl.columnTitle + (pl.visible ? '' : ' (masqué)'))
+                                  .join(', ')}
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="mt-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-neutral-400">
+                              <span className="w-3.5 h-3.5 rounded-full border border-current shrink-0 inline-block" />
+                              Non placé
+                            </div>
+                          )}
+                        </div>
                       </div>
                       <button
                         type="button"
@@ -1059,6 +1095,22 @@ function ItemRow(props: {
       >
         <GripVertical className="w-4 h-4" />
       </span>
+      {product?.img ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={product.img}
+          alt=""
+          loading="lazy"
+          className="w-16 h-16 shrink-0 rounded-lg object-cover bg-white dark:bg-zinc-800 border border-neutral-200 dark:border-white/10"
+          onError={(e) => {
+            (e.currentTarget as HTMLImageElement).style.display = 'none';
+          }}
+        />
+      ) : (
+        <div className="w-16 h-16 shrink-0 rounded-lg bg-neutral-200/70 dark:bg-white/5 border border-neutral-200 dark:border-white/10 flex items-center justify-center text-neutral-400">
+          <ImageIcon className="w-5 h-5" />
+        </div>
+      )}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <input

@@ -74,6 +74,7 @@ function ProductView({ slug, fallbackProduct }: ProductPageTemplateProps) {
         <HeroSection
           title={product?.name || 'PXT Fine'}
           data={product?.hero}
+          image={product?.media?.photos?.find((ph) => ph.url)?.url ?? product?.hero?.image}
           onOpenQuote={() => setIsConsultationOpen(true)}
           lang={lang}
         />

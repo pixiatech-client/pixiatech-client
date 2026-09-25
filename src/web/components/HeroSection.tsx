@@ -10,6 +10,8 @@ interface HeroSectionProps {
   onOpenQuote: () => void;
   title?: string;
   lang?: Language;
+  /** Image principale du produit (une seule source Firestore). Optionnelle. */
+  image?: string;
   /** Données produit (template dynamique). Priorité : data ?? CMS ?? défaut. */
   data?: ProductHero;
 }
@@ -18,6 +20,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   onOpenQuote,
   title: initialTitle = 'PXT Fine',
   lang = 'FR',
+  image,
   data,
 }) => {
   const { pages, currentPageId } = useCms();
@@ -109,6 +112,26 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
         {/* Dynamic Animated LED Matrix Canvas */}
         <LedCanvasText label={title} />
+
+        {image && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={image}
+            alt={title}
+            className="hero-product-img"
+            style={{
+              display: 'block',
+              maxWidth: 'min(720px, 100%)',
+              maxHeight: 420,
+              margin: '0 auto',
+              objectFit: 'contain',
+              borderRadius: 12,
+            }}
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).style.display = 'none';
+            }}
+          />
+        )}
 
         {/* Sub-header, Tags & Request Quote button matching xeron.co */}
         <div
