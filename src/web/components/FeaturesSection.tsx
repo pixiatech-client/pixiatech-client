@@ -3,12 +3,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Language } from '../data/translations';
 import { useCms } from '@/lib/site-web/cms-context';
+import type { ProductFeatures, ProductFeature } from '@/lib/products/types';
 
 interface FeaturesSectionProps {
   lang?: Language;
+  /** Données produit (template dynamique). Priorité : data ?? CMS ?? défaut. */
+  data?: ProductFeatures;
 }
 
-export const FeaturesSection: React.FC<FeaturesSectionProps> = ({ lang = 'FR' }) => {
+export const FeaturesSection: React.FC<FeaturesSectionProps> = ({ lang = 'FR', data }) => {
   const [activeIndex, setActiveIndex] = useState(0);
   const stepRefs = useRef<(HTMLDivElement | null)[]>([]);
   const isClickingRef = useRef(false);
@@ -16,11 +19,29 @@ export const FeaturesSection: React.FC<FeaturesSectionProps> = ({ lang = 'FR' })
   const { pages, currentPageId } = useCms();
   const cmsFeatures = (pages[currentPageId]?.sections?.features as Record<string, unknown>) || {};
 
-  const eyebrow = (cmsFeatures.eyebrow as string) || (lang === 'FR' ? '03 / POINTS CLÉS' : '03 / KEY FEATURES');
-  const title1 = (cmsFeatures.title as string) || (lang === 'FR' ? "Façonné autour de" : 'Built around');
+  const eyebrow =
+    data?.eyebrow ||
+    (cmsFeatures.eyebrow as string) ||
+    (lang === 'FR' ? '03 / POINTS CLÉS' : '03 / KEY FEATURES');
+  const title1 =
+    data?.title ||
+    (cmsFeatures.title as string) ||
+    (lang === 'FR' ? "Façonné autour de" : 'Built around');
   const title2 = lang === 'FR' ? "l'essentiel." : 'what matters.';
 
-  const featureList = lang === 'FR'
+  const totalFeatures = data?.items?.length ?? 7;
+  const toDisplayFeature = (item: ProductFeature, idx: number) => ({
+    num: item.num || String(idx + 1).padStart(2, '0'),
+    indexStr: `${String(idx + 1).padStart(2, '0')} / ${String(totalFeatures).padStart(2, '0')}`,
+    title: item.title,
+    desc: item.description || '',
+    img: item.image || '',
+    contain: !!item.contain,
+  });
+
+  const featureList = data?.items?.length
+    ? data.items.map(toDisplayFeature)
+    : lang === 'FR'
     ? [
         {
           num: '01',
@@ -189,9 +210,10 @@ export const FeaturesSection: React.FC<FeaturesSectionProps> = ({ lang = 'FR' })
           style={{
             fontSize: '11px',
             letterSpacing: '.24em',
-            color: 'var(--dark-muted, #7a7a76)',
+            color: '#C3F910',
             marginBottom: '36px',
             textTransform: 'uppercase',
+            fontWeight: 700,
           }}
         >
           {eyebrow}
@@ -221,14 +243,16 @@ export const FeaturesSection: React.FC<FeaturesSectionProps> = ({ lang = 'FR' })
                     }}
                     aria-hidden={!isActive}
                   >
-                    <img
-                      src={item.img}
-                      alt={item.title}
-                      className={`slot-img ${item.contain ? 'slot-contain' : ''}`}
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = `https://xeron.co${item.img}`;
-                      }}
-                    />
+                    {item.img ? (
+                      <img
+                        src={item.img}
+                        alt={item.title}
+                        className={`slot-img ${item.contain ? 'slot-contain' : ''}`}
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = `https://xeron.co${item.img}`;
+                        }}
+                      />
+                    ) : null}
                   </div>
                 );
               })}
@@ -239,8 +263,10 @@ export const FeaturesSection: React.FC<FeaturesSectionProps> = ({ lang = 'FR' })
               {/* Footer with caption and interactive progress rail */}
               <div className="fstage-foot">
                 <div className="fstage-caption">
-                  <span>{activeFeature.indexStr}</span>
-                  <span key={activeFeature.title} className="fstage-cap-in">
+                  <span style={{ color: '#C3F910', fontWeight: 700, letterSpacing: '.24em' }}>
+                    {activeFeature.indexStr}
+                  </span>
+                  <span key={activeFeature.title} className="fstage-cap-in" style={{ color: '#ffffff' }}>
                     {activeFeature.title}
                   </span>
                 </div>
@@ -259,7 +285,7 @@ export const FeaturesSection: React.FC<FeaturesSectionProps> = ({ lang = 'FR' })
                         className={`fstage-seg ${isActive ? 'on' : ''}`}
                         style={{ flex: isActive ? 2.4 : 1 }}
                       >
-                        <i />
+                        <i style={{ background: isActive ? '#C3F910' : undefined }} />
                       </button>
                     );
                   })}
@@ -284,6 +310,7 @@ export const FeaturesSection: React.FC<FeaturesSectionProps> = ({ lang = 'FR' })
                 >
                   {/* Inline media for mobile */}
                   <div className="fstage-step-media">
+                    {item.img ? (
                     <img
                       src={item.img}
                       alt={item.title}
@@ -292,15 +319,37 @@ export const FeaturesSection: React.FC<FeaturesSectionProps> = ({ lang = 'FR' })
                         (e.target as HTMLImageElement).src = `https://xeron.co${item.img}`;
                       }}
                     />
+                  ) : null}
                   </div>
 
                   <div className="fstage-step-text">
                     <div className="fstage-step-meta">
-                      <span style={{ color: 'var(--accent, #C3F910)', fontWeight: 700 }}>
+                      <span
+                        style={{
+                          color: '#C3F910',
+                          fontWeight: 700,
+                          fontSize: '12px',
+                          letterSpacing: '.2em',
+                        }}
+                      >
                         {item.num}
                       </span>
-                      <span className="fstage-step-line" />
-                      <span>{item.indexStr}</span>
+                      <span
+                        className="fstage-step-line"
+                        style={{
+                          background: isActive ? '#C3F910' : undefined,
+                          boxShadow: isActive ? '0 0 10px rgba(195, 249, 16, 0.5)' : 'none',
+                        }}
+                      />
+                      <span
+                        style={{
+                          color: isActive ? '#C3F910' : undefined,
+                          fontWeight: isActive ? 600 : 400,
+                          transition: 'color .3s',
+                        }}
+                      >
+                        {item.indexStr}
+                      </span>
                     </div>
 
                     <h3

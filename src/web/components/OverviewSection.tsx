@@ -3,37 +3,55 @@
 import React from 'react';
 import { Language } from '../data/translations';
 import { useCms } from '@/lib/site-web/cms-context';
+import type { ProductOverview, ProductStat } from '@/lib/products/types';
 
 interface OverviewSectionProps {
   companyName: string;
   lang?: Language;
+  /** Données produit (template dynamique). Priorité : data ?? CMS ?? défaut. */
+  data?: ProductOverview;
 }
 
 export const OverviewSection: React.FC<OverviewSectionProps> = ({
   companyName,
   lang = 'FR',
+  data,
 }) => {
   const { pages, currentPageId } = useCms();
   const cmsOverview = (pages[currentPageId]?.sections?.overview as Record<string, unknown>) || {};
 
-  const eyebrow = (cmsOverview.eyebrow as string) || (lang === 'FR' ? '01 / APERÇU' : '01 / OVERVIEW');
-  const title = (cmsOverview.title as string) || (lang === 'FR' ? 'Une technologie invisible. Une émotion inoubliable.' : 'Technology you never see. Content you never forget.');
-  const description = (cmsOverview.description as string) || (lang === 'FR'
-    ? `${companyName} Fine est un écran haute précision à pas fin conçu pour les environnements intérieurs exigeant une maîtrise thermique exemplaire, une fiabilité absolue et une intégration architecturale totale. Grâce à la technologie ColdLED, la température de fonctionnement et la consommation sont drastiquement réduites, prolongeant la durée de vie des diodes.`
-    : `${companyName} Fine is a premium indoor fine-pitch display built for indoor environments where thermal control, reliability, and architectural integration are critical. Featuring ColdLED technology, ${companyName} Fine significantly reduces operating temperature and power consumption for extended LED lifespan.`
-  );
+  const eyebrow =
+    data?.eyebrow ||
+    (cmsOverview.eyebrow as string) ||
+    (lang === 'FR' ? '01 / APERÇU' : '01 / OVERVIEW');
+  const title =
+    data?.title ||
+    (cmsOverview.title as string) ||
+    (lang === 'FR' ? 'Une technologie invisible. Une émotion inoubliable.' : 'Technology you never see. Content you never forget.');
+  const description =
+    data?.description ||
+    (cmsOverview.description as string) ||
+    (lang === 'FR'
+      ? `${companyName} Fine est un écran haute précision à pas fin conçu pour les environnements intérieurs exigeant une maîtrise thermique exemplaire, une fiabilité absolue et une intégration architecturale totale. Grâce à la technologie ColdLED, la température de fonctionnement et la consommation sont drastiquement réduites, prolongeant la durée de vie des diodes.`
+      : `${companyName} Fine is a premium indoor fine-pitch display built for indoor environments where thermal control, reliability, and architectural integration are critical. Featuring ColdLED technology, ${companyName} Fine significantly reduces operating temperature and power consumption for extended LED lifespan.`
+    );
 
-  const stats = lang === 'FR'
-    ? [
-        { value: '50%', label: "d'énergie consommée en moins comparé aux LED standard" },
-        { value: '29,5 mm', label: 'profondeur totale du châssis – ultra affleurant' },
-        { value: '8K', label: 'résolution maximale supportée' },
-      ]
-    : [
-        { value: '50%', label: 'less power than standard LED' },
-        { value: '29,5 mm', label: 'total screen depth – paper thin' },
-        { value: '8K', label: 'max resolution supported' },
-      ];
+  const stats: { value: string; label: string }[] = data?.stats?.length
+    ? data.stats.map((s: ProductStat) => ({
+        value: s.value,
+        label: (lang === 'FR' ? s.labelFr : s.labelEn) || s.label,
+      }))
+    : lang === 'FR'
+      ? [
+          { value: '50%', label: "d'énergie consommée en moins comparé aux LED standard" },
+          { value: '29,5 mm', label: 'profondeur totale du châssis – ultra affleurant' },
+          { value: '8K', label: 'résolution maximale supportée' },
+        ]
+      : [
+          { value: '50%', label: 'less power than standard LED' },
+          { value: '29,5 mm', label: 'total screen depth – paper thin' },
+          { value: '8K', label: 'max resolution supported' },
+        ];
 
   const techHeading = lang === 'FR' ? 'TECHNOLOGIES INTÉGRÉES' : 'TECHNOLOGIES INSIDE';
 

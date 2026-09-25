@@ -823,4 +823,4 @@ function ContactItem({ user, currentUser, isMiniChat, isCollapsed, selectedUsers
       )}
     </div>
   );
-}
+}

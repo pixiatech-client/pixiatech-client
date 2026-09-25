@@ -122,7 +122,88 @@
         "backendName": "Pixel Tech Web",
         "backendApiUrl": "/api/pixel-tech-web"
       }
+    },
+    "mentions_legales": {
+      "id": "mentions_legales",
+      "name": "Mentions Légales",
+      "slug": "/mentions-legales",
+      "editorPath": "/web/mentions-legales",
+      "updatedAt": "2026-09-25T08:33:33.200Z",
+      "meta": {
+        "title": "Mentions Légales & CGV/CGL · PIXIATECH",
+        "description": "Conditions générales de vente, de services et de location, informations légales de PIXIATECH SASU."
+      },
+      "sections": {
+        "header": {
+          "badge": "PIXIATECH / JURIDIQUE",
+          "title": "Mentions Légales",
+          "subtitle": "CONDITIONS GÉNÉRALES DE VENTE, DE SERVICES ET DE LOCATION (CGV/CGL) — Dernière mise à jour : 30/11/2025"
+        },
+        "identity": {
+          "badge": "IDENTITÉ SOCIÉTÉ",
+          "title": "Informations Légales & Siège Social",
+          "description": "PIXIATECH (SASU), Siège social : 5 Rue La Fontaine, 93400 Saint-Ouen-sur-Seine, France. RCS Bobigny 993 747 161. TVA FR39993747161. Contact : contact@pixiatech.com - 07 56 81 66 26"
+        },
+        "article1": {
+          "badge": "ARTICLE 1",
+          "title": "Présentation et Champ d’Application",
+          "description": "Les présentes conditions générales régissent l’ensemble des relations commerciales entre PIXIATECH et ses clients."
+        },
+        "article2": {
+          "badge": "ARTICLE 2",
+          "title": "Vente : Produits et Modèle Logistique",
+          "description": "Fonctionnement en flux tendu et expédition directe depuis les entrepôts de fabrication partenaires (UE ou hors UE)."
+        }
+      }
+    },
+    "politique_confidentialite": {
+      "id": "politique_confidentialite",
+      "name": "Politique de Confidentialité",
+      "slug": "/politique-confidentialite",
+      "editorPath": "/web/politique-confidentialite",
+      "updatedAt": "2026-09-24T16:41:47.329Z",
+      "meta": {
+        "title": "Politique de Confidentialité & RGPD · PIXIATECH",
+        "description": "Politique de protection des données personnelles et conformité RGPD de PIXIATECH."
+      },
+      "sections": {
+        "header": {
+          "badge": "PIXIATECH / RGPD",
+          "title": "Politique de Confidentialité",
+          "subtitle": "POLITIQUE DE PROTECTION DES DONNÉES PERSONNELLES & RGPD — Dernière mise à jour : 30/11/2025"
+        },
+        "responsable": {
+          "badge": "RESPONSABLE",
+          "title": "Responsable du Traitement",
+          "description": "PIXIATECH (SASU) - 5 Rue La Fontaine, 93400 Saint-Ouen-sur-Seine. RCS Bobigny 993 747 161. Contact DPO : contact@pixiatech.com"
+        }
+      }
+    },
+    "gestion_cookies": {
+      "id": "gestion_cookies",
+      "name": "gestion_cookies",
+      "slug": "/gestion_cookies",
+      "editorPath": "/web/gestion-cookies",
+      "updatedAt": "2026-09-25T08:35:54.528Z",
+      "sections": {}
+    },
+    "_01": {
+      "id": "_01",
+      "name": "01",
+      "slug": "/01",
+      "updatedAt": "2026-09-24T17:16:28.585Z",
+      "sections": {
+        "header": {
+          "badge": "PAGE",
+          "title": "01",
+          "description": ""
+        }
+      },
+      "meta": {
+        "title": "01 · PIXIATECH",
+        "description": ""
+      }
     }
   },
-  "updatedAt": "2026-09-24T13:41:15.567Z"
+  "updatedAt": "2026-09-25T08:35:54.528Z"
 }

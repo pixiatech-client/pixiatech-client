@@ -160,7 +160,48 @@ export const ElementorDrawer: React.FC<ElementorDrawerProps> = ({ onOpenBackendM
           { key: 'features', label: '03. Caractéristiques Techniques' },
           { key: 'fieldwork', label: '05. Réalisations sur le terrain' },
         ]
-      : [
+      : currentPageId === 'mentions_legales'
+      ? [
+          { key: 'header', label: '00. En-tête & Titre' },
+          { key: 'presentation', label: '01. Art. 1 - Champ d’application' },
+          { key: 'identity', label: '02. Identité de la Société' },
+          { key: 'article2', label: '03. Art. 2 - Vente & Logistique' },
+          { key: 'article3', label: '04. Art. 3 - Prix' },
+          { key: 'article4', label: '05. Art. 4 - Paiement' },
+          { key: 'article5', label: '06. Art. 5 - Livraison & Douanes' },
+          { key: 'article6', label: '07. Art. 6 - Rétractation' },
+          { key: 'article7', label: '08. Art. 7 - Installation' },
+          { key: 'article8', label: '09. Art. 8 - Location' },
+          { key: 'article9', label: '10. Art. 9 - Garanties' },
+          { key: 'article10', label: '11. Art. 10 - Responsabilité' },
+          { key: 'article11', label: '12. Art. 11 - Données personnelles' },
+          { key: 'article12', label: '13. Art. 12 - Droit & Litiges' },
+        ]
+      : currentPageId === 'politique_confidentialite'
+      ? [
+          { key: 'header', label: '00. En-tête & Titre' },
+          { key: 'intro', label: '01. Engagement & Intro' },
+          { key: 'responsable', label: '02. Responsable de Traitement' },
+          { key: 'donnees', label: '03. Données Collectées' },
+          { key: 'finalites', label: '04. Finalités du Traitement' },
+          { key: 'destinataires', label: '05. Destinataires & Transfert' },
+          { key: 'conservation', label: '06. Durée de Conservation' },
+          { key: 'securite', label: '07. Sécurité des Données' },
+          { key: 'droits', label: '08. Vos Droits RGPD' },
+        ]
+      : currentPageId === 'gestion_cookies'
+      ? [
+          { key: 'header', label: '00. En-tête & Titre' },
+          { key: 'definition', label: '01. Qu’est-ce qu’un Cookie ?' },
+          { key: 'emetteurs', label: '02. Qui dépose les Cookies ?' },
+          { key: 'types', label: '03. Types de Cookies Utilisés' },
+          { key: 'choix', label: '04. Vos Choix Concernant les Cookies' },
+          { key: 'duree', label: '05. Durée de Conservation' },
+          { key: 'navigateurs', label: '06. Paramétrage du Navigateur' },
+          { key: 'contact', label: '07. Contact & Assistance' },
+        ]
+      : currentPageId === 'home'
+      ? [
           { key: 'hero', label: "01. Hero & Slider d'accueil" },
           { key: 'manifesto', label: '02. Manifeste & Vision' },
           { key: 'showreel', label: '03. Showreel 3D (Écran LED)' },
@@ -174,7 +215,11 @@ export const ElementorDrawer: React.FC<ElementorDrawerProps> = ({ onOpenBackendM
           { key: 'experience', label: '11. Experience Center' },
           { key: 'insights', label: '12. Insights & Articles' },
           { key: 'contact', label: '13. Contact & Consultation' },
-        ];
+        ]
+      : Object.keys(sections).map((key) => ({
+          key,
+          label: (sections[key] as any)?.title || key,
+        }));
 
   // Sort sections according to saved sectionOrder
   const configuredOrder = activePage.sectionOrder;

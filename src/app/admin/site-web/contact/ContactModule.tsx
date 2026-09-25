@@ -208,24 +208,23 @@ export function ContactModule({ isAdminPage = true }: ContactModuleProps) {
     <div className="min-h-screen bg-[#F5F5F5] text-slate-900 flex flex-col font-sans selection:bg-[#c6ff00] selection:text-black">
       {isAdminPage && (
         <AdminToolbar
-        isAdminMode={isAdminMode}
-        onToggleAdminMode={() => setIsAdminMode(prev => !prev)}
-        hasUnsavedChanges={hasUnsavedChanges}
-        isSaving={isSaving}
-        onSave={handleSavePageContent}
-        onReset={handleResetPageContent}
-        onOpenSmtpModal={() => setIsSettingsOpen(true)}
-        saveSuccessMessage={lastSavedTime ? `Enregistré à ${lastSavedTime}` : null}
-        hiddenCount={hiddenCount}
+          isAdminMode={isAdminMode}
+          onToggleAdminMode={() => setIsAdminMode(prev => !prev)}
+          hasUnsavedChanges={hasUnsavedChanges}
+          isSaving={isSaving}
+          onSave={handleSavePageContent}
+          onReset={handleResetPageContent}
+          onOpenSmtpModal={() => setIsSettingsOpen(true)}
+          saveSuccessMessage={lastSavedTime ? `Enregistré à ${lastSavedTime}` : null}
+          hiddenCount={hiddenCount}
         />
       )}
 
       {statusNotification && (
-        <div className={`fixed bottom-6 right-6 z-50 px-4 py-3 rounded-xl shadow-2xl border text-sm font-semibold flex items-center space-x-2 animate-in slide-in-from-bottom-5 duration-200 ${
-          statusNotification.type === 'success'
+        <div className={`fixed bottom-6 right-6 z-50 px-4 py-3 rounded-xl shadow-2xl border text-sm font-semibold flex items-center space-x-2 animate-in slide-in-from-bottom-5 duration-200 ${statusNotification.type === 'success'
             ? 'bg-gray-900 text-[#c6ff00] border-[#c6ff00]/40'
             : 'bg-rose-950 text-rose-200 border-rose-500/40'
-        }`}>
+          }`}>
           <span>{statusNotification.message}</span>
         </div>
       )}
@@ -285,10 +284,10 @@ export function ContactModule({ isAdminPage = true }: ContactModuleProps) {
 
       {isAdminPage && (
         <SmtpSettingsModal
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-        onRefreshParent={loadData}
-        onOpenVisualEditor={() => setIsAdminMode(true)}
+          isOpen={isSettingsOpen}
+          onClose={() => setIsSettingsOpen(false)}
+          onRefreshParent={loadData}
+          onOpenVisualEditor={() => setIsAdminMode(true)}
         />
       )}
     </div>

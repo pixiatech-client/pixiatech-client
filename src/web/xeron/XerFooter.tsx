@@ -70,6 +70,10 @@ export const XerFooter: React.FC<XerFooterProps> = ({
         #site-footer a, #site-footer button, #site-footer input {
           pointer-events: auto !important;
         }
+        #site-footer a:hover, #site-footer button:hover {
+          color: #C3F910 !important;
+          transform: translateX(3px);
+        }
       `}</style>
 
       <div className="wrap" style={{ position: 'relative', zIndex: 1, padding: '80px var(--gutter) 0', pointerEvents: 'none' }}>
@@ -88,39 +92,41 @@ export const XerFooter: React.FC<XerFooterProps> = ({
           <div>
             <div
               style={{
-                fontSize: 10.5,
-                letterSpacing: '.22em',
-                color: 'var(--dark-muted, #7a7a76)',
+                fontSize: 11,
+                letterSpacing: '.24em',
+                color: '#C3F910',
                 marginBottom: 20,
                 fontFamily: 'monospace',
                 fontWeight: 700,
+                textTransform: 'uppercase',
               }}
             >
               {t.products}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, fontSize: 14 }}>
-              <a href="/web/pxt-fine" className="hov-acc" style={{ color: 'var(--dark-text-2, #c9c7c1)' }}>
+              <a href="/web/pxt-fine" style={{ color: 'var(--dark-text-2, #c9c7c1)', transition: 'all .2s ease', textDecoration: 'none' }}>
                 XR Fine (WP Series)
               </a>
-              <a href="/web/products" className="hov-acc" style={{ color: 'var(--dark-text-2, #c9c7c1)' }}>
+              <a href="/web/products" style={{ color: 'var(--dark-text-2, #c9c7c1)', transition: 'all .2s ease', textDecoration: 'none' }}>
                 XR Vision (MV Series)
               </a>
-              <a href="/web/products" className="hov-acc" style={{ color: 'var(--dark-text-2, #c9c7c1)' }}>
+              <a href="/web/products" style={{ color: 'var(--dark-text-2, #c9c7c1)', transition: 'all .2s ease', textDecoration: 'none' }}>
                 XR Flex (AR MKII)
               </a>
-              <a href="/web/products" className="hov-acc" style={{ color: 'var(--dark-text-2, #c9c7c1)' }}>
+              <a href="/web/products" style={{ color: 'var(--dark-text-2, #c9c7c1)', transition: 'all .2s ease', textDecoration: 'none' }}>
                 XR Studio (VP Series)
               </a>
               <a
                 href="/web/products"
-                className="hov-acc"
                 style={{
-                  color: 'var(--accent, #C3F910)',
+                  color: '#C3F910',
                   fontWeight: 700,
-                  marginTop: 4,
+                  marginTop: 6,
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: 4,
+                  transition: 'all .2s ease',
+                  textDecoration: 'none',
                 }}
               >
                 {t.allSeries}
@@ -132,12 +138,13 @@ export const XerFooter: React.FC<XerFooterProps> = ({
           <div>
             <div
               style={{
-                fontSize: 10.5,
-                letterSpacing: '.22em',
-                color: 'var(--dark-muted, #7a7a76)',
+                fontSize: 11,
+                letterSpacing: '.24em',
+                color: '#C3F910',
                 marginBottom: 20,
                 fontFamily: 'monospace',
                 fontWeight: 700,
+                textTransform: 'uppercase',
               }}
             >
               {t.company}
@@ -149,8 +156,7 @@ export const XerFooter: React.FC<XerFooterProps> = ({
                   e.preventDefault();
                   scrollTo('#manifesto');
                 }}
-                className="hov-acc"
-                style={{ color: 'var(--dark-text-2, #c9c7c1)' }}
+                style={{ color: 'var(--dark-text-2, #c9c7c1)', transition: 'all .2s ease', textDecoration: 'none' }}
               >
                 {t.about}
               </a>
@@ -160,8 +166,7 @@ export const XerFooter: React.FC<XerFooterProps> = ({
                   e.preventDefault();
                   scrollTo('#projects');
                 }}
-                className="hov-acc"
-                style={{ color: 'var(--dark-text-2, #c9c7c1)' }}
+                style={{ color: 'var(--dark-text-2, #c9c7c1)', transition: 'all .2s ease', textDecoration: 'none' }}
               >
                 {t.projects}
               </a>
@@ -171,8 +176,7 @@ export const XerFooter: React.FC<XerFooterProps> = ({
                   e.preventDefault();
                   scrollTo('#technology');
                 }}
-                className="hov-acc"
-                style={{ color: 'var(--dark-text-2, #c9c7c1)' }}
+                style={{ color: 'var(--dark-text-2, #c9c7c1)', transition: 'all .2s ease', textDecoration: 'none' }}
               >
                 {t.technology}
               </a>
@@ -182,8 +186,7 @@ export const XerFooter: React.FC<XerFooterProps> = ({
                   e.preventDefault();
                   scrollTo('#experience');
                 }}
-                className="hov-acc"
-                style={{ color: 'var(--dark-text-2, #c9c7c1)' }}
+                style={{ color: 'var(--dark-text-2, #c9c7c1)', transition: 'all .2s ease', textDecoration: 'none' }}
               >
                 {t.experienceCenter}
               </a>
@@ -194,12 +197,13 @@ export const XerFooter: React.FC<XerFooterProps> = ({
           <div>
             <div
               style={{
-                fontSize: 10.5,
-                letterSpacing: '.22em',
-                color: 'var(--dark-muted, #7a7a76)',
+                fontSize: 11,
+                letterSpacing: '.24em',
+                color: '#C3F910',
                 marginBottom: 20,
                 fontFamily: 'monospace',
                 fontWeight: 700,
+                textTransform: 'uppercase',
               }}
             >
               {t.support}
@@ -211,8 +215,7 @@ export const XerFooter: React.FC<XerFooterProps> = ({
                   e.preventDefault();
                   scrollTo('#contact');
                 }}
-                className="hov-acc"
-                style={{ color: 'var(--dark-text-2, #c9c7c1)' }}
+                style={{ color: 'var(--dark-text-2, #c9c7c1)', transition: 'all .2s ease', textDecoration: 'none' }}
               >
                 {t.contact}
               </a>
@@ -222,29 +225,28 @@ export const XerFooter: React.FC<XerFooterProps> = ({
                   e.preventDefault();
                   scrollTo('#contact');
                 }}
-                className="hov-acc"
-                style={{ color: 'var(--dark-text-2, #c9c7c1)' }}
+                style={{ color: 'var(--dark-text-2, #c9c7c1)', transition: 'all .2s ease', textDecoration: 'none' }}
               >
                 {t.techSupport}
               </a>
-              <a href="/web/insights" className="hov-acc" style={{ color: 'var(--dark-text-2, #c9c7c1)' }}>
+              <a href="/web/insights" style={{ color: 'var(--dark-text-2, #c9c7c1)', transition: 'all .2s ease', textDecoration: 'none' }}>
                 {t.resources}
               </a>
               <button
                 type="button"
                 onClick={handleStartProject}
-                className="hov-acc"
                 style={{
                   background: 'transparent',
                   border: 0,
                   padding: 0,
                   textAlign: 'left',
-                  color: 'var(--accent, #C3F910)',
+                  color: '#C3F910',
                   cursor: 'pointer',
                   fontSize: 14,
                   fontWeight: 700,
                   fontFamily: 'inherit',
-                  marginTop: 4,
+                  marginTop: 6,
+                  transition: 'all .2s ease',
                 }}
               >
                 {t.startProject}
@@ -256,12 +258,13 @@ export const XerFooter: React.FC<XerFooterProps> = ({
           <div>
             <div
               style={{
-                fontSize: 10.5,
-                letterSpacing: '.22em',
-                color: 'var(--dark-muted, #7a7a76)',
+                fontSize: 11,
+                letterSpacing: '.24em',
+                color: '#C3F910',
                 marginBottom: 20,
                 fontFamily: 'monospace',
                 fontWeight: 700,
+                textTransform: 'uppercase',
               }}
             >
               {t.hq}
@@ -281,18 +284,34 @@ export const XerFooter: React.FC<XerFooterProps> = ({
             <div
               style={{
                 display: 'flex',
-                gap: 18,
+                gap: 12,
                 marginTop: 22,
-                fontSize: 12.5,
-                letterSpacing: '.1em',
+                fontSize: 11,
+                letterSpacing: '.12em',
               }}
             >
               <a
                 href="https://www.linkedin.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hov-acc"
-                style={{ color: 'var(--dark-text-2, #c9c7c1)', textDecoration: 'none' }}
+                style={{
+                  color: 'var(--dark-text-2, #c9c7c1)',
+                  textDecoration: 'none',
+                  border: '1px solid rgba(195, 249, 16, 0.25)',
+                  padding: '6px 12px',
+                  borderRadius: 2,
+                  transition: 'all .2s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = '#C3F910';
+                  e.currentTarget.style.color = '#C3F910';
+                  e.currentTarget.style.background = 'rgba(195, 249, 16, 0.08)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = 'rgba(195, 249, 16, 0.25)';
+                  e.currentTarget.style.color = 'var(--dark-text-2, #c9c7c1)';
+                  e.currentTarget.style.background = 'transparent';
+                }}
               >
                 LINKEDIN
               </a>
@@ -300,8 +319,24 @@ export const XerFooter: React.FC<XerFooterProps> = ({
                 href="https://www.instagram.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hov-acc"
-                style={{ color: 'var(--dark-text-2, #c9c7c1)', textDecoration: 'none' }}
+                style={{
+                  color: 'var(--dark-text-2, #c9c7c1)',
+                  textDecoration: 'none',
+                  border: '1px solid rgba(195, 249, 16, 0.25)',
+                  padding: '6px 12px',
+                  borderRadius: 2,
+                  transition: 'all .2s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = '#C3F910';
+                  e.currentTarget.style.color = '#C3F910';
+                  e.currentTarget.style.background = 'rgba(195, 249, 16, 0.08)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = 'rgba(195, 249, 16, 0.25)';
+                  e.currentTarget.style.color = 'var(--dark-text-2, #c9c7c1)';
+                  e.currentTarget.style.background = 'transparent';
+                }}
               >
                 INSTAGRAM
               </a>
@@ -324,19 +359,31 @@ export const XerFooter: React.FC<XerFooterProps> = ({
             fontFamily: 'monospace',
           }}
         >
-          <span>{t.location}</span>
-          <div style={{ display: 'flex', gap: 24 }}>
-            <a href="#site-footer" className="hov-acc">
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+            <span
+              style={{
+                width: 6,
+                height: 6,
+                borderRadius: '50%',
+                background: '#C3F910',
+                boxShadow: '0 0 8px #C3F910',
+                display: 'inline-block',
+              }}
+            />
+            {t.location}
+          </span>
+          <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+            <a href="/politique-confidentialite" style={{ color: 'inherit', transition: 'color .2s', textDecoration: 'none' }}>
               {t.privacy}
             </a>
-            <a href="#site-footer" className="hov-acc">
+            <a href="/gestion-cookies" style={{ color: 'inherit', transition: 'color .2s', textDecoration: 'none' }}>
               {t.cookies}
             </a>
-            <a href="#site-footer" className="hov-acc">
+            <a href="/mentions-legales" style={{ color: 'inherit', transition: 'color .2s', textDecoration: 'none' }}>
               {t.legal}
             </a>
           </div>
-          <span>{lang === 'FR' ? 'FR' : 'EN'}</span>
+          <span style={{ color: '#C3F910', fontWeight: 700 }}>{lang === 'FR' ? 'FR' : 'EN'}</span>
         </div>
       </div>
 
@@ -355,7 +402,6 @@ export const XerFooter: React.FC<XerFooterProps> = ({
           href="https://pixiatech.com/"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-white font-tech text-2xl lg:text-3xl tracking-widest hover:opacity-80 transition-opacity"
           style={{
             display: 'block',
             width: '100%',
@@ -364,9 +410,18 @@ export const XerFooter: React.FC<XerFooterProps> = ({
             fontSize: 'clamp(64px, 12.5vw, 230px)',
             lineHeight: 1,
             letterSpacing: '0.08em',
-            color: '#f5f4f0',
+            color: '#C3F910',
             opacity: 0.05,
             textDecoration: 'none',
+            transition: 'all .4s ease',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.opacity = '0.12';
+            e.currentTarget.style.textShadow = '0 0 50px rgba(195, 249, 16, 0.5)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.opacity = '0.05';
+            e.currentTarget.style.textShadow = 'none';
           }}
         >
           PIXIATECH

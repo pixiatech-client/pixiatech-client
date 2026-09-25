@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "exportedAt": "2026-09-24T00:00:00.000Z",
+  "comment": "Référence du méga-menu (Phase A), migrée de MEGA_COLUMNS (xeron-catalog.ts). Le menu référence les produits UNIQUEMENT par productSlug. Tant qu'un produit n'a pas de page, l'item garde catalogSlug et s'affiche grisé.",
+  "menu": {
+    "columns": [
+      {
+        "id": "col-fixed-indoor",
+        "titleEn": "FIXED INSTALLATION / INDOOR",
+        "titleFr": "INSTALLATION FIXE / INTÉRIEUR",
+        "items": [
+          { "id": "item-wp", "label": "PXT Fine", "catalogSlug": "wp", "productSlug": "pxt-fine" },
+          { "id": "item-wt", "label": "PXT Ultra", "catalogSlug": "wt", "productSlug": null },
+          { "id": "item-wpwrap", "label": "PXT Wrap", "catalogSlug": "wpwrap", "productSlug": null },
+          { "id": "item-wv", "label": "PXT Seamless", "catalogSlug": "wv", "productSlug": null }
+        ]
+      },
+      {
+        "id": "col-creative-kinetic",
+        "titleEn": "CREATIVE & KINETIC",
+        "titleFr": "CRÉATIF, XR & CINÉTIQUE",
+        "items": [
+          { "id": "item-gemini", "label": "PXT Twin XR", "catalogSlug": "gemini", "productSlug": null },
+          { "id": "item-orion", "label": "PXT Studio XR", "catalogSlug": "orion", "productSlug": null },
+          { "id": "item-spki", "label": "PXT Matrice Cinétique", "catalogSlug": "spki", "productSlug": null }
+        ]
+      },
+      {
+        "id": "col-outdoor-architectural",
+        "titleEn": "OUTDOOR & ARCHITECTURAL",
+        "titleFr": "EXTÉRIEUR & ARCHITECTURAL",
+        "items": [
+          { "id": "item-mv", "label": "PXT Vision", "catalogSlug": "mv", "productSlug": null },
+          { "id": "item-mvedge", "label": "PXT Edge", "catalogSlug": "mvedge", "productSlug": null },
+          { "id": "item-mvmesh", "label": "PXT Air Mesh", "catalogSlug": "mvmesh", "productSlug": null },
+          { "id": "item-sports", "label": "PXT Stadium Ribbon", "catalogSlug": "sports", "productSlug": null },
+          { "id": "item-rental", "label": "PXT Tour Pro", "catalogSlug": "rental", "productSlug": null },
+          { "id": "item-transparent", "label": "PXT Crystal Glass", "catalogSlug": "transparent", "productSlug": null }
+        ]
+      }
+    ]
+  }
+}

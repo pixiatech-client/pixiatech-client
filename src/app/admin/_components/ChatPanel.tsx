@@ -267,4 +267,4 @@ export function ChatPanel({ isOpen, onClose, isDark = false, initialChatId = nul
     />
   );
 }
-
+

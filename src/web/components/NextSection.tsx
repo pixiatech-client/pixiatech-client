@@ -2,16 +2,34 @@
 
 import React from 'react';
 import { Language } from '../data/translations';
+import type { ProductNext } from '@/lib/products/types';
 
 interface NextSectionProps {
   onOpenConsultation: () => void;
   lang?: Language;
+  /** Données produit (template dynamique). Nom des séries neutres, CTA FR uniquement. */
+  data?: ProductNext;
 }
 
 export const NextSection: React.FC<NextSectionProps> = ({
   onOpenConsultation,
   lang = 'FR',
+  data,
 }) => {
+  const prevName = data?.prev?.name || 'WK Series';
+  const nextName = data?.next?.name || 'PXT Ultra';
+
+  // Seuls les libellés FR sont portés par les données ; l'EN garde son texte.
+  const headline = lang === 'FR' ? (data?.headline || 'Donnons vie à votre affichage.') : "Let's build your display.";
+  const highlight = lang === 'FR' ? (data?.headlineHighlight || 'votre affichage.') : 'your display.';
+  const line1 = headline.split(highlight)[0] || headline;
+  const line2 = line1 === headline ? '' : highlight;
+
+  // Le CTA produit n'est piloté qu'en FR pour ne jamais transparaître en EN.
+  const ctaLabel =
+    (lang === 'FR' ? data?.cta : undefined) ||
+    (lang === 'FR' ? 'Démarrer un projet →' : 'Start a Project →');
+
   return (
     <section
       id="next"
@@ -36,39 +54,58 @@ export const NextSection: React.FC<NextSectionProps> = ({
           {/* Previous Series */}
           <a
             href="/web/products"
-            className="hov-border-acc"
+            className="next-series-card"
             style={{
               display: 'block',
               border: '1px solid var(--dark-line, #1f1f1f)',
-              padding: '32px 30px',
-              transition: 'border-color .25s ease',
+              padding: '34px 32px',
+              transition: 'all .25s ease',
+              textDecoration: 'none',
+              background: 'transparent',
+              position: 'relative',
+              overflow: 'hidden',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = '#C3F910';
+              e.currentTarget.style.background = 'rgba(195, 249, 16, 0.05)';
+              e.currentTarget.style.boxShadow = '0 8px 30px rgba(195, 249, 16, 0.12)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = 'var(--dark-line, #1f1f1f)';
+              e.currentTarget.style.background = 'transparent';
+              e.currentTarget.style.boxShadow = 'none';
             }}
           >
             <div
               style={{
                 fontSize: '10.5px',
-                letterSpacing: '.2em',
-                color: 'var(--dark-muted, #7a7a76)',
+                letterSpacing: '.22em',
+                color: '#C3F910',
                 marginBottom: '14px',
                 textTransform: 'uppercase',
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
               }}
             >
-              {lang === 'FR' ? '← SÉRIE PRÉCÉDENTE' : '← PREVIOUS SERIES'}
+              <span>←</span> {lang === 'FR' ? 'SÉRIE PRÉCÉDENTE' : 'PREVIOUS SERIES'}
             </div>
             <div
               style={{
                 fontSize: 'clamp(22px, 2.2vw, 32px)',
                 fontWeight: 700,
                 color: 'var(--dark-text, #f5f4f0)',
+                letterSpacing: '-.01em',
               }}
             >
-              WK Series
+              {prevName}
             </div>
             <div
               style={{
                 fontSize: '13px',
                 color: 'var(--dark-muted, #7a7a76)',
-                marginTop: '6px',
+                marginTop: '8px',
               }}
             >
               {lang === 'FR' ? 'Écran LED fin pitch intérieur' : 'Indoor fine-pitch LED display'}
@@ -78,40 +115,60 @@ export const NextSection: React.FC<NextSectionProps> = ({
           {/* Next Series */}
           <a
             href="/web/products"
-            className="hov-border-acc"
+            className="next-series-card"
             style={{
               display: 'block',
               border: '1px solid var(--dark-line, #1f1f1f)',
-              padding: '32px 30px',
+              padding: '34px 32px',
               textAlign: 'right',
-              transition: 'border-color .25s ease',
+              transition: 'all .25s ease',
+              textDecoration: 'none',
+              background: 'transparent',
+              position: 'relative',
+              overflow: 'hidden',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = '#C3F910';
+              e.currentTarget.style.background = 'rgba(195, 249, 16, 0.05)';
+              e.currentTarget.style.boxShadow = '0 8px 30px rgba(195, 249, 16, 0.12)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = 'var(--dark-line, #1f1f1f)';
+              e.currentTarget.style.background = 'transparent';
+              e.currentTarget.style.boxShadow = 'none';
             }}
           >
             <div
               style={{
                 fontSize: '10.5px',
-                letterSpacing: '.2em',
-                color: 'var(--dark-muted, #7a7a76)',
+                letterSpacing: '.22em',
+                color: '#C3F910',
                 marginBottom: '14px',
                 textTransform: 'uppercase',
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'flex-end',
+                gap: '6px',
               }}
             >
-              {lang === 'FR' ? 'SÉRIE SUIVANTE →' : 'NEXT SERIES →'}
+              {lang === 'FR' ? 'SÉRIE SUIVANTE' : 'NEXT SERIES'} <span>→</span>
             </div>
             <div
               style={{
                 fontSize: 'clamp(22px, 2.2vw, 32px)',
                 fontWeight: 700,
                 color: 'var(--dark-text, #f5f4f0)',
+                letterSpacing: '-.01em',
               }}
             >
-              PXT Ultra
+              {nextName}
             </div>
             <div
               style={{
                 fontSize: '13px',
                 color: 'var(--dark-muted, #7a7a76)',
-                marginTop: '6px',
+                marginTop: '8px',
               }}
             >
               {lang === 'FR' ? 'Écran LED fin pitch intérieur' : 'Indoor fine-pitch LED display'}
@@ -141,17 +198,11 @@ export const NextSection: React.FC<NextSectionProps> = ({
               lineHeight: 1.06,
             }}
           >
-            {lang === 'FR' ? (
+            {line1}
+            {line2 && (
               <>
-                Donnons vie à
                 <br />
-                votre affichage.
-              </>
-            ) : (
-              <>
-                Let&#x27;s build
-                <br />
-                your display.
+                {line2}
               </>
             )}
           </h2>
@@ -168,7 +219,7 @@ export const NextSection: React.FC<NextSectionProps> = ({
               cursor: 'pointer',
             }}
           >
-            {lang === 'FR' ? 'Démarrer un projet →' : 'Start a Project →'}
+            {ctaLabel}
           </button>
         </div>
       </div>

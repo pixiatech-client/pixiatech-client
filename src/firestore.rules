@@ -93,6 +93,13 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    match /site_web_products/{productId} {
+      // Produits des pages publiques /web/product/[slug] : lecture publique,
+      // gestion exclusive par les admins.
+      allow read, list: if true;
+      allow write: if isAdmin();
+    }
+
     match /boutique_characteristics/{charId} {
       allow read, list: if true;
       allow write: if isAdmin();

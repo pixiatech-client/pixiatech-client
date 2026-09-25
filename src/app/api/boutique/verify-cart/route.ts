@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { rateLimitExceeded } from '@/lib/rate-limit';
 import { getSaleBlockReason, getVariantSaleBlockReason, effectiveVariantStock } from '@/lib/product-status';

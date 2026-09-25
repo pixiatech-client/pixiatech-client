@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<title>PIXIATECH — Fiche Technique Modèle</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm 20mm 16mm; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Segoe UI", Arial, Helvetica, sans-serif;
+    color: #111110; margin: 0; padding: 0;
+    font-size: 12px; line-height: 1.45;
+  }
+  .brand {
+    font-size: 20px; font-weight: 900; letter-spacing: .28em; color: #0a0a09;
+    border-bottom: 3px solid #C3F910; padding-bottom: 8px; margin-bottom: 4px;
+  }
+  .brand b { letter-spacing: .3em; }
+  .brand span { color: #C3F910; }
+  .doc {
+    font-size: 9px; letter-spacing: .24em; color: #6b6a66; margin-bottom: 14px;
+    text-transform: uppercase;
+  }
+  .notice {
+    background: #f4f2ed; border: 1px solid #e5e3dc; border-radius: 8px;
+    padding: 8px 12px; font-size: 10px; color: #5c5a55; margin: 0 0 16px;
+  }
+  h2 {
+    font-size: 12px; letter-spacing: .08em; text-transform: uppercase;
+    margin: 18px 0 8px; padding: 6px 10px; background: #0d0d0c; color: #f5f4f0;
+    border-left: 4px solid #C3F910;
+  }
+  h2 .n { color: #C3F910; margin-right: 6px; }
+  .field { display: flex; margin: 4px 0; }
+  .field .k { flex: 0 0 190px; font-weight: 700; font-size: 11px; letter-spacing: .04em; color: #3c3b39; }
+  .field .v { flex: 1; border-bottom: 1px dotted #9a9a94; min-height: 20px; padding: 2px 6px; font-size: 12px; }
+  .hint { font-size: 9px; color: #9a9a94; letter-spacing: .02em; }
+  table { width: 100%; border-collapse: collapse; margin: 6px 0 10px; }
+  th, td { border: 1px solid #c9c7c1; padding: 4px 8px; font-size: 11px; text-align: left; vertical-align: top; }
+  th { background: #efede7; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; font-size: 9.5px; }
+  td.v, td .v { height: 18px; }
+  .section-sep { page-break-before: always; }
+  .foot { margin-top: 18px; font-size: 9px; letter-spacing: .2em; color: #9a9a94; text-align: center; text-transform: uppercase; }
+</style>
+</head>
+<body>
+
+  <div class="brand">PIXIATECH<span>.</span></div>
+  <div class="doc">Fiche Produit — Modèle à remplir (importer dans l'admin Produits)</div>
+  <div class="notice">
+    Remplissez les champs ci-dessous puis enregistrez ce document en PDF.
+    Au moment de la création d'un produit dans l'admin (section Produits du site web),
+    activez « Mode import » et déposez ce PDF : les champs du template produit (page publique)
+    seront préremplis automatiquement. Toute ligne « clé | valeur » et chaque tableau colonne à colonne
+    sont reconnus automatiquement. Les photos et la galerie se déposent dans l'admin (non extractibles d'un PDF).
+  </div>
+
+  <!-- 1 -->
+  <h2><span class="n">1.</span>Nom du produit</h2>
+  <div class="field"><div class="k">Dénomination (max. 12 caractères)</div><div class="v"></div></div>
+
+  <!-- 2 -->
+  <h2><span class="n">2.</span>Mode de vente</h2>
+  <div class="field"><div class="k">vente / location / sur commande</div><div class="v"></div></div>
+
+  <!-- 3 -->
+  <h2><span class="n">3.</span>Badge</h2>
+  <div class="field"><div class="k">nouveau / populaire / promotion</div><div class="v"></div></div>
+
+  <!-- 4 -->
+  <h2><span class="n">4.</span>Environnement</h2>
+  <div class="field"><div class="k">intérieur / extérieur / semi-extérieur</div><div class="v"></div></div>
+
+  <!-- 5 -->
+  <h2><span class="n">5.</span>Caractéristiques techniques</h2>
+  <div class="hint">Une ligne par caractéristique : « Clé | Valeur ».</div>
+  <table>
+    <tr><th style="width:45%">Caractéristique</th><th>Valeur</th></tr>
+    <tr><td>Pitch pixel</td><td class="v"></td></tr>
+    <tr><td>Luminosité (nits)</td><td class="v"></td></tr>
+    <tr><td>Dimensions châssis</td><td class="v"></td></tr>
+    <tr><td>Poids châssis</td><td class="v"></td></tr>
+    <tr><td>Agencement LED</td><td class="v"></td></tr>
+    <tr><td>Résolution module</td><td class="v"></td></tr>
+    <tr><td>Dimensions module</td><td class="v"></td></tr>
+    <tr><td>Résolution châssis</td><td class="v"></td></tr>
+    <tr><td>Taux de rafraîchissement</td><td class="v"></td></tr>
+    <tr><td>Angle de vision</td><td class="v"></td></tr>
+    <tr><td>Puissance max</td><td class="v"></td></tr>
+    <tr><td>Puissance moyenne</td><td class="v"></td></tr>
+    <tr><td>Source d'alimentation</td><td class="v"></td></tr>
+    <tr><td>Indice IP</td><td class="v"></td></tr>
+    <tr><td>Température de fonctionnement</td><td class="v"></td></tr>
+    <tr><td>Certifications</td><td class="v"></td></tr>
+  </table>
+
+  <!-- 6 -->
+  <h2><span class="n">6.</span>Boutons personnalisés</h2>
+  <div class="hint">« Bouton 1 | Libellé », « Bouton 2 | Libellé ».</div>
+  <div class="field"><div class="k">Bouton 1 (CTA principal)</div><div class="v"></div></div>
+  <div class="field"><div class="k">Bouton 2 (CTA secondaire)</div><div class="v"></div></div>
+
+  <!-- 7 -->
+  <h2><span class="n">7.</span>Modèles / Variantes</h2>
+  <div class="hint">Nom du modèle | Description | Référence (toutes les lignes = modèles du tableau comparatif).</div>
+  <table>
+    <tr><th>Nom du modèle</th><th>Description</th><th>Référence</th></tr>
+    <tr><td class="v"></td><td class="v"></td><td class="v"></td></tr>
+    <tr><td class="v"></td><td class="v"></td><td class="v"></td></tr>
+    <tr><td class="v"></td><td class="v"></td><td class="v"></td></tr>
+    <tr><td class="v"></td><td class="v"></td><td class="v"></td></tr>
+  </table>
+
+  <!-- 8 -->
+  <h2><span class="n">8.</span>Description</h2>
+  <div class="field"><div class="k">Petite description :</div><div class="v"></div></div>
+  <div class="field"><div class="k">Description détaillée :</div><div class="v"></div></div>
+  <div class="field"><div class="k">Mots-clés (séparés par •) :</div><div class="v"></div></div>
+
+  <!-- 9 -->
+  <div class="section-sep"></div>
+  <div class="brand">PIXIATECH<span>.</span></div>
+  <div class="doc">Fiche Produit — Modèle à remplir (suite)</div>
+
+  <h2><span class="n">9.</span>Lien public (slug)</h2>
+  <div class="field"><div class="k">Identifiant d'URL (ex. wp / wt / mv)</div><div class="v"></div></div>
+  <div class="hint">L'URL publique sera /web/product/[slug]. Laissez vide pour génération automatique.</div>
+
+  <!-- 10 -->
+  <h2><span class="n">10.</span>Menu de navigation</h2>
+  <div class="hint">Libellé | Groupe (FR) | Groupe (EN) | Étiquette. Renseigne le méga-menu (séparé du produit).</div>
+  <div class="field"><div class="k">Libellé menu</div><div class="v"></div></div>
+  <div class="field"><div class="k">Groupe (français)</div><div class="v"></div></div>
+  <div class="field"><div class="k">Groupe (anglais)</div><div class="v"></div></div>
+  <div class="field"><div class="k">Étiquette (tag)</div><div class="v"></div></div>
+
+  <!-- 11 -->
+  <h2><span class="n">11.</span>Bandeau d'accueil (Hero)</h2>
+  <div class="field"><div class="k">Slogan / sous-titre</div><div class="v"></div></div>
+  <div class="field"><div class="k">CTA principal</div><div class="v"></div></div>
+  <div class="field"><div class="k">Couleur de fond</div><div class="v"></div></div>
+  <div class="field"><div class="k">Étiquettes (tags, séparées par •)</div><div class="v"></div></div>
+
+  <!-- 12 -->
+  <h2><span class="n">12.</span>Aperçu</h2>
+  <div class="field"><div class="k">Liseré (eyebrow)</div><div class="v"></div></div>
+  <div class="field"><div class="k">Titre</div><div class="v"></div></div>
+  <div class="field"><div class="k">Description</div><div class="v"></div></div>
+  <div class="hint">Statistiques : « Valeur | Libellé » par ligne.</div>
+  <table>
+    <tr><th style="width:30%">Valeur</th><th>Libellé</th></tr>
+    <tr><td class="v"></td><td class="v"></td></tr>
+    <tr><td class="v"></td><td class="v"></td></tr>
+    <tr><td class="v"></td><td class="v"></td></tr>
+  </table>
+
+  <!-- 13 -->
+  <h2><span class="n">13.</span>Conception &amp; dimensions</h2>
+  <div class="field"><div class="k">Liseré (eyebrow)</div><div class="v"></div></div>
+  <div class="field"><div class="k">Titre</div><div class="v"></div></div>
+  <div class="field"><div class="k">Dimensions châssis</div><div class="v"></div></div>
+  <div class="field"><div class="k">Poids</div><div class="v"></div></div>
+  <div class="field"><div class="k">Matériau</div><div class="v"></div></div>
+
+  <!-- 14 -->
+  <h2><span class="n">14.</span>Caractéristiques vedettes</h2>
+  <div class="hint">« Feature N | Titre | Description ».</div>
+  <table>
+    <tr><th style="width:18%">N°</th><th style="width:30%">Titre</th><th>Description</th></tr>
+    <tr><td class="v"></td><td class="v"></td><td class="v"></td></tr>
+    <tr><td class="v"></td><td class="v"></td><td class="v"></td></tr>
+    <tr><td class="v"></td><td class="v"></td><td class="v"></td></tr>
+    <tr><td class="v"></td><td class="v"></td><td class="v"></td></tr>
+    <tr><td class="v"></td><td class="v"></td><td class="v"></td></tr>
+    <tr><td class="v"></td><td class="v"></td><td class="v"></td></tr>
+    <tr><td class="v"></td><td class="v"></td><td class="v"></td></tr>
+  </table>
+
+  <!-- 15 -->
+  <h2><span class="n">15.</span>Spécifications comparatives (matrice)</h2>
+  <div class="hint">
+    Pour CHAQUE modèle du tableau comparatif : une ligne « MODELE &lt;nom du modèle&gt; » puis les lignes
+    « clé | valeur » (clés : env, arrangement, pitch, density, moduleRes, moduleDim, cabRes, cabDim, weight,
+    brightness, refresh, scan, angle, maxPower, avgPower, powerSource, signal, ip, temp, certs).
+    Répétez le bloc pour chaque modèle. La section 5 alimente le modèle par défaut.
+  </div>
+  <table>
+    <tr><th style="width:45%">Clé (spécification)</th><th>Valeur</th></tr>
+    <tr><td>MODELE 1</td><td class="v"></td></tr>
+    <tr><td>pitch</td><td class="v"></td></tr>
+    <tr><td>brightness</td><td class="v"></td></tr>
+    <tr><td>cabDim</td><td class="v"></td></tr>
+    <tr><td>env</td><td class="v"></td></tr>
+    <tr><td>MODELE 2</td><td class="v"></td></tr>
+    <tr><td>pitch</td><td class="v"></td></tr>
+    <tr><td>brightness</td><td class="v"></td></tr>
+    <tr><td>cabDim</td><td class="v"></td></tr>
+    <tr><td>env</td><td class="v"></td></tr>
+  </table>
+  <div class="hint">Ajoutez ou supprimez des lignes « clé | valeur » selon les besoins ; toute clé absente sera ignorée.</div>
+
+  <!-- 16 -->
+  <h2><span class="n">16.</span>Réalisations</h2>
+  <div class="hint">« Projet N | Lieu / Année | Légende ».</div>
+  <table>
+    <tr><th style="width:8%">N°</th><th style="width:38%">Lieu / Année</th><th>Légende</th></tr>
+    <tr><td class="v"></td><td class="v"></td><td class="v"></td></tr>
+    <tr><td class="v"></td><td class="v"></td><td class="v"></td></tr>
+  </table>
+
+  <!-- 17 -->
+  <h2><span class="n">17.</span>Fichiers annexes</h2>
+  <div class="field"><div class="k">Photo principale (nom de fichier)</div><div class="v"></div></div>
+  <div class="field"><div class="k">Galerie (noms, séparés par •)</div><div class="v"></div></div>
+  <div class="notice" style="margin-top:14px">
+    Les fichiers mentionnés sont fournis par glisser-déposer dans l'admin (aperçu, remplacement,
+    suppression). Cette section est indicative — le PDF ne peut pas transporter les images.
+  </div>
+
+  <div class="foot">PIXIATECH • Fiche Produit — Modèle v1</div>
+
+</body>
+</html>

@@ -2,20 +2,35 @@
 
 import React, { useRef, useState, useEffect } from 'react';
 import specsData from '../data/specs-data.json';
-import { SpecModel } from '../types';
+import { SpecModel, SpecValue } from '../types';
 import { Language } from '../data/translations';
+import type { ProductSpecs, ProductSpecModel } from '@/lib/products/types';
 
 interface SpecsSectionProps {
   onSelectDatasheet: (model: SpecModel) => void;
   lang?: Language;
+  /** Matrice produit (template dynamique). À défaut, specs-data.json global. */
+  specs?: ProductSpecs;
 }
 
-export const SpecsSection: React.FC<SpecsSectionProps> = ({ onSelectDatasheet, lang = 'FR' }) => {
+function toSpecModel(model: ProductSpecModel): SpecModel {
+  const specs: Record<string, SpecValue> = {};
+  for (const [key, value] of Object.entries(model.specs || {})) {
+    specs[key] = typeof value === 'string' ? { v: value } : value;
+  }
+  return { name: model.name, tag: model.tag || 'DATASHEET', specs };
+}
+
+export const SpecsSection: React.FC<SpecsSectionProps> = ({ onSelectDatasheet, lang = 'FR', specs }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
 
-  const { models } = specsData;
+  const models: SpecModel[] = specs?.models?.length
+    ? specs.models.map(toSpecModel)
+    : (specsData.models as SpecModel[]);
+
+  const modelCount = String(models.length).padStart(2, '0');
 
   const updateScrollState = () => {
     if (!scrollRef.current) return;
@@ -34,7 +49,7 @@ export const SpecsSection: React.FC<SpecsSectionProps> = ({ onSelectDatasheet, l
       el.removeEventListener('scroll', updateScrollState);
       window.removeEventListener('resize', updateScrollState);
     };
-  }, []);
+  }, [models.length]);
 
   const handleScroll = (direction: 'left' | 'right') => {
     if (!scrollRef.current) return;
@@ -150,7 +165,9 @@ export const SpecsSection: React.FC<SpecsSectionProps> = ({ onSelectDatasheet, l
               textTransform: 'uppercase',
             }}
           >
-            09 {lang === 'FR' ? 'MODÈLES — DÉFILEMENT HORIZONTAL →' : 'MODELS — SCROLL HORIZONTALLY →'}
+            <span style={{ color: '#C3F910', fontWeight: 700 }}>{modelCount}</span>{' '}
+            {lang === 'FR' ? 'MODÈLES — DÉFILEMENT HORIZONTAL' : 'MODELS — SCROLL HORIZONTALLY'}{' '}
+            <span style={{ color: '#C3F910' }}>→</span>
           </span>
 
           <div style={{ display: 'flex', gap: '8px' }}>
@@ -162,15 +179,29 @@ export const SpecsSection: React.FC<SpecsSectionProps> = ({ onSelectDatasheet, l
               style={{
                 width: '44px',
                 height: '44px',
-                border: '1px solid var(--dark-line-3, #2a2a2a)',
+                border: `1px solid ${canScrollLeft ? 'rgba(195, 249, 16, 0.4)' : 'var(--dark-line-3, #2a2a2a)'}`,
                 background: 'transparent',
-                color: canScrollLeft ? '#F5F4F0' : '#3A3A3A',
+                color: canScrollLeft ? '#C3F910' : '#3A3A3A',
                 cursor: canScrollLeft ? 'pointer' : 'default',
                 fontSize: '16px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                transition: 'color .2s, border-color .2s',
+                transition: 'all .2s ease',
+              }}
+              onMouseEnter={(e) => {
+                if (canScrollLeft) {
+                  e.currentTarget.style.borderColor = '#C3F910';
+                  e.currentTarget.style.background = 'rgba(195, 249, 16, 0.12)';
+                  e.currentTarget.style.boxShadow = '0 0 12px rgba(195, 249, 16, 0.3)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (canScrollLeft) {
+                  e.currentTarget.style.borderColor = 'rgba(195, 249, 16, 0.4)';
+                  e.currentTarget.style.background = 'transparent';
+                  e.currentTarget.style.boxShadow = 'none';
+                }
               }}
             >
               ←
@@ -183,15 +214,29 @@ export const SpecsSection: React.FC<SpecsSectionProps> = ({ onSelectDatasheet, l
               style={{
                 width: '44px',
                 height: '44px',
-                border: '1px solid var(--dark-line-3, #2a2a2a)',
+                border: `1px solid ${canScrollRight ? 'rgba(195, 249, 16, 0.4)' : 'var(--dark-line-3, #2a2a2a)'}`,
                 background: 'transparent',
-                color: canScrollRight ? '#F5F4F0' : '#3A3A3A',
+                color: canScrollRight ? '#C3F910' : '#3A3A3A',
                 cursor: canScrollRight ? 'pointer' : 'default',
                 fontSize: '16px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                transition: 'color .2s, border-color .2s',
+                transition: 'all .2s ease',
+              }}
+              onMouseEnter={(e) => {
+                if (canScrollRight) {
+                  e.currentTarget.style.borderColor = '#C3F910';
+                  e.currentTarget.style.background = 'rgba(195, 249, 16, 0.12)';
+                  e.currentTarget.style.boxShadow = '0 0 12px rgba(195, 249, 16, 0.3)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (canScrollRight) {
+                  e.currentTarget.style.borderColor = 'rgba(195, 249, 16, 0.4)';
+                  e.currentTarget.style.background = 'transparent';
+                  e.currentTarget.style.boxShadow = 'none';
+                }
               }}
             >
               →
@@ -270,22 +315,25 @@ export const SpecsSection: React.FC<SpecsSectionProps> = ({ onSelectDatasheet, l
                     style={{
                       display: 'inline-block',
                       marginTop: '10px',
-                      border: '1px solid #3A2A22',
+                      border: '1px solid rgba(195, 249, 16, 0.45)',
                       padding: '6px 12px',
                       fontSize: '10px',
                       letterSpacing: '.16em',
-                      color: '#E88A66',
-                      background: 'transparent',
+                      color: '#C3F910',
+                      background: 'rgba(195, 249, 16, 0.04)',
                       cursor: 'pointer',
-                      transition: 'border-color .2s, color .2s',
+                      transition: 'all .2s ease',
+                      fontWeight: 600,
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = '#E88A66';
-                      e.currentTarget.style.color = '#fff';
+                      e.currentTarget.style.borderColor = '#C3F910';
+                      e.currentTarget.style.color = '#000000';
+                      e.currentTarget.style.background = '#C3F910';
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = '#3A2A22';
-                      e.currentTarget.style.color = '#E88A66';
+                      e.currentTarget.style.borderColor = 'rgba(195, 249, 16, 0.45)';
+                      e.currentTarget.style.color = '#C3F910';
+                      e.currentTarget.style.background = 'rgba(195, 249, 16, 0.04)';
                     }}
                   >
                     {lang === 'FR' ? 'FICHE TECHNIQUE' : 'DATASHEET'}
@@ -333,10 +381,12 @@ export const SpecsSection: React.FC<SpecsSectionProps> = ({ onSelectDatasheet, l
                 {grp.rows.map((row) => (
                   <div
                     key={row.key}
+                    className="spec-row"
                     style={{
                       display: 'flex',
                       borderBottom: '1px solid var(--dark-line-2, #161615)',
                       minWidth: 'max-content',
+                      transition: 'background .2s ease',
                     }}
                   >
                     {/* Sticky Key Column */}

@@ -1,11 +1,13 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { CATALOG_PRODUCTS, MEGA_COLUMNS } from './xeron-catalog';
+import { CATALOG_PRODUCTS, MEGA_COLUMNS, type CatalogProduct } from './xeron-catalog';
 import { Language } from '../xeron-translations';
 import { SearchModal } from './SearchModal';
 import { Shield } from 'lucide-react';
+import { ProductsProvider, useProducts } from '@/lib/products/products-context';
+import type { ProductRecord, MegaMenu, MegaMenuItem } from '@/lib/products/types';
 
 interface XerHeaderProps {
   companyName?: string;
@@ -15,7 +17,109 @@ interface XerHeaderProps {
   forceSolidDark?: boolean;
 }
 
-export const XerHeader: React.FC<XerHeaderProps> = ({
+export const XerHeader: React.FC<XerHeaderProps> = (props) => (
+  <ProductsProvider>
+    <XerHeaderContent {...props} />
+  </ProductsProvider>
+);
+
+interface MenuItemModel {
+  id: string;
+  label: string;
+  tag: string;
+  clickable: boolean;
+  productSlug: string | null;
+  catalogSlug: string | null;
+  product: ProductRecord | null;
+  legacy: CatalogProduct | null;
+  img: string | null;
+  descEn: string;
+  descFr: string;
+}
+
+interface MenuColumnModel {
+  id: string;
+  titleEn: string;
+  titleFr: string;
+  items: MenuItemModel[];
+}
+
+function productImg(p: ProductRecord): string | null {
+  return p.media?.photos?.find((ph) => ph.url)?.url ?? null;
+}
+
+function makeModel(
+  item: MegaMenuItem,
+  productBySlug: Map<string, ProductRecord>,
+  legacyBySlug: Map<string, CatalogProduct>
+): MenuItemModel {
+  const product = item.productSlug ? productBySlug.get(item.productSlug) ?? null : null;
+  const legacy = item.catalogSlug ? legacyBySlug.get(item.catalogSlug) ?? null : null;
+  const clickable = !!product && product.status === 'published';
+  return {
+    id: item.id,
+    label: item.label || product?.name || legacy?.name || '',
+    tag: legacy?.menuTag ?? product?.hero?.tags?.[0] ?? '',
+    clickable,
+    productSlug: item.productSlug ?? null,
+    catalogSlug: item.catalogSlug ?? null,
+    product,
+    legacy,
+    img: product ? productImg(product) : legacy?.img ?? null,
+    descEn: product?.description?.shortEn ?? legacy?.shortDescEn ?? '',
+    descFr: product?.description?.shortFr ?? legacy?.shortDescFr ?? '',
+  };
+}
+
+function buildMenuModel(
+  menu: MegaMenu | null,
+  products: ProductRecord[]
+): { columns: MenuColumnModel[]; flat: MenuItemModel[] } {
+  const productBySlug = new Map(products.map((p) => [p.slug, p]));
+  const legacyBySlug = new Map(CATALOG_PRODUCTS.map((p) => [p.slug, p]));
+  const configured =
+    menu && Array.isArray(menu.columns) && menu.columns.length > 0 ? menu.columns : null;
+  let columns: MenuColumnModel[];
+  if (configured) {
+    columns = configured
+      .filter((c) => c && typeof c === 'object' && Array.isArray(c.items))
+      .map((c) => ({
+        id: c.id || 'col',
+        titleEn: c.titleEn ?? '',
+        titleFr: c.titleFr ?? '',
+        items: c.items
+          .filter((i) => i && typeof i === 'object')
+          .filter((i) => i.visible !== false)
+          .map((i) => makeModel(i, productBySlug, legacyBySlug))
+          .filter((m) => m.label),
+      }));
+  } else {
+    columns = MEGA_COLUMNS.map((col, ci) => ({
+      id: `legacy-col-${ci}`,
+      titleEn: col.titleEn,
+      titleFr: col.titleFr,
+      items: col.slugs
+        .map((slug) =>
+          makeModel(
+            {
+              id: `legacy-${slug}`,
+              label: legacyBySlug.get(slug)?.name ?? slug,
+              productSlug: productBySlug.has(slug) ? slug : null,
+              catalogSlug: slug,
+              visible: true,
+            },
+            productBySlug,
+            legacyBySlug
+          )
+        )
+        .filter((m) => m.label),
+    }));
+  }
+  const flat = columns.flatMap((c) => c.items);
+  return { columns, flat };
+}
+
+const XerHeaderContent: React.FC<XerHeaderProps> = ({
   companyName = 'PIXIATECH',
   onOpenConsultation,
   lang = 'EN',
@@ -23,9 +127,10 @@ export const XerHeader: React.FC<XerHeaderProps> = ({
   forceSolidDark = false,
 }) => {
   const router = useRouter();
+  const { products, menu } = useProducts();
   const [scrolled, setScrolled] = useState(false);
   const [megaOpen, setMegaOpen] = useState(false);
-  const [hoveredSlug, setHoveredSlug] = useState<string>('wp');
+  const [hoveredItemId, setHoveredItemId] = useState<string>('wp');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileSubMenu, setMobileSubMenu] = useState<'main' | 'products'>('main');
   const [searchOpen, setSearchOpen] = useState(false);
@@ -65,16 +170,33 @@ export const XerHeader: React.FC<XerHeaderProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const activeProduct =
-    CATALOG_PRODUCTS.find((p) => p.slug === hoveredSlug) || CATALOG_PRODUCTS[0];
+  const productBySlug = useMemo(() => new Map(products.map((p) => [p.slug, p])), [products]);
 
-  // Render-only port: every product series currently resolves to the PXT Fine page.
-  const handleProductClick = (slug: string) => {
+  const model = useMemo(() => buildMenuModel(menu, products), [menu, products]);
+
+  const hoveredItem =
+    model.flat.find((m) => m.id === hoveredItemId) ?? model.flat.find((m) => m.clickable) ?? null;
+
+  const preview = hoveredItem;
+  const previewName = preview?.label ?? '';
+  const previewImg = preview?.img ?? null;
+  const previewPitch = preview?.legacy?.pitch ?? '';
+  const previewDesc = lang === 'FR' ? preview?.descFr ?? '' : preview?.descEn ?? '';
+
+  const navigateTo = (target: { clickable: boolean; productSlug: string | null }) => {
+    if (!target.clickable || !target.productSlug) return;
     setMegaOpen(false);
     setMobileMenuOpen(false);
     setSearchOpen(false);
-    router.push('/web/pxt-fine');
+    router.push(`/web/product/${target.productSlug}`);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const navigateBySlug = (slug: string) => {
+    const p = productBySlug.get(slug);
+    if (p && p.status === 'published') {
+      navigateTo({ clickable: true, productSlug: p.slug });
+    }
   };
 
   const handleNavAnchor = (hash: string) => {
@@ -83,6 +205,23 @@ export const XerHeader: React.FC<XerHeaderProps> = ({
     const el = document.querySelector(hash);
     el?.scrollIntoView({ behavior: 'smooth' });
   };
+
+  const searchProducts = useMemo(
+    () =>
+      products
+        .filter((p) => p.status === 'published')
+        .map((p) => ({
+          slug: p.slug,
+          name: p.name,
+          tag: p.hero?.tags?.[0] ?? '',
+          shortEn: p.description?.shortEn ?? '',
+          shortFr: p.description?.shortFr ?? '',
+          img: productImg(p) ?? '',
+        })),
+    [products]
+  );
+
+  const clickableCount = model.flat.filter((m) => m.clickable).length;
 
   const isDarkBar = forceSolidDark || scrolled || megaOpen;
 
@@ -439,8 +578,8 @@ export const XerHeader: React.FC<XerHeaderProps> = ({
               }}
             >
               {/* Columns 1, 2, 3 */}
-              {MEGA_COLUMNS.map((col, idx) => (
-                <div key={idx}>
+              {model.columns.map((col) => (
+                <div key={col.id}>
                   <div
                     style={{
                       fontSize: 10.5,
@@ -455,18 +594,17 @@ export const XerHeader: React.FC<XerHeaderProps> = ({
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                    {col.slugs.map((slug) => {
-                      const prod = CATALOG_PRODUCTS.find((p) => p.slug === slug);
-                      if (!prod) return null;
-                      const isHovered = hoveredSlug === prod.slug;
+                    {col.items.map((m) => {
+                      const isHovered = hoveredItem?.id === m.id;
                       return (
                         <div
-                          key={prod.slug}
+                          key={m.id}
                           className="mega-card-item"
-                          onMouseEnter={() => setHoveredSlug(prod.slug)}
-                          onClick={() => handleProductClick(prod.slug)}
+                          onMouseEnter={() => setHoveredItemId(m.id)}
+                          onClick={() => navigateTo(m)}
                           style={{
-                            cursor: 'pointer',
+                            cursor: m.clickable ? 'pointer' : 'default',
+                            opacity: m.clickable ? 1 : 0.45,
                             display: 'flex',
                             alignItems: 'baseline',
                             justifyContent: 'space-between',
@@ -482,7 +620,7 @@ export const XerHeader: React.FC<XerHeaderProps> = ({
                               transition: 'color .2s ease',
                             }}
                           >
-                            {prod.name}
+                            {m.label}
                           </span>
                           <span
                             style={{
@@ -492,7 +630,7 @@ export const XerHeader: React.FC<XerHeaderProps> = ({
                               letterSpacing: '.1em',
                             }}
                           >
-                            {prod.menuTag}
+                            {m.tag || (m.clickable ? '' : 'INDISPONIBLE')}
                           </span>
                         </div>
                       );
@@ -523,32 +661,55 @@ export const XerHeader: React.FC<XerHeaderProps> = ({
                       marginBottom: 18,
                     }}
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={activeProduct.img}
-                      alt={activeProduct.name}
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover',
-                        transition: 'transform .4s ease',
-                      }}
-                    />
-                    <div
-                      style={{
-                        position: 'absolute',
-                        top: 10,
-                        right: 10,
-                        background: 'rgba(0,0,0,0.75)',
-                        padding: '4px 8px',
-                        fontSize: 10,
-                        fontFamily: 'monospace',
-                        color: '#C3F910',
-                        letterSpacing: '.1em',
-                      }}
-                    >
-                      {activeProduct.pitch}
-                    </div>
+                    {previewImg ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={previewImg}
+                        alt={previewName}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                          transition: 'transform .4s ease',
+                        }}
+                      />
+                    ) : (
+                      <div
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: 11,
+                          fontFamily: 'monospace',
+                          letterSpacing: '.22em',
+                          textTransform: 'uppercase',
+                          color: '#3F3F3F',
+                          padding: 20,
+                          textAlign: 'center',
+                        }}
+                      >
+                        {previewName || '—'}
+                      </div>
+                    )}
+                    {previewPitch && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: 10,
+                          right: 10,
+                          background: 'rgba(0,0,0,0.75)',
+                          padding: '4px 8px',
+                          fontSize: 10,
+                          fontFamily: 'monospace',
+                          color: '#C3F910',
+                          letterSpacing: '.1em',
+                        }}
+                      >
+                        {previewPitch}
+                      </div>
+                    )}
                   </div>
 
                   <div
@@ -564,7 +725,7 @@ export const XerHeader: React.FC<XerHeaderProps> = ({
                   </div>
 
                   <div style={{ fontSize: 20, fontWeight: 800, color: '#F5F4F0', marginBottom: 6 }}>
-                    {activeProduct.name}
+                    {previewName || '—'}
                   </div>
 
                   <p
@@ -576,14 +737,15 @@ export const XerHeader: React.FC<XerHeaderProps> = ({
                       minHeight: 48,
                     }}
                   >
-                    {lang === 'FR' ? activeProduct.shortDescFr : activeProduct.shortDescEn}
+                    {previewDesc}
                   </p>
                 </div>
 
                 <div>
                   <button
                     type="button"
-                    onClick={() => handleProductClick(activeProduct.slug)}
+                    onClick={() => preview && navigateTo(preview)}
+                    disabled={!preview?.clickable}
                     style={{
                       display: 'inline-flex',
                       alignItems: 'center',
@@ -595,13 +757,18 @@ export const XerHeader: React.FC<XerHeaderProps> = ({
                       letterSpacing: '.1em',
                       fontWeight: 700,
                       color: '#C3F910',
-                      cursor: 'pointer',
-                      borderBottom: '1px solid #C3F910',
+                      cursor: preview?.clickable ? 'pointer' : 'default',
+                      opacity: preview?.clickable ? 1 : 0.4,
+                      borderBottom: preview?.clickable ? '1px solid #C3F910' : '1px solid #3b4526',
                     }}
                   >
-                                        {lang === 'FR'
-                      ? `Explorer la série ${activeProduct.name} →`
-                      : `Explore ${activeProduct.name} Series →`}
+                    {preview?.clickable
+                      ? lang === 'FR'
+                        ? `Explorer la série ${preview.label} →`
+                        : `Explore ${preview.label} Series →`
+                      : lang === 'FR'
+                        ? 'Série indisponible pour le moment'
+                        : 'Series currently unavailable'}
                   </button>
 
                   {/* ALL PRODUCTS → */}
@@ -636,7 +803,6 @@ export const XerHeader: React.FC<XerHeaderProps> = ({
             </div>
           </div>
         )}
-
 
         {/* Mobile Menu with Drill-down & Back behavior */}
         {mobileMenuOpen && (
@@ -846,25 +1012,41 @@ export const XerHeader: React.FC<XerHeaderProps> = ({
                   {lang === 'FR' ? 'SÉRIES PHARE' : 'FEATURED SERIES'}
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 12px' }}>
-                  {CATALOG_PRODUCTS.slice(0, 6).map((p) => (
-                    <button
-                      key={p.slug}
-                      type="button"
-                      onClick={() => handleProductClick(p.slug)}
-                      style={{
-                        background: 'transparent',
-                        border: 0,
-                        padding: '6px 0',
-                        textAlign: 'left',
-                        color: '#C9C7C1',
-                        fontSize: 13,
-                        cursor: 'pointer',
-                      }}
-                    >
-                      {p.name}
-                    </button>
-                  ))}
+                  {model.flat
+                    .filter((m) => m.clickable)
+                    .slice(0, 6)
+                    .map((m) => (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => navigateTo(m)}
+                        style={{
+                          background: 'transparent',
+                          border: 0,
+                          padding: '6px 0',
+                          textAlign: 'left',
+                          color: '#C9C7C1',
+                          fontSize: 13,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {m.label}
+                      </button>
+                    ))}
                 </div>
+                {clickableCount === 0 && (
+                  <p
+                    style={{
+                      fontSize: 12,
+                      color: '#7A7A76',
+                      padding: '6px 0',
+                    }}
+                  >
+                    {lang === 'FR'
+                      ? 'Aucune série disponible pour le moment.'
+                      : 'No series available at the moment.'}
+                  </p>
+                )}
               </div>
             ) : (
               /* Level 2: Products Submenu with Back button */
@@ -893,61 +1075,86 @@ export const XerHeader: React.FC<XerHeaderProps> = ({
                   ← {lang === 'FR' ? 'RETOUR AU MENU PRINCIPAL' : 'BACK TO MAIN MENU'}
                 </button>
 
-                <div
-                  style={{
-                    fontSize: 10.5,
-                    letterSpacing: '.22em',
-                    color: '#7A7A76',
-                    marginBottom: 12,
-                    fontFamily: 'monospace',
-                  }}
-                >
-                  {lang === 'FR' ? 'CHOISIR UNE SÉRIE D\'AFFICHAGE' : 'SELECT A DISPLAY SERIES'}
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {CATALOG_PRODUCTS.map((p) => (
+                {model.columns.map((col) => (
+                  <div key={col.id} style={{ marginBottom: 18 }}>
                     <div
-                      key={p.slug}
-                      onClick={() => handleProductClick(p.slug)}
                       style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 14,
-                        padding: '10px 12px',
-                        background: '#121211',
-                        border: '1px solid #1c1c1b',
-                        cursor: 'pointer',
+                        fontSize: 10.5,
+                        letterSpacing: '.22em',
+                        color: '#7A7A76',
+                        marginBottom: 8,
+                        fontFamily: 'monospace',
                       }}
                     >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={p.img}
-                        alt={p.name}
-                        style={{ width: 44, height: 44, objectFit: 'cover', background: '#000' }}
-                      />
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                          <span style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>{p.name}</span>
-                          <span style={{ fontSize: 10, fontFamily: 'monospace', color: '#C3F910' }}>
-                            {p.pitch}
-                          </span>
-                        </div>
+                      {lang === 'FR' ? col.titleFr : col.titleEn}
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {col.items.map((m) => (
                         <div
+                          key={m.id}
+                          onClick={() => navigateTo(m)}
                           style={{
-                            fontSize: 11,
-                            color: '#888',
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 14,
+                            padding: '10px 12px',
+                            background: '#121211',
+                            border: '1px solid #1c1c1b',
+                            cursor: m.clickable ? 'pointer' : 'default',
+                            opacity: m.clickable ? 1 : 0.5,
                           }}
                         >
-                          {lang === 'FR' ? p.shortDescFr : p.shortDescEn}
+                          {m.img ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={m.img}
+                              alt={m.label}
+                              style={{ width: 44, height: 44, objectFit: 'cover', background: '#000' }}
+                            />
+                          ) : (
+                            <div
+                              style={{
+                                width: 44,
+                                height: 44,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                background: '#181816',
+                                border: '1px solid #242423',
+                                fontSize: 9,
+                                fontFamily: 'monospace',
+                                letterSpacing: '.1em',
+                                color: '#7A7A76',
+                              }}
+                            >
+                              {m.label.slice(0, 2).toUpperCase()}
+                            </div>
+                          )}
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                              <span style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>{m.label}</span>
+                              <span style={{ fontSize: 10, fontFamily: 'monospace', color: '#C3F910' }}>
+                                {m.tag}
+                              </span>
+                            </div>
+                            <div
+                              style={{
+                                fontSize: 11,
+                                color: '#888',
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                              }}
+                            >
+                              {lang === 'FR' ? m.descFr : m.descEn}
+                            </div>
+                          </div>
                         </div>
-                      </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -959,8 +1166,9 @@ export const XerHeader: React.FC<XerHeaderProps> = ({
         open={searchOpen}
         onClose={() => setSearchOpen(false)}
         lang={lang}
+        products={searchProducts}
         onSelectProduct={(slug) => {
-          handleProductClick(slug);
+          navigateBySlug(slug);
         }}
       />
     </>

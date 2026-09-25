@@ -6,6 +6,108 @@
   font-family: var(--font);
 }
 
+/* ── fstage-step hover & active states: neon green accent ── */
+.fstage-step.on .fstage-step-line {
+  width: 48px !important;
+  background: var(--accent, #C3F910) !important;
+  box-shadow: 0 0 10px rgba(195, 249, 16, 0.55);
+}
+.fstage-step.on:before {
+  height: 56px !important;
+  background: var(--accent, #C3F910) !important;
+  box-shadow: 0 0 12px rgba(195, 249, 16, 0.6);
+}
+.fstage-step.on .fstage-step-meta span:first-child {
+  color: var(--accent, #C3F910) !important;
+}
+.fstage-step.on h3 {
+  color: #ffffff !important;
+}
+
+.fstage-step:not(.on):hover {
+  opacity: 0.85 !important;
+}
+.fstage-step:not(.on):hover .fstage-step-text {
+  opacity: 0.85;
+  transform: translateX(6px);
+}
+.fstage-step:not(.on):hover:before {
+  height: 36px !important;
+  background: rgba(195, 249, 16, 0.6) !important;
+}
+.fstage-step:not(.on):hover .fstage-step-meta span:first-child {
+  color: var(--accent, #C3F910) !important;
+}
+.fstage-step:not(.on):hover .fstage-step-line {
+  width: 32px !important;
+  background: rgba(195, 249, 16, 0.7) !important;
+}
+.fstage-step:not(.on):hover h3 {
+  color: #ffffff !important;
+}
+
+/* ── fstage-seg progress bar hover & active ── */
+.fstage-seg.on i {
+  background: var(--accent, #C3F910) !important;
+  height: 3px !important;
+  box-shadow: 0 0 10px rgba(195, 249, 16, 0.7);
+}
+.fstage-seg:hover i {
+  background: var(--accent, #C3F910) !important;
+  height: 3px !important;
+  box-shadow: 0 0 8px rgba(195, 249, 16, 0.6);
+}
+
+/* ── Spec table row hover ── */
+.spec-row {
+  transition: background .2s ease;
+}
+.spec-row:hover {
+  background: rgba(195, 249, 16, 0.04) !important;
+}
+.spec-row:hover .spec-key {
+  color: var(--accent, #C3F910) !important;
+  font-weight: 700;
+}
+.spec-row:hover .spec-val {
+  color: #ffffff !important;
+}
+
+/* ── Next series cards hover ── */
+.next-series-card {
+  transition: all .25s ease !important;
+}
+.next-series-card:hover {
+  border-color: var(--accent, #C3F910) !important;
+  background: rgba(195, 249, 16, 0.05) !important;
+  box-shadow: 0 8px 32px rgba(195, 249, 16, 0.15) !important;
+}
+.next-series-card:hover .series-title {
+  color: #ffffff !important;
+}
+
+/* ── Universal link hover accent ── */
+a:not(.btn):not(.no-acc):hover {
+  color: var(--accent, #C3F910) !important;
+}
+
+/* ── Subnav links hover ── */
+.subnav a:hover {
+  color: var(--accent, #C3F910) !important;
+  border-bottom-color: var(--accent, #C3F910) !important;
+}
+
+/* ── Tags with accent color ── */
+.tag.on {
+  color: var(--accent, #C3F910) !important;
+  border-color: rgba(195, 249, 16, 0.4) !important;
+  background: rgba(195, 249, 16, 0.06);
+}
+.tag:hover {
+  border-color: var(--accent, #C3F910) !important;
+  color: var(--accent, #C3F910) !important;
+}
+
 /* Route /web seulement : html doit garder overflow visible (comme le /site)
    pour que l'overflow-x:hidden de body se propage au viewport ; sinon html ET
    body deviennent des scroll containers et position:sticky (showreel 600vh)

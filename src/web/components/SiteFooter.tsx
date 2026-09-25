@@ -44,23 +44,23 @@ export const SiteFooter: React.FC<SiteFooterProps> = ({
         <div className="grid grid-cols-2 md:grid-cols-4 gap-10 pb-[4.5rem] border-b border-[#1a1a1a]">
           {/* Products */}
           <div>
-            <div className="text-[10.5px] tracking-[0.22em] text-[#7a7a76] uppercase font-mono mb-5">
+            <div className="text-[11px] tracking-[0.24em] text-[#C3F910] uppercase font-mono font-bold mb-5">
               {t.products}
             </div>
             <div className="flex flex-col gap-3 text-[14px]">
-              <a href="#hero" className="text-[#c9c7c1] hover:text-white transition-colors">
+              <a href="#hero" className="text-[#c9c7c1] hover:text-[#C3F910] transition-colors">
                 PXT Fine (WP Series)
               </a>
-              <a href="#hero" className="text-[#c9c7c1] hover:text-white transition-colors">
+              <a href="#hero" className="text-[#c9c7c1] hover:text-[#C3F910] transition-colors">
                 PXT Vision
               </a>
-              <a href="#hero" className="text-[#c9c7c1] hover:text-white transition-colors">
+              <a href="#hero" className="text-[#c9c7c1] hover:text-[#C3F910] transition-colors">
                 PXT Flex
               </a>
-              <a href="#hero" className="text-[#c9c7c1] hover:text-white transition-colors">
+              <a href="#hero" className="text-[#c9c7c1] hover:text-[#C3F910] transition-colors">
                 PXT Studio
               </a>
-              <a href="#hero" className="text-[#c9c7c1] hover:text-white transition-colors">
+              <a href="#hero" className="text-[#C3F910] font-bold hover:text-[#C3F910] hover:underline transition-all">
                 {t.allSeries}
               </a>
             </div>
@@ -68,20 +68,20 @@ export const SiteFooter: React.FC<SiteFooterProps> = ({
 
           {/* Company */}
           <div>
-            <div className="text-[10.5px] tracking-[0.22em] text-[#7a7a76] uppercase font-mono mb-5">
+            <div className="text-[11px] tracking-[0.24em] text-[#C3F910] uppercase font-mono font-bold mb-5">
               {t.company}
             </div>
             <div className="flex flex-col gap-3 text-[14px]">
-              <a href="#overview" className="text-[#c9c7c1] hover:text-white transition-colors">
+              <a href="#overview" className="text-[#c9c7c1] hover:text-[#C3F910] transition-colors">
                 {t.about.replace('PixiaTech', companyName)}
               </a>
-              <a href="#fieldwork" className="text-[#c9c7c1] hover:text-white transition-colors">
+              <a href="#fieldwork" className="text-[#c9c7c1] hover:text-[#C3F910] transition-colors">
                 {t.projects}
               </a>
-              <a href="#overview" className="text-[#c9c7c1] hover:text-white transition-colors">
+              <a href="#overview" className="text-[#c9c7c1] hover:text-[#C3F910] transition-colors">
                 {t.coldLedTech}
               </a>
-              <a href="#design" className="text-[#c9c7c1] hover:text-white transition-colors">
+              <a href="#design" className="text-[#c9c7c1] hover:text-[#C3F910] transition-colors">
                 {t.experienceCenter}
               </a>
             </div>
@@ -89,7 +89,7 @@ export const SiteFooter: React.FC<SiteFooterProps> = ({
 
           {/* Standards & Compliance */}
           <div>
-            <div className="text-[10.5px] tracking-[0.22em] text-[#7a7a76] uppercase font-mono mb-5">
+            <div className="text-[11px] tracking-[0.24em] text-[#C3F910] uppercase font-mono font-bold mb-5">
               {t.standards}
             </div>
             <div className="flex flex-col gap-3 text-[14px]">
@@ -102,14 +102,14 @@ export const SiteFooter: React.FC<SiteFooterProps> = ({
 
           {/* Showroom & Contact */}
           <div>
-            <div className="text-[10.5px] tracking-[0.22em] text-[#7a7a76] uppercase font-mono mb-5">
+            <div className="text-[11px] tracking-[0.24em] text-[#C3F910] uppercase font-mono font-bold mb-5">
               {t.headquarters}
             </div>
             <div className="flex flex-col gap-2.5 text-[13.5px] text-[#c9c7c1]">
               <div className="font-bold text-white">{companyName} France</div>
               <div>{t.showroom}</div>
               <div className="text-[#7a7a76] text-xs">Saint-Ouen-sur-Seine (Grand Paris)</div>
-              <div className="mt-2 text-[#C3F910] font-mono text-xs">
+              <div className="mt-2 text-[#C3F910] font-mono text-xs font-bold">
                 contact@{companyName.toLowerCase().replace(/\s+/g, '')}.com
               </div>
             </div>
@@ -118,13 +118,15 @@ export const SiteFooter: React.FC<SiteFooterProps> = ({
 
         {/* Bottom bar */}
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-8 text-[11px] tracking-[0.15em] text-[#7a7a76] uppercase font-mono">
-          <div>
+          <div className="flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#C3F910] shadow-[0_0_8px_#C3F910]" />
             © 2026 {companyName.toUpperCase()}. {t.rights}
           </div>
-          <div className="flex gap-6">
-            <a href="#hero" className="hover:text-white transition-colors">{t.privacy}</a>
-            <a href="#hero" className="hover:text-white transition-colors">{t.legal}</a>
-            <a href="#specs" className="hover:text-white transition-colors">{t.datasheets}</a>
+          <div className="flex flex-wrap gap-5">
+            <a href="/politique-confidentialite" className="hover:text-[#C3F910] transition-colors">{t.privacy}</a>
+            <a href="/gestion-cookies" className="hover:text-[#C3F910] transition-colors">Cookies</a>
+            <a href="/mentions-legales" className="hover:text-[#C3F910] transition-colors">{t.legal}</a>
+            <a href="#specs" className="hover:text-[#C3F910] transition-colors">{t.datasheets}</a>
           </div>
         </div>
       </div>

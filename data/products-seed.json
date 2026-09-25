@@ -1,0 +1,940 @@
+{
+  "version": 1,
+  "exportedAt": "2026-09-24T00:00:00.000Z",
+  "comment": "Référence de migration du produit PXT Fine (Phase A). Source : xeron-catalog.ts, specs-data.json, pixel-tech-web-pages.json (product_wp) et contenus codés en dur des sections /web.",
+  "products": [
+    {
+      "name": "PXT Fine",
+      "slug": "pxt-fine",
+      "status": "published",
+      "order": 0,
+      "badge": "CHÂSSIS PXT FINE — 600×337,5 mm",
+      "environment": "indoor",
+      "sellingModes": ["sale"],
+      "characteristics": [
+        { "key": "PIXEL PITCH", "value": "1.2 – 3.1 mm" },
+        { "key": "LUMINOSITÉ", "value": "800 – 1 500 nits" },
+        { "key": "CHÂSSIS", "value": "600 × 337.5 mm" },
+        { "key": "PROFONDEUR", "value": "29.7 mm" },
+        { "key": "POIDS", "value": "5.8 kg / cabinet" },
+        { "key": "TAUX DE RAFRAÎCHISSEMENT", "value": "jusqu'à 7 680 Hz" },
+        { "key": "TECHNOLOGIE", "value": "ColdLED™" }
+      ],
+      "buttons": {
+        "study": "RECEVOIR UNE ÉTUDE TECHNIQUE",
+        "datasheet": "TÉLÉCHARGER LA FICHE TECHNIQUE"
+      },
+      "variants": [
+        { "name": "PXT Fine 1.2 Lite", "value": "1.25 mm", "reference": "IL-FISS-IRWP1.2 Lite" },
+        { "name": "PXT Fine 1.2 Flip", "value": "1.25 mm", "reference": "IL-FISS-IRWP1.2 Flip" },
+        { "name": "PXT Fine 1.5 Lite", "value": "1.56 mm", "reference": "IL-FISS-IRWP1.5 Lite" },
+        { "name": "PXT Fine 1.8 Lite", "value": "1.87 mm", "reference": "IL-FISS-IRWP1.8 Lite" },
+        { "name": "PXT Fine 1.56 Flip", "value": "1.56 mm", "reference": "IL-FISS-IRWP1.56 Flip" },
+        { "name": "PXT Fine 1.87 Flip", "value": "1.87 mm", "reference": "IL-FISS-IRWP1.87 Flip" },
+        { "name": "PXT Fine 2.3 Lite", "value": "2.34 mm", "reference": "IL-FISS-IRWP2.3 Lite" },
+        { "name": "PXT Fine 2.5 Lite", "value": "2.5 mm", "reference": "IL-FISS-IRWP2.5 Lite" },
+        { "name": "PXT Fine 3.1 Lite", "value": "3.12 mm", "reference": "IL-FISS-IRWP3.1 Lite" }
+      ],
+      "description": {
+        "shortFr": "L'écran LED ultra-fin conçu pour les espaces d'exception où contrôle thermique, fiabilité sans compromis et intégration architecturale sont primordiaux.",
+        "shortEn": "The wallpaper-thin LED display engineered for executive spaces where thermal control, reliability and architectural integration are critical.",
+        "detailedFr": "Chaque détail de la série PXT Fine a été pensé pour les environnements de prestige : salles de commande critiques, halls d'accueil corporate, studios broadcast et résidences privées d'exception.",
+        "detailedEn": "Every detail of the PXT Fine series has been designed for high-end environments: mission-critical command rooms, corporate lobbies, broadcast studios and exceptional private residences.",
+        "keywords": ["INTÉRIEUR", "Corporate", "Salle de contrôle", "Retail", "XR / VP"]
+      },
+      "menu": {
+        "groupFr": "INSTALLATION FIXE / INTÉRIEUR",
+        "groupEn": "FIXED INSTALLATION / INDOOR",
+        "tag": "FINE PITCH 16:9"
+      },
+      "hero": {
+        "title": "PXT Fine",
+        "subtitle": "L'alliance absolue de la précision millimétrique et de l'intensité visuelle.",
+        "primaryCta": "RECEVOIR UNE ÉTUDE TECHNIQUE",
+        "secondaryCta": "TÉLÉCHARGER LA FICHE TECHNIQUE",
+        "breadcrumbCategoryFr": "ÉCRAN LED INTÉRIEUR",
+        "breadcrumbCategoryEn": "INDOOR LED DISPLAY",
+        "tags": ["INTÉRIEUR", "Corporate", "Salle de contrôle", "Retail", "XR / VP"],
+        "specs": [
+          { "label": "PITCH PIXEL", "value": "1.2–3.1 mm" },
+          { "label": "LUMINOSITÉ · NITS", "value": "800–1,500" },
+          { "label": "CHÂSSIS", "value": "600×337.5 mm" },
+          { "label": "ENVIRONNEMENT", "value": "INTÉRIEUR" }
+        ],
+        "image": "/assets/products/wp.jpg",
+        "bgColor": "#080808"
+      },
+      "overview": {
+        "eyebrow": "01 / APERÇU",
+        "title": "La pureté visuelle sans compromis.",
+        "description": "Chaque détail de la série PXT Fine a été pensé pour les environnements de prestige : salles de commande critiques, halls d'accueil corporate, studios broadcast et résidences privées d'exception.",
+        "image": "/uploads/products/wp/wp-cabinet.jpg",
+        "video": {
+          "poster": "/uploads/products/wp/wp-cabinet.jpg",
+          "sources": [
+            { "src": "/uploads/products/wp/wp-cabinet.webm", "type": "video/webm" },
+            { "src": "/uploads/products/wp/wp-cabinet.mov", "type": "video/quicktime" }
+          ]
+        },
+        "stats": [
+          { "value": "50%", "label": "50%", "labelFr": "d'énergie consommée en moins comparé aux LED standard", "labelEn": "less power than standard LED" },
+          { "value": "29,5 mm", "label": "29,5 mm", "labelFr": "profondeur totale du châssis – ultra affleurant", "labelEn": "total screen depth – paper thin" },
+          { "value": "8K", "label": "8K", "labelFr": "résolution maximale supportée", "labelEn": "max resolution supported" }
+        ],
+        "technologies": [
+          {
+            "num": "01",
+            "title": "ColdLED",
+            "description": "La chaleur est l'ennemi juré des diodes LED. ColdLED l'élimine à la source — prolongeant la durée de vie et maintenant une luminosité optimale là où les écrans traditionnels s'affaiblissent."
+          },
+          {
+            "num": "02",
+            "title": "SolidSkin",
+            "description": "La couche protectrice SolidSkin et sa certification IP65 en face avant protègent chaque diode contre l'humidité, la poussière et les chocs — assurant une image plus douce et sans reflet sur toute la surface."
+          }
+        ]
+      },
+      "design": {
+        "eyebrow": "02 / CONCEPTION ARCHITECTURALE",
+        "title": "Usinage d'orfèvrerie & Châssis Monobloc",
+        "cabinetDim": "600 × 337,5 × 29,7 mm",
+        "weight": "5.8 kg / cabinet",
+        "material": "Aluminium Die-Cast Haute Densité",
+        "image": "/uploads/products/wp/feature-1.jpg",
+        "specsList": [
+          { "label": "CHÂSSIS", "value": "600×337.5 mm" },
+          { "label": "PITCH PIXEL", "value": "1.2–3.1 mm" },
+          { "label": "LUMINOSITÉ", "value": "800–1,500" },
+          { "label": "ENVIRONNEMENT", "value": "INTÉRIEUR" }
+        ],
+        "configs": [
+          {
+            "num": "01",
+            "title": "Fixation murale",
+            "description": "Support ultra-fin avec seulement 37 mm de profondeur totale. Finition invisible et maintenance 100% avant sans décrocher le panneau."
+          },
+          {
+            "num": "02",
+            "title": "Totem mobile",
+            "description": "Se transforme en écran mobile haute définition. Bordure de protection anti-choc sécurisant les diodes lors des déplacements."
+          },
+          {
+            "num": "03",
+            "title": "Angles créatifs",
+            "description": "Configurations d'angles pour espaces en L et enveloppants. Compatible avec la série XR Wrap pour installations courbes."
+          }
+        ]
+      },
+      "features": {
+        "eyebrow": "03 / CARACTÉRISTIQUES DE POINTE",
+        "title": "Technologies Propriétaires Brevetées",
+        "items": [
+          { "num": "01", "title": "Plateforme d'efficacité énergétique durable", "description": "Fonctionnement à basse température pour une stabilité accrue et des coûts d'exploitation réduits.", "image": "/uploads/products/wp/feature-1.jpg", "contain": false },
+          { "num": "02", "title": "Profil ultra-fin de 29,7 mm", "description": "S'intègre parfaitement dans les espaces restreints des intérieurs prestigieux et des salles de contrôle.", "image": "/uploads/products/wp/feature-2.jpg", "contain": true },
+          { "num": "03", "title": "Qualité d'image Premium HDR10", "description": "Contraste saisissant et restitution visuelle ultra-stable pour les applications critiques.", "image": "/uploads/products/wp/feature-3.jpg", "contain": false },
+          { "num": "04", "title": "Contraste extrême de 30 000:1", "description": "Noirs d'une profondeur absolue et précision colorimétrique maximale pour les plateaux TV et la production virtuelle.", "image": "/uploads/products/wp/feature-4.jpg", "contain": false },
+          { "num": "05", "title": "Fréquence de rafraîchissement jusqu'à 7 680 Hz", "description": "Rendu parfait face caméra avec un temps de réponse instantané de l'ordre de la nanoseconde.", "image": "/uploads/products/wp/feature-5.jpg", "contain": false },
+          { "num": "06", "title": "Certification CEM Classe B", "description": "Répond aux normes les plus exigeantes pour les centres de commandement et les salles de crise.", "image": "/uploads/products/wp/feature-6.jpg", "contain": false },
+          { "num": "07", "title": "Maintenance intégrale par l'avant", "description": "Intervention magnétique sans interrompre le fonctionnement dans les environnements 24/7.", "image": "/uploads/products/wp/feature-7.jpg", "contain": false }
+        ]
+      },
+      "specs": {
+        "groups": [
+          {
+            "id": "general",
+            "label": "GENERAL",
+            "rows": [
+              { "key": "env", "label": "IN / OUT" },
+              { "key": "arrangement", "label": "LED ARRANGEMENT" }
+            ]
+          },
+          {
+            "id": "physical",
+            "label": "PHYSICAL",
+            "rows": [
+              { "key": "pitch", "label": "PIXEL PITCH" },
+              { "key": "density", "label": "PHYSICAL DENSITY" },
+              { "key": "moduleRes", "label": "MODULE RESOLUTION (H/V)" },
+              { "key": "moduleDim", "label": "MODULE DIMENSIONS" },
+              { "key": "cabRes", "label": "CABINET RESOLUTION (H/V)" },
+              { "key": "cabDim", "label": "CABINET DIMENSIONS" },
+              { "key": "weight", "label": "CABINET WEIGHT" }
+            ]
+          },
+          {
+            "id": "optical",
+            "label": "OPTICAL",
+            "rows": [
+              { "key": "brightness", "label": "BRIGHTNESS" },
+              { "key": "refresh", "label": "REFRESH RATE" },
+              { "key": "scan", "label": "SCAN RATE" },
+              { "key": "angle", "label": "VIEWING ANGLE (H/V)" }
+            ]
+          },
+          {
+            "id": "electrical",
+            "label": "ELECTRICAL",
+            "rows": [
+              { "key": "maxPower", "label": "MAX POWER (W / PANEL)" },
+              { "key": "avgPower", "label": "AVG POWER (W / PANEL)" },
+              { "key": "powerSource", "label": "OPERATING POWER SOURCE" },
+              { "key": "signal", "label": "SIGNAL INPUT" }
+            ]
+          },
+          {
+            "id": "environmental",
+            "label": "ENVIRONMENTAL",
+            "rows": [
+              { "key": "ip", "label": "IP RATING" },
+              { "key": "temp", "label": "OPERATING TEMPERATURE" },
+              { "key": "transparency", "label": "TRANSPARENCY" },
+              { "key": "certs", "label": "CERTIFICATIONS" }
+            ]
+          }
+        ],
+        "models": [
+          {
+            "name": "IL-FISS-IRWP1.2 Lite",
+            "tag": "DATASHEET",
+            "specs": {
+              "angle": "160°/160°",
+              "arrangement": "3-in-1 SMD",
+              "avgPower": "45 W",
+              "brightness": "800 nits",
+              "cabDim": "600 × 337.5 mm",
+              "cabRes": "480 × 270 px",
+              "certs": "CE · FCC · ETL · CB · RoHS · REACH · WEEE",
+              "density": "640,000 px/m²",
+              "env": "INDOOR",
+              "ip": "IP30",
+              "maxPower": "135 W",
+              "moduleDim": "300 × 168.8 mm",
+              "moduleRes": "240 × 135 px",
+              "pitch": "1.25 mm",
+              "powerSource": "100-240V AC, 50/60 Hz",
+              "refresh": "3,840 Hz",
+              "scan": "1/30",
+              "signal": "DVI · HDMI · DP · SDI · RJ45",
+              "temp": "-10°C ~ +45°C",
+              "transparency": "0%",
+              "weight": "5.2 kg (11.46lb)"
+            }
+          },
+          {
+            "name": "IL-FISS-IRWP1.2 Flip",
+            "tag": "DATASHEET",
+            "specs": {
+              "angle": "160°/160°",
+              "arrangement": "Flip chip",
+              "avgPower": "18 W",
+              "brightness": "1000 nits",
+              "cabDim": "600 × 337.5 mm",
+              "cabRes": "480 × 270 px",
+              "certs": "CE · FCC · ETL · CB · RoHS · REACH · WEEE",
+              "density": "640,000 px/m²",
+              "env": "INDOOR",
+              "ip": "IP30",
+              "maxPower": "55 W",
+              "moduleDim": "300 × 168.8 mm",
+              "moduleRes": "240 × 135 px",
+              "pitch": "1.25 mm",
+              "powerSource": "100-240V AC, 50/60 Hz",
+              "refresh": "3,840 Hz",
+              "scan": "1/27",
+              "signal": "DVI · HDMI · DP · SDI · RJ45",
+              "temp": "-10°C ~ +45°C",
+              "transparency": "0%",
+              "weight": "5.2 kg (11.46lb)"
+            }
+          },
+          {
+            "name": "IL-FISS-IRWP1.5 Lite",
+            "tag": "DATASHEET",
+            "specs": {
+              "angle": "160°/160°",
+              "arrangement": "3-in-1 SMD",
+              "avgPower": "50 W",
+              "brightness": "800 nits",
+              "cabDim": "600 × 337.5 mm",
+              "cabRes": "384 × 216 px",
+              "certs": "CE · FCC · ETL · CB · RoHS · REACH · WEEE",
+              "density": "409,600 px/m²",
+              "env": "INDOOR",
+              "ip": "IP30",
+              "maxPower": "150 W",
+              "moduleDim": "300 × 168.8 mm",
+              "moduleRes": "192 × 108 px",
+              "pitch": "1.56 mm",
+              "powerSource": "100-240V AC, 50/60 Hz",
+              "refresh": "3,840 Hz",
+              "scan": "1/27",
+              "signal": "DVI · HDMI · DP · SDI · RJ45",
+              "temp": "-10°C ~ +45°C",
+              "transparency": "0%",
+              "weight": "5.2 kg (11.46lb)"
+            }
+          },
+          {
+            "name": "IL-FISS-IRWP1.8 Lite",
+            "tag": "DATASHEET",
+            "specs": {
+              "angle": "160°/160°",
+              "arrangement": "3-in-1 SMD",
+              "avgPower": "50 W",
+              "brightness": "800 nits",
+              "cabDim": "600 × 337.5 mm",
+              "cabRes": "320 × 180 px",
+              "certs": "CE · FCC · ETL · CB · RoHS · REACH · WEEE",
+              "density": "284,444 px/m²",
+              "env": "INDOOR",
+              "ip": "IP30",
+              "maxPower": "150 W",
+              "moduleDim": "300 × 168.8 mm",
+              "moduleRes": "160 × 90 px",
+              "pitch": "1.87 mm",
+              "powerSource": "100-240V AC, 50/60 Hz",
+              "refresh": "3,840 Hz",
+              "scan": "1/30",
+              "signal": "DVI · HDMI · DP · SDI · RJ45",
+              "temp": "-10°C ~ +45°C",
+              "transparency": "0%",
+              "weight": "5.2 kg (11.46lb)"
+            }
+          },
+          {
+            "name": "IL-FISS-IRWP1.56 Flip",
+            "tag": "DATASHEET",
+            "specs": {
+              "angle": "160°/160°",
+              "arrangement": "Flip chip",
+              "avgPower": "24 W",
+              "brightness": "1000 nits",
+              "cabDim": "600 × 337.5 mm",
+              "cabRes": "384 × 216 px",
+              "certs": "CE · FCC · ETL · CB · RoHS · REACH · WEEE",
+              "density": "409,600 px/m²",
+              "env": "INDOOR",
+              "ip": "IP30",
+              "maxPower": "71 W",
+              "moduleDim": "300 × 168.8 mm",
+              "moduleRes": "192 × 108 px",
+              "pitch": "1.56 mm",
+              "powerSource": "100-240V AC, 50/60 Hz",
+              "refresh": "3,840 Hz",
+              "scan": "1/27",
+              "signal": "DVI · HDMI · DP · SDI · RJ45",
+              "temp": "-10°C ~ +45°C",
+              "weight": "5.2 kg (11.46lb)"
+            }
+          },
+          {
+            "name": "IL-FISS-IRWP1.87 Flip",
+            "tag": "DATASHEET",
+            "specs": {
+              "angle": "160°/160°",
+              "arrangement": "Flip chip",
+              "avgPower": "20 W",
+              "brightness": "1000 nits",
+              "cabDim": "600 × 337.5 mm",
+              "cabRes": "320 × 180 px",
+              "certs": "CE · FCC · ETL · CB · RoHS · REACH · WEEE",
+              "density": "284,444 px/m²",
+              "env": "INDOOR",
+              "ip": "IP30",
+              "maxPower": "61 W",
+              "moduleDim": "300 × 168.8 mm",
+              "moduleRes": "160 × 90 px",
+              "pitch": "1.87 mm",
+              "powerSource": "100-240V AC, 50/60 Hz",
+              "refresh": "3,840 Hz",
+              "scan": "1/30",
+              "signal": "DVI, HDMI, DP, SDI, RJ45",
+              "temp": "-10°C ~ +45°C",
+              "weight": "5.2 kg (11.46lb)"
+            }
+          },
+          {
+            "name": "IL-FISS-IRWP2.3 Lite",
+            "tag": "DATASHEET",
+            "specs": {
+              "angle": "160°/160°",
+              "arrangement": "3-in-1 SMD",
+              "avgPower": "35 W",
+              "brightness": "1000 nits",
+              "cabDim": "600 × 337.5 mm",
+              "cabRes": "256 × 144 px",
+              "certs": "CE · FCC · ETL · CB · RoHS · REACH · WEEE",
+              "density": "182,044 px/m²",
+              "env": "INDOOR",
+              "ip": "IP30",
+              "maxPower": "105 W",
+              "moduleDim": "300 × 168.8 mm",
+              "moduleRes": "128 × 72 px",
+              "pitch": "2.34 mm",
+              "powerSource": "100-240V AC, 50/60 Hz",
+              "refresh": "3,840 Hz",
+              "scan": "1/24",
+              "signal": "DVI · HDMI · DP · SDI · RJ45",
+              "temp": "-10°C ~ +45°C",
+              "transparency": "0%",
+              "weight": "5.2 kg (11.46lb)"
+            }
+          },
+          {
+            "name": "IL-FISS-IRWP2.5 Lite",
+            "tag": "DATASHEET",
+            "specs": {
+              "angle": "160°/160°",
+              "arrangement": "3-in-1 SMD",
+              "avgPower": "35 W",
+              "brightness": "1200 nits",
+              "cabDim": "600 × 337.5 mm",
+              "cabRes": "240 × 135 px",
+              "certs": "CE · FCC · ETL · CB · RoHS · REACH · WEEE",
+              "density": "160,000 px/m²",
+              "env": "INDOOR",
+              "ip": "IP30",
+              "maxPower": "105 W",
+              "moduleDim": "300 × 337.5 mm",
+              "moduleRes": "120 × 135 px",
+              "pitch": "2.5 mm",
+              "powerSource": "100-240V AC, 50/60 Hz",
+              "refresh": "3,840 Hz",
+              "scan": "1/30",
+              "signal": "DVI · HDMI · DP · SDI · RJ45",
+              "temp": "-10°C ~ +45°C",
+              "transparency": "0%",
+              "weight": "5.2 kg (11.46lb)"
+            }
+          },
+          {
+            "name": "IL-FISS-IRWP3.1 Lite",
+            "tag": "DATASHEET",
+            "specs": {
+              "angle": "160°/160°",
+              "arrangement": "3-in-1 SMD",
+              "avgPower": "40 W",
+              "brightness": "1200 nits",
+              "cabDim": "600 × 337.5 mm",
+              "cabRes": "192 × 108 px",
+              "certs": "CE · FCC · ETL · CB · RoHS · REACH · WEEE",
+              "density": "102,400 px/m²",
+              "env": "INDOOR",
+              "ip": "IP30",
+              "maxPower": "120 W",
+              "moduleDim": "300 × 168.8 mm",
+              "moduleRes": "96 × 54 px",
+              "pitch": "3.12 mm",
+              "powerSource": "100-240V AC, 50/60 Hz",
+              "refresh": "3,840 Hz",
+              "scan": "1/24",
+              "signal": "DVI · HDMI · DP · SDI · RJ45",
+              "temp": "-10°C ~ +45°C",
+              "transparency": "0%",
+              "weight": "5.2 kg (11.46lb)"
+            }
+          }
+        ]
+      },
+      "fieldwork": {
+        "eyebrow": "05 / SUR LE TERRAIN",
+        "title": "Installations & Réalisations",
+        "projects": [
+          {
+            "title": "Centre de Contrôle Stratégique",
+            "location": "Paris La Défense",
+            "pitch": "P1.2 Fine Pitch",
+            "image": "/uploads/projects/westfield-paris-retail-led-screen.jpg"
+          },
+          {
+            "title": "Ministère de la Culture & Pavillon XR",
+            "location": "Riyad, KSA",
+            "pitch": "P1.5 XR Studio",
+            "image": "/uploads/projects/xeron-led-screens-for-saudi-arabias-ministry-of-culture.jpg"
+          }
+        ]
+      },
+      "next": {
+        "prev": { "name": "WK Series", "tagline": "Écran LED fin pitch intérieur" },
+        "next": { "name": "PXT Ultra", "tagline": "Écran LED fin pitch intérieur" },
+        "headline": "Donnons vie à votre affichage.",
+        "headlineHighlight": "votre affichage.",
+        "cta": "Démarrer un projet →"
+      },
+      "seo": {
+        "title": "PXT Fine - Écran LED Haute Précision · PIXIATECH",
+        "description": "Cabinet aluminium usiné 600x337.5 mm, pitch ultra-fin, calibrage 16-bit et rafraîchissement 7680 Hz."
+      },
+      "media": {
+        "photos": [
+          { "url": "/uploads/products/wp/module-1.jpg" },
+          { "url": "/uploads/products/wp/module-3.jpg" },
+          { "url": "/uploads/products/wp/feature-1.jpg" },
+          { "url": "/uploads/products/wp/feature-2.jpg" },
+          { "url": "/uploads/products/wp/feature-3.jpg" },
+          { "url": "/uploads/products/wp/feature-4.jpg" },
+          { "url": "/uploads/products/wp/feature-5.jpg" },
+          { "url": "/uploads/products/wp/feature-6.jpg" },
+          { "url": "/uploads/products/wp/feature-7.jpg" }
+        ],
+        "videos": [
+          { "url": "/uploads/products/wp/wp-cabinet.webm", "type": "video" },
+          { "url": "/uploads/products/wp/wp-cabinet.mov", "type": "video" }
+        ]
+      },
+      "files": [
+        { "name": "PXT Fine — Fiche Technique.pdf", "url": "" }
+      ]
+    },
+    {
+      "name": "WK Series",
+      "slug": "wk-series",
+      "status": "published",
+      "order": 1,
+      "badge": "nouveau",
+      "environment": "indoor",
+      "sellingModes": [
+        "sale",
+        "rental"
+      ],
+      "characteristics": [
+        {
+          "key": "Pitch pixel",
+          "value": "1,25 mm"
+        },
+        {
+          "key": "Luminosité (nits)",
+          "value": "3 000 nits"
+        },
+        {
+          "key": "Dimensions châssis",
+          "value": "500 × 500 × 85 mm"
+        },
+        {
+          "key": "Poids châssis",
+          "value": "12,5 kg"
+        },
+        {
+          "key": "Agencement LED",
+          "value": "3 en 1 (SMD 1515)"
+        },
+        {
+          "key": "Résolution module",
+          "value": "128 × 128 px"
+        },
+        {
+          "key": "Dimensions module",
+          "value": "160 × 160 mm"
+        },
+        {
+          "key": "Résolution châssis",
+          "value": "384 × 384 px"
+        },
+        {
+          "key": "Taux de rafraîchissement",
+          "value": "3 840 Hz"
+        },
+        {
+          "key": "Angle de vision",
+          "value": "160° H / 160° V"
+        },
+        {
+          "key": "Puissance max",
+          "value": "850 W/m²"
+        },
+        {
+          "key": "Puissance moyenne",
+          "value": "280 W/m²"
+        },
+        {
+          "key": "Source d'alimentation",
+          "value": "200–240 V AC / 48 V DC"
+        },
+        {
+          "key": "Indice IP",
+          "value": "IP30"
+        },
+        {
+          "key": "Température de fonctionnement",
+          "value": "0 °C à 40 °C"
+        },
+        {
+          "key": "Certifications",
+          "value": "CE · FCC · RoHS"
+        }
+      ],
+      "buttons": {
+        "study": "DEMANDER UNE ÉTUDE",
+        "datasheet": "TÉLÉCHARGER LA FICHE TECHNIQUE"
+      },
+      "variants": [
+        {
+          "name": "WK A",
+          "value": "Version compacte 500 × 500",
+          "reference": "PXT-WK-A-500"
+        },
+        {
+          "name": "WK A Slim",
+          "value": "Version allégée 45 mm",
+          "reference": "PXT-WK-AS-500"
+        },
+        {
+          "name": "WK P",
+          "value": "Version Premium 750 × 500",
+          "reference": "PXT-WK-P-750"
+        },
+        {
+          "name": "WK S",
+          "value": "Version RP 750 × 750",
+          "reference": "PXT-WK-S-750"
+        }
+      ],
+      "description": {
+        "shortFr": "La série WK associe une densité d'image exceptionnelle à des châssis légers et affleurants, pensés pour le retail et l'accueil d'entreprise.",
+        "detailedFr": "Chaque châssis de la série WK intègre l'électronique complète : alimentation et récepteur sont logés au cœur du caisson, réduisant les raccordements à un seul câble signal et un seul câble puissance. Les modules se remplacent par l'avant, sans outil, grâce à un alignement magnétique assisté. La finition antireflet assure une lecture confortable à toute distance, même en éclairage zénithal. Une version location est disponible pour vos opérations promotionnelles et vos accueils temporaires.",
+        "keywords": [
+          "Pitch 1,25 mm",
+          "Écran LED intérieur",
+          "Location écran LED",
+          "Showroom",
+          "Vidéowall retail"
+        ]
+      },
+      "menu": {
+        "groupFr": "Écrans LED intérieurs",
+        "groupEn": "Indoor LED displays",
+        "tag": "Nouveau"
+      },
+      "hero": {
+        "title": "WK Series",
+        "subtitle": "La définition au service de vos vitrines.",
+        "primaryCta": "Demander une étude",
+        "secondaryCta": "TÉLÉCHARGER LA FICHE TECHNIQUE",
+        "bgColor": "#0E1A2B",
+        "tags": [
+          "FIN PITCH",
+          "Retail",
+          "Accueil entreprise",
+          "Location"
+        ],
+        "breadcrumbCategoryFr": "ÉCRAN LED INTÉRIEUR",
+        "breadcrumbCategoryEn": "INDOOR LED DISPLAY",
+        "specs": [
+          {
+            "label": "PITCH PIXEL",
+            "value": "1,25 mm"
+          },
+          {
+            "label": "CHÂSSIS",
+            "value": "500 × 500 × 85 mm"
+          },
+          {
+            "label": "ENVIRONNEMENT",
+            "value": "ÉCRAN LED INTÉRIEUR"
+          }
+        ],
+        "image": "/media/products/wk-series-hero.jpg"
+      },
+      "overview": {
+        "eyebrow": "01 / APERÇU",
+        "title": "Le fin pitch léger, pensé pour le retail.",
+        "description": "Chaque détail de la série WK a été conçu pour vos vitrines, showrooms et espaces d'accueil : un rendu ultra-dense, une pose affleurante et une maintenance sans outil.",
+        "stats": [
+          {
+            "value": "1,25 mm",
+            "label": "Pixel pitch"
+          },
+          {
+            "value": "3 000 nits",
+            "label": "Luminosité"
+          },
+          {
+            "value": "12,5 kg",
+            "label": "Poids par châssis"
+          }
+        ],
+        "image": "/media/products/wk-series-hero.jpg"
+      },
+      "design": {
+        "eyebrow": "02 / CONCEPTION",
+        "title": "Léger, affleurant, modulaire.",
+        "cabinetDim": "500 × 500 × 85 mm",
+        "weight": "12,5 kg / châssis",
+        "material": "Aluminium moulé"
+      },
+      "features": {
+        "items": [
+          {
+            "num": "01",
+            "title": "Module sans frontal",
+            "description": "Bandeau entièrement exposeur : aucun cadre de fixation visible entre les modules."
+          },
+          {
+            "num": "02",
+            "title": "Alignement magnétique",
+            "description": "Modules remplacés par l'avant, sans outil, avec alignement assisté."
+          },
+          {
+            "num": "03",
+            "title": "Électronique intégrée",
+            "description": "Alimentation et récepteur logés dans le châssis : un seul raccord."
+          },
+          {
+            "num": "04",
+            "title": "Finition antireflet",
+            "description": "Lecture confortable à toute distance, même en éclairage zénithal."
+          }
+        ]
+      },
+      "specs": {
+        "groups": [
+          {
+            "id": "general",
+            "label": "GENERAL",
+            "rows": [
+              {
+                "key": "env",
+                "label": "IN / OUT"
+              },
+              {
+                "key": "arrangement",
+                "label": "LED ARRANGEMENT"
+              }
+            ]
+          },
+          {
+            "id": "physical",
+            "label": "PHYSICAL",
+            "rows": [
+              {
+                "key": "pitch",
+                "label": "PIXEL PITCH"
+              },
+              {
+                "key": "density",
+                "label": "PHYSICAL DENSITY"
+              },
+              {
+                "key": "moduleRes",
+                "label": "MODULE RESOLUTION (H/V)"
+              },
+              {
+                "key": "moduleDim",
+                "label": "MODULE DIMENSIONS"
+              },
+              {
+                "key": "cabRes",
+                "label": "CABINET RESOLUTION (H/V)"
+              },
+              {
+                "key": "cabDim",
+                "label": "CABINET DIMENSIONS"
+              },
+              {
+                "key": "weight",
+                "label": "CABINET WEIGHT"
+              }
+            ]
+          },
+          {
+            "id": "optical",
+            "label": "OPTICAL",
+            "rows": [
+              {
+                "key": "brightness",
+                "label": "BRIGHTNESS"
+              },
+              {
+                "key": "refresh",
+                "label": "REFRESH RATE"
+              },
+              {
+                "key": "scan",
+                "label": "SCAN RATE"
+              },
+              {
+                "key": "angle",
+                "label": "VIEWING ANGLE (H/V)"
+              }
+            ]
+          },
+          {
+            "id": "electrical",
+            "label": "ELECTRICAL",
+            "rows": [
+              {
+                "key": "maxPower",
+                "label": "MAX POWER (W / PANEL)"
+              },
+              {
+                "key": "avgPower",
+                "label": "AVG POWER (W / PANEL)"
+              },
+              {
+                "key": "powerSource",
+                "label": "OPERATING POWER SOURCE"
+              },
+              {
+                "key": "signal",
+                "label": "SIGNAL INPUT"
+              }
+            ]
+          },
+          {
+            "id": "environmental",
+            "label": "ENVIRONMENTAL",
+            "rows": [
+              {
+                "key": "ip",
+                "label": "IP RATING"
+              },
+              {
+                "key": "temp",
+                "label": "OPERATING TEMPERATURE"
+              },
+              {
+                "key": "transparency",
+                "label": "TRANSPARENCY"
+              },
+              {
+                "key": "certs",
+                "label": "CERTIFICATIONS"
+              }
+            ]
+          }
+        ],
+        "models": [
+          {
+            "name": "WK A",
+            "tag": "DATASHEET",
+            "specs": {
+              "env": "INDOOR",
+              "arrangement": "3-in-1 SMD",
+              "pitch": "1.25 mm",
+              "density": "640,000 px/m²",
+              "moduleRes": "128 × 128 px",
+              "moduleDim": "160 × 160 mm",
+              "cabRes": "384 × 384 px",
+              "cabDim": "500 × 500 mm",
+              "weight": "12.5 kg",
+              "brightness": "3,000 nits",
+              "refresh": "3,840 Hz",
+              "scan": "1/30",
+              "angle": "160° / 160°",
+              "maxPower": "212 W",
+              "avgPower": "70 W",
+              "powerSource": "200-240V AC / 48V DC",
+              "signal": "DVI · HDMI · DP · RJ45",
+              "ip": "IP30",
+              "temp": "0°C ~ 40°C",
+              "certs": "CE · FCC · RoHS"
+            }
+          },
+          {
+            "name": "WK P",
+            "tag": "DATASHEET",
+            "specs": {
+              "env": "INDOOR",
+              "arrangement": "3-in-1 SMD",
+              "pitch": "1.87 mm",
+              "density": "286,000 px/m²",
+              "moduleRes": "192 × 96 px",
+              "moduleDim": "240 × 120 mm",
+              "cabRes": "400 × 400 px",
+              "cabDim": "750 × 500 mm",
+              "weight": "15.8 kg",
+              "brightness": "2,000 nits",
+              "refresh": "3,840 Hz",
+              "scan": "1/16",
+              "angle": "160° / 160°",
+              "maxPower": "185 W",
+              "avgPower": "60 W",
+              "powerSource": "200-240V AC / 48V DC",
+              "signal": "DVI · HDMI · DP · RJ45",
+              "ip": "IP30",
+              "temp": "0°C ~ 40°C",
+              "certs": "CE · FCC · RoHS"
+            }
+          },
+          {
+            "name": "WK S",
+            "tag": "DATASHEET",
+            "specs": {
+              "env": "INDOOR",
+              "arrangement": "3-in-1 SMD",
+              "pitch": "2.34 mm",
+              "density": "182,000 px/m²",
+              "moduleRes": "192 × 96 px",
+              "moduleDim": "240 × 120 mm",
+              "cabRes": "576 × 288 px",
+              "cabDim": "750 × 750 mm",
+              "weight": "21.5 kg",
+              "brightness": "2,000 nits",
+              "refresh": "3,840 Hz",
+              "scan": "1/12",
+              "angle": "160° / 160°",
+              "maxPower": "150 W",
+              "avgPower": "48 W",
+              "powerSource": "200-240V AC / 48V DC",
+              "signal": "DVI · HDMI · DP · RJ45",
+              "ip": "IP30",
+              "temp": "0°C ~ 40°C",
+              "certs": "CE · FCC · RoHS"
+            }
+          }
+        ]
+      },
+      "fieldwork": {
+        "projects": [
+          {
+            "title": "Mur d'images LED de 8 m² au point de vente multimarque.",
+            "location": "Paris, France • 2025",
+            "pitch": "01"
+          },
+          {
+            "title": "Vidéowall 2 × 2 en accueil d'entreprise.",
+            "location": "Genève, Suisse • 2024",
+            "pitch": "02"
+          }
+        ]
+      },
+      "next": {
+        "prev": {
+          "name": "PXT Fine",
+          "tagline": "Écran LED fin pitch intérieur"
+        },
+        "next": {
+          "name": "PXT Ultra",
+          "tagline": "Écran LED fin pitch intérieur"
+        },
+        "headline": "Donnons vie à votre affichage.",
+        "headlineHighlight": "votre affichage.",
+        "cta": "Démarrer un projet →"
+      },
+      "seo": {
+        "title": "WK Series - Écran LED Fin Pitch Intérieur · PIXIATECH",
+        "description": "La série WK associe une densité d'image exceptionnelle à des châssis légers et affleurants, pensés pour le retail et l'accueil d'entreprise."
+      },
+      "media": {
+        "photos": [
+          {
+            "name": "wk-series-hero.jpg",
+            "url": "/media/products/wk-series-hero.jpg"
+          },
+          {
+            "name": "wk-series-1.jpg",
+            "url": "/media/products/wk-series-1.jpg"
+          },
+          {
+            "name": "wk-series-2.jpg",
+            "url": "/media/products/wk-series-2.jpg"
+          },
+          {
+            "name": "wk-series-3.jpg",
+            "url": "/media/products/wk-series-3.jpg"
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -12,6 +12,7 @@ import { FloatingChatWrapper } from '@/components/chat/FloatingChatWrapper';
 import { RoleProvider } from '@/contexts/RoleContext';
 import { SiteBanners } from './SiteBanners';
 import { ExpandableTabs } from '@/components/ui/expandable-tabs';
+import { CookieConsentBanner } from '@/components/cookies/CookieConsentBanner';
 import { Home, Store, ShoppingBag, User, LayoutDashboard, Package, Settings, LogOut } from 'lucide-react';
 
 function useProtectMedia() {
@@ -47,7 +48,8 @@ export function LayoutProvider({
   const router = useRouter();
   const isAdminPage = pathname.startsWith('/admin');
   const isEmbedPage = pathname.startsWith('/embed') || pathname.startsWith('/chat-widget');
-  const isWebPage = pathname.startsWith('/web');
+  const isLegalPage = pathname.startsWith('/mentions-legales') || pathname.startsWith('/politique-confidentialite') || pathname.startsWith('/gestion-cookies');
+  const isWebPage = pathname.startsWith('/web') || isLegalPage;
   const isQuotePage = pathname.startsWith('/quote');
   const isFrontendPage = !isAdminPage && !isEmbedPage && !isWebPage;
   const isBoutiquePage = pathname.startsWith('/boutique');
@@ -132,6 +134,7 @@ export function LayoutProvider({
           </CartProvider>
           </ProfileProvider>
         </ThemeProvider>
+        {!isAdminPage && !isEmbedPage && <CookieConsentBanner />}
         <ShadcnToaster />
         <SonnerToaster 
           position="bottom-right" 

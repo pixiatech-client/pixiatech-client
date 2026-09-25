@@ -1,17 +1,32 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { CATALOG_PRODUCTS } from './xeron-catalog';
 import { Language } from '../xeron-translations';
+
+export interface SearchProduct {
+  slug: string;
+  name: string;
+  tag: string;
+  shortEn: string;
+  shortFr: string;
+  img: string;
+}
 
 interface SearchModalProps {
   open: boolean;
   onClose: () => void;
   lang: Language;
+  products?: SearchProduct[];
   onSelectProduct?: (slug: string) => void;
 }
 
-export const SearchModal: React.FC<SearchModalProps> = ({ open, onClose, lang, onSelectProduct }) => {
+export const SearchModal: React.FC<SearchModalProps> = ({
+  open,
+  onClose,
+  lang,
+  products = [],
+  onSelectProduct,
+}) => {
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -37,8 +52,20 @@ export const SearchModal: React.FC<SearchModalProps> = ({ open, onClose, lang, o
 
   const q = query.trim().toLowerCase();
 
+  const pxtFine = products.find((p) => p.slug === 'pxt-fine') ?? products.find((p) => p.slug === 'wp');
+
   const quickLinks = [
-    { label: 'PXT Fine', action: () => { onSelectProduct?.('wp'); onClose(); } },
+    ...(pxtFine
+      ? [
+          {
+            label: 'PXT Fine',
+            action: () => {
+              onSelectProduct?.(pxtFine.slug);
+              onClose();
+            },
+          },
+        ]
+      : []),
     { label: lang === 'FR' ? 'Écran Cinétique' : 'Kinetic Screen', hash: '#featured' },
     { label: 'ColdLED', hash: '#technology' },
     { label: lang === 'FR' ? 'Marchés & Projets' : 'Markets & Projects', hash: '#markets' },
@@ -47,13 +74,12 @@ export const SearchModal: React.FC<SearchModalProps> = ({ open, onClose, lang, o
   ];
 
   const filteredProducts = q
-    ? CATALOG_PRODUCTS.filter(
+    ? products.filter(
         (p) =>
           p.name.toLowerCase().includes(q) ||
-          p.menuTag.toLowerCase().includes(q) ||
-          p.pitch.toLowerCase().includes(q) ||
-          p.shortDescFr.toLowerCase().includes(q) ||
-          p.shortDescEn.toLowerCase().includes(q)
+          p.tag.toLowerCase().includes(q) ||
+          p.shortFr.toLowerCase().includes(q) ||
+          p.shortEn.toLowerCase().includes(q)
       )
     : [];
 
@@ -228,12 +254,33 @@ export const SearchModal: React.FC<SearchModalProps> = ({ open, onClose, lang, o
                         e.currentTarget.style.background = '#121211';
                       }}
                     >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={p.img}
-                        alt={p.name}
-                        style={{ width: 48, height: 48, objectFit: 'cover', background: '#000' }}
-                      />
+                      {p.img ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={p.img}
+                          alt={p.name}
+                          style={{ width: 48, height: 48, objectFit: 'cover', background: '#000' }}
+                        />
+                      ) : (
+                        <div
+                          style={{
+                            width: 48,
+                            height: 48,
+                            flex: 'none',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            background: '#181816',
+                            border: '1px solid #242423',
+                            fontSize: 9,
+                            fontFamily: 'monospace',
+                            letterSpacing: '.1em',
+                            color: '#7A7A76',
+                          }}
+                        >
+                          {p.name.slice(0, 2).toUpperCase()}
+                        </div>
+                      )}
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
                           <span style={{ fontSize: 14.5, fontWeight: 700, color: '#fff' }}>{p.name}</span>
@@ -245,7 +292,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({ open, onClose, lang, o
                               letterSpacing: '.12em',
                             }}
                           >
-                            {p.menuTag}
+                            {p.tag}
                           </span>
                         </div>
                         <div
@@ -258,10 +305,9 @@ export const SearchModal: React.FC<SearchModalProps> = ({ open, onClose, lang, o
                             marginTop: 2,
                           }}
                         >
-                          {lang === 'FR' ? p.shortDescFr : p.shortDescEn}
+                          {lang === 'FR' ? p.shortFr : p.shortEn}
                         </div>
                       </div>
-                      <div style={{ fontSize: 11, fontFamily: 'monospace', color: '#666' }}>{p.pitch}</div>
                     </div>
                   ))}
                 </div>

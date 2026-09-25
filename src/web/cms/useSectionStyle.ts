@@ -1,8 +1,8 @@
-﻿import type React from 'react';
+import type React from 'react';
 
 /**
  * useSectionStyle
- * ──────────────
+ * --------------
  * Reads style/layout overrides from CMS section data and returns
  * CSS-ready values.  Undefined = no override (section keeps its own default).
  */

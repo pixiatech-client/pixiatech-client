@@ -4,37 +4,53 @@ import React from 'react';
 import { LedCanvasText } from './LedCanvasText';
 import { Language } from '../data/translations';
 import { useCms } from '@/lib/site-web/cms-context';
+import type { ProductHero } from '@/lib/products/types';
 
 interface HeroSectionProps {
   onOpenQuote: () => void;
   title?: string;
   lang?: Language;
+  /** Données produit (template dynamique). Priorité : data ?? CMS ?? défaut. */
+  data?: ProductHero;
 }
 
 export const HeroSection: React.FC<HeroSectionProps> = ({
   onOpenQuote,
   title: initialTitle = 'PXT Fine',
   lang = 'FR',
+  data,
 }) => {
   const { pages, currentPageId } = useCms();
   const cmsHero = pages[currentPageId]?.sections?.hero || {};
 
   const breadcrumbAll = lang === 'FR' ? 'TOUS LES PRODUITS' : 'ALL PRODUCTS';
-  const breadcrumbCat = lang === 'FR' ? 'ÉCRAN LED INTÉRIEUR' : 'INDOOR LED DISPLAY';
-  const title = (cmsHero.title as string) || initialTitle;
-  const subtitle = (cmsHero.subtitle as string) || (lang === 'FR' ? 'Écran LED intérieur' : 'Indoor LED display');
-  const quoteCta = (cmsHero.primaryCta as string) || (lang === 'FR' ? 'Demander un devis →' : 'Request Quote →');
+  const breadcrumbCat =
+    (lang === 'FR' ? data?.breadcrumbCategoryFr : data?.breadcrumbCategoryEn) ||
+    (lang === 'FR' ? 'ÉCRAN LED INTÉRIEUR' : 'INDOOR LED DISPLAY');
+  const title = data?.title || (cmsHero.title as string) || initialTitle;
+  const subtitle =
+    data?.subtitle ||
+    (cmsHero.subtitle as string) ||
+    (lang === 'FR' ? 'Écran LED intérieur' : 'Indoor LED display');
+  const quoteCta =
+    data?.primaryCta ||
+    (cmsHero.primaryCta as string) ||
+    (lang === 'FR' ? 'Demander un devis →' : 'Request Quote →');
 
-  const tags = lang === 'FR'
-    ? ['INTÉRIEUR', 'Corporate', 'Salle de contrôle', 'Retail', 'XR / VP']
-    : ['INDOOR', 'Corporate', 'Control Room', 'Retail', 'XR / VP'];
+  const tags = data?.tags?.length
+    ? data.tags
+    : lang === 'FR'
+      ? ['INTÉRIEUR', 'Corporate', 'Salle de contrôle', 'Retail', 'XR / VP']
+      : ['INDOOR', 'Corporate', 'Control Room', 'Retail', 'XR / VP'];
 
-  const specs = [
-    { value: '1.2–3.1 mm', label: lang === 'FR' ? 'PITCH PIXEL' : 'PIXEL PITCH' },
-    { value: '800–1,500', label: lang === 'FR' ? 'LUMINOSITÉ · NITS' : 'BRIGHTNESS · NITS' },
-    { value: '600×337.5 mm', label: lang === 'FR' ? 'CHÂSSIS' : 'CABINET' },
-    { value: lang === 'FR' ? 'INTÉRIEUR' : 'INDOOR', label: lang === 'FR' ? 'ENVIRONNEMENT' : 'ENVIRONMENT' },
-  ];
+  const specs = data?.specs?.length
+    ? data.specs.map((s) => ({ value: s.value, label: s.label }))
+    : [
+        { value: '1.2–3.1 mm', label: lang === 'FR' ? 'PITCH PIXEL' : 'PIXEL PITCH' },
+        { value: '800–1,500', label: lang === 'FR' ? 'LUMINOSITÉ · NITS' : 'BRIGHTNESS · NITS' },
+        { value: '600×337.5 mm', label: lang === 'FR' ? 'CHÂSSIS' : 'CABINET' },
+        { value: lang === 'FR' ? 'INTÉRIEUR' : 'INDOOR', label: lang === 'FR' ? 'ENVIRONNEMENT' : 'ENVIRONMENT' },
+      ];
 
   const subnavItems = lang === 'FR'
     ? [
@@ -84,7 +100,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             textTransform: 'uppercase',
           }}
         >
-          <a href="/web/products" className="hov-white" style={{ transition: 'color .2s' }}>
+          <a href="/web/products" className="hov-acc" style={{ transition: 'color .2s' }}>
             {breadcrumbAll}
           </a>
           <span>/</span>
