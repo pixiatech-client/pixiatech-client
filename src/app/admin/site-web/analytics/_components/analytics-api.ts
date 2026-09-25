@@ -34,10 +34,6 @@ async function postJson<T>(url: string): Promise<T> {
   return data as T;
 }
 
-export function seedAnalyticsData(): Promise<{ sessions: number; messages: number }> {
-  return postJson<{ sessions: number; messages: number }>(`/api/analytics/seed`);
-}
-
 export function resetAnalyticsData(): Promise<{
   sessionsDeleted: number;
   eventsDeleted: number;

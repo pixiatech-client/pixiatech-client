@@ -886,10 +886,9 @@
         "noNeighbors": "—",
         "backToAnalytics": "Back to analytics",
         "reportGenerated": "Report generated.",
-        "dataMenuTitle": "Test data",
-        "seedTitle": "Add fake data",
-        "resetTitle": "Clear everything and start over",
-        "seedDone": "{count} fake sessions inserted.",
+        "resetTitle": "Clear all",
+        "resetConfirm": "Delete all analytics data (sessions, events, and test conversions)? This cannot be undone.",
+        "resetConfirmAction": "Confirm deletion",
         "resetDone": "Data reset ({sessions} sessions deleted)."
       }
     },

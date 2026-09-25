@@ -886,10 +886,9 @@
         "noNeighbors": "—",
         "backToAnalytics": "Retour à l'analytics",
         "reportGenerated": "Rapport généré.",
-        "dataMenuTitle": "Données de test",
-        "seedTitle": "Ajouter des données fictives",
-        "resetTitle": "Tout effacer et repartir de zéro",
-        "seedDone": "{count} sessions fictives insérées.",
+        "resetTitle": "Tout effacer",
+        "resetConfirm": "Effacer toutes les données analytics (sessions, événements et conversions de test) ? Action irréversible.",
+        "resetConfirmAction": "Confirmer l'effacement",
         "resetDone": "Données réinitialisées ({sessions} sessions supprimées)."
       }
     },
