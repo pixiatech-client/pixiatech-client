@@ -21,7 +21,11 @@ import {
   GripVertical,
   Layers,
   RotateCcw,
+  Globe,
+  Sparkles,
 } from 'lucide-react';
+import { I18nFieldEditor } from './I18nFieldEditor';
+import { CMS_LANGUAGES } from '@/lib/site-web/cms-i18n';
 
 // ─── Spacing Control (Elementor-style) ───────────────────────────────────────
 type SpacingSide = 'top' | 'right' | 'bottom' | 'left';
@@ -125,12 +129,16 @@ export const ElementorDrawer: React.FC<ElementorDrawerProps> = ({ onOpenBackendM
     saveStatus,
     backendConnected,
     settings,
+    currentLang,
+    setCurrentLang,
+    autoTranslateSection,
   } = useCms();
 
   const [dockPosition, setDockPosition] = useState<'left' | 'right'>('left');
   const [isMinimized, setIsMinimized] = useState<boolean>(false);
   const [showSectionManager, setShowSectionManager] = useState<boolean>(false);
   const [uploading, setUploading] = useState<boolean>(false);
+  const [translatingSection, setTranslatingSection] = useState<boolean>(false);
   // Section order input drafts — must be declared here before any early return (Rules of Hooks)
   const [orderDrafts, setOrderDrafts] = useState<Record<string, string>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -388,6 +396,36 @@ export const ElementorDrawer: React.FC<ElementorDrawerProps> = ({ onOpenBackendM
         </div>
       </div>
 
+      {/* Sélecteur de Langue d'Édition */}
+      <div className="px-4 py-2 bg-[#10100F] border-b border-[#222220] flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5 text-[10px] font-mono text-[#7A7A76] uppercase tracking-wider shrink-0">
+          <Globe className="w-3 h-3 text-[#C3F910]" />
+          <span>Langue :</span>
+        </div>
+        <div className="flex items-center gap-1 overflow-x-auto py-0.5 no-scrollbar">
+          {CMS_LANGUAGES.map((langCfg) => {
+            const isActive = langCfg.code === currentLang;
+            return (
+              <button
+                key={langCfg.code}
+                type="button"
+                onClick={() => setCurrentLang(langCfg.code)}
+                className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold flex items-center gap-1 transition-all shrink-0 cursor-pointer ${
+                  isActive
+                    ? 'bg-[#C3F910] text-[#080808] shadow-sm scale-105'
+                    : 'bg-[#181816] text-[#888] hover:text-white hover:bg-[#252522]'
+                }`}
+                title={`Éditer en ${langCfg.label} ${langCfg.isSource ? '(Langue Source)' : ''}`}
+              >
+                <span>{langCfg.flag}</span>
+                <span>{langCfg.code.toUpperCase()}</span>
+                {langCfg.isSource && <span className="text-[7.5px] opacity-75 font-normal">(Src)</span>}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       <div className="px-4 py-2.5 bg-[#121211] border-b border-[#222220]">
         <div className="flex items-center justify-between mb-1">
           <label className="text-[10px] font-mono text-[#7A7A76] uppercase tracking-wider">
@@ -568,120 +606,122 @@ export const ElementorDrawer: React.FC<ElementorDrawerProps> = ({ onOpenBackendM
           <div className="space-y-4">
             <div className="text-[11px] font-mono text-[#C3F910] font-bold uppercase tracking-wider flex items-center justify-between">
               <span>Édition des Textes</span>
-              <span className="text-[#7A7A76] text-[10px]">Aperçu en direct</span>
-            </div>
-
-            {/* Badge / Eyebrow — always shown */}
-            <div>
-              <label className="text-[10px] font-mono text-[#9A9A94] uppercase tracking-wider block mb-1">
-                Surtitre / Badge
-              </label>
-              <input
-                type="text"
-                value={String(currentSectionData.badge ?? currentSectionData.eyebrow ?? '')}
-                onChange={(e) => {
-                  updateSectionField(currentSectionKey, 'badge', e.target.value);
-                  updateSectionField(currentSectionKey, 'eyebrow', e.target.value);
+              <button
+                type="button"
+                onClick={async () => {
+                  setTranslatingSection(true);
+                  try {
+                    await autoTranslateSection(currentSectionKey);
+                  } finally {
+                    setTranslatingSection(false);
+                  }
                 }}
-                className="w-full bg-[#171715] border border-[#2B2B28] rounded p-2 text-white focus:border-[#C3F910] focus:outline-none"
-                placeholder="Ex: 01 / INNOVATION"
-              />
+                disabled={translatingSection}
+                className="flex items-center gap-1 text-[9.5px] font-mono px-2 py-1 rounded bg-[#181816] text-[#C3F910] hover:bg-[#C3F910]/20 border border-[#C3F910]/30 transition-colors cursor-pointer disabled:opacity-50"
+                title="Traduire tous les champs manquants de cette section"
+              >
+                <Sparkles className={`w-3 h-3 ${translatingSection ? 'animate-spin' : ''}`} />
+                <span>{translatingSection ? 'Traduction en cours...' : 'Traduire toute la section'}</span>
+              </button>
             </div>
 
-            {/* Title — always shown */}
-            <div>
-              <label className="text-[10px] font-mono text-[#9A9A94] uppercase tracking-wider block mb-1">
-                Titre Principal
-              </label>
-              <input
-                type="text"
-                value={String(currentSectionData.title ?? '')}
-                onChange={(e) => updateSectionField(currentSectionKey, 'title', e.target.value)}
-                className="w-full bg-[#171715] border border-[#2B2B28] rounded p-2 text-white font-bold text-sm focus:border-[#C3F910] focus:outline-none"
-                placeholder="Titre de la section..."
+            {/* Surtitre / Badge */}
+            <I18nFieldEditor
+              label="Surtitre / Badge"
+              sectionKey={currentSectionKey}
+              fieldKey="badge"
+              placeholder="Ex: 01 / INNOVATION"
+            />
+
+            {/* Titre Principal */}
+            <I18nFieldEditor
+              label="Titre Principal"
+              sectionKey={currentSectionKey}
+              fieldKey="title"
+              placeholder="Titre de la section..."
+              inputClassName="font-bold text-sm"
+            />
+
+            {/* Hero Tagline / Accroche */}
+            {(currentSectionKey === 'hero' || currentSectionData.tagline !== undefined) && (
+              <I18nFieldEditor
+                label="Ligne 2 du Titre (Tagline)"
+                sectionKey={currentSectionKey}
+                fieldKey="tagline"
+                placeholder="Ex: DU VISUEL."
+                inputClassName="font-bold text-sm"
               />
-            </div>
+            )}
+
+            {/* Titre Ligne 2 & 3 pour les sections à titre scindé */}
+            {['manifesto', 'products', 'projects', 'process', 'insights'].includes(currentSectionKey) && (
+              <div className="space-y-2">
+                <I18nFieldEditor
+                  label="Titre — Ligne 2"
+                  sectionKey={currentSectionKey}
+                  fieldKey="titleLine2"
+                  placeholder="Seconde ligne du titre..."
+                  inputClassName="font-bold text-sm"
+                />
+                {['manifesto'].includes(currentSectionKey) && (
+                  <I18nFieldEditor
+                    label="Titre — Ligne 3"
+                    sectionKey={currentSectionKey}
+                    fieldKey="titleLine3"
+                    placeholder="Troisième ligne du titre..."
+                    inputClassName="font-bold text-sm"
+                  />
+                )}
+              </div>
+            )}
 
             {/* Kinetic title lines — shown when kinetic or when keys exist */}
-            {(currentSectionKey === 'kinetic' || currentSectionData.title1 !== undefined || currentSectionData.title2 !== undefined || currentSectionData.title3 !== undefined) && (
+            {(currentSectionKey === 'kinetic' ||
+              currentSectionData.title1 !== undefined ||
+              currentSectionData.title2 !== undefined ||
+              currentSectionData.title3 !== undefined) && (
               <div className="space-y-2">
                 <label className="text-[10px] font-mono text-[#9A9A94] uppercase tracking-wider block">
                   Lignes du Grand Titre (Kinetic)
                 </label>
                 {[1, 2, 3].map((n) => (
-                  <input
+                  <I18nFieldEditor
                     key={n}
-                    type="text"
-                    value={String((currentSectionData as Record<string, unknown>)[`title${n}`] ?? '')}
-                    onChange={(e) => updateSectionField(currentSectionKey, `title${n}`, e.target.value)}
-                    className="w-full bg-[#171715] border border-[#2B2B28] rounded p-2 text-white focus:border-[#C3F910] focus:outline-none"
+                    label={`Ligne ${n}`}
+                    sectionKey={currentSectionKey}
+                    fieldKey={`title${n}`}
                     placeholder={`Ligne ${n}...`}
                   />
                 ))}
               </div>
             )}
 
-            {/* Description / Subtitle — always shown */}
-            <div>
-              <label className="text-[10px] font-mono text-[#9A9A94] uppercase tracking-wider block mb-1">
-                Description / Sous-titre
-              </label>
-              <textarea
-                rows={4}
-                value={String(
-                  currentSectionData.subtitle ??
-                    currentSectionData.description ??
-                    currentSectionData.body ??
-                    currentSectionData.tagline ??
-                    ''
-                )}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  updateSectionField(currentSectionKey, 'description', val);
-                  updateSectionField(currentSectionKey, 'subtitle', val);
-                  updateSectionField(currentSectionKey, 'body', val);
-                  updateSectionField(currentSectionKey, 'tagline', val);
-                }}
-                className="w-full bg-[#171715] border border-[#2B2B28] rounded p-2 text-white leading-relaxed focus:border-[#C3F910] focus:outline-none"
-                placeholder="Texte explicatif..."
-              />
-            </div>
+            {/* Description / Sous-titre */}
+            <I18nFieldEditor
+              label="Description / Sous-titre"
+              sectionKey={currentSectionKey}
+              fieldKey="description"
+              isTextarea
+              rows={4}
+              placeholder="Texte explicatif..."
+            />
 
-            {/* CTA buttons — always shown */}
-            <div>
-              <label className="text-[10px] font-mono text-[#9A9A94] uppercase tracking-wider block mb-1">
-                Libellé Bouton Principal
-              </label>
-              <input
-                type="text"
-                value={String(currentSectionData.primaryCta ?? currentSectionData.ctaText ?? currentSectionData.cta1 ?? '')}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  updateSectionField(currentSectionKey, 'primaryCta', val);
-                  updateSectionField(currentSectionKey, 'ctaText', val);
-                  updateSectionField(currentSectionKey, 'cta1', val);
-                }}
-                className="w-full bg-[#171715] border border-[#2B2B28] rounded p-2 text-[#C3F910] font-bold focus:border-[#C3F910] focus:outline-none"
-                placeholder="Ex: Explorer les marchés →"
-              />
-            </div>
+            {/* Libellé Bouton Principal */}
+            <I18nFieldEditor
+              label="Libellé Bouton Principal"
+              sectionKey={currentSectionKey}
+              fieldKey="primaryCta"
+              placeholder="Ex: Explorer les marchés →"
+              inputClassName="text-[#C3F910] font-bold"
+            />
 
-            <div>
-              <label className="text-[10px] font-mono text-[#9A9A94] uppercase tracking-wider block mb-1">
-                Libellé Bouton Secondaire
-              </label>
-              <input
-                type="text"
-                value={String(currentSectionData.secondaryCta ?? currentSectionData.cta2 ?? '')}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  updateSectionField(currentSectionKey, 'secondaryCta', val);
-                  updateSectionField(currentSectionKey, 'cta2', val);
-                }}
-                className="w-full bg-[#171715] border border-[#2B2B28] rounded p-2 text-white focus:border-[#C3F910] focus:outline-none"
-                placeholder="Ex: Démarrer un Projet →"
-              />
-            </div>
+            {/* Libellé Bouton Secondaire */}
+            <I18nFieldEditor
+              label="Libellé Bouton Secondaire"
+              sectionKey={currentSectionKey}
+              fieldKey="secondaryCta"
+              placeholder="Ex: Démarrer un Projet →"
+            />
 
             {/* Product-specific fields */}
             {currentSectionData.cabinetDim !== undefined && (

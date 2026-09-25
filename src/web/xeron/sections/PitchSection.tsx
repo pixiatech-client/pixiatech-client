@@ -4,15 +4,16 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Language } from '../../xeron-translations';
 import { usePrefersReducedMotion } from '../../xeron-hooks';
 import { useCms } from '@/lib/site-web/cms-context';
+import { getCmsText, normalizeLang } from '@/lib/site-web/cms-i18n';
 import { useSectionStyle } from '../../cms/useSectionStyle';
 
 const PRESETS = [0.7, 0.9, 1.2, 1.5, 1.8, 2.5, 2.9, 3.9, 4.8, 6.6, 10];
 const MIN = 0.7;
 const MAX = 10;
 
-function pixelsPerM2(pitch: number) {
+function pixelsPerM2(pitch: number, lang: Language) {
   const mm = pitch === 0 ? 1 : pitch;
-  return Math.round(Math.pow(1000 / mm, 2)).toLocaleString('en-US');
+  return Math.round(Math.pow(1000 / mm, 2)).toLocaleString(lang === 'FR' ? 'fr-FR' : 'en-US');
 }
 
 interface PitchSectionProps {
@@ -31,34 +32,61 @@ export const PitchSection: React.FC<PitchSectionProps> = ({
   const reduced = usePrefersReducedMotion();
   const [pitch, setPitch] = useState<number>(1.2);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const { pages } = useCms();
+  const { pages, currentLang, isEditing } = useCms();
   const cmsData = (pages['home']?.sections?.pitch as Record<string, unknown>) || {};
   const cms = useSectionStyle(cmsData);
+  const activeLang = isEditing ? currentLang : normalizeLang(lang);
 
   const t = {
-    eyebrow: lang === 'FR' ? '07 / PAS DE PIXEL' : '07 / PIXEL PITCH',
-    titleLine1: lang === 'FR' ? 'À quelle distance' : 'How close should',
-    titleLine2: lang === 'FR' ? 'devez-vous vous placer ?' : 'you get?',
+    eyebrow: getCmsText(
+      cmsData,
+      'badge',
+      activeLang,
+      getCmsText(cmsData, 'eyebrow', activeLang, activeLang === 'fr' ? '07 / PAS DE PIXEL' : '07 / PIXEL PITCH')
+    ),
+    titleLine1: getCmsText(
+      cmsData,
+      'title',
+      activeLang,
+      activeLang === 'fr' ? 'À quelle distance' : 'How close should'
+    ),
+    titleLine2: getCmsText(
+      cmsData,
+      'titleLine2',
+      activeLang,
+      activeLang === 'fr' ? 'devez-vous vous placer ?' : 'you get?'
+    ),
     desc:
-      lang === 'FR'
-        ? "Un pas de pixel plus fin → vision rapprochée et densité maximale. Un pas plus large → distances d'observation accrues et grands formats efficients."
-        : 'Smaller pixel pitch → closer viewing and higher pixel density. Larger pitch → longer viewing distances and efficient large-format installations.',
-    unit: lang === 'FR' ? 'mm pas de pixel' : 'mm pixel pitch',
+      getCmsText(cmsData, 'description', activeLang) ||
+      getCmsText(
+        cmsData,
+        'subtitle',
+        activeLang,
+        activeLang === 'fr'
+          ? "Un pas de pixel plus fin → vision rapprochée et densité maximale. Un pas plus large → distances d'observation accrues et grands formats efficients."
+          : 'Smaller pixel pitch → closer viewing and higher pixel density. Larger pitch → longer viewing distances and efficient large-format installations.'
+      ),
+    unit: activeLang === 'fr' ? 'mm pas de pixel' : 'mm pixel pitch',
     pixelsLabel: 'PIXELS / M²',
-    typicalLabel: lang === 'FR' ? 'UTILISATION TYPIQUE' : 'TYPICAL USE',
-    cta: lang === 'FR' ? 'TROUVER LE BON PAS DE PIXEL →' : 'FIND THE RIGHT PIXEL PITCH →',
-    simLabel: lang === 'FR' ? 'SURFACE LED — SIMULATION' : 'LED SURFACE — SIMULATED',
-    minViewingLabel: lang === 'FR' ? 'DISTANCE MIN. DE VISION *' : 'MIN. VIEWING DISTANCE *',
-    display: lang === 'FR' ? 'ÉCRAN' : 'DISPLAY',
+    typicalLabel: activeLang === 'fr' ? 'UTILISATION TYPIQUE' : 'TYPICAL USE',
+    cta: getCmsText(
+      cmsData,
+      'primaryCta',
+      activeLang,
+      getCmsText(cmsData, 'ctaText', activeLang, activeLang === 'fr' ? 'TROUVER LE BON PAS DE PIXEL →' : 'FIND THE RIGHT PIXEL PITCH →')
+    ),
+    simLabel: activeLang === 'fr' ? 'SURFACE LED — SIMULATION' : 'LED SURFACE — SIMULATED',
+    minViewingLabel: activeLang === 'fr' ? 'DISTANCE MIN. DE VISION *' : 'MIN. VIEWING DISTANCE *',
+    display: activeLang === 'fr' ? 'ÉCRAN' : 'DISPLAY',
     disclaimer:
-      lang === 'FR'
+      activeLang === 'fr'
         ? "* Règle d'usage empirique de l'industrie — pour orientation préalable, non contractuelle pour l'ingénierie finale."
         : '* Approximate industry rule of thumb — for product discovery, not final engineering.',
   };
 
   const getTypicalUse = (p: number) => {
     if (p <= 0.9) return lang === 'FR' ? 'Salle de crise critique' : 'Command center / Studio';
-    if (p <= 1.5) return lang === 'FR' ? 'Corporate lobby' : 'Corporate lobby';
+    if (p <= 1.5) return lang === 'FR' ? "Hall / lobby d'entreprise" : 'Corporate lobby';
     if (p <= 2.5) return lang === 'FR' ? 'Auditorium & Retail luxe' : 'Auditorium & Luxury retail';
     if (p <= 3.9) return lang === 'FR' ? 'DOOH intérieur & Événementiel' : 'Indoor DOOH & Events';
     return lang === 'FR' ? 'Grand format & Façade' : 'Large-format & Stadium';
@@ -288,7 +316,7 @@ export const PitchSection: React.FC<PitchSectionProps> = ({
                   cursor: 'pointer',
                   borderRadius: 2,
                 }}
-                aria-label="Pixel pitch selector"
+                aria-label={lang === 'FR' ? 'Sélecteur de pas de pixel' : 'Pixel pitch selector'}
               />
 
               {/* Preset Buttons Bar */}
@@ -347,7 +375,7 @@ export const PitchSection: React.FC<PitchSectionProps> = ({
                     fontVariantNumeric: 'tabular-nums',
                   }}
                 >
-                  {pixelsPerM2(pitch)}
+                  {pixelsPerM2(pitch, lang)}
                 </div>
                 <div
                   style={{

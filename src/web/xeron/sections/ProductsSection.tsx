@@ -3,6 +3,7 @@
 import React from 'react';
 import { Language } from '../../xeron-translations';
 import { useCms } from '@/lib/site-web/cms-context';
+import { getCmsText, normalizeLang } from '@/lib/site-web/cms-i18n';
 import { useSectionStyle } from '../../cms/useSectionStyle';
 
 interface ProductsSectionProps {
@@ -18,32 +19,47 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
   lang = 'FR',
   onOpenConsultation,
 }) => {
-  const { pages } = useCms();
+  const { pages, currentLang, isEditing } = useCms();
 
   const cmsData = (pages['home']?.sections?.products as Record<string, unknown>) || {};
   const cms = useSectionStyle(cmsData);
+  const activeLang = isEditing ? currentLang : normalizeLang(lang);
 
   const t = {
-    eyebrow:
-      (cmsData.badge as string) ||
-      (cmsData.eyebrow as string) ||
-      (lang === 'FR' ? '06 / CATALOGUE PRODUITS' : '06 / PRODUCTS CATALOG'),
-    title:
-      (cmsData.title as string) ||
-      (lang === 'FR' ? '39 séries d\u2019écrans.' : '39 display series.'),
-    titleLine2:
-      (cmsData.titleLine2 as string) ||
-      (lang === 'FR' ? 'Un seul catalogue.' : 'One catalog.'),
-    cta:
-      (cmsData.primaryCta as string) ||
-      (cmsData.ctaText as string) ||
-      (lang === 'FR' ? 'TOUS LES PRODUITS →' : 'ALL PRODUCTS →'),
+    eyebrow: getCmsText(
+      cmsData,
+      'badge',
+      activeLang,
+      getCmsText(cmsData, 'eyebrow', activeLang, activeLang === 'fr' ? '06 / CATALOGUE PRODUITS' : '06 / PRODUCTS CATALOG')
+    ),
+    title: getCmsText(
+      cmsData,
+      'title',
+      activeLang,
+      activeLang === 'fr' ? '39 séries d\u2019écrans.' : '39 display series.'
+    ),
+    titleLine2: getCmsText(
+      cmsData,
+      'titleLine2',
+      activeLang,
+      activeLang === 'fr' ? 'Un seul catalogue.' : 'One catalog.'
+    ),
+    cta: getCmsText(
+      cmsData,
+      'primaryCta',
+      activeLang,
+      getCmsText(cmsData, 'ctaText', activeLang, activeLang === 'fr' ? 'TOUS LES PRODUITS →' : 'ALL PRODUCTS →')
+    ),
     desc:
-      (cmsData.description as string) ||
-      (cmsData.subtitle as string) ||
-      (lang === 'FR'
-        ? 'Installation fixe, location & événementiel, transparents, cinétiques et créatifs — explorez notre catalogue complet par environnement et domaine d\u2019application.'
-        : 'Fixed installation, rental & staging, transparent, kinetic and creative — filter the full catalog by environment and application.'),
+      getCmsText(cmsData, 'description', activeLang) ||
+      getCmsText(
+        cmsData,
+        'subtitle',
+        activeLang,
+        activeLang === 'fr'
+          ? 'Installation fixe, location & événementiel, transparents, cinétiques et créatifs — explorez notre catalogue complet par environnement et domaine d\u2019application.'
+          : 'Fixed installation, rental & staging, transparent, kinetic and creative — filter the full catalog by environment and application.'
+      ),
   };
 
   return (

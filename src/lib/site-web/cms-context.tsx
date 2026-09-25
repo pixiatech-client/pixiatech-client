@@ -1,7 +1,16 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { DEFAULT_CMS_SETTINGS, type CmsBackendSettings, type CmsPageData } from './cms-types';
+import { DEFAULT_CMS_SETTINGS, type CmsBackendSettings, type CmsFieldTranslation, type CmsPageData } from './cms-types';
+import {
+  CMS_DEFAULT_LANG,
+  CMS_LANGUAGES,
+  CMS_SOURCE_LANG,
+  getCmsFieldTranslation,
+  getCmsText,
+  normalizeLang,
+  setCmsFieldTranslation,
+} from './cms-i18n';
 
 const STORAGE_KEY = 'pixiatech_site_web_pages_v3';
 const SETTINGS_STORAGE_KEY = 'pixiatech_site_web_settings_v3';
@@ -40,11 +49,18 @@ interface CmsContextType {
   settings: CmsBackendSettings;
   saveStatus: 'idle' | 'saving' | 'saved' | 'error';
   backendConnected: boolean;
+  currentLang: string;
+  setCurrentLang: (lang: string) => void;
+  getText: (sectionKey: string, fieldKey: string, fallback?: string, lang?: string) => string;
   setIsEditing: (val: boolean) => void;
   setSelectedBlockId: (id: string | null) => void;
   setActiveTab: (tab: 'content' | 'media' | 'style' | 'backend') => void;
   setCurrentPageId: (pageId: string) => void;
   updateSectionField: (sectionKey: string, fieldKey: string, value: unknown) => void;
+  updateSectionFieldLocalized: (sectionKey: string, fieldKey: string, value: unknown, lang?: string, isManual?: boolean) => void;
+  getFieldTranslation: (sectionKey: string, fieldKey: string, lang?: string) => CmsFieldTranslation;
+  autoTranslateField: (sectionKey: string, fieldKey: string, targetLangs?: string[]) => Promise<boolean>;
+  autoTranslateSection: (sectionKey: string, targetLangs?: string[]) => Promise<boolean>;
   updateNestedField: (path: string[], value: unknown) => void;
   updateSectionOrder: (newOrder: string[]) => void;
   toggleSectionVisibility: (sectionKey: string) => void;
@@ -72,9 +88,14 @@ export const CmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [activeTab, setActiveTab] = useState<'content' | 'media' | 'style' | 'backend'>('content');
   const [currentPageId, setCurrentPageId] = useState<string>('home');
   const [pages, setPages] = useState<Record<string, CmsPageData>>({});
+  const [currentLang, setCurrentLangState] = useState<string>('fr');
   const [settings, setSettings] = useState<CmsBackendSettings>(settingsWithLocal);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [backendConnected, setBackendConnected] = useState<boolean>(false);
+
+  const setCurrentLang = useCallback((l: string) => {
+    setCurrentLangState(normalizeLang(l));
+  }, []);
 
   // 1. Vérifie la session admin côté serveur (source de vérité unique).
   useEffect(() => {
@@ -104,15 +125,25 @@ export const CmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     let mounted = true;
     async function loadData() {
+      // Premier paint depuis localStorage (peut être périmé, sera corrigé par le réseau).
       const local = loadLocalPages();
       if (local) setPages(local);
       if (mounted) {
         try {
-          const res = await fetch('/api/site-web/pages');
+          const res = await fetch('/api/site-web/pages', { cache: 'no-store' });
           if (res.ok) {
             const data = await res.json();
             if (data?.pages && typeof data.pages === 'object' && mounted) {
-              setPages(data.pages);
+              setPages((prev) => {
+                // Les données serveur fraîches écrasent le fallback local
+                const next = { ...prev, ...data.pages };
+                try {
+                  localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+                } catch {
+                  // ignore
+                }
+                return next;
+              });
               setBackendConnected(true);
             }
           }
@@ -127,8 +158,44 @@ export const CmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   }, []);
 
-  const updateSectionField = useCallback(
-    (sectionKey: string, fieldKey: string, value: unknown) => {
+  // 3. Re-fetch la page courante depuis le serveur à chaque changement de currentPageId.
+  //    Garantit que toute modification réseau/serveur est immédiatement injectée dans l'état et le localStorage.
+  useEffect(() => {
+    if (!currentPageId) return;
+    let mounted = true;
+    async function refreshCurrentPage() {
+      try {
+        const res = await fetch(`/api/site-web/pages/${currentPageId}`, {
+          cache: 'no-store',
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data?.page && mounted) {
+            setPages((prev) => {
+              const next = { ...prev, [currentPageId]: data.page };
+              try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+              } catch {
+                // ignore
+              }
+              return next;
+            });
+            setBackendConnected(true);
+          }
+        }
+      } catch {
+        // Silencieux : on garde l'état en mémoire si le réseau est indisponible.
+      }
+    }
+    refreshCurrentPage();
+    return () => {
+      mounted = false;
+    };
+  }, [currentPageId]);
+
+  const updateSectionFieldLocalized = useCallback(
+    (sectionKey: string, fieldKey: string, value: unknown, lang?: string, isManual: boolean = true) => {
+      const targetLang = normalizeLang(lang || currentLang);
       setPages((prev) => {
         const active = prev[currentPageId] || {
           id: currentPageId,
@@ -138,11 +205,21 @@ export const CmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           meta: { title: 'Page PIXIATECH', description: '' },
           sections: {},
         };
-        const section = { ...(active.sections?.[sectionKey] as Record<string, unknown> | undefined), [fieldKey]: value };
+        const currentSection = (active.sections?.[sectionKey] as Record<string, unknown> | undefined) || {};
+        let updatedSection: Record<string, unknown>;
+        if (typeof value === 'string') {
+          updatedSection = setCmsFieldTranslation(currentSection, fieldKey, targetLang, value, {
+            isManual,
+            forceOverwrite: isManual,
+          });
+        } else {
+          updatedSection = { ...currentSection, [fieldKey]: value };
+        }
+
         const updated: CmsPageData = {
           ...active,
           updatedAt: new Date().toISOString(),
-          sections: { ...(active.sections || {}), [sectionKey]: section },
+          sections: { ...(active.sections || {}), [sectionKey]: updatedSection },
         };
         const next = { ...prev, [currentPageId]: updated };
         try {
@@ -153,7 +230,194 @@ export const CmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return next;
       });
     },
-    [currentPageId]
+    [currentPageId, currentLang]
+  );
+
+  const updateSectionField = useCallback(
+    (sectionKey: string, fieldKey: string, value: unknown) => {
+      updateSectionFieldLocalized(sectionKey, fieldKey, value, currentLang, true);
+    },
+    [updateSectionFieldLocalized, currentLang]
+  );
+
+  const getFieldTranslation = useCallback(
+    (sectionKey: string, fieldKey: string, lang?: string): CmsFieldTranslation => {
+      const targetLang = normalizeLang(lang || currentLang);
+      const active = pages[currentPageId];
+      const section = active?.sections?.[sectionKey] as Record<string, unknown> | undefined;
+      return getCmsFieldTranslation(section, fieldKey, targetLang);
+    },
+    [pages, currentPageId, currentLang]
+  );
+
+  const getText = useCallback(
+    (sectionKey: string, fieldKey: string, fallback?: string, lang?: string): string => {
+      const targetLang = normalizeLang(lang || currentLang);
+      const active = pages[currentPageId];
+      const section = active?.sections?.[sectionKey] as Record<string, unknown> | undefined;
+      return getCmsText(section, fieldKey, targetLang, fallback);
+    },
+    [pages, currentPageId, currentLang]
+  );
+
+  const autoTranslateField = useCallback(
+    async (sectionKey: string, fieldKey: string, targetLangs?: string[]): Promise<boolean> => {
+      const active = pages[currentPageId];
+      const section = active?.sections?.[sectionKey] as Record<string, unknown> | undefined;
+      const sourceTrans = getCmsFieldTranslation(section, fieldKey, CMS_SOURCE_LANG);
+      const sourceText = sourceTrans.value;
+      if (!sourceText || sourceText.trim() === '') return false;
+
+      const allTargets = targetLangs || CMS_LANGUAGES.filter((l) => !l.isSource).map((l) => l.code);
+      const targetsToTranslate = allTargets.filter((l) => {
+        const trans = getCmsFieldTranslation(section, fieldKey, l);
+        if (trans.status === 'manual' && (!targetLangs || targetLangs.length > 1)) {
+          return false;
+        }
+        return true;
+      });
+
+      if (targetsToTranslate.length === 0) return true;
+
+      try {
+        const res = await fetch('/api/site-web/translate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            text: sourceText,
+            from: CMS_SOURCE_LANG,
+            targets: targetsToTranslate,
+          }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data?.translations && typeof data.translations === 'object') {
+            setPages((prev) => {
+              const activePage = prev[currentPageId];
+              if (!activePage) return prev;
+              let currentSec = (activePage.sections?.[sectionKey] as Record<string, unknown>) || {};
+              for (const [l, val] of Object.entries(data.translations as Record<string, string>)) {
+                currentSec = setCmsFieldTranslation(currentSec, fieldKey, l, val, {
+                  isManual: false,
+                  sourceText,
+                  forceOverwrite: targetLangs && targetLangs.length === 1,
+                });
+              }
+              const updatedPage: CmsPageData = {
+                ...activePage,
+                updatedAt: new Date().toISOString(),
+                sections: { ...(activePage.sections || {}), [sectionKey]: currentSec },
+              };
+              const next = { ...prev, [currentPageId]: updatedPage };
+              try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+              } catch {}
+              return next;
+            });
+            return true;
+          }
+        }
+        return false;
+      } catch (err) {
+        console.error('[CMS] autoTranslateField error:', err);
+        return false;
+      }
+    },
+    [pages, currentPageId]
+  );
+
+  const autoTranslateSection = useCallback(
+    async (sectionKey: string, targetLangs?: string[]): Promise<boolean> => {
+      const active = pages[currentPageId];
+      const section = active?.sections?.[sectionKey] as Record<string, unknown> | undefined;
+      if (!section) return false;
+
+      const ignorable = new Set([
+        'image',
+        'heroImage',
+        'primaryImage',
+        'billboardImage',
+        'layout',
+        'paddingTop',
+        'paddingBottom',
+        'paddingLeft',
+        'paddingRight',
+        'minHeight',
+        'visible',
+        'heroBgColor',
+        'accentColor',
+        'textColor',
+        '_i18n',
+      ]);
+      const textFields: Record<string, string> = {};
+      for (const [k, v] of Object.entries(section)) {
+        if (
+          !ignorable.has(k) &&
+          typeof v === 'string' &&
+          v.trim().length > 0 &&
+          !v.startsWith('http') &&
+          !v.endsWith('.jpg') &&
+          !v.endsWith('.png') &&
+          !v.endsWith('.webp')
+        ) {
+          const sourceTrans = getCmsFieldTranslation(section, k, CMS_SOURCE_LANG);
+          if (sourceTrans.value) {
+            textFields[k] = sourceTrans.value;
+          }
+        }
+      }
+
+      if (Object.keys(textFields).length === 0) return true;
+      const targets = targetLangs || CMS_LANGUAGES.filter((l) => !l.isSource).map((l) => l.code);
+
+      try {
+        const res = await fetch('/api/site-web/translate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fields: textFields,
+            from: CMS_SOURCE_LANG,
+            targets,
+          }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data?.translations) {
+            setPages((prev) => {
+              const activePage = prev[currentPageId];
+              if (!activePage) return prev;
+              let currentSec = (activePage.sections?.[sectionKey] as Record<string, unknown>) || {};
+              for (const [fieldKey, langMap] of Object.entries(
+                data.translations as Record<string, Record<string, string>>
+              )) {
+                for (const [l, val] of Object.entries(langMap)) {
+                  currentSec = setCmsFieldTranslation(currentSec, fieldKey, l, val, {
+                    isManual: false,
+                    sourceText: textFields[fieldKey],
+                  });
+                }
+              }
+              const updatedPage: CmsPageData = {
+                ...activePage,
+                updatedAt: new Date().toISOString(),
+                sections: { ...(activePage.sections || {}), [sectionKey]: currentSec },
+              };
+              const next = { ...prev, [currentPageId]: updatedPage };
+              try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+              } catch {}
+              return next;
+            });
+            return true;
+          }
+        }
+        return false;
+      } catch (err) {
+        console.error('[CMS] autoTranslateSection error:', err);
+        return false;
+      }
+    },
+    [pages, currentPageId]
   );
 
   const updateSectionOrder = useCallback(
@@ -271,7 +535,17 @@ export const CmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       });
       if (res.ok) {
         const data = await res.json();
-        if (data?.page) setPages((prev) => ({ ...prev, [currentPageId]: data.page }));
+        if (data?.page) {
+          setPages((prev) => {
+            const next = { ...prev, [currentPageId]: data.page };
+            try {
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+            } catch {
+              // ignore
+            }
+            return next;
+          });
+        }
         setSaveStatus('saved');
         setBackendConnected(true);
         setTimeout(() => setSaveStatus('idle'), 3000);
@@ -368,11 +642,19 @@ export const CmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const resetPageToDefault = async (pageId: string): Promise<void> => {
     try {
-      const res = await fetch(`/api/site-web/pages/${pageId}`);
+      const res = await fetch(`/api/site-web/pages/${pageId}`, { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
         if (data?.page) {
-          setPages((prev) => ({ ...prev, [pageId]: data.page }));
+          setPages((prev) => {
+            const next = { ...prev, [pageId]: data.page };
+            try {
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+            } catch {
+              // ignore
+            }
+            return next;
+          });
         }
       }
     } catch (err) {
@@ -408,11 +690,18 @@ export const CmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         settings,
         saveStatus,
         backendConnected,
+        currentLang,
+        setCurrentLang,
+        getText,
         setIsEditing,
         setSelectedBlockId,
         setActiveTab,
         setCurrentPageId,
         updateSectionField,
+        updateSectionFieldLocalized,
+        getFieldTranslation,
+        autoTranslateField,
+        autoTranslateSection,
         updateNestedField,
         updateSectionOrder,
         toggleSectionVisibility,

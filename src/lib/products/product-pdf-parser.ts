@@ -749,7 +749,45 @@ function normalizeKey(key: string): string {
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, ' ');
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+// ---------------------------------------------------------------------------
+// Caractéristiques canoniques (une caractéristique = une propriété)
+// ---------------------------------------------------------------------------
+
+export interface ProductCoreSpecs {
+  pixelPitch?: string;
+  brightness?: string;
+  cabinetDimensions?: string;
+  cabinetWeight?: string;
+}
+
+/**
+ * Extraction sémantique STRICTE des caractéristiques de la section 5.
+ * Chaque clé PDF normalisée est mappée vers UNE propriété canonique unique.
+ * Aucun fallback croisé (ex. dimensions ⇒ pitch) : une caractéristique absente
+ * reste absente. Références sémantiques acceptées sur le même champ :
+ * - pitch          → "Pitch pixel"
+ * - brightness     → "Luminosité (nits)" / "Luminosité"
+ * - cabinetDim     → "Dimensions châssis"
+ * - cabinetWeight  → "Poids châssis"
+ */
+export function deriveCoreSpecs(
+  characteristics: { key: string; value: string }[]
+): ProductCoreSpecs {
+  const map = new Map(characteristics.map((c) => [normalizeKey(c.key), c.value.trim()]));
+  const specs: ProductCoreSpecs = {};
+  const pitch = map.get('pitch pixel');
+  if (pitch) specs.pixelPitch = pitch;
+  const brightness = map.get('luminosite nits') ?? map.get('luminosite');
+  if (brightness) specs.brightness = brightness;
+  const cabinetDimensions = map.get('dimensions chassis');
+  if (cabinetDimensions) specs.cabinetDimensions = cabinetDimensions;
+  const cabinetWeight = map.get('poids chassis');
+  if (cabinetWeight) specs.cabinetWeight = cabinetWeight;
+  return specs;
 }
 
 /** Select the section-5 characteristics that form the hero/design highlights. */
@@ -757,14 +795,13 @@ function deriveHighlights(
   characteristics: { key: string; value: string }[],
   env: ProductEnvironment | undefined
 ): ProductStat[] {
-  const map = new Map(characteristics.map(c => [normalizeKey(c.key), c.value]));
+  const specs = deriveCoreSpecs(characteristics);
   const highlights: ProductStat[] = [];
-  const pitch = map.get('pitch pixel');
-  if (pitch) highlights.push({ label: 'PITCH PIXEL', value: pitch });
-  const brightness = map.get('luminosite nits') ?? map.get('luminosite');
-  if (brightness) highlights.push({ label: 'LUMINOSITÉ · NITS', value: brightness });
-  const dims = map.get('dimensions chassis');
-  if (dims) highlights.push({ label: 'CHÂSSIS', value: dims });
+  if (specs.pixelPitch) highlights.push({ label: 'PITCH PIXEL', value: specs.pixelPitch });
+  if (specs.brightness) highlights.push({ label: 'LUMINOSITÉ · NITS', value: specs.brightness });
+  if (specs.cabinetDimensions) {
+    highlights.push({ label: 'CHÂSSIS', value: specs.cabinetDimensions });
+  }
   const labels = environmentLabels(env);
   highlights.push({ label: 'ENVIRONNEMENT', value: labels ? labels.fr : 'INTÉRIEUR' });
   return highlights;
@@ -850,6 +887,12 @@ export function mapParsedToProduct(
       ...(parsed.menu.tag ? { tag: parsed.menu.tag } : {}),
     };
   }
+
+  const coreSpecs = deriveCoreSpecs(parsed.characteristics ?? []);
+  if (coreSpecs.pixelPitch) product.pixelPitch = coreSpecs.pixelPitch;
+  if (coreSpecs.brightness) product.brightness = coreSpecs.brightness;
+  if (coreSpecs.cabinetDimensions) product.cabinetDimensions = coreSpecs.cabinetDimensions;
+  if (coreSpecs.cabinetWeight) product.cabinetWeight = coreSpecs.cabinetWeight;
 
   const highlights = deriveHighlights(parsed.characteristics ?? [], environment);
   const labels = environmentLabels(environment);

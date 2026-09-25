@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Language } from '../../xeron-translations';
 import { useCms } from '@/lib/site-web/cms-context';
+import { getCmsText, normalizeLang } from '@/lib/site-web/cms-i18n';
 import { useSectionStyle } from '../../cms/useSectionStyle';
 
 interface HeroSectionProps {
@@ -13,26 +14,34 @@ interface HeroSectionProps {
 
 export const HeroSection: React.FC<HeroSectionProps> = ({ lang = 'FR', onOpenConsultation }) => {
   const router = useRouter();
-  const { pages } = useCms();
+  const { pages, currentLang, isEditing } = useCms();
   const cmsHero = pages['home']?.sections?.hero || {};
   const cmsData = cmsHero as Record<string, unknown>;
   const cms = useSectionStyle(cmsData);
   const [activeSlide, setActiveSlide] = useState(0);
+
+  const activeLang = isEditing ? currentLang : normalizeLang(lang);
 
   const heroPrimaryImage = cmsHero.primaryImage || cmsHero.heroImage || '/uploads/site/hero-1.jpg';
 
   const slides = [
     {
       img: heroPrimaryImage,
-      alt: 'LED installation — architectural lobby with illuminated structure',
+      alt: activeLang === 'fr'
+        ? 'Installation LED — hall architectural avec structure illuminée'
+        : 'LED installation — architectural lobby with illuminated structure',
     },
     {
       img: '/uploads/site/hero-2.jpg',
-      alt: 'LED installation — atrium with immersive LED display',
+      alt: activeLang === 'fr'
+        ? 'Installation LED — atrium avec écran LED immersif'
+        : 'LED installation — atrium with immersive LED display',
     },
     {
       img: '/uploads/site/hero-3.jpg',
-      alt: 'LED installation — curved panoramic LED wall',
+      alt: activeLang === 'fr'
+        ? 'Installation LED — mur LED panoramique incurvé'
+        : 'LED installation — curved panoramic LED wall',
     },
   ];
 
@@ -44,19 +53,29 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ lang = 'FR', onOpenCon
   }, [slides.length]);
 
   const t = {
-    eyebrow: cmsHero.badge || 'PIXIATECH / VISUAL TECHNOLOGY',
-    h1Line1: cmsHero.title || (lang === 'FR' ? "L'INGÉNIERIE" : 'ENGINEERED'),
-    h1Line2: cmsHero.tagline || (lang === 'FR' ? 'DU VISUEL.' : 'TO BE SEEN.'),
+    eyebrow: getCmsText(cmsHero, 'badge', activeLang, 'PIXIATECH / VISUAL TECHNOLOGY'),
+    h1Line1: getCmsText(cmsHero, 'title', activeLang, activeLang === 'fr' ? "L'INGÉNIERIE" : 'ENGINEERED'),
+    h1Line2: getCmsText(cmsHero, 'tagline', activeLang, activeLang === 'fr' ? 'DU VISUEL.' : 'TO BE SEEN.'),
     sub:
-      cmsHero.subtitle ||
-      (lang === 'FR'
-        ? "Systèmes d'affichage LED de haute précision conçus pour l'architecture, l'entreprise et les expériences visuelles inoubliables."
-        : 'Professional LED display systems engineered for architecture, business and unforgettable visual experiences.'),
-    cta1: cmsHero.ctaText || (lang === 'FR' ? 'Explorer les Marchés →' : 'Explore Solutions →'),
-    cta2: lang === 'FR' ? 'Démarrer un Projet →' : 'Start a Project →',
-    city: lang === 'FR' ? 'PARIS · MONDE' : 'PARIS · GLOBAL PROJECTS',
-    scroll: lang === 'FR' ? 'DÉFILEZ POUR DÉCOUVRIR ↓' : 'SCROLL TO DISCOVER ↓',
-    tagline: lang === 'FR' ? "SYSTÈMES D'AFFICHAGE LED" : 'LED DISPLAY SYSTEMS',
+      getCmsText(cmsHero, 'description', activeLang) ||
+      getCmsText(
+        cmsHero,
+        'subtitle',
+        activeLang,
+        activeLang === 'fr'
+          ? "Systèmes d'affichage LED de haute précision conçus pour l'architecture, l'entreprise et les expériences visuelles inoubliables."
+          : 'Professional LED display systems engineered for architecture, business and unforgettable visual experiences.'
+      ),
+    cta1: getCmsText(
+      cmsHero,
+      'primaryCta',
+      activeLang,
+      getCmsText(cmsHero, 'ctaText', activeLang, activeLang === 'fr' ? 'Explorer les Marchés →' : 'Explore Solutions →')
+    ),
+    cta2: getCmsText(cmsHero, 'secondaryCta', activeLang, activeLang === 'fr' ? 'Démarrer un Projet →' : 'Start a Project →'),
+    city: activeLang === 'fr' ? 'PARIS · MONDE' : 'PARIS · GLOBAL PROJECTS',
+    scroll: activeLang === 'fr' ? 'DÉFILEZ POUR DÉCOUVRIR ↓' : 'SCROLL TO DISCOVER ↓',
+    tagline: activeLang === 'fr' ? "SYSTÈMES D'AFFICHAGE LED" : 'LED DISPLAY SYSTEMS',
   };
 
   return (

@@ -5,9 +5,37 @@ import { XERON_INSIGHTS, XERON_PROCESS, XERON_PROJECTS } from '../../xeron-data'
 import { usePrefersReducedMotion } from '../../xeron-hooks';
 import { Language } from '../../xeron-translations';
 import { useCms } from '@/lib/site-web/cms-context';
+import { getCmsText, normalizeLang } from '@/lib/site-web/cms-i18n';
 import { useSectionStyle } from '../../cms/useSectionStyle';
 
 const stripArticles = XERON_INSIGHTS.filter((a) => !a.featured).slice(0, 3);
+
+const CATEGORY_FR: Record<string, string> = {
+  GUIDE: 'GUIDE',
+  'LED TECHNOLOGY': 'TECHNOLOGIE LED',
+  COMPARISON: 'COMPARATIF',
+  DOOH: 'DOOH',
+  RETAIL: 'COMMERCE',
+  'CORPORATE AV': 'AV ENTREPRISE',
+  ARCHITECTURE: 'ARCHITECTURE',
+  'VIRTUAL PRODUCTION': 'PRODUCTION VIRTUELLE',
+};
+
+function projectTitle(p: { title: string; titleFr?: string }, lang: Language): string {
+  return (lang === 'FR' ? p.titleFr ?? p.title : p.title).replace('&rsquo;', "'");
+}
+
+function insightTitle(a: { title: string; titleFr?: string }, lang: Language): string {
+  return lang === 'FR' ? a.titleFr ?? a.title : a.title;
+}
+
+function insightCategory(category: string, lang: Language): string {
+  return lang === 'FR' ? CATEGORY_FR[category] ?? category : category;
+}
+
+function insightRead(read: string, lang: Language): string {
+  return lang === 'FR' ? read.replace('MIN READ', 'MIN DE LECTURE') : read;
+}
 
 interface SectionCommonProps {
   lang?: Language;
@@ -19,21 +47,46 @@ export const ProjectsSection: React.FC<SectionCommonProps> = ({
   lang = 'FR',
   onOpenConsultation,
 }) => {
-  const { pages } = useCms();
+  const { pages, currentLang, isEditing } = useCms();
   const cmsData = (pages['home']?.sections?.projects as Record<string, unknown>) || {};
   const cms = useSectionStyle(cmsData);
+  const activeLang = isEditing ? currentLang : normalizeLang(lang);
 
   const t = {
-    eyebrow: (cmsData.badge as string) || (cmsData.eyebrow as string) || (lang === 'FR' ? '08 / PROJETS & RÉALISATIONS' : '08 / PROJECTS'),
-    titleLine1: (cmsData.title as string) || (lang === 'FR' ? 'Déployé dans' : 'Built in'),
-    titleLine2: (cmsData.titleLine2 as string) || (lang === 'FR' ? 'le monde réel.' : 'the real world.'),
+    eyebrow: getCmsText(
+      cmsData,
+      'badge',
+      activeLang,
+      getCmsText(cmsData, 'eyebrow', activeLang, activeLang === 'fr' ? '08 / PROJETS & RÉALISATIONS' : '08 / PROJECTS')
+    ),
+    titleLine1: getCmsText(
+      cmsData,
+      'title',
+      activeLang,
+      activeLang === 'fr' ? 'Déployé dans' : 'Built in'
+    ),
+    titleLine2: getCmsText(
+      cmsData,
+      'titleLine2',
+      activeLang,
+      activeLang === 'fr' ? 'le monde réel.' : 'the real world.'
+    ),
     desc:
-      (cmsData.description as string) ||
-      (cmsData.subtitle as string) ||
-      (lang === 'FR'
-        ? "Scènes de festivals, studios de production virtuelle, façades DOOH et campus universitaires — études de cas concrètes de nos déploiements."
-        : 'Festival stages, virtual production studios, DOOH façades and campus displays — case studies on the projects page.'),
-    allProjects: (cmsData.primaryCta as string) || (cmsData.ctaText as string) || (lang === 'FR' ? 'TOUS LES PROJETS →' : 'ALL PROJECTS →'),
+      getCmsText(cmsData, 'description', activeLang) ||
+      getCmsText(
+        cmsData,
+        'subtitle',
+        activeLang,
+        activeLang === 'fr'
+          ? "Scènes de festivals, studios de production virtuelle, façades DOOH et campus universitaires — études de cas concrètes de nos déploiements."
+          : 'Festival stages, virtual production studios, DOOH façades and campus displays — case studies on the projects page.'
+      ),
+    allProjects: getCmsText(
+      cmsData,
+      'primaryCta',
+      activeLang,
+      getCmsText(cmsData, 'ctaText', activeLang, activeLang === 'fr' ? 'TOUS LES PROJETS →' : 'ALL PROJECTS →')
+    ),
   };
 
   return (
@@ -158,7 +211,7 @@ export const ProjectsSection: React.FC<SectionCommonProps> = ({
                   className="slot-img"
                   data-image-key={`project_${idx}_image`}
                   src={projectImg}
-                  alt={p.title}
+                  alt={projectTitle(p, lang)}
                   style={{
                     width: '100%',
                     height: '100%',
@@ -191,7 +244,7 @@ export const ProjectsSection: React.FC<SectionCommonProps> = ({
                     lineHeight: 1.4,
                   }}
                 >
-                  {p.title.replace('&rsquo;', "'")}
+                  {projectTitle(p, lang)}
                 </span>
                 <span
                   style={{
@@ -232,17 +285,33 @@ export const ProjectsSection: React.FC<SectionCommonProps> = ({
 export const ProcessSection: React.FC<SectionCommonProps> = ({
   lang = 'FR',
 }) => {
-  const { pages } = useCms();
+  const { pages, currentLang, isEditing } = useCms();
   const cmsData = (pages['home']?.sections?.process as Record<string, unknown>) || {};
   const cms = useSectionStyle(cmsData);
   const ref = useRef<HTMLElement | null>(null);
   const lineRef = useRef<HTMLDivElement | null>(null);
   const reduced = usePrefersReducedMotion();
+  const activeLang = isEditing ? currentLang : normalizeLang(lang);
 
   const t = {
-    eyebrow: (cmsData.badge as string) || (cmsData.eyebrow as string) || (lang === 'FR' ? '09 / MÉTHODOLOGIE & PROCESS' : '09 / PROCESS'),
-    titleLine1: (cmsData.title as string) || (lang === 'FR' ? "De l'idée" : 'From idea'),
-    titleLine2: (cmsData.titleLine2 as string) || (lang === 'FR' ? 'à la première lumière.' : 'to first light.'),
+    eyebrow: getCmsText(
+      cmsData,
+      'badge',
+      activeLang,
+      getCmsText(cmsData, 'eyebrow', activeLang, activeLang === 'fr' ? '09 / MÉTHODOLOGIE & PROCESS' : '09 / PROCESS')
+    ),
+    titleLine1: getCmsText(
+      cmsData,
+      'title',
+      activeLang,
+      activeLang === 'fr' ? "De l'idée" : 'From idea'
+    ),
+    titleLine2: getCmsText(
+      cmsData,
+      'titleLine2',
+      activeLang,
+      activeLang === 'fr' ? 'à la première lumière.' : 'to first light.'
+    ),
   };
 
   const processSteps = [
@@ -474,21 +543,45 @@ export const ExperienceSection: React.FC<SectionCommonProps> = ({
   lang = 'FR',
   onOpenConsultation,
 }) => {
-  const { pages } = useCms();
+  const { pages, currentLang, isEditing } = useCms();
   const cmsData = (pages['home']?.sections?.experience as Record<string, unknown>) || {};
   const cms = useSectionStyle(cmsData);
+  const activeLang = isEditing ? currentLang : normalizeLang(lang);
   const bgImage = (cmsData.image as string) || (cmsData.heroImage as string) || (cmsData.primaryImage as string) || '/uploads/site/xc-bg.jpg';
 
   const t = {
-    eyebrow: (cmsData.badge as string) || (cmsData.eyebrow as string) || (lang === 'FR' ? '10 / PIXIATECH EXPERIENCE CENTER' : '10 / PIXIATECH EXPERIENCE CENTER'),
-    title:
-      (cmsData.title as string) ||
-      (lang === 'FR'
+    eyebrow: getCmsText(
+      cmsData,
+      'badge',
+      activeLang,
+      getCmsText(cmsData, 'eyebrow', activeLang, '10 / PIXIATECH EXPERIENCE CENTER')
+    ),
+    title: getCmsText(
+      cmsData,
+      'title',
+      activeLang,
+      activeLang === 'fr'
         ? 'La lumière prend tout son sens lorsque vous vous tenez devant elle.'
-        : 'Pixels make more sense when you stand in front of them.'),
-    cta1: (cmsData.primaryCta as string) || (cmsData.ctaText as string) || (cmsData.cta1 as string) || (lang === 'FR' ? 'Visiter le PIXIATECH Experience Center →' : 'Visit PixiaTech Experience Center →'),
-    cta2: (cmsData.secondaryCta as string) || (cmsData.cta2 as string) || (lang === 'FR' ? 'Réserver une démo technique →' : 'Book a Demo →'),
-    location: (cmsData.location as string) || (lang === 'FR' ? 'PARIS & SHOWROOM EUROPÉEN' : 'PARIS & EUROPEAN SHOWROOM'),
+        : 'Pixels make more sense when you stand in front of them.'
+    ),
+    cta1: getCmsText(
+      cmsData,
+      'primaryCta',
+      activeLang,
+      getCmsText(cmsData, 'ctaText', activeLang, activeLang === 'fr' ? 'Visiter le PIXIATECH Experience Center →' : 'Visit PixiaTech Experience Center →')
+    ),
+    cta2: getCmsText(
+      cmsData,
+      'secondaryCta',
+      activeLang,
+      activeLang === 'fr' ? 'Réserver une démo technique →' : 'Book a Demo →'
+    ),
+    location: getCmsText(
+      cmsData,
+      'location',
+      activeLang,
+      activeLang === 'fr' ? 'PARIS & SHOWROOM EUROPÉEN' : 'PARIS & EUROPEAN SHOWROOM'
+    ),
   };
 
   return (
@@ -627,15 +720,36 @@ export const ExperienceSection: React.FC<SectionCommonProps> = ({
 export const InsightsSection: React.FC<SectionCommonProps> = ({
   lang = 'FR',
 }) => {
-  const { pages } = useCms();
+  const { pages, currentLang, isEditing } = useCms();
   const cmsData = (pages['home']?.sections?.insights as Record<string, unknown>) || {};
   const cms = useSectionStyle(cmsData);
+  const activeLang = isEditing ? currentLang : normalizeLang(lang);
 
   const t = {
-    eyebrow: (cmsData.badge as string) || (cmsData.eyebrow as string) || (lang === 'FR' ? '11 / RESSOURCES & INSIGHTS' : '11 / INSIGHTS'),
-    titleLine1: (cmsData.title as string) || (lang === 'FR' ? 'Notes sur la lumière,' : 'Notes on light,'),
-    titleLine2: (cmsData.titleLine2 as string) || (lang === 'FR' ? 'les pixels et l’espace.' : 'pixels and space.'),
-    allArticles: (cmsData.primaryCta as string) || (cmsData.ctaText as string) || (lang === 'FR' ? 'TOUS LES ARTICLES →' : 'ALL ARTICLES →'),
+    eyebrow: getCmsText(
+      cmsData,
+      'badge',
+      activeLang,
+      getCmsText(cmsData, 'eyebrow', activeLang, activeLang === 'fr' ? '11 / RESSOURCES & INSIGHTS' : '11 / INSIGHTS')
+    ),
+    titleLine1: getCmsText(
+      cmsData,
+      'title',
+      activeLang,
+      activeLang === 'fr' ? 'Notes sur la lumière,' : 'Notes on light,'
+    ),
+    titleLine2: getCmsText(
+      cmsData,
+      'titleLine2',
+      activeLang,
+      activeLang === 'fr' ? 'les pixels et l’espace.' : 'pixels and space.'
+    ),
+    allArticles: getCmsText(
+      cmsData,
+      'primaryCta',
+      activeLang,
+      getCmsText(cmsData, 'ctaText', activeLang, activeLang === 'fr' ? 'TOUS LES ARTICLES →' : 'ALL ARTICLES →')
+    ),
   };
 
   return (
@@ -754,7 +868,7 @@ export const InsightsSection: React.FC<SectionCommonProps> = ({
                     className="slot-img"
                     data-image-key={`insight_${idx}_image`}
                     src={cardImg}
-                    alt={a.title}
+                    alt={insightTitle(a, lang)}
                     style={{
                       width: '100%',
                       height: '100%',
@@ -775,7 +889,7 @@ export const InsightsSection: React.FC<SectionCommonProps> = ({
                   textTransform: 'uppercase',
                 }}
               >
-                {a.category}
+                {insightCategory(a.category, lang)}
               </div>
               <div
                 className="art-t pretty"
@@ -788,7 +902,7 @@ export const InsightsSection: React.FC<SectionCommonProps> = ({
                   color: '#111110',
                 }}
               >
-                {a.title}
+                {insightTitle(a, lang)}
               </div>
               <div
                 style={{
@@ -798,7 +912,7 @@ export const InsightsSection: React.FC<SectionCommonProps> = ({
                   fontFamily: 'monospace',
                 }}
               >
-                {a.read}
+                {insightRead(a.read, lang)}
               </div>
             </a>
           );

@@ -40,7 +40,7 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
     cta: lang === 'FR' ? 'Découvrir les réalisations →' : 'See the projects →',
     steps: lang === 'FR' ? ['PIXEL', 'MODULE', 'MUR', 'FAÇADE', 'VILLE'] : ['PIXEL', 'MODULE', 'WALL', 'FAÇADE', 'CITY'],
     hud: lang === 'FR' ? ['DISTANCE CAMÉRA', 'PIXELS VISIBLES', 'ÉCHELLE VISUELLE'] : ['CAMERA DISTANCE', 'PIXELS IN VIEW', 'WHAT YOU SEE'],
-    content: { tagline: 'Science Behind The LED' },
+    content: { tagline: lang === 'FR' ? 'La science derrière la LED' : 'Science Behind The LED' },
   };
 
   useEffect(() => {
@@ -1068,7 +1068,7 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
         pCount >= 1e6
           ? (pCount / 1e6).toFixed(2) + ' M'
           : pCount >= 1e3
-          ? Math.round(pCount).toLocaleString('en-US')
+          ? Math.round(pCount).toLocaleString(lang === 'FR' ? 'fr-FR' : 'en-US')
           : String(Math.round(pCount));
 
       if (hudPixels && hudPixels.textContent !== pxStr) {

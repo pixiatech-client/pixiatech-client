@@ -84,3 +84,8 @@ dump-*.js
 /vite.config.ts
 /.codex/
 .claude/settings.local.json
+
+# QA / tooling scratch (non commité)
+/.opencode-tmp/
+/.playwright-cli/
+/qa-home.yaml

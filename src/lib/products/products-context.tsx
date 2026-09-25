@@ -15,11 +15,14 @@ import React, {
   useMemo,
 } from 'react';
 
-import { type MegaMenu, type ProductRecord } from './types';
+import { type MegaMenu, type ProductCategory, type ProductCategoryGroup, type ProductRecord } from './types';
 import { subscribeProducts, subscribeMegaMenu } from './products-service';
+import { subscribeCategories, subscribeGroups } from './categories-service';
 
 interface ProductsContextType {
   products: ProductRecord[];
+  categories: ProductCategory[];
+  groups: ProductCategoryGroup[];
   menu: MegaMenu | null;
   loading: boolean;
   error: string | null;
@@ -31,6 +34,8 @@ const ProductsContext = createContext<ProductsContextType | null>(null);
 
 export const ProductsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [products, setProducts] = useState<ProductRecord[]>([]);
+  const [categories, setCategories] = useState<ProductCategory[]>([]);
+  const [groups, setGroups] = useState<ProductCategoryGroup[]>([]);
   const [menu, setMenu] = useState<MegaMenu | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -51,6 +56,22 @@ export const ProductsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setLoading(false);
       }
     );
+    const unsubCategories = subscribeCategories(
+      (cats) => {
+        if (mounted) setCategories(cats);
+      },
+      (err) => {
+        if (mounted) console.warn('[Products] Error loading categories:', err);
+      }
+    );
+    const unsubGroups = subscribeGroups(
+      (grps) => {
+        if (mounted) setGroups(grps);
+      },
+      (err) => {
+        if (mounted) console.warn('[Products] Error loading category groups:', err);
+      }
+    );
     const unsubMenu = subscribeMegaMenu(
       (m) => {
         if (mounted) setMenu(m);
@@ -62,6 +83,8 @@ export const ProductsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return () => {
       mounted = false;
       unsubProducts();
+      unsubCategories();
+      unsubGroups();
       unsubMenu();
     };
   }, []);
@@ -70,9 +93,17 @@ export const ProductsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setLoading(true);
     try {
       const { listProducts, getMegaMenu } = await import('./products-service');
-      const [records, nextMenu] = await Promise.all([listProducts(), getMegaMenu()]);
+      const { listCategories, listGroups } = await import('./categories-service');
+      const [records, nextMenu, nextCategories, nextGroups] = await Promise.all([
+        listProducts(),
+        getMegaMenu(),
+        listCategories(),
+        listGroups(),
+      ]);
       setProducts(records);
       setMenu(nextMenu);
+      setCategories(nextCategories);
+      setGroups(nextGroups);
       setError(null);
     } catch (err) {
       console.warn('[Products] Refresh failed:', err);
@@ -93,8 +124,8 @@ export const ProductsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   );
 
   const value = useMemo<ProductsContextType>(
-    () => ({ products, menu, loading, error, getBySlug, refresh }),
-    [products, menu, loading, error, getBySlug, refresh]
+    () => ({ products, categories, groups, menu, loading, error, getBySlug, refresh }),
+    [products, categories, groups, menu, loading, error, getBySlug, refresh]
   );
 
   return <ProductsContext.Provider value={value}>{children}</ProductsContext.Provider>;

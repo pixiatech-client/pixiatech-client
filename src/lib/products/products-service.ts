@@ -234,6 +234,19 @@ export async function uploadProductPhoto(
   return { name: file.name, url, path, size: file.size };
 }
 
+/** Upload de l'image affichée au survol dans la page "Tous les produits".
+ *  Stockée dans products/{slug}/hover/ et sauvegardée dans hero.hoverImage. */
+export async function uploadProductHoverImage(
+  slug: string,
+  file: File
+): Promise<{ url: string; path: string }> {
+  const path = `${PRODUCT_MEDIA_ROOT}/${slug}/hover/${sanitizeFileName(file.name)}`;
+  const storageRef = ref(storage, path);
+  await uploadBytes(storageRef, file);
+  const url = await getDownloadURL(storageRef);
+  return { url, path };
+}
+
 export async function uploadProductVideo(
   slug: string,
   file: File

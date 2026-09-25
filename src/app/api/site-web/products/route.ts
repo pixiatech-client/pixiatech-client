@@ -11,7 +11,11 @@ export async function GET(request: NextRequest) {
     const products = await listProducts();
     return NextResponse.json({ success: true, products });
   } catch (err: unknown) {
-    return NextResponse.json({ success: false, error: (err as Error).message }, { status: 500 });
+    console.error('GET /api/site-web/products', err);
+    return NextResponse.json(
+      { success: false, message: 'Impossible de charger les produits. La base est momentanément indisponible — réessayez dans un instant.' },
+      { status: 500 }
+    );
   }
 }
 
@@ -48,6 +52,10 @@ export async function POST(request: NextRequest) {
       product,
     });
   } catch (err: unknown) {
-    return NextResponse.json({ success: false, error: (err as Error).message }, { status: 500 });
+    console.error('POST /api/site-web/products', err);
+    return NextResponse.json(
+      { success: false, message: 'Échec de la création du produit. La base est momentanément indisponible — réessayez dans un instant.' },
+      { status: 500 }
+    );
   }
 }

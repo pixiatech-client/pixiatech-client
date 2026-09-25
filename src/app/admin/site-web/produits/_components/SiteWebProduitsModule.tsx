@@ -23,12 +23,13 @@ import {
   FileCheck,
   X,
   Sparkles,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { parseProductPdf } from '@/lib/products/product-pdf-parser';
-import { uploadProductPhoto } from '@/lib/products/products-service';
-import { slugify, MAX_PRODUCT_NAME_LENGTH } from '@/lib/products/types';
-import type { Product } from '@/lib/products/types';
+import { uploadProductPhoto, uploadProductHoverImage } from '@/lib/products/products-service';
+import { slugify, groupDisplayName, productCategoryIds, MAX_PRODUCT_NAME_LENGTH } from '@/lib/products/types';
+import type { Product, ProductCategory, ProductCategoryGroup } from '@/lib/products/types';
 
 interface SiteWebProduitsModuleProps {
   initial?: Product[];
@@ -117,6 +118,24 @@ async function createProduct(body: Record<string, unknown>): Promise<Product> {
     throw new Error(data.message || data.error || 'Création impossible.');
   }
   return data.product as Product;
+}
+
+async function fetchProductCategories(): Promise<ProductCategory[]> {
+  const res = await fetch('/api/site-web/categories', { credentials: 'include' });
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data.message || data.error || 'Impossible de charger les catégories.');
+  }
+  return data.categories as ProductCategory[];
+}
+
+async function fetchProductGroups(): Promise<ProductCategoryGroup[]> {
+  const res = await fetch('/api/site-web/category-groups', { credentials: 'include' });
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data.message || data.error || 'Impossible de charger les groupes de filtres.');
+  }
+  return data.groups as ProductCategoryGroup[];
 }
 
 /** Champs extraits du PDF, résumés pour un affichage convivial (aucun JSON). */
@@ -566,6 +585,107 @@ function ProductForm({
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  // ── Catégories (taxonomie CMS) ────────────────────────────────────────────
+  const [categories, setCategoriesState] = useState<ProductCategory[]>([]);
+  const [groups, setGroups] = useState<ProductCategoryGroup[]>([]);
+  /** Sélection par groupe de filtres : clé = type de catégorie, valeur = IDs. */
+  const [selByGroup, setSelByGroup] = useState<Record<string, string[]>>({});
+  const [addingGroup, setAddingGroup] = useState<string | null>(null);
+  const [newFilterName, setNewFilterName] = useState('');
+  const [categorySaving, setCategorySaving] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    Promise.all([fetchProductCategories(), fetchProductGroups()])
+      .then(([list, groupList]) => {
+        if (!mounted) return;
+        setCategoriesState(list);
+        setGroups(groupList);
+        // Sélections initiales depuis `categoryIds` (choix unifié) avec repli
+        // sur les anciens tableaux environment/application du produit.
+        const initial = productCategoryIds(existing);
+        if (initial.length > 0) {
+          const buckets: Record<string, string[]> = {};
+          for (const id of initial) {
+            const cat = list.find((c) => c.id === id);
+            if (cat) (buckets[cat.type] ??= []).push(id);
+          }
+          setSelByGroup(buckets);
+        }
+      })
+      .catch((err) => {
+        if (!mounted) return;
+        console.warn('[ProductForm] Impossible de charger les catégories :', err);
+      });
+    return () => {
+      mounted = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const toggleSel = (type: string, id: string) =>
+    setSelByGroup((prev) => ({
+      ...prev,
+      [type]: prev[type]?.includes(id) ? prev[type].filter((x) => x !== id) : [...(prev[type] ?? []), id],
+    }));
+
+  /** Création d'un filtre directement depuis le formulaire produit :
+   *  crée la catégorie, recharge la liste et sélectionne la nouvelle. */
+  const addFilter = async (type: string, raw: string) => {
+    const name = raw.trim();
+    if (!name) return;
+    setCategorySaving(true);
+    try {
+      const res = await fetch('/api/site-web/categories', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, slug: slugify(name), type, active: true, order: 9999 }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || data.error || 'Échec de la création du filtre.');
+      }
+      const list = await fetchProductCategories();
+      setCategoriesState(list);
+      const created =
+        list.find((c) => c.id === data.category?.id) ??
+        list.find((c) => c.slug === data.category?.slug && c.type === type);
+      if (created) {
+        setSelByGroup((prev) => ({
+          ...prev,
+          [type]: prev[type]?.includes(created.id) ? prev[type] : [...(prev[type] ?? []), created.id],
+        }));
+      }
+      setNewFilterName('');
+      setAddingGroup(null);
+      toast.success(`Filtre « ${name} » ajouté et sélectionné.`);
+    } catch (err) {
+      toast.error((err as Error).message || 'Échec de la création du filtre.');
+    } finally {
+      setCategorySaving(false);
+    }
+  };
+
+  /** Catégories sélectionnées, groupées par groupe (pour sauvegarde). */
+  const categoryIds: string[] = Object.values(selByGroup).flat();
+  // Anciens tableaux environment/application conservés pour compatibilité.
+  const legacyBuckets: Record<string, string[]> = {};
+  for (const id of categoryIds) {
+    const type = categories.find((c) => c.id === id)?.type;
+    if (type) (legacyBuckets[type] ??= []).push(id);
+  }
+  const environmentCategoryIds = legacyBuckets['environment'] ?? [];
+  const applicationCategoryIds = legacyBuckets['application'] ?? [];
+
+  // ── Image au survol (hero.hoverImage) ──────────────────────────────────────
+  const [hoverFile, setHoverFile] = useState<File | null>(null);
+  const [hoverPreview, setHoverPreview] = useState<string | undefined>(
+    existing?.hero?.hoverImage ?? undefined
+  );
+  const [hoverUploading, setHoverUploading] = useState(false);
+  const hoverInputRef = useRef<HTMLInputElement>(null);
+
   const photoInputRef = useRef<HTMLInputElement>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
 
@@ -622,6 +742,38 @@ function ProductForm({
     }
   };
 
+  const uploadHoverImage = async (file: File) => {
+    if (!existing) return;
+    setHoverUploading(true);
+    try {
+      const { url } = await uploadProductHoverImage(existing.slug, file);
+      await saveProduct(existing.slug, { hero: { ...existing.hero, hoverImage: url } });
+      setHoverPreview(url);
+      setHoverFile(null);
+      toast.success('Image au survol mise à jour.');
+    } catch (err) {
+      toast.error((err as Error).message || 'Échec du téléversement.');
+    } finally {
+      setHoverUploading(false);
+    }
+  };
+
+  const removeHoverImage = async () => {
+    if (!existing) return;
+    setHoverUploading(true);
+    try {
+      const { hoverImage: _removed, ...heroRest } = existing.hero ?? {};
+      await saveProduct(existing.slug, { hero: heroRest });
+      setHoverPreview(undefined);
+      setHoverFile(null);
+      toast.success('Image au survol supprimée.');
+    } catch (err) {
+      toast.error((err as Error).message || 'Échec de la suppression.');
+    } finally {
+      setHoverUploading(false);
+    }
+  };
+
   const analyzePdf = async (file: File) => {
     setAnalyzing(true);
     try {
@@ -660,6 +812,9 @@ function ProductForm({
         slug,
         status: 'draft',
         order: 0,
+        environmentCategoryIds,
+        applicationCategoryIds,
+        categoryIds,
       });
       if (photoFile) {
         try {
@@ -699,7 +854,13 @@ function ProductForm({
     }
     setSaving(true);
     try {
-      const body: Record<string, unknown> = { name: cleanName, status: nextStatus || status };
+      const body: Record<string, unknown> = {
+        name: cleanName,
+        status: nextStatus || status,
+        environmentCategoryIds,
+        applicationCategoryIds,
+        categoryIds,
+      };
       if (pdfReanalysis) Object.assign(body, pdfReanalysis);
       const next = await saveProduct(existing.slug, body);
       onSaved(next.status === 'published' ? `Produit « ${next.name} » publié.` : `Produit « ${next.name} » enregistré.`);
@@ -825,7 +986,7 @@ function ProductForm({
                   maxLength={MAX_PRODUCT_NAME_LENGTH}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="ex. WK Series"
+                  placeholder="ex. PXT Series"
                   autoFocus
                   className="mt-3 w-full max-w-md px-4 py-3 bg-neutral-50 dark:bg-white/5 border border-neutral-200 dark:border-white/10 rounded-xl text-sm text-neutral-900 dark:text-white focus:ring-2 focus:ring-[#38E044]/50 outline-none transition-all"
                 />
@@ -982,6 +1143,55 @@ function ProductForm({
                 </div>
               </section>
 
+              {/* ── Image au survol (hero.hoverImage) ── */}
+              <section className="rounded-2xl border border-dashed border-neutral-200 dark:border-white/10 p-4 bg-neutral-50/50 dark:bg-white/[0.02]">
+                <div className="flex items-center gap-2 mb-3">
+                  <h2 className="text-sm font-bold text-neutral-900 dark:text-white">Image au survol</h2>
+                  <span className="text-[10px] font-mono font-bold bg-sky-100 dark:bg-sky-500/15 text-sky-700 dark:text-sky-400 px-2 py-0.5 rounded-full border border-sky-200 dark:border-sky-500/30 uppercase tracking-wider">
+                    Hover · Tous les produits uniquement
+                  </span>
+                </div>
+                <p className="text-[11px] text-neutral-400 dark:text-neutral-500 mb-3 leading-relaxed">
+                  Affichée uniquement au survol dans la page <strong>Tous les produits</strong>.
+                  La photo principale reste inchangée partout ailleurs (méga menu, fiche produit, etc.).
+                </p>
+                <div className="flex items-center gap-4">
+                  <div className="w-24 h-24 rounded-2xl border border-neutral-200 dark:border-white/10 bg-white dark:bg-white/[0.03] flex items-center justify-center overflow-hidden shrink-0">
+                    {hoverPreview ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={hoverPreview} alt="Aperçu image survol" className="w-full h-full object-contain p-1" />
+                    ) : (
+                      <ImageIcon className="w-8 h-8 text-neutral-200 dark:text-neutral-700" />
+                    )}
+                  </div>
+                  <div className="flex-1 w-full space-y-2">
+                    <UploadZone
+                      label="Image au survol (glisser-déposer ou cliquer)"
+                      hint="JPG ou PNG — remplace l'image principale au hover"
+                      onFile={(file) => file && void uploadHoverImage(file)}
+                      inputRef={hoverInputRef}
+                      disabled={hoverUploading}
+                    />
+                    {hoverUploading && (
+                      <div className="flex items-center gap-2 text-xs text-neutral-500 font-semibold">
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-sky-500" />
+                        Téléversement en cours…
+                      </div>
+                    )}
+                    {hoverPreview && !hoverUploading && (
+                      <button
+                        type="button"
+                        onClick={() => void removeHoverImage()}
+                        className="flex items-center gap-1.5 text-[11px] text-rose-500 hover:text-rose-700 font-bold transition-colors cursor-pointer"
+                      >
+                        <X className="w-3 h-3" />
+                        Retirer l'image au survol
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </section>
+
               <section>
                 <h2 className="text-sm font-bold text-neutral-900 dark:text-white mb-1.5">
                   Fiche technique (PDF)
@@ -1037,6 +1247,135 @@ function ProductForm({
               )}
             </>
           )}
+
+          {/* ── Catégories (taxonomie CMS) ── */}
+          <section>
+            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+              <h2 className="text-sm font-bold text-neutral-900 dark:text-white">Catégories</h2>
+              <span className="text-[11px] text-neutral-400 font-medium">
+                Filtres de la page « Tous les produits »
+              </span>
+              <a
+                href="/admin/site-web/categories"
+                className="inline-flex items-center gap-1.5 ml-auto px-3 py-1.5 rounded-xl text-[11px] font-bold border border-neutral-300 dark:border-white/10 text-neutral-700 dark:text-neutral-200 hover:border-[#38E044]/60 hover:text-[#38E044] transition-colors"
+              >
+                <SlidersHorizontal className="h-3.5 w-3.5" />
+                Gérer les filtres (renommer / supprimer)
+              </a>
+            </div>
+            {categories.length === 0 ? (
+              <p className="text-[11px] text-neutral-400">
+                Chargement des catégories… Si aucune n’apparaît, créez-en dans le
+                menu <strong>Site Web → Catégories</strong>.
+              </p>
+            ) : (
+              <div className="space-y-4">
+                {[...groups]
+                  .sort((a, b) => {
+                    const oa = typeof a.order === 'number' ? a.order : Number.MAX_SAFE_INTEGER;
+                    const ob = typeof b.order === 'number' ? b.order : Number.MAX_SAFE_INTEGER;
+                    return oa - ob;
+                  })
+                  .map((group) => {
+                    const type = group.key;
+                    const list = categories.filter((c) => c.type === type && c.active);
+                    const selected = selByGroup[type] ?? [];
+                    const label = groupDisplayName(group, 'FR');
+                    return (
+                      <div key={group.id}>
+                        <div className="text-[11px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mb-2 flex items-center gap-2 flex-wrap">
+                          <span>{label}</span>
+                          {list.length > 0 && <span className="text-neutral-400">({list.length})</span>}
+                          {!group.active && (
+                            <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-neutral-200 dark:bg-white/10 text-neutral-500 dark:text-neutral-300">
+                              inactif
+                            </span>
+                          )}
+                        </div>
+                        {list.length === 0 ? (
+                          <p className="text-[11px] text-neutral-400 italic">Aucune catégorie active.</p>
+                        ) : (
+                          <div className="flex flex-wrap gap-2">
+                            {list.map((c) => {
+                              const on = selected.includes(c.id);
+                              return (
+                                <button
+                                  key={c.id}
+                                  type="button"
+                                  onClick={() => toggleSel(type, c.id)}
+                                  className={`px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all cursor-pointer border ${
+                                    on
+                                      ? 'bg-[#38E044] text-black border-[#38E044] shadow-[0_0_12px_rgba(56,224,68,0.25)]'
+                                      : 'bg-white dark:bg-zinc-800 text-neutral-700 dark:text-neutral-200 border-neutral-300 dark:border-white/10 hover:border-neutral-400'
+                                  }`}
+                                >
+                                  {on ? '✓ ' : ''}
+                                  {c.name}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                        <div className="mt-2">
+                          {addingGroup === type ? (
+                            <div className="flex items-center gap-2">
+                              <input
+                                autoFocus
+                                value={newFilterName}
+                                onChange={(ev) => setNewFilterName(ev.target.value)}
+                                onKeyDown={(ev) => {
+                                  if (ev.key === 'Enter') {
+                                    ev.preventDefault();
+                                    void addFilter(type, newFilterName);
+                                  }
+                                }}
+                                placeholder={`Nouveau filtre ${label}…`}
+                                className="w-56 px-3 py-1.5 rounded-xl text-[11px] font-semibold bg-white dark:bg-zinc-800 text-neutral-900 dark:text-white border border-neutral-300 dark:border-white/10 focus:ring-2 focus:ring-[#38E044]/40 outline-none transition-all"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => void addFilter(type, newFilterName)}
+                                disabled={categorySaving}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-[11px] font-black bg-[#38E044] text-black hover:bg-[#4af257] transition-colors disabled:opacity-50 cursor-pointer"
+                              >
+                                {categorySaving ? (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                  <Check className="h-3.5 w-3.5" />
+                                )}
+                                Ajouter
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setAddingGroup(null);
+                                  setNewFilterName('');
+                                }}
+                                className="text-[11px] font-bold text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white px-2 py-1.5 transition-colors cursor-pointer"
+                              >
+                                Annuler
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setAddingGroup(type);
+                                setNewFilterName('');
+                              }}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-[11px] font-bold text-neutral-500 dark:text-neutral-400 border border-dashed border-neutral-300 dark:border-white/15 hover:text-[#38E044] hover:border-[#38E044]/60 transition-colors cursor-pointer"
+                            >
+                              <Plus className="h-3.5 w-3.5" />
+                              Ajouter un filtre {label}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            )}
+          </section>
         </div>
       </div>
     </div>

@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Language } from '../../xeron-translations';
 import { useCms } from '@/lib/site-web/cms-context';
+import { getCmsText, normalizeLang } from '@/lib/site-web/cms-i18n';
 import { useSectionStyle } from '../../cms/useSectionStyle';
 
 interface TechShowcaseSectionProps {
@@ -54,27 +55,35 @@ const TECHS = [
  */
 export const TechShowcaseSection: React.FC<TechShowcaseSectionProps> = ({ lang = 'FR' }) => {
   const [activeIdx, setActiveIdx] = useState<number>(0);
-  const { pages } = useCms();
+  const { pages, currentLang, isEditing } = useCms();
 
   const cmsData = (pages['home']?.sections?.technology as Record<string, unknown>) || {};
   const cms = useSectionStyle(cmsData);
+  const activeLang = isEditing ? currentLang : normalizeLang(lang);
 
   const t = {
-    eyebrow:
-      (cmsData.badge as string) ||
-      (cmsData.eyebrow as string) ||
-      (lang === 'FR' ? '07 / TECHNOLOGIES PROPRI\u00c9TAIRES' : '07 / PROPRIETARY TECHNOLOGY'),
-    title:
-      (cmsData.title as string) ||
-      (lang === 'FR'
-        ? 'La technologie au c\u0153ur de chaque pixel.'
-        : 'Technology inside every pixel.'),
+    eyebrow: getCmsText(
+      cmsData,
+      'badge',
+      activeLang,
+      getCmsText(cmsData, 'eyebrow', activeLang, activeLang === 'fr' ? '07 / TECHNOLOGIES PROPRIÉTAIRES' : '07 / PROPRIETARY TECHNOLOGY')
+    ),
+    title: getCmsText(
+      cmsData,
+      'title',
+      activeLang,
+      activeLang === 'fr' ? 'La technologie au cœur de chaque pixel.' : 'Technology inside every pixel.'
+    ),
     desc:
-      (cmsData.description as string) ||
-      (cmsData.subtitle as string) ||
-      (lang === 'FR'
-        ? 'Cinq technologies fondamentales d\u00e9velopp\u00e9es dans nos laboratoires pour garantir un rendement photonique maximal, une durabilit\u00e9 \u00e9prouv\u00e9e et une efficience exemplaire.'
-        : 'Five proprietary display technologies delivering exceptional performance, proven reliability and enhanced sustainability.'),
+      getCmsText(cmsData, 'description', activeLang) ||
+      getCmsText(
+        cmsData,
+        'subtitle',
+        activeLang,
+        activeLang === 'fr'
+          ? 'Cinq technologies fondamentales développées dans nos laboratoires pour garantir un rendement photonique maximal, une durabilité éprouvée et une efficience exemplaire.'
+          : 'Five proprietary display technologies delivering exceptional performance, proven reliability and enhanced sustainability.'
+      ),
   };
 
   return (

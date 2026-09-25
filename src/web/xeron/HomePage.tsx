@@ -118,14 +118,23 @@ const HOME_SECTIONS: Record<
 export function XerHomePage() {
   const [lang, setLang] = useState<Language>('FR');
   const [consultOpen, setConsultOpen] = useState(false);
-  const { setCurrentPageId, currentPageData } = useCms();
+  const { setCurrentPageId, currentPageData, isEditing, currentLang, setCurrentLang } = useCms();
 
   useEffect(() => {
     setCurrentPageId(HOME_PAGE_ID);
   }, [setCurrentPageId]);
 
-  const toggleLang = () => setLang((l) => (l === 'FR' ? 'EN' : 'FR'));
+  const toggleLang = () => {
+    const next: Language = lang === 'FR' ? 'EN' : 'FR';
+    setLang(next);
+    setCurrentLang(next.toLowerCase());
+  };
   const openConsultation = () => setConsultOpen(true);
+
+  // Si on est dans l'éditeur CMS, synchroniser la langue affichée avec celle choisie dans l'ElementorDrawer
+  const effectiveLang: Language = isEditing
+    ? (currentLang.toUpperCase() === 'EN' ? 'EN' : 'FR')
+    : lang;
 
   // Compute ordered sections
   const configuredOrder = currentPageData?.sectionOrder;
@@ -142,7 +151,7 @@ export function XerHomePage() {
     <RevealRoot className="xer-site" style={{ background: '#080808' }}>
       <XerHeader
         companyName="PIXIATECH"
-        lang={lang}
+        lang={effectiveLang}
         onOpenConsultation={openConsultation}
         onToggleLang={toggleLang}
       />
@@ -153,13 +162,13 @@ export function XerHomePage() {
             if (!sec) return null;
             return (
               <EditableWrapper key={key} sectionKey={key} sectionLabel={sec.label}>
-                {sec.render({ lang, openConsultation })}
+                {sec.render({ lang: effectiveLang, openConsultation })}
               </EditableWrapper>
             );
           })}
         </SectionDragDropProvider>
       </main>
-      <XerFooter companyName="PIXIATECH" lang={lang} onOpenConsultation={openConsultation} />
+      <XerFooter companyName="PIXIATECH" lang={effectiveLang} onOpenConsultation={openConsultation} />
       <ConsultationModal
         isOpen={consultOpen}
         onClose={() => setConsultOpen(false)}

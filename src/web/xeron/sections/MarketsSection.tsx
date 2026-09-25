@@ -3,6 +3,7 @@
 import React, { useRef, useEffect } from 'react';
 import { Language } from '../../xeron-translations';
 import { useCms } from '@/lib/site-web/cms-context';
+import { getCmsText, normalizeLang } from '@/lib/site-web/cms-i18n';
 import { useSectionStyle } from '../../cms/useSectionStyle';
 
 interface MarketsSectionProps {
@@ -14,32 +15,43 @@ export const MarketsSection: React.FC<MarketsSectionProps> = ({ lang = 'FR', onO
   const wrapperRef = useRef<HTMLDivElement>(null);
   const stickyRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
-  const { pages } = useCms();
+  const { pages, currentLang, isEditing } = useCms();
   const cmsData = (pages['home']?.sections?.markets as Record<string, unknown>) || {};
   const cms = useSectionStyle(cmsData);
+  const activeLang = isEditing ? currentLang : normalizeLang(lang);
 
   const t = {
-    eyebrow: (cmsData.badge as string) || (cmsData.eyebrow as string) || (lang === 'FR' ? '03 / MARCHÉS' : '03 / MARKETS'),
-    title: (cmsData.title as string) || (lang === 'FR' ? 'Conçu pour chaque environnement.' : 'Built for every environment.'),
+    eyebrow: getCmsText(
+      cmsData,
+      'badge',
+      activeLang,
+      getCmsText(cmsData, 'eyebrow', activeLang, activeLang === 'fr' ? '03 / MARCHÉS' : '03 / MARKETS')
+    ),
+    title: getCmsText(
+      cmsData,
+      'title',
+      activeLang,
+      activeLang === 'fr' ? 'Conçu pour chaque environnement.' : 'Built for every environment.'
+    ),
     markets: [
       {
         id: 'corporate',
         num: '01',
-        name: 'CORPORATE',
+        name: lang === 'FR' ? 'ENTREPRISE' : 'CORPORATE',
         desc:
           lang === 'FR'
             ? 'Des écrans de précision pour les espaces où chaque détail compte.'
             : 'Precision displays for spaces where every detail matters.',
-        cta: lang === 'FR' ? 'EXPLORER CORPORATE →' : 'EXPLORE CORPORATE →',
+        cta: lang === 'FR' ? 'EXPLORER ENTREPRISE →' : 'EXPLORE CORPORATE →',
         img: '/uploads/site/market-corporate.jpg',
       },
       {
         id: 'retail',
         num: '02',
-        name: 'RETAIL',
+        name: lang === 'FR' ? 'COMMERCE & RETAIL' : 'RETAIL',
         desc:
           lang === 'FR' ? 'Des affichages qui transforment les visiteurs en audiences captivées.' : 'Displays that turn visitors into audiences.',
-        cta: lang === 'FR' ? 'EXPLORER RETAIL →' : 'EXPLORE RETAIL →',
+        cta: lang === 'FR' ? 'EXPLORER COMMERCE →' : 'EXPLORE RETAIL →',
         img: '/uploads/site/market-retail.jpg',
       },
       {
@@ -56,18 +68,18 @@ export const MarketsSection: React.FC<MarketsSectionProps> = ({ lang = 'FR', onO
       {
         id: 'rental',
         num: '04',
-        name: 'RENTAL & TOURING',
+        name: lang === 'FR' ? 'LOCATION & TOURNÉES' : 'RENTAL & TOURING',
         desc:
           lang === 'FR'
             ? "Rapide à monter, sûr en tournée, impossible à ignorer sur scène."
             : 'Fast to build, safe to tour, impossible to ignore.',
-        cta: lang === 'FR' ? 'EXPLORER RENTAL →' : 'EXPLORE RENTAL →',
+        cta: lang === 'FR' ? 'EXPLORER LOCATION →' : 'EXPLORE RENTAL →',
         img: '/uploads/site/market-rental.jpg',
       },
       {
         id: 'xr',
         num: '05',
-        name: 'XR & VIRTUAL PRODUCTION',
+        name: lang === 'FR' ? 'XR & PRODUCTION VIRTUELLE' : 'XR & VIRTUAL PRODUCTION',
         desc:
           lang === 'FR'
             ? 'Conçu avec une précision millimétrique pour les caméras broadcast et plateaux virtuels.'
@@ -78,7 +90,7 @@ export const MarketsSection: React.FC<MarketsSectionProps> = ({ lang = 'FR', onO
       {
         id: 'sports',
         num: '06',
-        name: 'STADES & ARENAS',
+        name: lang === 'FR' ? 'STADES & ARENAS' : 'STADIUMS & ARENAS',
         desc:
           lang === 'FR'
             ? 'Écrans géants pour tribunes et rubans de coursives résistant aux intempéries.'

@@ -4,10 +4,65 @@
       "id": "home",
       "name": "home",
       "slug": "/home",
-      "updatedAt": "2026-09-24T13:41:15.567Z",
+      "updatedAt": "2026-09-25T20:02:25.553Z",
       "sections": {
         "pixia-web": {
           "text_1790257213042": "sdsdsdsdÉDITEUR DIRECT : CLIQUEZ SUR UN TEXTE OU UNE IMAGE"
+        },
+        "top": {
+          "_i18n": {
+            "text_1790360060306": {
+              "fr": {
+                "value": "L'INGÉNIERIE OUI",
+                "status": "source",
+                "updatedAt": "2026-09-25T18:14:20.306Z",
+                "sourceText": "L'INGÉNIERIE OUI"
+              }
+            },
+            "text_1790360077007": {
+              "en": {
+                "value": "ENGINEERED YES",
+                "status": "manual",
+                "updatedAt": "2026-09-25T18:14:37.007Z",
+                "sourceText": ""
+              }
+            },
+            "text_1790366517806": {
+              "fr": {
+                "value": "L'INGÉNIERIE 1",
+                "status": "source",
+                "updatedAt": "2026-09-25T20:01:57.806Z",
+                "sourceText": "L'INGÉNIERIE 1"
+              }
+            },
+            "text_1790366523128": {
+              "en": {
+                "value": "ENGINEERED 2",
+                "status": "manual",
+                "updatedAt": "2026-09-25T20:02:03.128Z",
+                "sourceText": ""
+              }
+            },
+            "text_1790366537277": {
+              "fr": {
+                "value": "L'INGÉNIERIE 1",
+                "status": "source",
+                "updatedAt": "2026-09-25T20:02:17.277Z",
+                "sourceText": "L'INGÉNIERIE 1"
+              }
+            },
+            "text_1790366544045": {
+              "en": {
+                "value": "ENGINEERED 2",
+                "status": "manual",
+                "updatedAt": "2026-09-25T20:02:24.045Z",
+                "sourceText": ""
+              }
+            }
+          },
+          "text_1790360060306": "L'INGÉNIERIE OUI",
+          "text_1790366517806": "L'INGÉNIERIE 1",
+          "text_1790366537277": "L'INGÉNIERIE 1"
         }
       }
     },
@@ -125,34 +180,20 @@
     },
     "mentions_legales": {
       "id": "mentions_legales",
-      "name": "Mentions Légales",
-      "slug": "/mentions-legales",
+      "name": "mentions_legales",
+      "slug": "/mentions_legales",
       "editorPath": "/web/mentions-legales",
-      "updatedAt": "2026-09-25T08:33:33.200Z",
-      "meta": {
-        "title": "Mentions Légales & CGV/CGL · PIXIATECH",
-        "description": "Conditions générales de vente, de services et de location, informations légales de PIXIATECH SASU."
-      },
+      "updatedAt": "2026-09-25T13:34:25.236Z",
       "sections": {
-        "header": {
-          "badge": "PIXIATECH / JURIDIQUE",
-          "title": "Mentions Légales",
-          "subtitle": "CONDITIONS GÉNÉRALES DE VENTE, DE SERVICES ET DE LOCATION (CGV/CGL) — Dernière mise à jour : 30/11/2025"
+        "pixia-web": {
+          "description": "CONDITIONS GÉNÉRALES DE VENTE, DE SERVICES ET DE LOCATION (CGV/CGL) 2000",
+          "subtitle": "CONDITIONS GÉNÉRALES DE VENTE, DE SERVICES ET DE LOCATION (CGV/CGL) 2000"
+        },
+        "presentation": {
+          "title": "Présentation et Champ d’Application "
         },
         "identity": {
-          "badge": "IDENTITÉ SOCIÉTÉ",
-          "title": "Informations Légales & Siège Social",
-          "description": "PIXIATECH (SASU), Siège social : 5 Rue La Fontaine, 93400 Saint-Ouen-sur-Seine, France. RCS Bobigny 993 747 161. TVA FR39993747161. Contact : contact@pixiatech.com - 07 56 81 66 26"
-        },
-        "article1": {
-          "badge": "ARTICLE 1",
-          "title": "Présentation et Champ d’Application",
-          "description": "Les présentes conditions générales régissent l’ensemble des relations commerciales entre PIXIATECH et ses clients."
-        },
-        "article2": {
-          "badge": "ARTICLE 2",
-          "title": "Vente : Produits et Modèle Logistique",
-          "description": "Fonctionnement en flux tendu et expédition directe depuis les entrepôts de fabrication partenaires (UE ou hors UE)."
+          "title": "Informations Légales & Siège oui"
         }
       }
     },
@@ -205,5 +246,5 @@
       }
     }
   },
-  "updatedAt": "2026-09-25T08:35:54.528Z"
+  "updatedAt": "2026-09-25T20:02:25.553Z"
 }

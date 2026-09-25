@@ -3,6 +3,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Language } from '../../xeron-translations';
 import { useCms } from '@/lib/site-web/cms-context';
+import { getCmsText, normalizeLang } from '@/lib/site-web/cms-i18n';
 import { useSectionStyle } from '../../cms/useSectionStyle';
 
 interface ManifestoSectionProps {
@@ -11,21 +12,46 @@ interface ManifestoSectionProps {
 
 export const ManifestoSection: React.FC<ManifestoSectionProps> = ({ lang = 'FR' }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const { pages } = useCms();
+  const { pages, currentLang, isEditing } = useCms();
   const cmsData = (pages['home']?.sections?.manifesto as Record<string, unknown>) || {};
   const cms = useSectionStyle(cmsData);
+  const activeLang = isEditing ? currentLang : normalizeLang(lang);
 
   const t = {
-    eyebrow: (cmsData.badge as string) || (cmsData.eyebrow as string) || (lang === 'FR' ? '01 / MANIFESTE' : '01 / MANIFESTO'),
-    line1: (cmsData.title as string) || (lang === 'FR' ? 'Nous ne plaçons pas des écrans dans des espaces.' : "We don't place screens into spaces."),
-    line2: (cmsData.titleLine2 as string) || (lang === 'FR' ? 'Nous faisons des écrans' : 'We make screens'),
-    line3: (cmsData.titleLine3 as string) || (lang === 'FR' ? "une partie intégrante de l'espace." : 'part of the space.'),
+    eyebrow: getCmsText(
+      cmsData,
+      'badge',
+      activeLang,
+      getCmsText(cmsData, 'eyebrow', activeLang, activeLang === 'fr' ? '01 / MANIFESTE' : '01 / MANIFESTO')
+    ),
+    line1: getCmsText(
+      cmsData,
+      'title',
+      activeLang,
+      activeLang === 'fr' ? 'Nous ne plaçons pas des écrans dans des espaces.' : "We don't place screens into spaces."
+    ),
+    line2: getCmsText(
+      cmsData,
+      'titleLine2',
+      activeLang,
+      activeLang === 'fr' ? 'Nous faisons des écrans' : 'We make screens'
+    ),
+    line3: getCmsText(
+      cmsData,
+      'titleLine3',
+      activeLang,
+      activeLang === 'fr' ? "une partie intégrante de l'espace." : 'part of the space.'
+    ),
     body:
-      (cmsData.description as string) ||
-      (cmsData.subtitle as string) ||
-      (lang === 'FR'
-        ? 'PIXIATECH combine des technologies LED de pointe, une ingénierie de précision et une vision architecturale pour concevoir des systèmes visuels conçus sur-mesure autour de chaque environnement.'
-        : 'PIXIATECH combines advanced LED technologies, engineering and architectural thinking to create visual systems designed around each environment.'),
+      getCmsText(cmsData, 'description', activeLang) ||
+      getCmsText(
+        cmsData,
+        'subtitle',
+        activeLang,
+        activeLang === 'fr'
+          ? 'PIXIATECH combine des technologies LED de pointe, une ingénierie de précision et une vision architecturale pour concevoir des systèmes visuels conçus sur-mesure autour de chaque environnement.'
+          : 'PIXIATECH combines advanced LED technologies, engineering and architectural thinking to create visual systems designed around each environment.'
+      ),
   };
 
   useEffect(() => {
@@ -199,15 +225,15 @@ export const ManifestoSection: React.FC<ManifestoSectionProps> = ({ lang = 'FR' 
           >
             <div>
               <div style={{ fontSize: 32, fontWeight: 800, color: '#000', fontFamily: 'sans-serif' }}>39+</div>
-              <div>SÉRIES D'AFFICHAGE CERTIFIÉES</div>
+              <div>{lang === 'FR' ? "SÉRIES D'AFFICHAGE CERTIFIÉES" : 'CERTIFIED DISPLAY SERIES'}</div>
             </div>
             <div>
               <div style={{ fontSize: 32, fontWeight: 800, color: '#000', fontFamily: 'sans-serif' }}>100%</div>
-              <div>CALIBRATION SPECTROMÉTRIQUE</div>
+              <div>{lang === 'FR' ? 'CALIBRATION SPECTROMÉTRIQUE' : 'SPECTROMETRIC CALIBRATION'}</div>
             </div>
             <div>
               <div style={{ fontSize: 32, fontWeight: 800, color: '#000', fontFamily: 'sans-serif' }}>5 ANS</div>
-              <div>GARANTIE & TÉLÉ-DIAGNOSTIC</div>
+              <div>{lang === 'FR' ? 'GARANTIE & TÉLÉ-DIAGNOSTIC' : 'WARRANTY & REMOTE DIAGNOSTICS'}</div>
             </div>
           </div>
         </div>

@@ -13,6 +13,7 @@ import { RoleProvider } from '@/contexts/RoleContext';
 import { SiteBanners } from './SiteBanners';
 import { ExpandableTabs } from '@/components/ui/expandable-tabs';
 import { CookieConsentBanner } from '@/components/cookies/CookieConsentBanner';
+import { AnalyticsTracker } from '@/components/analytics/AnalyticsTracker';
 import { Home, Store, ShoppingBag, User, LayoutDashboard, Package, Settings, LogOut } from 'lucide-react';
 
 function useProtectMedia() {
@@ -135,6 +136,7 @@ export function LayoutProvider({
           </ProfileProvider>
         </ThemeProvider>
         {!isAdminPage && !isEmbedPage && <CookieConsentBanner />}
+        {!isAdminPage && !isEmbedPage && <AnalyticsTracker />}
         <ShadcnToaster />
         <SonnerToaster 
           position="bottom-right" 

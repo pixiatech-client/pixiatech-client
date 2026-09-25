@@ -3854,6 +3854,7 @@ const settingsSchema = z.object({
   isBoutiqueEnabled: z.boolean().optional(),
   hintBubble: hintBubbleSchema.optional(),
   sidebarOrder: z.array(z.string()).optional(),
+  sidebarSiteWebOrder: z.array(z.string()).optional(),
   logoConfig: z.object({
     text: z.string(),
     letter: z.string(),
@@ -4153,6 +4154,7 @@ export async function updatePayPalSettings(data: PayPalSettingsUpdate) {
 
 const sidebarConfigSchema = z.object({
   sidebarOrder: z.array(z.string()).optional(),
+  sidebarSiteWebOrder: z.array(z.string()).optional(),
   logoConfig: z.object({
     text: z.string(),
     letter: z.string(),

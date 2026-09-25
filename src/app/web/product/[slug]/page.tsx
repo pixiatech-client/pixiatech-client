@@ -51,7 +51,7 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
   const { slug } = await params;
   const product = await resolvePublicProduct(slug);
   if (!product) {
-    return { title: 'Produit introuvable' };
+    return { title: 'Produit introuvable · Product not found' };
   }
   return {
     title: product.seo?.title || `${product.name} - PixiaTech`,

@@ -8,6 +8,7 @@ import {
 import type { ContactSubmissionPayload, PageContentConfig, ProjectCategoryConfig } from '@/lib/site-web/types';
 import { EditableText } from './EditableText';
 import { CardSwitch, CardHiddenNotice } from './CardSwitch';
+import { trackFormSubmit } from '@/lib/analytics/tracker';
 
 interface ContactFormProps {
   content: PageContentConfig['form'];
@@ -90,6 +91,8 @@ export const ContactForm: React.FC<ContactFormProps> = ({
       if (!response.ok || !result.success) {
         throw new Error(result.message || "Erreur lors de l'envoi de votre demande.");
       }
+
+      trackFormSubmit();
 
       setSuccessResult({
         message: result.message,

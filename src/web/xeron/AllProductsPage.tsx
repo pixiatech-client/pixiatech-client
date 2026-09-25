@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { Search, X } from 'lucide-react';
 import '../xeron.css';
 import { XerHeader } from './XerHeader';
 import { XerFooter } from './XerFooter';
@@ -11,7 +12,9 @@ import { BackToTopButton } from './BackToTopButton';
 import { Language } from '../xeron-translations';
 import { useCms } from '@/lib/site-web/cms-context';
 import { ProductsProvider, useProducts } from '@/lib/products/products-context';
-import type { ProductRecord } from '@/lib/products/types';
+import type { ProductCategory, ProductCategoryGroup, ProductRecord } from '@/lib/products/types';
+import { categoryDisplayName, groupDisplayName, productCategoryIds, slugify } from '@/lib/products/types';
+import { trackProductClick, setLang as trackerSetLang } from '@/lib/analytics/tracker';
 import seedData from '../../../data/mega-menu-seed.json';
 
 interface AllProductsPageProps {
@@ -66,16 +69,59 @@ const ALL_PRODUCTS = [
   { slug: 'spin',    name: 'XR Spin',      env: 'INDOOR',   apps: ['Indoor', 'Creative', 'Kinetic'],                sub: 'Hologram fan LED display',                    pitch: '3.75 mm',       brightness: '800',         cabinet: 'Ø 75–100 cm' },
 ];
 
-const ENV_FILTERS = ['All', 'Indoor', 'Outdoor'];
-const APP_FILTERS = [
-  'All', 'Corporate', 'Retail', 'DOOH', 'Rental', 'Sports',
-  'XR / VP', 'Control Room', 'Creative', 'Kinetic', 'Transparent',
-];
+// ─── Sous-titres français des séries legacy (les sous-titres EN sont dans la
+// liste ALL_PRODUCTS ; ce dictionnaire fournit la version FR au rendu). ───────
+const LEGACY_SUB_FR: Record<string, string> = {
+  wp: "Écran LED d'intérieur",
+  wt: "Écran LED intérieur très haute densité",
+  wpwrap: 'Écran LED incurvé',
+  wv: 'Écran LED de salle de contrôle',
+  gemini: 'Écran LED intérieur double face',
+  orion: 'Écran LED de collaboration intérieur',
+  poster: 'Écran LED intérieur autoportant',
+  mv: 'Écran LED extérieur — nouvelle génération',
+  mvedge: 'Écran LED de façade incurvé',
+  rs: 'Écran LED de location intérieur / extérieur',
+  sp: 'Écran LED de périmètre de stade',
+  spki: 'Système LED cinétique intérieur',
+  spko: 'Système LED cinétique intérieur / extérieur',
+  armk2: 'Écran LED de location intérieur / extérieur',
+  art: 'Écran LED de tournée extérieur',
+  xmk2: 'Écran LED créatif incurvé',
+  xmk3: 'Écran LED créatif incurvé — nouvelle génération',
+  ezmk2: 'Écran LED de location fin pitch intérieur',
+  titanx: 'Écran LED transparent de tournée extérieur',
+  mvmesh: 'Maille LED transparente extérieure',
+  holo: 'Écran LED créatif transparent extérieur',
+  ammk2: 'Maille LED transparente extérieure',
+  amt: 'Maille LED de tournée extérieure',
+  bwamt: 'Écran LED hybride plein + maille de tournée',
+  jelly: 'Écran LED créatif hologramme / verre',
+  studio: 'Écran LED de studio — plafond, fond, sol',
+  sf: 'Écran LED flexible intérieur',
+  mc: 'Écran LED créatif coin & cube',
+  rc: 'Colonne LED intérieure',
+  dfmk2: 'Système de sol LED',
+  dbmk2: 'Écran LED ultra-noir',
+  orez: 'Écran LED fin pitch extérieur',
+  spin: 'Écran LED hologramme rotatif',
+};
+
+function envBadge(env: string, lang: Language): string {
+  if (lang !== 'FR' || env === 'IN / OUT') {
+    return env === 'IN / OUT' && lang === 'FR' ? 'INT / EXT' : env;
+  }
+  return env === 'INDOOR' ? 'INTÉRIEUR' : 'EXTÉRIEUR';
+}
 
 // ─── Fusion legacy → produits Firestore (source de vérité) ──────────────────
 // Un seul produit, une seule carte : si un catalogSlug legacy possède un
 // équivalent Firestore connu (mapping du seed), la carte légacy est remplacée
 // par le produit réel — jamais affichée en double.
+
+// Les filtres ENVIRONMENT / APPLICATION sont construits dynamiquement depuis
+// la collection Firestore `product_categories` (taxonomie CMS). Les séries
+// legacy ci-dessus sont résolues vers des IDs de catégorie via leur slug.
 
 const LEGACY_TO_PRODUCT: Record<string, string> = (() => {
   const map: Record<string, string> = {};
@@ -105,14 +151,16 @@ interface CatalogCard {
   imgBack: string | null;
   env: string;
   apps: string[];
+  /** IDs de catégories (taxonomie CMS) — utilisés pour le filtrage. */
+  categoryIds: string[];
   sub: string;
   pitch: string;
   brightness: string;
   cabinet: string;
 }
 
-function mainImageOf(p: ProductRecord): string | null {
-  return p.media?.photos?.find((ph) => ph.url)?.url ?? p.hero?.image ?? null;
+function mainImageOf(p: ProductRecord | null): string | null {
+  return p?.media?.photos?.find((ph) => ph.url)?.url ?? p?.hero?.image ?? null;
 }
 
 function envLabel(e?: ProductRecord['environment']): string {
@@ -128,11 +176,44 @@ function envLabel(e?: ProductRecord['environment']): string {
   }
 }
 
-function appsOf(p: ProductRecord): string[] {
-  const list: string[] = [];
-  const tag = p.hero?.tags?.[0];
-  if (tag) list.push(tag);
-  return list;
+/** Lookups slug → id (séparés par type) pour la résolution des séries legacy. */
+interface CategoryLookup {
+  envBySlug: Map<string, string>;
+  appBySlug: Map<string, string>;
+}
+
+function buildCategoryLookup(categories: ProductCategory[]): CategoryLookup {
+  const lookup: CategoryLookup = { envBySlug: new Map(), appBySlug: new Map() };
+  for (const c of categories) {
+    (c.type === 'environment' ? lookup.envBySlug : lookup.appBySlug).set(c.slug, c.id);
+  }
+  return lookup;
+}
+
+/** ENV legacy ("INDOOR" | "OUTDOOR" | "IN / OUT") → IDs de catégories. */
+function legacyEnvIds(env: string, lookup: CategoryLookup): string[] {
+  const ids: string[] = [];
+  const add = (slug: string) => {
+    const id = lookup.envBySlug.get(slug);
+    if (id) ids.push(id);
+  };
+  if (env === 'IN / OUT') {
+    add('indoor');
+    add('outdoor');
+  } else {
+    add(env.toLowerCase());
+  }
+  return ids;
+}
+
+/** Apps legacy (libellés) → IDs de catégories application par slug. */
+function legacyAppIds(apps: string[], lookup: CategoryLookup): string[] {
+  const ids: string[] = [];
+  for (const app of apps) {
+    const id = lookup.appBySlug.get(slugify(app));
+    if (id && !ids.includes(id)) ids.push(id);
+  }
+  return ids;
 }
 
 function subOf(p: ProductRecord, lang: Language): string {
@@ -141,10 +222,25 @@ function subOf(p: ProductRecord, lang: Language): string {
     : p.description?.shortEn ?? p.hero?.subtitle ?? '';
 }
 
-function specValue(p: ProductRecord, index: number): string {
-  const values = (p.hero?.specs ?? []).map((s) => s.value).filter(Boolean);
-  if (values.length >= index + 1) return values[index];
-  return '—';
+// Résolution sémantique (jamais par position) : champ canonique explicite
+// d'abord, puis hero.specs par label (docs créés avant les champs explicites).
+// Une caractéristique absente affiche « — » — aucun remplacement croisé.
+const SPEC_KIND: Record<'pitch' | 'brightness' | 'cabinet', RegExp> = {
+  pitch: /^\s*pitch\s*pixel|^\s*pixel\s*pitch/i,
+  brightness: /^\s*luminos|^\s*brightness/i,
+  cabinet: /^\s*ch[âa]ssis|^\s*cabinet/i,
+};
+
+function specValue(p: ProductRecord, kind: 'pitch' | 'brightness' | 'cabinet'): string {
+  const explicit =
+    kind === 'pitch'
+      ? p.pixelPitch
+      : kind === 'brightness'
+        ? p.brightness
+        : p.cabinetDimensions;
+  if (explicit) return explicit;
+  const entry = (p.hero?.specs ?? []).find((s) => SPEC_KIND[kind].test(s.label ?? ''));
+  return entry?.value ?? '—';
 }
 
 function realCard(p: ProductRecord, lang: Language): CatalogCard {
@@ -154,17 +250,22 @@ function realCard(p: ProductRecord, lang: Language): CatalogCard {
     name: p.name,
     isReal: true,
     img: mainImageOf(p),
-    imgBack: null,
+    imgBack: p.hero?.hoverImage ?? null,
     env: envLabel(p.environment),
-    apps: appsOf(p),
+    apps: p.hero?.tags ?? [],
+    categoryIds: productCategoryIds(p),
     sub: subOf(p, lang),
-    pitch: specValue(p, 0),
-    brightness: specValue(p, 1),
-    cabinet: specValue(p, 2),
+    pitch: specValue(p, 'pitch'),
+    brightness: specValue(p, 'brightness'),
+    cabinet: specValue(p, 'cabinet'),
   };
 }
 
-function legacyCard(legacy: (typeof ALL_PRODUCTS)[number]): CatalogCard {
+function legacyCard(
+  legacy: (typeof ALL_PRODUCTS)[number],
+  lookup: CategoryLookup,
+  lang: Language
+): CatalogCard {
   return {
     key: `legacy-${legacy.slug}`,
     slug: legacy.slug,
@@ -174,7 +275,11 @@ function legacyCard(legacy: (typeof ALL_PRODUCTS)[number]): CatalogCard {
     imgBack: `/uploads/products/${legacy.slug}/back.jpg`,
     env: legacy.env,
     apps: legacy.apps,
-    sub: legacy.sub,
+    categoryIds: [
+      ...legacyEnvIds(legacy.env, lookup),
+      ...legacyAppIds(legacy.apps, lookup),
+    ],
+    sub: lang === 'FR' ? LEGACY_SUB_FR[legacy.slug] ?? legacy.sub : legacy.sub,
     pitch: legacy.pitch,
     brightness: legacy.brightness,
     cabinet: legacy.cabinet,
@@ -192,11 +297,12 @@ function AllProductsView({
   onOpenConsultation,
 }: AllProductsPageProps) {
   const router = useRouter();
-  const { products } = useProducts();
+  const { products, categories, groups } = useProducts();
   const [lang, setLang] = useState<Language>(initialLang);
   const [consultOpen, setConsultOpen] = useState(false);
-  const [envFilter, setEnvFilter] = useState('All');
-  const [appFilter, setAppFilter] = useState('All');
+  /** Filtre actif par groupe = ID de catégorie CMS (ou 'All'). */
+  const [filters, setFilters] = useState<Record<string, string>>({});
+  const [query, setQuery] = useState('');
   const [hovered, setHovered] = useState<string | null>(null);
   const { setCurrentPageId } = useCms();
 
@@ -204,7 +310,11 @@ function AllProductsView({
     setCurrentPageId('products');
   }, [setCurrentPageId]);
 
-  const toggleLang = () => setLang((l) => (l === 'FR' ? 'EN' : 'FR'));
+  const toggleLang = () => {
+    const next = lang === 'FR' ? 'EN' : 'FR';
+    setLang(next);
+    trackerSetLang(next.toLowerCase());
+  };
   const handleOpenConsultation = () => {
     if (onOpenConsultation) {
       onOpenConsultation();
@@ -220,18 +330,22 @@ function AllProductsView({
     desc: lang === 'FR'
       ? 'Le catalogue complet PixiaTech — installation fixe, location, transparent, cinétique et créatif.'
       : 'The complete PixiaTech display catalog — fixed installation, rental, transparent, kinetic and creative systems.',
-    envLabel: 'ENVIRONMENT',
-    appLabel: 'APPLICATION',
+    all: lang === 'FR' ? 'TOUS' : 'ALL',
+    search: lang === 'FR' ? 'RECHERCHER' : 'SEARCH',
+    searchPlaceholder: lang === 'FR' ? 'Rechercher un produit…' : 'Search products…',
+    clearSearch: lang === 'FR' ? 'Effacer la recherche' : 'Clear search',
+    rearView: lang === 'FR' ? 'vue arrière' : 'rear view',
     series: lang === 'FR' ? 'SÉRIES' : 'SERIES',
     startProject: lang === 'FR' ? 'DÉMARRER UN PROJET' : 'START A PROJECT',
-    pixelPitch: 'PIXEL PITCH',
-    brightness: 'BRIGHTNESS',
+    pixelPitch: lang === 'FR' ? 'PAS DE PIXEL' : 'PIXEL PITCH',
+    brightness: lang === 'FR' ? 'LUMINOSITÉ' : 'BRIGHTNESS',
     cabinet: 'CABINET',
   };
 
   const merged = useMemo(() => {
     const published = products.filter((p) => p.status === 'published');
     const realBySlug = new Map(published.map((p) => [p.slug, p]));
+    const lookup = buildCategoryLookup(categories);
     const cards: CatalogCard[] = [];
     const usedReal = new Set<string>();
     for (const legacy of ALL_PRODUCTS) {
@@ -242,25 +356,52 @@ function AllProductsView({
         usedReal.add(real.slug);
         cards.push(realCard(real, lang));
       } else {
-        cards.push(legacyCard(legacy));
+        cards.push(legacyCard(legacy, lookup, lang));
       }
     }
     for (const real of published) {
       if (!usedReal.has(real.slug)) cards.push(realCard(real, lang));
     }
     return cards;
-  }, [products, lang]);
+  }, [products, categories, lang]);
+
+  /** Sections de filtres : groupes actifs, dans l'ordre, avec leurs options
+ *  actives triées. Un groupe sans option active est masqué du front-end. */
+  const sections = useMemo(() => {
+    return groups
+      .filter((g) => g.active)
+      .map((g) => {
+        const options = categories
+          .filter((c) => c.type === g.key && c.active)
+          .sort((a, b) => {
+            const oa = typeof a.order === 'number' ? a.order : Number.MAX_SAFE_INTEGER;
+            const ob = typeof b.order === 'number' ? b.order : Number.MAX_SAFE_INTEGER;
+            return oa !== ob ? oa - ob : (a.name || '').localeCompare(b.name || '', 'fr');
+          });
+        return { group: g, options };
+      })
+      .filter((s) => s.options.length > 0);
+  }, [groups, categories]);
 
   const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
     return merged.filter((p) => {
-      const matchEnv =
-        envFilter === 'All' ||
-        (envFilter === 'Indoor' && (p.env === 'INDOOR' || p.env === 'IN / OUT')) ||
-        (envFilter === 'Outdoor' && (p.env === 'OUTDOOR' || p.env === 'IN / OUT'));
-      const matchApp = appFilter === 'All' || p.apps.includes(appFilter);
-      return matchEnv && matchApp;
+      // Conjonction de groupes : chaque groupe dont une option est sélectionnée
+      // doit matcher (jamais par libellé — uniquement par ID de catégorie).
+      const matchSections = sections.every((s) => {
+        const sel = filters[s.group.key];
+        if (!sel || sel === 'All') return true;
+        return p.categoryIds.includes(sel);
+      });
+      const matchQuery =
+        !q ||
+        [p.name, p.slug, p.sub, p.env, ...p.apps]
+          .join(' ')
+          .toLowerCase()
+          .includes(q);
+      return matchSections && matchQuery;
     });
-  }, [merged, envFilter, appFilter]);
+  }, [merged, sections, filters, query]);
 
   return (
     <RevealRoot className="xer-site" style={{ background: '#F5F4F0' }}>
@@ -338,8 +479,8 @@ function AllProductsView({
               marginBottom: 48,
             }}
           >
-            {/* Environment */}
-            <div>
+            {/* Search */}
+            <div style={{ minWidth: 280, flex: '0 1 340px' }}>
               <div
                 style={{
                   fontSize: 10.5,
@@ -351,84 +492,129 @@ function AllProductsView({
                   textTransform: 'uppercase',
                 }}
               >
-                {t.envLabel}
+                {t.search}
               </div>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {ENV_FILTERS.map((f) => {
-                  const active = envFilter === f;
-                  return (
-                    <button
-                      key={f}
-                      type="button"
-                      className={`chip${active ? ' on' : ''}`}
-                      onClick={() => setEnvFilter(f)}
-                      style={{
-                        fontSize: 11,
-                        letterSpacing: '.1em',
-                        fontFamily: 'monospace',
-                        fontWeight: 700,
-                        textTransform: 'uppercase',
-                        padding: '8px 16px',
-                        cursor: 'pointer',
-                        border: '1px solid',
-                        borderColor: active ? '#111110' : '#c9c7c2',
-                        background: active ? '#111110' : 'transparent',
-                        color: active ? '#f5f4f0' : '#4A4A46',
-                        transition: 'all .18s ease',
-                      }}
-                    >
-                      {f}
-                    </button>
-                  );
-                })}
+              <div
+                style={{
+                  position: 'relative',
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+              >
+                <Search
+                  className="lucide"
+                  style={{
+                    position: 'absolute',
+                    left: 14,
+                    width: 15,
+                    height: 15,
+                    color: '#8A8880',
+                    pointerEvents: 'none',
+                  }}
+                />
+                <input
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder={t.searchPlaceholder}
+                  style={{
+                    width: '100%',
+                    padding: '11px 38px 11px 40px',
+                    fontSize: 13,
+                    fontFamily: 'inherit',
+                    color: '#111110',
+                    background: '#fff',
+                    border: '1px solid #c9c7c2',
+                    outline: 'none',
+                    transition: 'border-color .18s ease',
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = '#111110';
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = '#c9c7c2';
+                  }}
+                />
+                {query && (
+                  <button
+                    type="button"
+                    aria-label={t.clearSearch}
+                    onClick={() => setQuery('')}
+                    style={{
+                      position: 'absolute',
+                      right: 8,
+                      width: 26,
+                      height: 26,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      border: 'none',
+                      background: 'transparent',
+                      color: '#8A8880',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <X className="lucide" style={{ width: 15, height: 15 }} />
+                  </button>
+                )}
               </div>
             </div>
 
-            {/* Application */}
-            <div style={{ flex: 1, minWidth: 320 }}>
-              <div
-                style={{
-                  fontSize: 10.5,
-                  letterSpacing: '.2em',
-                  color: '#8A8880',
-                  marginBottom: 12,
-                  fontFamily: 'monospace',
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                }}
-              >
-                {t.appLabel}
-              </div>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {APP_FILTERS.map((f) => {
-                  const active = appFilter === f;
-                  return (
-                    <button
-                      key={f}
-                      type="button"
-                      className={`chip${active ? ' on' : ''}`}
-                      onClick={() => setAppFilter(f)}
-                      style={{
-                        fontSize: 11,
-                        letterSpacing: '.1em',
-                        fontFamily: 'monospace',
-                        fontWeight: 700,
-                        textTransform: 'uppercase',
-                        padding: '8px 16px',
-                        cursor: 'pointer',
-                        border: '1px solid',
-                        borderColor: active ? '#111110' : '#c9c7c2',
-                        background: active ? '#111110' : 'transparent',
-                        color: active ? '#f5f4f0' : '#4A4A46',
-                        transition: 'all .18s ease',
-                      }}
-                    >
-                      {f}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+            {/* Sections de filtres — générées depuis les groupes du CMS */}
+            {sections.map(({ group, options }, index) => {
+              const activeId = filters[group.key] ?? 'All';
+              const setFilter = (id: string) =>
+                setFilters((prev) => ({ ...prev, [group.key]: id }));
+              return (
+                <div key={group.id} style={index === 0 ? {} : { flex: 1, minWidth: 320 }}>
+                  <div
+                    style={{
+                      fontSize: 10.5,
+                      letterSpacing: '.2em',
+                      color: '#8A8880',
+                      marginBottom: 12,
+                      fontFamily: 'monospace',
+                      fontWeight: 700,
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    {groupDisplayName(group, lang)}
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    {[
+                      { id: 'All', name: t.all },
+                      ...options.map((c) => ({ id: c.id, name: categoryDisplayName(c, lang) })),
+                    ].map((f) => {
+                      const active = activeId === f.id;
+                      return (
+                        <button
+                          key={f.id}
+                          type="button"
+                          className={`chip${active ? ' on' : ''}`}
+                          onClick={() => setFilter(f.id)}
+                          style={{
+                            fontSize: 11,
+                            letterSpacing: '.1em',
+                            fontFamily: 'monospace',
+                            fontWeight: 700,
+                            textTransform: 'uppercase',
+                            padding: '8px 16px',
+                            cursor: 'pointer',
+                            border: '1px solid',
+                            borderColor: active ? '#111110' : '#c9c7c2',
+                            background: active ? '#111110' : 'transparent',
+                            color: active ? '#f5f4f0' : '#4A4A46',
+                            transition: 'all .18s ease',
+                          }}
+                        >
+                          {f.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
 
             {/* Count */}
             <div
@@ -458,6 +644,7 @@ function AllProductsView({
           >
             {filtered.map((p) => {
               const isHov = hovered === p.key;
+              const cabinetLabel = p.cabinet === 'Custom' && lang === 'FR' ? 'Sur mesure' : p.cabinet;
               return (
                 <article
                   key={p.key}
@@ -466,6 +653,7 @@ function AllProductsView({
                   onMouseLeave={() => setHovered(null)}
                   onClick={() => {
                     if (p.isReal) {
+                      trackProductClick(p.slug, lang);
                       router.push(`/web/product/${p.slug}`);
                       window.scrollTo({ top: 0, behavior: 'smooth' });
                     } else {
@@ -527,7 +715,7 @@ function AllProductsView({
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={p.imgBack}
-                          alt={`${p.name} — rear view`}
+                          alt={`${p.name} — ${t.rearView}`}
                           className="slot-img slot-contain"
                           loading="lazy"
                           style={{
@@ -575,7 +763,7 @@ function AllProductsView({
                           whiteSpace: 'nowrap',
                         }}
                       >
-                        {p.env}
+                        {envBadge(p.env, lang)}
                       </div>
                     </div>
 
@@ -635,7 +823,7 @@ function AllProductsView({
                         </div>
                       </div>
                       <div>
-                        <div style={{ fontSize: 13.5, fontWeight: 600 }}>{p.cabinet}</div>
+                        <div style={{ fontSize: 13.5, fontWeight: 600 }}>{cabinetLabel}</div>
                         <div
                           style={{
                             fontSize: 9.5,
@@ -656,6 +844,24 @@ function AllProductsView({
               );
             })}
           </div>
+
+          {filtered.length === 0 && (
+            <div
+              style={{
+                marginTop: 48,
+                textAlign: 'center',
+                color: '#6b6a66',
+                fontSize: 15,
+              }}
+            >
+              <div style={{ fontSize: 11, letterSpacing: '.2em', color: '#8A8880', fontFamily: 'monospace', fontWeight: 700, textTransform: 'uppercase', marginBottom: 10 }}>
+                {lang === 'FR' ? 'AUCUN RÉSULTAT' : 'NO RESULTS'}
+              </div>
+              {lang === 'FR'
+                ? 'Aucun produit ne correspond à votre recherche.'
+                : 'No products match your search.'}
+            </div>
+          )}
 
           {/* CTA bottom */}
           <div

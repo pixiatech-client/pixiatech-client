@@ -264,6 +264,25 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
     }
   };
 
+  const handleSaveSiteWebOrder = async (newOrder: string[]) => {
+    if (userProfile?.role === 'admin') {
+      try {
+        const result = await saveSidebarConfig({ sidebarSiteWebOrder: newOrder });
+        if (result.success) {
+          sonnerToast.success(t('Menu order saved!'), {
+            description: t('The new order is applied for all users.'),
+          });
+        } else {
+          sonnerToast.error(t('Error saving order.'), {
+            description: typeof result.error === 'string' ? result.error : t('Please try again.'),
+          });
+        }
+      } catch (error) {
+        sonnerToast.error(t('Network error while saving.'));
+      }
+    }
+  };
+
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isSettingsMenuOpen, setIsSettingsMenuOpen] = useState(false);
 
@@ -399,6 +418,8 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
         setLogoConfig={setLogoConfig}
         initialOrder={initialSettings?.sidebarOrder}
         onSaveOrder={handleSaveOrder}
+        initialSiteWebOrder={initialSettings?.sidebarSiteWebOrder}
+        onSaveSiteWebOrder={handleSaveSiteWebOrder}
         onSaveLogo={handleSaveLogo}
         onCheckUpdate={openAbout}
         onOpenAccountDrawer={onOpenAccountDrawer}

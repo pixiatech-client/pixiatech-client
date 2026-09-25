@@ -11,6 +11,7 @@ import { Language } from '@/web/xeron-translations';
 import { EditableWrapper } from '@/web/cms/EditableWrapper';
 import { useCms } from '@/lib/site-web/cms-context';
 import type { LegalPageData, LegalSection } from '@/web/data/legal-pages-content';
+import { getLegalPageData } from '@/web/data/legal-pages-content';
 import {
   Shield,
   FileText,
@@ -28,21 +29,27 @@ import {
 } from 'lucide-react';
 
 interface LegalPageLayoutProps {
+  /** Static page data (FR). If pageKey is also given, it takes precedence for lang switching. */
   pageData: LegalPageData;
+  /** Registry key used to look up bilingual data (e.g. "mentions_legales"). */
+  pageKey?: string;
   isCookiePage?: boolean;
 }
 
-export function LegalPageLayout({ pageData, isCookiePage = false }: LegalPageLayoutProps) {
+export function LegalPageLayout({ pageData, pageKey, isCookiePage = false }: LegalPageLayoutProps) {
   const [lang, setLang] = useState<Language>('FR');
   const [consultOpen, setConsultOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<string>('');
   const [copied, setCopied] = useState(false);
 
+  // Resolve language-specific data if a pageKey was supplied
+  const resolvedPageData: LegalPageData = pageKey ? getLegalPageData(pageKey, lang) : pageData;
+
   const { setCurrentPageId, currentPageData, isEditing } = useCms();
 
   useEffect(() => {
-    setCurrentPageId(pageData.id);
-  }, [setCurrentPageId, pageData.id]);
+    setCurrentPageId(resolvedPageData.id);
+  }, [setCurrentPageId, resolvedPageData.id]);
 
   const toggleLang = () => setLang((l) => (l === 'FR' ? 'EN' : 'FR'));
   const openConsultation = () => setConsultOpen(true);
@@ -50,13 +57,13 @@ export function LegalPageLayout({ pageData, isCookiePage = false }: LegalPageLay
   // Merge CMS overrides if present
   const cmsSections = (currentPageData?.sections as Record<string, any>) || {};
   const mergedHeader = {
-    badge: (cmsSections.header?.badge as string) || pageData.header.badge,
-    title: (cmsSections.header?.title as string) || pageData.header.title,
-    subtitle: (cmsSections.header?.subtitle as string) || pageData.header.subtitle,
-    lastUpdated: pageData.header.lastUpdated,
+    badge: (cmsSections.header?.badge as string) || resolvedPageData.header.badge,
+    title: (cmsSections.header?.title as string) || resolvedPageData.header.title,
+    subtitle: (cmsSections.header?.subtitle as string) || resolvedPageData.header.subtitle,
+    lastUpdated: resolvedPageData.header.lastUpdated,
   };
 
-  const sectionOrder = pageData.sectionOrder;
+  const sectionOrder = resolvedPageData.sectionOrder;
 
   // Track active section on scroll for TOC
   useEffect(() => {
@@ -121,7 +128,7 @@ export function LegalPageLayout({ pageData, isCookiePage = false }: LegalPageLay
             <div className="flex items-center gap-2">
               <a href="/web" className="hover:text-white transition-colors">PIXIATECH</a>
               <span>/</span>
-              <span className="text-[#C3F910] uppercase">{pageData.name}</span>
+              <span className="text-[#C3F910] uppercase">{resolvedPageData.name}</span>
             </div>
             <div className="flex items-center gap-4">
               <span className="flex items-center gap-1.5">
@@ -200,7 +207,7 @@ export function LegalPageLayout({ pageData, isCookiePage = false }: LegalPageLay
                 </div>
                 <nav className="space-y-1 text-xs">
                   {sectionOrder.map((secKey) => {
-                    const sec = pageData.sections[secKey];
+                    const sec = resolvedPageData.sections[secKey];
                     if (!sec) return null;
                     const isActive = activeSection === secKey;
                     return (
@@ -245,7 +252,7 @@ export function LegalPageLayout({ pageData, isCookiePage = false }: LegalPageLay
             {/* Main Content Articles */}
             <div className="lg:col-span-8 xl:col-span-9 space-y-12">
               {sectionOrder.map((secKey, idx) => {
-                const sec = pageData.sections[secKey];
+                const sec = resolvedPageData.sections[secKey];
                 if (!sec) return null;
 
                 // CMS dynamic override

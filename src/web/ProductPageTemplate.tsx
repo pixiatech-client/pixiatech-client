@@ -16,6 +16,7 @@ import { BackToTopButton } from './components/BackToTopButton';
 import { SpecModel } from './types';
 import { useCms } from '@/lib/site-web/cms-context';
 import { Language } from './xeron-translations';
+import { setLang as trackerSetLang } from '@/lib/analytics/tracker';
 import { ProductsProvider, useProducts } from '@/lib/products/products-context';
 import { applyModelFallback, REFERENCE_PRODUCT } from '@/lib/products/model-fallback';
 import type { Product } from '@/lib/products/types';
@@ -54,7 +55,9 @@ function ProductView({ slug, fallbackProduct }: ProductPageTemplateProps) {
   );
 
   const toggleLang = () => {
-    setLang((prev) => (prev === 'EN' ? 'FR' : 'EN'));
+    const next = lang === 'EN' ? 'FR' : 'EN';
+    setLang(next);
+    trackerSetLang(next.toLowerCase());
   };
 
   return (

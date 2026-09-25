@@ -31,6 +31,7 @@ import {
   Receipt,
   ShieldAlert,
   LayoutTemplate,
+  BarChart3,
 } from 'lucide-react';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import { UserRole } from './dashboard-new-types';
@@ -76,6 +77,8 @@ const VIEW_TO_ROUTE: Record<string, string> = {
   sitewebMenu: '/admin/site-web/menu',
   sitewebContact: '/admin/site-web/contact',
   sitewebProduits: '/admin/site-web/produits',
+  sitewebCategories: '/admin/site-web/categories',
+  sitewebAnalytics: '/admin/site-web/analytics',
 };
 
 const ROUTE_TO_VIEW: Record<string, string> = {
@@ -107,6 +110,8 @@ const ROUTE_TO_VIEW: Record<string, string> = {
   '/admin/site-web/menu': 'sitewebMenu',
   '/admin/site-web/contact': 'sitewebContact',
   '/admin/site-web/produits': 'sitewebProduits',
+  '/admin/site-web/categories': 'sitewebCategories',
+  '/admin/site-web/analytics': 'sitewebAnalytics',
 };
 
 export type SettingsSection = 'general' | 'images' | 'appearance' | 'wizard' | 'livraison' | 'main-doeuvre' | 'pdf' | 'emergency' | 'messaging' | 'software' | 'email-verification' | 'flow' | 'content';
@@ -148,9 +153,11 @@ interface SidebarProps {
   onSettingsSectionSelect?: (section: SettingsSection) => void;
   selectedSettingsSection?: SettingsSection;
   onSaveOrder?: (newOrder: string[]) => void;
+  onSaveSiteWebOrder?: (newOrder: string[]) => void;
   onSaveLogo?: (newConfig: SidebarProps['logoConfig']) => void;
   onCheckUpdate?: () => void;
   initialOrder?: string[];
+  initialSiteWebOrder?: string[];
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -172,9 +179,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onSettingsSectionSelect,
   selectedSettingsSection,
   onSaveOrder,
+  onSaveSiteWebOrder,
   onSaveLogo,
   onCheckUpdate,
-  initialOrder
+  initialOrder,
+  initialSiteWebOrder
 }) => {
   const { t, locale } = useI18n();
   const pathname = usePathname();
@@ -261,6 +270,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'sitewebMenu', label: t('admin.siteWeb.navMenu'), icon: LayoutTemplate, color: 'text-orange-500', roles: [UserRole.ADMINISTRATEUR] },
     { id: 'sitewebContact', label: t('admin.siteWeb.navContact'), icon: MessageSquare, color: 'text-emerald-500', roles: [UserRole.ADMINISTRATEUR] },
     { id: 'sitewebProduits', label: t('admin.siteWeb.navProduits'), icon: Box, color: 'text-yellow-500', roles: [UserRole.ADMINISTRATEUR] },
+    { id: 'sitewebCategories', label: t('admin.siteWeb.navCategories'), icon: Tag, color: 'text-violet-500', roles: [UserRole.ADMINISTRATEUR] },
+    { id: 'sitewebAnalytics', label: t('admin.siteWeb.navAnalytics'), icon: BarChart3, color: 'text-sky-500', roles: [UserRole.ADMINISTRATEUR] },
   ], [t]);
 
   const initialItems = useMemo(() => {
@@ -297,30 +308,36 @@ export const Sidebar: React.FC<SidebarProps> = ({
   }, [t, isSiteWeb, SITE_WEB_ITEMS]);
 
   const [items, setItems] = useState(() => {
-    if (initialOrder && initialOrder.length > 0) {
-      const orderedItems = initialOrder.map((id: string) => initialItems.find(item => item.id === id)).filter(Boolean);
-      const newItems = initialItems.filter(item => !initialOrder.includes(item.id));
+    const order = isSiteWeb ? initialSiteWebOrder : initialOrder;
+    if (order && order.length > 0) {
+      const orderedItems = order.map((id: string) => initialItems.find(item => item.id === id)).filter(Boolean);
+      const newItems = initialItems.filter(item => !order.includes(item.id));
       return [...orderedItems, ...newItems];
     }
     return initialItems;
   });
 
   useEffect(() => {
-    if (initialOrder && initialOrder.length > 0) {
-      const orderedItems = initialOrder.map((id: string) => initialItems.find(item => item.id === id)).filter(Boolean);
-      const newItems = initialItems.filter(item => !initialOrder.includes(item.id));
+    const order = isSiteWeb ? initialSiteWebOrder : initialOrder;
+    if (order && order.length > 0) {
+      const orderedItems = order.map((id: string) => initialItems.find(item => item.id === id)).filter(Boolean);
+      const newItems = initialItems.filter(item => !order.includes(item.id));
       setItems([...orderedItems, ...newItems]);
     } else {
       setItems(initialItems);
     }
-  }, [initialOrder, initialItems]);
+  }, [initialOrder, initialSiteWebOrder, initialItems]);
 
   const handleToggleEditOrder = () => {
     if (isEditingOrder) {
       setIsEditingOrder(false);
-      if (role === UserRole.ADMINISTRATEUR && onSaveOrder) {
+      if (role === UserRole.ADMINISTRATEUR && (isSiteWeb ? onSaveSiteWebOrder : onSaveOrder)) {
         const currentOrderIds = items.map((item: any) => item.id);
-        onSaveOrder(currentOrderIds);
+        if (isSiteWeb) {
+          onSaveSiteWebOrder?.(currentOrderIds);
+        } else {
+          onSaveOrder?.(currentOrderIds);
+        }
       }
     } else {
       setIsEditingOrder(true);
@@ -958,7 +975,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 {t('admin.mainMenu')}
               </span>
             )}
-            {role === UserRole.ADMINISTRATEUR && !isSiteWeb && (
+            {role === UserRole.ADMINISTRATEUR && (
               <button
                 onClick={handleToggleEditOrder}
                 className={`p-1.5 rounded-lg transition-colors ${isEditingOrder
@@ -1049,7 +1066,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                               'labor-sub': 'main-doeuvre',
                               'pdf-sub': 'pdf',
                               'emergency-sub': 'emergency',
-                            };
+};
                             const isSubItemActive =
                               (selectedSettingsSection === subItemToSection[subItem.id]) ||
                               activeView === subItem.id;

@@ -8,6 +8,7 @@ import { SearchModal } from './SearchModal';
 import { Shield } from 'lucide-react';
 import { ProductsProvider, useProducts } from '@/lib/products/products-context';
 import type { ProductRecord, MegaMenu, MegaMenuItem } from '@/lib/products/types';
+import { trackProductClick } from '@/lib/analytics/tracker';
 
 interface XerHeaderProps {
   companyName?: string;
@@ -44,8 +45,8 @@ interface MenuColumnModel {
   items: MenuItemModel[];
 }
 
-function productImg(p: ProductRecord): string | null {
-  return p.media?.photos?.find((ph) => ph.url)?.url ?? null;
+function productImg(p: ProductRecord | null): string | null {
+  return p?.media?.photos?.find((ph) => ph.url)?.url ?? p?.hero?.image ?? null;
 }
 
 function makeModel(
@@ -65,7 +66,7 @@ function makeModel(
     catalogSlug: item.catalogSlug ?? null,
     product,
     legacy,
-    img: product ? productImg(product) : legacy?.img ?? null,
+    img: productImg(product) ?? legacy?.img ?? null,
     descEn: product?.description?.shortEn ?? legacy?.shortDescEn ?? '',
     descFr: product?.description?.shortFr ?? legacy?.shortDescFr ?? '',
   };
@@ -131,6 +132,7 @@ const XerHeaderContent: React.FC<XerHeaderProps> = ({
   const [scrolled, setScrolled] = useState(false);
   const [megaOpen, setMegaOpen] = useState(false);
   const [hoveredItemId, setHoveredItemId] = useState<string>('wp');
+  const [previewImgFailed, setPreviewImgFailed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileSubMenu, setMobileSubMenu] = useState<'main' | 'products'>('main');
   const [searchOpen, setSearchOpen] = useState(false);
@@ -179,7 +181,9 @@ const XerHeaderContent: React.FC<XerHeaderProps> = ({
 
   const preview = hoveredItem;
   const previewName = preview?.label ?? '';
-  const previewImg = preview?.img ?? null;
+  const previewImgRaw = preview?.img ?? null;
+  useEffect(() => setPreviewImgFailed(false), [previewImgRaw]);
+  const previewImg = previewImgRaw && !previewImgFailed ? previewImgRaw : null;
   const previewPitch = preview?.legacy?.pitch ?? '';
   const previewDesc = lang === 'FR' ? preview?.descFr ?? '' : preview?.descEn ?? '';
 
@@ -188,6 +192,7 @@ const XerHeaderContent: React.FC<XerHeaderProps> = ({
     setMegaOpen(false);
     setMobileMenuOpen(false);
     setSearchOpen(false);
+    trackProductClick(target.productSlug);
     router.push(`/web/product/${target.productSlug}`);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -467,8 +472,8 @@ const XerHeaderContent: React.FC<XerHeaderProps> = ({
             {/* Search Button (⌘K) */}
             <button
               type="button"
-              aria-label="Recherche"
-              title="Recherche (⌘K)"
+              aria-label={lang === 'FR' ? 'Recherche' : 'Search'}
+              title={lang === 'FR' ? 'Recherche (⌘K)' : 'Search (⌘K)'}
               onClick={() => {
                 setMegaOpen(false);
                 setSearchOpen(true);
@@ -630,7 +635,7 @@ const XerHeaderContent: React.FC<XerHeaderProps> = ({
                               letterSpacing: '.1em',
                             }}
                           >
-                            {m.tag || (m.clickable ? '' : 'INDISPONIBLE')}
+                            {m.tag || (m.clickable ? '' : lang === 'FR' ? 'INDISPONIBLE' : 'UNAVAILABLE')}
                           </span>
                         </div>
                       );
@@ -666,6 +671,7 @@ const XerHeaderContent: React.FC<XerHeaderProps> = ({
                       <img
                         src={previewImg}
                         alt={previewName}
+                        onError={() => setPreviewImgFailed(true)}
                         style={{
                           width: '100%',
                           height: '100%',

@@ -100,6 +100,37 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    match /product_categories/{catId} {
+      // Taxonomie des filtres produits (page publique « Tous les produits »).
+      // Lecture publique (onSnapshot) ; écriture exclusive par les admins
+      // (via Admin SDK / API — jamais depuis le navigateur).
+      allow read, list: if true;
+      allow write: if isAdmin();
+    }
+
+    match /product_category_groups/{groupId} {
+      // Groupes de filtres (sections de la page publique « Tous les produits »).
+      // Mêmes règles que les catégories : lecture publique (onSnapshot),
+      // écriture exclusive par les admins.
+      allow read, list: if true;
+      allow write: if isAdmin();
+    }
+
+    match /analytics_sessions/{sessionId} {
+      // Agrégats analytics par session. Écriture UNIQUEMENT via Admin SDK
+      // (ingestion serveur /api/analytics/track), jamais depuis le navigateur.
+      // Accès lecture réservé aux admins (dashboard Analytics).
+      allow read, list: if isAdmin();
+      allow create, update, delete: if false;
+    }
+
+    match /analytics_events/{eventId} {
+      // Journal brut des événements analytics (anonymes). Mêmes règles que
+      // analytics_sessions : écriture serveur, lecture admin.
+      allow read, list: if isAdmin();
+      allow create, update, delete: if false;
+    }
+
     match /boutique_characteristics/{charId} {
       allow read, list: if true;
       allow write: if isAdmin();

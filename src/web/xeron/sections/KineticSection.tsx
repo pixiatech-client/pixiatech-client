@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Language } from '../../xeron-translations';
 import { useCms } from '@/lib/site-web/cms-context';
+import { getCmsText, normalizeLang } from '@/lib/site-web/cms-i18n';
 import { useSectionStyle } from '../../cms/useSectionStyle';
 
 interface KineticSectionProps {
@@ -15,19 +16,45 @@ const ACCENT_GREEN = '#C3F910';
 export const KineticSection: React.FC<KineticSectionProps> = ({ lang = 'FR' }) => {
   const [activePart, setActivePart] = useState<number>(0);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const { pages } = useCms();
+  const { pages, currentLang, isEditing } = useCms();
   const cmsData = (pages['home']?.sections?.kinetic as Record<string, unknown>) || {};
   const cms = useSectionStyle(cmsData);
+  const activeLang = isEditing ? currentLang : normalizeLang(lang);
 
   const t = {
-    eyebrow: lang === 'FR' ? '04 / FEATURED — SPKI-250 KINETIC' : '04 / FEATURED — SPKI-250 KINETIC',
-    title1: lang === 'FR' ? "L'écran s'anime." : 'The screen moves.',
-    title2: lang === 'FR' ? 'La profondeur devient' : 'Depth becomes',
-    title3: lang === 'FR' ? "partie intégrante de l'image." : 'part of the image.',
-    caption: lang === 'FR' ? 'LED CINÉTIQUE — MODULES EN MOUVEMENT' : 'KINETIC LED — MODULES IN MOTION',
-    stepText: lang === 'FR' ? '05 — CHÂSSIS MOULÉ SOUS PRESSION' : '05 — DIE-CAST CABINET',
+    eyebrow: getCmsText(
+      cmsData,
+      'badge',
+      activeLang,
+      activeLang === 'fr' ? '04 / FEATURED — SPKI-250 KINETIC' : '04 / FEATURED — SPKI-250 KINETIC'
+    ),
+    title1: getCmsText(
+      cmsData,
+      'title1',
+      activeLang,
+      getCmsText(cmsData, 'title', activeLang, activeLang === 'fr' ? "L'écran s'anime." : 'The screen moves.')
+    ),
+    title2: getCmsText(
+      cmsData,
+      'title2',
+      activeLang,
+      activeLang === 'fr' ? 'La profondeur devient' : 'Depth becomes'
+    ),
+    title3: getCmsText(
+      cmsData,
+      'title3',
+      activeLang,
+      activeLang === 'fr' ? "partie intégrante de l'image." : 'part of the image.'
+    ),
+    caption: getCmsText(
+      cmsData,
+      'caption',
+      activeLang,
+      activeLang === 'fr' ? 'LED CINÉTIQUE — MODULES EN MOUVEMENT' : 'KINETIC LED — MODULES IN MOTION'
+    ),
+    stepText: activeLang === 'fr' ? '05 — CHÂSSIS MOULÉ SOUS PRESSION' : '05 — DIE-CAST CABINET',
     items:
-      lang === 'FR'
+      activeLang === 'fr'
         ? [
             'UNITÉ DE MOUVEMENT — 248.5 MM',
             'GLISSIÈRE LINÉAIRE INDUSTRIELLE',
@@ -37,16 +64,20 @@ export const KineticSection: React.FC<KineticSectionProps> = ({ lang = 'FR' }) =
           ]
         : ['MOTION UNIT — 248.5 MM', 'LINEAR GUIDE RAIL', 'MOTION CONTROLLER', 'QUICK-LOCK SYSTEM', 'DIE-CAST CABINET'],
     stats: [
-      { val: '248.5 × 248.5', label: lang === 'FR' ? 'UNITÉ DE MOUVEMENT · MM' : 'MOTION UNIT · MM' },
-      { val: '500 × 500', label: lang === 'FR' ? 'CHÂSSIS · MM' : 'CABINET · MM' },
-      { val: '1.5 mm', label: lang === 'FR' ? 'INTERVALLE MODULE' : 'MODULE GAP' },
-      { val: 'Quick-Lock', label: lang === 'FR' ? 'INSTALLATION SANS OUTIL' : 'TOOL-FREE INSTALL' },
-      { val: 'Die-Cast', label: lang === 'FR' ? 'ALUMINIUM MOULÉ' : 'ALUMINIUM CABINET' },
+      { val: '248.5 × 248.5', label: activeLang === 'fr' ? 'UNITÉ DE MOUVEMENT · MM' : 'MOTION UNIT · MM' },
+      { val: '500 × 500', label: activeLang === 'fr' ? 'CHÂSSIS · MM' : 'CABINET · MM' },
+      { val: '1.5 mm', label: activeLang === 'fr' ? 'INTERVALLE MODULE' : 'MODULE GAP' },
+      { val: 'Quick-Lock', label: activeLang === 'fr' ? 'INSTALLATION SANS OUTIL' : 'TOOL-FREE INSTALL' },
+      { val: 'Die-Cast', label: activeLang === 'fr' ? 'ALUMINIUM MOULÉ' : 'ALUMINIUM CABINET' },
     ],
-    footnote:
-      lang === 'FR'
+    footnote: getCmsText(
+      cmsData,
+      'description',
+      activeLang,
+      activeLang === 'fr'
         ? 'Système LED cinétique intérieur grand format et ultra-léger — modules de mouvement 4-en-1 montés sur glissières linéaires industrielles, conçus pour les scénographies scéniques et installations suspendues à grande échelle.'
-        : 'Large-format, lightweight indoor kinetic LED — 4-in-1 motion units on industrial linear guide rails, engineered for large-scale and elevated installations.',
+        : 'Large-format, lightweight indoor kinetic LED — 4-in-1 motion units on industrial linear guide rails, engineered for large-scale and elevated installations.'
+    ),
   };
 
   useEffect(() => {

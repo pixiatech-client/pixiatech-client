@@ -1,4 +1,17 @@
+export type CmsTranslationStatus = 'source' | 'translated' | 'manual' | 'missing';
+
+export interface CmsFieldTranslation {
+  value: string;
+  status: CmsTranslationStatus;
+  updatedAt?: string;
+  sourceText?: string;
+}
+
+// Map: fieldKey -> langCode (e.g. 'fr', 'en', 'ar', 'es') -> CmsFieldTranslation
+export type CmsI18nStore = Record<string, Record<string, CmsFieldTranslation>>;
+
 export interface CmsSectionHero {
+  _i18n?: CmsI18nStore;
   badge?: string;
   title?: string;
   tagline?: string;
@@ -11,6 +24,7 @@ export interface CmsSectionHero {
   heroBgColor?: string;
   titleFontSize?: number;
   textColor?: string;
+  [key: string]: unknown;
 }
 
 export interface CmsSectionOverview {

@@ -17,6 +17,7 @@ import { SpecModel } from './types';
 import { EditableWrapper } from './cms/EditableWrapper';
 import { useCms } from '@/lib/site-web/cms-context';
 import { Language } from './xeron-translations';
+import { setLang as trackerSetLang } from '@/lib/analytics/tracker';
 
 const PRODUCT_PAGE_ID = 'product_wp';
 
@@ -32,7 +33,9 @@ export function WebPage() {
   }, [setCurrentPageId]);
 
   const toggleLang = () => {
-    setLang((prev) => (prev === 'EN' ? 'FR' : 'EN'));
+    const next = lang === 'EN' ? 'FR' : 'EN';
+    setLang(next);
+    trackerSetLang(next.toLowerCase());
   };
 
   return (

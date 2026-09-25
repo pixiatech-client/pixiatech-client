@@ -196,6 +196,7 @@ export type Settings = {
   zoomMinDistance?: number;
   hintBubble?: HintBubbleSettings;
   sidebarOrder?: string[];
+  sidebarSiteWebOrder?: string[];
   logoConfig?: {
     text: string;
     letter: string;

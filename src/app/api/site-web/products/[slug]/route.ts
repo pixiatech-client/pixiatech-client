@@ -21,7 +21,11 @@ export async function GET(request: NextRequest, context: RouteContext) {
     }
     return NextResponse.json({ success: true, product });
   } catch (err: unknown) {
-    return NextResponse.json({ success: false, error: (err as Error).message }, { status: 500 });
+    console.error('GET /api/site-web/products/[slug]', err);
+    return NextResponse.json(
+      { success: false, message: 'Impossible de charger le produit. La base est momentanément indisponible — réessayez dans un instant.' },
+      { status: 500 }
+    );
   }
 }
 
@@ -54,7 +58,11 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       product,
     });
   } catch (err: unknown) {
-    return NextResponse.json({ success: false, error: (err as Error).message }, { status: 500 });
+    console.error('PUT /api/site-web/products/[slug]', err);
+    return NextResponse.json(
+      { success: false, message: 'Échec de l’enregistrement du produit. La base est momentanément indisponible — réessayez dans un instant.' },
+      { status: 500 }
+    );
   }
 }
 
@@ -72,6 +80,10 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     }
     return NextResponse.json({ success: true, message: `Produit '${slug}' supprimé de la base produits.` });
   } catch (err: unknown) {
-    return NextResponse.json({ success: false, error: (err as Error).message }, { status: 500 });
+    console.error('DELETE /api/site-web/products/[slug]', err);
+    return NextResponse.json(
+      { success: false, message: 'Échec de la suppression du produit. La base est momentanément indisponible — réessayez dans un instant.' },
+      { status: 500 }
+    );
   }
 }
