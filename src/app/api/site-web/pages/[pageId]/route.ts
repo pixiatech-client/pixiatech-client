@@ -39,13 +39,18 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     if (!body || typeof body !== 'object') {
       return NextResponse.json({ success: false, message: 'Corps de requête invalide.' }, { status: 400 });
     }
+    const existing = getCmsPage(pageId);
     const db = saveCmsPage(pageId, {
       id: pageId,
-      name: body.name ?? pageId,
-      slug: body.slug ?? `/${pageId}`,
+      name: body.name ?? existing?.name ?? pageId,
+      slug: body.slug ?? existing?.slug ?? `/${pageId}`,
       updatedAt: body.updatedAt ?? new Date().toISOString(),
-      sections: body.sections || {},
-      meta: body.meta,
+      // `sections` : on ne remplace que si le champ est fourni, sinon on
+      // conserve l'existant (une edition de meta ne doit pas vider le contenu).
+      sections: body.sections ?? existing?.sections ?? {},
+      // Même règle pour `meta` : `body.meta` absent ne doit plus écraser une
+      // valeur enregistrée avec `undefined`.
+      meta: body.meta ?? existing?.meta,
     });
     const page = db.pages?.[pageId];
     return NextResponse.json({

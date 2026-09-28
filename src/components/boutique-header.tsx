@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Home, Store, ShoppingBag, User, LogOut, Package, ChevronDown, Shield, Key, Mail, Menu, X, Check } from 'lucide-react';
+import { Home, Store, ShoppingBag, User, LogOut, Package, ChevronDown, Shield, Key, Mail, Menu, X, Check, LayoutDashboard } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useI18n } from '@/lib/i18n';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
@@ -361,6 +361,14 @@ export function BoutiqueHeader({ boutiqueEnabled = true }: { boutiqueEnabled?: b
               </button>
               {profileOpen && (
                 <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50">
+                  <Link
+                    href="/mon-compte/tableau-de-bord"
+                    onClick={() => setProfileOpen(false)}
+                    className="flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    <LayoutDashboard size={14} className="text-[#38E044]" />
+                    <span>Tableau de bord</span>
+                  </Link>
                   <Link
                     href="/mon-compte/commandes"
                     onClick={() => setProfileOpen(false)}

@@ -142,7 +142,60 @@ export const SectionDragDropProvider: React.FC<{
           style={{ cursor: 'grabbing' }}
         />
       )}
+
+      <DropIndicator
+        targetKey={targetKey}
+        targetPosition={targetPosition}
+        sectionRefs={sectionRefs}
+      />
     </DragDropContext.Provider>
+  );
+};
+
+/**
+ * Ligne d'insertion matérialisant la destination du dépôt.
+ *
+ * Elle était calculée (`targetKey` / `targetPosition`) mais jamais rendue :
+ * le glisser-déposer était donc muet et donnait l'impression de ne rien faire.
+ */
+const DropIndicator: React.FC<{
+  targetKey: string | null;
+  targetPosition: 'before' | 'after' | null;
+  sectionRefs: React.MutableRefObject<Map<string, HTMLElement>>;
+}> = ({ targetKey, targetPosition, sectionRefs }) => {
+  const [rect, setRect] = useState<{ top: number; height: number } | null>(null);
+
+  useEffect(() => {
+    if (!targetKey) {
+      setRect(null);
+      return;
+    }
+    const el = sectionRefs.current.get(targetKey);
+    if (!el) {
+      setRect(null);
+      return;
+    }
+    const r = el.getBoundingClientRect();
+    setRect({ top: r.top, height: r.height });
+  }, [targetKey, targetPosition]);
+
+  if (!rect || !targetKey) return null;
+
+  const y = targetPosition === 'after' ? rect.top + rect.height : rect.top;
+
+  return (
+    <div className="fixed left-0 right-0 z-[9995] pointer-events-none" style={{ top: y - 1 }}>
+      <div
+        className="h-[3px] w-full"
+        style={{ background: '#C3F910', boxShadow: '0 0 18px rgba(195,249,16,0.95)' }}
+      />
+      <div
+        className="absolute left-4 -top-2.5 px-2 py-0.5 rounded-full font-mono text-[10px] font-bold"
+        style={{ background: '#C3F910', color: '#080808' }}
+      >
+        {targetPosition === 'after' ? 'APRÈS' : 'AVANT'} · {targetKey}
+      </div>
+    </div>
   );
 };
 

@@ -1,14 +1,24 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { useCms } from '@/lib/site-web/cms-context';
-import { Image as ImageIcon, Upload, Check, X, Sparkles, Link as LinkIcon } from 'lucide-react';
+import { Image as ImageIcon, Upload, Check, X, Sparkles, Link as LinkIcon, Loader2 } from 'lucide-react';
+import { findSectionKey, getSectionNode, resolveElementKey, setSelectedElement } from './section-registry';
+
+import { FloatingElementToolbar } from './FloatingElementToolbar';
+import { applyElementStyle, type ElementStyle } from './useCmsElementStyles';
+
+type MediaKind = 'image' | 'video';
 
 interface ImageEditState {
-  element: HTMLImageElement;
+  element: HTMLElement;
+  kind: MediaKind;
   currentSrc: string;
   alt: string;
 }
+
+/** Éléments dont le texte est directement éditable dans l'éditeur visuel. */
+const EDITABLE_TEXT_TAGS = ['H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'P', 'SPAN', 'LI', 'BUTTON', 'A'];
 
 const STOCK_LIBRARY_IMAGES = [
   { label: 'Hero 1 — Hall Architectural', src: '/uploads/site/hero-1.jpg' },
@@ -32,30 +42,78 @@ const STOCK_LIBRARY_IMAGES = [
 ];
 
 export const VisualInPlaceEditor: React.FC = () => {
-  const { isEditing, isAdmin, uploadMedia, updateSectionField, currentPageId, setSelectedBlockId } = useCms();
-  
+  const {
+  isEditing,
+  isAdmin,
+  uploadMedia,
+  updateSectionField,
+  updateElementStyle,
+  saveCurrentPage,
+  setSelectedBlockId,
+} = useCms();
+
   // State pour la modal d'édition d'image
   const [activeImageTarget, setActiveImageTarget] = useState<ImageEditState | null>(null);
   const [newImageSrc, setNewImageSrc] = useState<string>('');
   const [isUploading, setIsUploading] = useState<boolean>(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isApplying, setIsApplying] = useState<boolean>(false);
+  const [toast, setToast] = useState<{ message: string; tone: 'ok' | 'pending' | 'error' } | null>(null);
 
   // Éléments de survol pour l'inspection
   const hoveredElementRef = useRef<HTMLElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3500);
-  };
+  const showToast = useCallback((msg: string, tone: 'ok' | 'pending' | 'error' = 'ok') => {
+    setToast({ message: msg, tone });
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(null), tone === 'error' ? 6000 : 3500);
+  }, []);
+
+  useEffect(() => () => {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+  }, []);
+
+  /**
+   * Persistance réelle : on n'affiche « sauvegardé » qu'après le retour positif
+   * de l'API. Avant cette correction, seul l'état React + localStorage étaient
+   * modifiés, d'où un message « sauvegardé » mensonger.
+   */
+  const persist = useCallback(
+    async (label: string) => {
+      showToast(`Sauvegarde de « ${label} »…`, 'pending');
+      const ok = await saveCurrentPage();
+      showToast(
+        ok ? `✓ ${label} — sauvegardé` : `✕ ${label} — échec de la sauvegarde (serveur)`,
+        ok ? 'ok' : 'error'
+      );
+      return ok;
+    },
+    [saveCurrentPage, showToast]
+  );
+
+  const openImageModalForElement = useCallback((el: HTMLElement) => {
+    const kind: MediaKind = el.tagName === 'VIDEO' ? 'video' : 'image';
+    setActiveImageTarget({
+      element: el,
+      kind,
+      currentSrc: el.getAttribute('src') || '',
+      alt: (el as HTMLImageElement).alt || '',
+    });
+    setNewImageSrc(el.getAttribute('src') || '');
+  }, []);
 
   useEffect(() => {
     if (!isEditing || !isAdmin) return;
 
-    // Helper: Trouver la section parente la plus proche
-    const getParentSectionKey = (el: HTMLElement): string => {
-      const section = el.closest('section[id], div[id], [data-section]');
-      return section?.id || section?.getAttribute('data-section') || 'content';
+    // La clé de section vient du registre alimenté par EditableWrapper,
+    // ou détection sémantique header / footer / data-cms-section.
+    const getSectionKey = (el: HTMLElement): string | null => {
+      const registered = findSectionKey(el);
+      if (registered) return registered;
+      if (el.closest('header, nav, #site-header')) return 'header';
+      if (el.closest('footer, #site-footer')) return 'footer';
+      return null;
     };
 
     // Style injecté pour le mode inspecteur
@@ -67,6 +125,18 @@ export const VisualInPlaceEditor: React.FC = () => {
         outline-offset: 3px !important;
         cursor: text !important;
         position: relative !important;
+      }
+      .pixia-el-selected {
+        outline: 2px solid #C3F910 !important;
+        outline-offset: 3px !important;
+        box-shadow: 0 0 0 4px rgba(195, 249, 16, 0.15) !important;
+      }
+      .pixia-el-selected.pixia-el-media {
+        outline-color: #00E5FF !important;
+        box-shadow: 0 0 0 4px rgba(0, 229, 255, 0.18) !important;
+      }
+      .pixia-el-selected.pixia-el-anchor {
+        cursor: pointer !important;
       }
       .pixia-editable-img-hover {
         outline: 3px dashed #00E5FF !important;
@@ -89,8 +159,6 @@ export const VisualInPlaceEditor: React.FC = () => {
       if (!el) return true;
       return Boolean(
         el.closest('#admin-top-bar') ||
-        el.closest('#elementor-drawer') ||
-        el.closest('#elementor-drawer-minimized') ||
         el.closest('#image-edit-modal') ||
         el.closest('#backend-export-modal') ||
         el.closest('[data-cms-ui]') ||
@@ -105,15 +173,11 @@ export const VisualInPlaceEditor: React.FC = () => {
         return;
       }
 
-      if (target.tagName === 'IMG') {
+      if (target.tagName === 'IMG' || target.tagName === 'VIDEO') {
         target.classList.add('pixia-editable-img-hover');
         hoveredElementRef.current = target;
-      } else if (
-        ['H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'P', 'SPAN'].includes(target.tagName) ||
-        target.hasAttribute('data-editable')
-      ) {
-        // Seulement si c'est un nœud avec texte direct ou sans enfants profonds complexes
-        if (target.children.length <= 2) {
+      } else if (EDITABLE_TEXT_TAGS.includes(target.tagName) || target.hasAttribute('data-editable') || target.hasAttribute('data-text-key')) {
+        if (target.children.length <= 3) {
           target.classList.add('pixia-editable-text-hover');
           hoveredElementRef.current = target;
         }
@@ -127,38 +191,71 @@ export const VisualInPlaceEditor: React.FC = () => {
       target.classList.remove('pixia-editable-text-hover');
     };
 
-    // 2. Click Handler Universel
+    // 2. Click Handler Universel avec interception de navigation
     const handleClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
       if (!target || isCmsTarget(target)) {
         return;
       }
 
-      // Cas 1: Clic sur une image
-      if (target.tagName === 'IMG') {
+      // En mode édition : intercepter TOUT clic sur un lien, bouton ou ancre
+      // pour éviter la navigation intempestive et permettre la sélection / édition (Point 5).
+      const clickableParent = target.closest('a, button, [role="button"]') as HTMLElement | null;
+      if (clickableParent) {
         e.preventDefault();
         e.stopPropagation();
-        const img = target as HTMLImageElement;
-        const section = img.closest('section[id], div[id], [data-section]');
-        const sectionKey = section?.id || section?.getAttribute('data-section') || 'experience';
-        setSelectedBlockId(sectionKey);
+      }
 
-        setActiveImageTarget({
-          element: img,
-          currentSrc: img.src || img.getAttribute('src') || '',
-          alt: img.alt || '',
-        });
-        setNewImageSrc(img.getAttribute('src') || img.src || '');
+      const sectionKey = getSectionKey(target);
+      if (!sectionKey) {
+        // Même si pas de section officielle, si on a cliqué sur un lien ou bouton,
+        // on bloque la navigation pour ne pas perdre le contexte d'édition.
+        if (clickableParent) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
         return;
       }
 
-      // Cas 2: Clic sur un texte
+      const sectionRoot = getSectionNode(sectionKey);
+      const elementKey = resolveElementKey(target, sectionRoot);
+      const isMediaTarget = target.tagName === 'IMG' || target.tagName === 'VIDEO';
+
+      // Sélection de la section
+      setSelectedBlockId(sectionKey);
+
+      // Ancrage visuel : la barre flottante doit pointer sur un élément
+      // identifiable. On nettoie l'ancienne sélection puis on marque la nouvelle.
+      for (const prev of Array.from(document.querySelectorAll('.pixia-el-selected'))) {
+        prev.classList.remove('pixia-el-selected', 'pixia-el-anchor', 'pixia-el-media');
+      }
+      target.classList.add('pixia-el-selected');
+      if (target.closest('a, button, [role="button"]')) target.classList.add('pixia-el-anchor');
+      if (isMediaTarget) target.classList.add('pixia-el-media');
+
+      // Sélection de l'élément pour la toolbar flottante
+      setSelectedElement({
+        el: target,
+        sectionKey,
+        elementKey,
+        kind: isMediaTarget ? 'media' : 'text',
+      });
+
+      // Cas 1: Clic sur une image ou vidéo
+      if (isMediaTarget) {
+        e.preventDefault();
+        e.stopPropagation();
+        openImageModalForElement(target);
+        return;
+      }
+
+      // Cas 2: Clic sur un texte / bouton / lien
       if (
-        ['H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'P', 'SPAN'].includes(target.tagName) ||
-        target.hasAttribute('data-editable')
+        EDITABLE_TEXT_TAGS.includes(target.tagName) ||
+        target.hasAttribute('data-editable') ||
+        target.hasAttribute('data-text-key')
       ) {
         if (target.isContentEditable) {
-          // Déjà en cours d'édition, laisser le curseur se déplacer
           return;
         }
 
@@ -169,74 +266,111 @@ export const VisualInPlaceEditor: React.FC = () => {
         target.focus();
         target.classList.remove('pixia-editable-text-hover');
 
-        const sectionKey = getParentSectionKey(target);
         const originalText = target.innerText;
 
         const onBlur = () => {
           target.contentEditable = 'false';
-          const newText = target.innerText;
-          if (newText !== originalText) {
-            // Sauvegarder dans le CMS
-            const textKey =
-              target.getAttribute('data-text-key') ||
-              (['H1', 'H2'].includes(target.tagName) ? 'title' : target.tagName === 'P' ? 'description' : `text_${Date.now()}`);
-            updateSectionField(sectionKey, textKey, newText);
-            if (['H1', 'H2'].includes(target.tagName)) {
-              updateSectionField(sectionKey, 'title', newText);
-            } else if (target.tagName === 'P') {
-              updateSectionField(sectionKey, 'description', newText);
-              updateSectionField(sectionKey, 'subtitle', newText);
-            }
-            setSelectedBlockId(sectionKey);
-            showToast(`✓ Texte modifié sauvegardé (${target.tagName.toLowerCase()})`);
-          }
           target.removeEventListener('blur', onBlur);
+          if (!target.isConnected) return;
+          const newText = target.innerText;
+          if (newText === originalText) return;
+
+          const explicitKey = target.getAttribute('data-text-key');
+
+          if (explicitKey) {
+            // Clé réelle : le champ existe dans la section, on l'édite
+            // directement (donc traduit par le flux FR/EN existant).
+            updateSectionField(sectionKey, explicitKey, newText);
+            void persist(`${sectionKey}.${explicitKey}`);
+            return;
+          }
+
+          // Pas de cle declaree : on n'invente plus `text_<timestamp>`, cle que
+          // rien ne relit (l'edition etait donc perdue au refresh), et on ne
+          // recycle plus `title`/`description`/`cta`, partages par tous les
+          // elements d'une section. Le texte part dans le sac d'elements, via la
+          // primitive atomique : la lecture part du miroir synchrone, donc un
+          // style deja pose par la barre contextuelle n'est pas ecrase.
+          const next = updateElementStyle(sectionKey, elementKey, { text: newText });
+          applyElementStyle(target, next as ElementStyle);
+          void persist(`${sectionKey}._elements.${elementKey}.text`);
         };
 
         target.addEventListener('blur', onBlur);
       }
     };
 
+    // 3. Désélection : Échap ou clic sur une zone neutre.
+    const handleDeselectKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setSelectedElement(null);
+    };
+
+    const handleDeselectClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target || target === document.body) setSelectedElement(null);
+    };
+
     document.addEventListener('mouseover', handleMouseOver, true);
     document.addEventListener('mouseout', handleMouseOut, true);
     document.addEventListener('click', handleClick, true);
+    document.addEventListener('keydown', handleDeselectKey);
+    document.addEventListener('click', handleDeselectClick);
 
     return () => {
       document.removeEventListener('mouseover', handleMouseOver, true);
       document.removeEventListener('mouseout', handleMouseOut, true);
       document.removeEventListener('click', handleClick, true);
+      document.removeEventListener('keydown', handleDeselectKey);
+      document.removeEventListener('click', handleDeselectClick);
       const el = document.getElementById('pixia-visual-editor-styles');
       if (el) el.remove();
     };
-  }, [isEditing, isAdmin, uploadMedia, updateSectionField, currentPageId]);
+  }, [isEditing, isAdmin, uploadMedia, updateSectionField, setSelectedBlockId, persist, openImageModalForElement]);
 
   // Appliquer le remplacement de l'image
-  const handleApplyImage = (srcToApply?: string) => {
+  const handleApplyImage = async (srcToApply?: string) => {
     const finalSrc = srcToApply || newImageSrc;
     if (!activeImageTarget || !finalSrc) return;
 
-    const img = activeImageTarget.element;
-    img.src = finalSrc;
-    img.setAttribute('src', finalSrc);
+    const el = activeImageTarget.element;
+    el.setAttribute('src', finalSrc);
+    if (activeImageTarget.kind === 'image') {
+      (el as HTMLImageElement).src = finalSrc;
+    }
 
-    // Persister dans le CMS
-    const section = img.closest('section[id], div[id], [data-section]');
-    const sectionKey = section?.id || section?.getAttribute('data-section') || 'experience';
-    const imgKey = img.getAttribute('data-image-key') || 'image';
+    const sectionKey = findSectionKey(el);
+    if (!sectionKey) {
+      showToast('✕ Section non reconnue — modification non sauvegardée', 'error');
+      return;
+    }
 
-    updateSectionField(sectionKey, imgKey, finalSrc);
-    updateSectionField(sectionKey, 'image', finalSrc);
-    updateSectionField(sectionKey, 'heroImage', finalSrc);
-    updateSectionField(sectionKey, 'primaryImage', finalSrc);
-    updateSectionField(sectionKey, 'billboardImage', finalSrc);
+    const sectionRoot = getSectionNode(sectionKey);
+    const elementKey = resolveElementKey(el, sectionRoot);
+    const explicitKey = el.getAttribute('data-image-key') || el.getAttribute('data-media-key');
+
+    if (explicitKey) {
+      // Clé déclarée par le composant : le champ existe réellement, on l'écrit.
+      updateSectionField(sectionKey, explicitKey, finalSrc);
+    } else {
+      // Pas de clé déclarée : on n'écrit plus dans `image`/`heroImage`/
+      // `primaryImage`/`billboardImage`. Ces champs ne sont lus que par la
+      // section hero, donc sur toute autre section l'image était enregistrée
+      // dans le vide puis disparaissait au refresh. On passe par le sac
+      // d'éléments, réappliqué au chargement par `useCmsElementStyles`.
+      const next = updateElementStyle(sectionKey, elementKey, {
+        src: finalSrc,
+        alt: (el as HTMLImageElement).alt || undefined,
+      });
+      applyElementStyle(el, next as ElementStyle);
+    }
     setSelectedBlockId(sectionKey);
 
-    try {
-      localStorage.setItem(`pixia_img_${finalSrc.split('/').pop()}`, finalSrc);
-    } catch {}
-
-    showToast('✓ Photo remplacée avec succès !');
-    setActiveImageTarget(null);
+    setIsApplying(true);
+    const ok = await persist(explicitKey ? `${sectionKey}.${explicitKey}` : `${sectionKey}._elements.${elementKey}.src`);
+    setIsApplying(false);
+    if (ok) {
+      setActiveImageTarget(null);
+    }
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -246,10 +380,10 @@ export const VisualInPlaceEditor: React.FC = () => {
       setIsUploading(true);
       const url = await uploadMedia(file);
       setNewImageSrc(url);
-      handleApplyImage(url);
+      await handleApplyImage(url);
     } catch (err) {
       console.error('Upload failed:', err);
-      showToast('Erreur lors du téléversement');
+      showToast('✕ Erreur lors du téléversement', 'error');
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -260,11 +394,22 @@ export const VisualInPlaceEditor: React.FC = () => {
 
   return (
     <>
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[400] bg-[#C3F910] text-[#080808] px-5 py-2.5 rounded-full font-mono text-xs font-bold shadow-2xl flex items-center gap-2 animate-in fade-in duration-200">
-          <Check className="w-4 h-4" />
-          <span>{toastMessage}</span>
+      {/* Barre contextuelle flottante dynamique liée à l'élément sélectionné */}
+      <FloatingElementToolbar onOpenImageModal={openImageModalForElement} />
+      {/* Toast Notification — l'état "sauvegardé" n'apparaît qu'après le
+          retour positif de l'API. */}
+      {toast && (
+        <div
+          className={`fixed bottom-20 left-1/2 -translate-x-1/2 z-[400] px-5 py-2.5 rounded-full font-mono text-xs font-bold shadow-2xl flex items-center gap-2 animate-in fade-in duration-200 ${
+            toast.tone === 'error'
+              ? 'bg-[#ff4444] text-white'
+              : toast.tone === 'pending'
+              ? 'bg-[#0e0e0d] text-[#C3F910] border border-[#C3F910]'
+              : 'bg-[#C3F910] text-[#080808]'
+          }`}
+        >
+          {toast.tone === 'pending' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+          <span>{toast.message}</span>
         </div>
       )}
 
@@ -414,11 +559,12 @@ export const VisualInPlaceEditor: React.FC = () => {
               </button>
               <button
                 type="button"
-                onClick={() => handleApplyImage()}
-                className="flex items-center gap-2 bg-[#C3F910] hover:bg-[#b0e20e] text-[#080808] font-mono font-bold text-xs px-5 py-2.5 rounded-xl transition-all cursor-pointer shadow-[0_0_15px_rgba(195,249,16,0.25)]"
+                onClick={() => void handleApplyImage()}
+                disabled={isApplying}
+                className="flex items-center gap-2 bg-[#C3F910] hover:bg-[#b0e20e] disabled:opacity-60 text-[#080808] font-mono font-bold text-xs px-5 py-2.5 rounded-xl transition-all cursor-pointer shadow-[0_0_15px_rgba(195,249,16,0.25)]"
               >
-                <Check className="w-4 h-4" />
-                <span>APPLIQUER CETTE IMAGE</span>
+                {isApplying ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                <span>{isApplying ? 'SAUVEGARDE…' : 'APPLIQUER CETTE IMAGE'}</span>
               </button>
             </div>
           </div>

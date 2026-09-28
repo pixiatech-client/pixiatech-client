@@ -1,10 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Package,
   FileText,
-  Truck,
   AlertTriangle,
   ArrowRight,
   CheckCircle2,
@@ -13,10 +12,23 @@ import {
   ShieldCheck,
   Building2,
   ChevronRight,
-  Info,
-  KeyRound,
-  AlertCircle
+  AlertCircle,
+  TrendingUp,
+  Zap,
+  Star,
+  ShoppingBag,
+  Truck,
+  BarChart3,
+  Activity,
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  Sparkles,
+  ArrowUpRight,
+  Circle,
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import type { UserProfile, Order, Invoice, Dispute, ActiveTab } from '../../types';
 
 interface DashboardViewProps {
@@ -32,6 +44,168 @@ interface DashboardViewProps {
   onOpenEmailModal?: () => void;
 }
 
+/* ─── Animated count-up hook ─────────────────────────────────────────────── */
+function useCountUp(target: number, duration = 900) {
+  const [value, setValue] = useState(0);
+  const start = useRef(0);
+  const raf = useRef<ReturnType<typeof requestAnimationFrame> | null>(null);
+
+  useEffect(() => {
+    const from = start.current;
+    const startTime = performance.now();
+    const animate = (now: number) => {
+      const progress = Math.min((now - startTime) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setValue(Math.round(from + (target - from) * eased));
+      if (progress < 1) raf.current = requestAnimationFrame(animate);
+      else start.current = target;
+    };
+    raf.current = requestAnimationFrame(animate);
+    return () => { if (raf.current) cancelAnimationFrame(raf.current); };
+  }, [target, duration]);
+
+  return value;
+}
+
+/* ─── Status badge ───────────────────────────────────────────────────────── */
+function StatusBadge({ status }: { status: string }) {
+  const cfg: Record<string, { label: string; cls: string }> = {
+    delivered:   { label: 'Livré',           cls: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' },
+    in_transit:  { label: 'En acheminement', cls: 'bg-sky-500/15 text-sky-400 border-sky-500/30' },
+    pending:     { label: 'En préparation',  cls: 'bg-amber-500/15 text-amber-400 border-amber-500/30' },
+  };
+  const { label, cls } = cfg[status] ?? cfg.pending;
+  return (
+    <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full border ${cls}`}>
+      <Circle className="w-1.5 h-1.5 fill-current" />
+      {label}
+    </span>
+  );
+}
+
+/* ─── KPI Card ───────────────────────────────────────────────────────────── */
+interface KpiCardProps {
+  label: string;
+  value: number;
+  suffix?: string;
+  sub: string;
+  accent: string;
+  icon: React.ReactNode;
+  delay?: number;
+  onClick?: () => void;
+  isCurrency?: boolean;
+}
+
+function KpiCard({ label, value, suffix = '', sub, accent, icon, delay = 0, onClick, isCurrency = false }: KpiCardProps) {
+  const animated = useCountUp(isCurrency ? Math.round(value) : value);
+  const displayValue = isCurrency
+    ? animated.toLocaleString('fr-FR')
+    : animated;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, delay, ease: [0.22, 1, 0.36, 1] }}
+      onClick={onClick}
+      className={`group relative overflow-hidden rounded-2xl border border-white/[0.06] bg-[#0F1214] p-5 shadow-lg transition-all duration-200 select-none ${onClick ? 'cursor-pointer hover:border-white/10 hover:bg-[#141719]' : ''}`}
+    >
+      {/* Subtle glow on hover */}
+      <div className={`pointer-events-none absolute inset-0 rounded-2xl opacity-0 transition-opacity duration-300 group-hover:opacity-100 ${accent.replace('text-', 'bg-').replace(/\[.*?\]/, '[#38E044]')}`}
+        style={{ background: `radial-gradient(ellipse at top left, ${accent.includes('emerald') ? 'rgba(56,224,68,0.06)' : accent.includes('sky') ? 'rgba(56,189,248,0.06)' : 'rgba(251,191,36,0.06)'} 0%, transparent 70%)` }}
+      />
+
+      <div className="relative z-10">
+        <div className="mb-3 flex items-center justify-between">
+          <span className="text-[11px] font-semibold uppercase tracking-widest text-neutral-500">{label}</span>
+          <div className={`flex h-8 w-8 items-center justify-center rounded-xl border border-white/[0.06] bg-white/[0.04] ${accent}`}>
+            {icon}
+          </div>
+        </div>
+
+        <div className="flex items-end gap-1">
+          <span className="font-mono text-3xl font-extrabold leading-none text-white tabular-nums">
+            {displayValue}
+          </span>
+          {suffix && <span className="mb-0.5 font-mono text-lg font-bold text-white/60">{suffix}</span>}
+        </div>
+
+        <p className="mt-2 text-[11px] text-neutral-500">{sub}</p>
+      </div>
+    </motion.div>
+  );
+}
+
+/* ─── Quick Action Button ────────────────────────────────────────────────── */
+function QuickAction({
+  icon,
+  label,
+  sub,
+  onClick,
+  accent = 'border-white/[0.06]',
+  delay = 0,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  sub: string;
+  onClick: () => void;
+  accent?: string;
+  delay?: number;
+}) {
+  return (
+    <motion.button
+      type="button"
+      onClick={onClick}
+      initial={{ opacity: 0, scale: 0.96 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.3, delay }}
+      className={`group flex w-full items-center gap-3.5 rounded-2xl border ${accent} bg-[#0F1214] p-4 text-left transition-all duration-200 hover:bg-[#141719] hover:border-white/10 cursor-pointer`}
+    >
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/[0.06] text-neutral-300 transition-transform duration-200 group-hover:scale-110">
+        {icon}
+      </div>
+      <div className="min-w-0">
+        <div className="text-sm font-semibold text-white">{label}</div>
+        <div className="text-[11px] text-neutral-500 leading-tight mt-0.5">{sub}</div>
+      </div>
+      <ArrowUpRight className="ml-auto h-4 w-4 shrink-0 text-neutral-600 transition-all duration-200 group-hover:text-neutral-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+    </motion.button>
+  );
+}
+
+/* ─── Section header ─────────────────────────────────────────────────────── */
+function SectionHeader({
+  icon,
+  title,
+  action,
+  onAction,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  action?: string;
+  onAction?: () => void;
+}) {
+  return (
+    <div className="mb-4 flex items-center justify-between">
+      <div className="flex items-center gap-2.5">
+        <span className="text-[#38E044]">{icon}</span>
+        <h2 className="text-sm font-bold text-white">{title}</h2>
+      </div>
+      {action && onAction && (
+        <button
+          type="button"
+          onClick={onAction}
+          className="flex items-center gap-1 text-[11px] font-semibold text-neutral-500 transition-colors hover:text-[#38E044] cursor-pointer"
+        >
+          {action}
+          <ArrowRight className="h-3 w-3" />
+        </button>
+      )}
+    </div>
+  );
+}
+
+/* ─── Main Dashboard ─────────────────────────────────────────────────────── */
 export const DashboardView: React.FC<DashboardViewProps> = ({
   user,
   orders,
@@ -42,410 +216,504 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onOpenStore,
   onViewInvoiceDetails,
   onOpenSiretModal,
-  onOpenEmailModal
+  onOpenEmailModal,
 }) => {
-  const pendingOrders = orders.filter((o) => o.status !== 'delivered');
+  const pendingOrders   = orders.filter((o) => o.status !== 'delivered');
   const deliveredOrders = orders.filter((o) => o.status === 'delivered');
-  const totalSpentTTC = orders.reduce((acc, curr) => acc + curr.totalTTC, 0);
+  const totalSpentTTC   = orders.reduce((a, c) => a + c.totalTTC, 0);
+  const openDisputes    = disputes.filter((d) => d.status !== 'Résolu').length;
+  const resolvedDisp    = disputes.filter((d) => d.status === 'Résolu').length;
+  const recentOrders    = orders.slice(0, 4);
+  const recentInvoices  = invoices.slice(0, 3);
+  const greet = (() => {
+    const h = new Date().getHours();
+    if (h < 6)  return 'Bonne nuit';
+    if (h < 12) return 'Bonjour';
+    if (h < 18) return 'Bon après-midi';
+    return 'Bonsoir';
+  })();
+
+  const firstName = user.name ? user.name.split(' ')[0] : 'Client';
 
   return (
-    <div id="pixiatech-dashboard-view" className="space-y-6">
-      {/* 1. Header Card (Matching Visual Reference from Connect Screenshot) */}
-      <div className="bg-white rounded-3xl border border-neutral-200/80 p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-[#0A0D0E] text-white flex items-center justify-center shrink-0 shadow-md">
-            <Package className="w-6 h-6 text-[#38E044]" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl sm:text-2xl font-bold text-neutral-900 tracking-tight">
-                Tableau de bord Client
-              </h1>
-              <span className="inline-flex items-center gap-1 text-[11px] font-semibold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full border border-emerald-200">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#38E044]" />
-                En ligne
-              </span>
-            </div>
-            <p className="text-xs sm:text-sm text-neutral-500 mt-0.5">
-              Bienvenue, <strong className="text-neutral-800">{user.name}</strong>. Suivez vos commandes, vos factures et vos livraisons en temps réel.
-            </p>
-          </div>
-        </div>
+    <div id="pixiatech-dashboard-view" className="space-y-6 pb-8">
 
-        <button
-          type="button"
-          onClick={onOpenStore}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0A0D0E] text-white text-xs font-bold hover:bg-neutral-800 transition-all shadow-sm cursor-pointer"
-        >
-          <span>Accéder à la boutique</span>
-          <ExternalLink className="w-3.5 h-3.5 text-neutral-400" />
-        </button>
-      </div>
+      {/* ── Hero Welcome Banner ───────────────────────────────────────── */}
+      <motion.div
+        initial={{ opacity: 0, y: -12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+        className="relative overflow-hidden rounded-3xl border border-white/[0.07] bg-[#0A0D0E] px-6 py-5 shadow-2xl sm:px-8 sm:py-6"
+      >
+        {/* Background grid pattern */}
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage: `linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)`,
+            backgroundSize: '40px 40px',
+          }}
+        />
+        {/* Green radial glow top-right */}
+        <div className="pointer-events-none absolute -top-12 -right-12 h-48 w-48 rounded-full bg-[#38E044]/10 blur-3xl" />
 
-      {/* 2. Key Metrics Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-2xl border border-neutral-200/80 p-5 shadow-xs hover:border-neutral-300 transition-all">
-          <div className="flex items-center justify-between text-neutral-500 mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider">Commandes Totales</span>
-            <div className="p-2 rounded-xl bg-neutral-100 text-neutral-700">
-              <Package className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-neutral-900 font-mono">
-            {orders.length}
-          </div>
-          <div className="mt-2 text-xs text-neutral-500 flex items-center justify-between">
-            <span>{deliveredOrders.length} livrée(s)</span>
-            <span className="text-emerald-600 font-medium">
-              {pendingOrders.length > 0 ? `${pendingOrders.length} en transit` : 'Toutes remises'}
-            </span>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl border border-neutral-200/80 p-5 shadow-xs hover:border-neutral-300 transition-all">
-          <div className="flex items-center justify-between text-neutral-500 mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider">Factures Disponibles</span>
-            <div className="p-2 rounded-xl bg-emerald-50 text-emerald-700">
-              <FileText className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-neutral-900 font-mono">
-            {invoices.length}
-          </div>
-          <div className="mt-2 text-xs text-neutral-500 flex items-center justify-between">
-            <span>Conformes TVA 20%</span>
-            <button
-              onClick={() => onNavigate('invoices')}
-              className="text-[#15803d] hover:underline font-semibold flex items-center gap-0.5"
-            >
-              Consulter <ChevronRight className="w-3 h-3" />
-            </button>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl border border-neutral-200/80 p-5 shadow-xs hover:border-neutral-300 transition-all">
-          <div className="flex items-center justify-between text-neutral-500 mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider">Total Commandes TTC</span>
-            <div className="p-2 rounded-xl bg-neutral-100 text-neutral-700">
-              <span className="font-bold text-xs">€</span>
-            </div>
-          </div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-neutral-900 font-mono">
-            {totalSpentTTC.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
-          </div>
-          <div className="mt-2 text-xs text-neutral-500">
-            Dépenses globales validées
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl border border-neutral-200/80 p-5 shadow-xs hover:border-neutral-300 transition-all">
-          <div className="flex items-center justify-between text-neutral-500 mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider">Litiges & Réclamations</span>
-            <div className="p-2 rounded-xl bg-amber-50 text-amber-700">
-              <AlertTriangle className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-neutral-900 font-mono">
-            {disputes.length}
-          </div>
-          <div className="mt-2 text-xs text-neutral-500 flex items-center justify-between">
-            <span>
-              {disputes.filter((d) => d.status === 'Résolu').length} résolu(s)
-            </span>
-            <button
-              onClick={onOpenDisputeModal}
-              className="text-amber-700 hover:underline font-semibold flex items-center gap-0.5"
-            >
-              Déclarer <ChevronRight className="w-3 h-3" />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* 3. Dashboard Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Column: Commandes Récentes & Actions (2 cols) */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Recent Orders Card */}
-          <div className="bg-white rounded-3xl border border-neutral-200/80 p-6 shadow-xs">
-            <div className="flex items-center justify-between pb-4 border-b border-neutral-100">
-              <div className="flex items-center gap-2.5">
-                <Package className="w-5 h-5 text-neutral-900" />
-                <h2 className="text-base font-bold text-neutral-900">
-                  Mes Dernières Commandes
-                </h2>
+        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-4">
+            {/* Avatar */}
+            {user.avatarUrl ? (
+              <img
+                src={user.avatarUrl}
+                alt={user.name}
+                className="h-12 w-12 rounded-2xl object-cover ring-2 ring-[#38E044]/30 shrink-0"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#38E044]/10 ring-2 ring-[#38E044]/30">
+                <span className="font-mono text-xl font-extrabold text-[#38E044]">
+                  {(user.name || 'C').charAt(0).toUpperCase()}
+                </span>
               </div>
-              {orders.length > 0 && (
-                <button
-                  onClick={() => onNavigate('orders')}
-                  className="text-xs font-semibold text-neutral-600 hover:text-black flex items-center gap-1 cursor-pointer"
-                >
-                  <span>Voir toutes les commandes</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-              )}
+            )}
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-xl font-extrabold tracking-tight text-white sm:text-2xl">
+                  {greet}, <span className="text-[#38E044]">{firstName}</span>
+                </h1>
+                <span className="inline-flex items-center gap-1 rounded-full border border-[#38E044]/30 bg-[#38E044]/10 px-2 py-0.5 text-[10px] font-bold text-[#38E044]">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#38E044] shadow-[0_0_6px_#38E044]" />
+                  En ligne
+                </span>
+              </div>
+              <p className="mt-0.5 text-xs text-neutral-500">
+                Portail client sécurisé — Suivez vos commandes, factures et livraisons en temps réel.
+              </p>
             </div>
+          </div>
 
-            {orders.length === 0 ? (
-              /* Empty state as requested by Screenshot 1 */
-              <div className="py-12 text-center">
-                <div className="w-14 h-14 mx-auto rounded-full bg-neutral-100 flex items-center justify-center text-neutral-400 mb-3">
-                  <Package className="w-7 h-7" />
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            {!user.emailVerified && onOpenEmailModal && (
+              <button
+                type="button"
+                onClick={onOpenEmailModal}
+                className="flex items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3.5 py-2 text-xs font-semibold text-amber-400 transition-all hover:bg-amber-500/15 cursor-pointer"
+              >
+                <Mail className="h-3.5 w-3.5" />
+                Vérifier e-mail
+              </button>
+            )}
+            {!user.siretVerified && onOpenSiretModal && (
+              <button
+                type="button"
+                onClick={onOpenSiretModal}
+                className="flex items-center gap-1.5 rounded-xl border border-sky-500/30 bg-sky-500/10 px-3.5 py-2 text-xs font-semibold text-sky-400 transition-all hover:bg-sky-500/15 cursor-pointer"
+              >
+                <Building2 className="h-3.5 w-3.5" />
+                Certifier entreprise
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={onOpenStore}
+              className="flex items-center gap-2 rounded-xl bg-[#38E044] px-4 py-2 text-xs font-extrabold text-black shadow-lg shadow-[#38E044]/20 transition-all hover:bg-[#2fcf3a] hover:shadow-[#38E044]/30 cursor-pointer"
+            >
+              <ShoppingBag className="h-3.5 w-3.5" />
+              Boutique
+              <ExternalLink className="h-3 w-3 opacity-70" />
+            </button>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* ── KPI Metrics ───────────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <KpiCard
+          label="Commandes"
+          value={orders.length}
+          sub={`${deliveredOrders.length} livrée(s) · ${pendingOrders.length} en transit`}
+          accent="text-[#38E044]"
+          icon={<Package className="h-4 w-4" />}
+          delay={0.05}
+          onClick={() => onNavigate('orders')}
+        />
+        <KpiCard
+          label="Factures"
+          value={invoices.length}
+          sub="Conformes TVA 20% · Art. 289 CGI"
+          accent="text-sky-400"
+          icon={<FileText className="h-4 w-4" />}
+          delay={0.1}
+          onClick={() => onNavigate('invoices')}
+        />
+        <KpiCard
+          label="Total dépensé"
+          value={totalSpentTTC}
+          suffix=" €"
+          isCurrency
+          sub="Toutes commandes TTC"
+          accent="text-violet-400"
+          icon={<BarChart3 className="h-4 w-4" />}
+          delay={0.15}
+        />
+        <KpiCard
+          label="Litiges"
+          value={disputes.length}
+          sub={`${resolvedDisp} résolu(s) · ${openDisputes} ouvert(s)`}
+          accent="text-amber-400"
+          icon={<AlertTriangle className="h-4 w-4" />}
+          delay={0.2}
+          onClick={() => onNavigate('disputes')}
+        />
+      </div>
+
+      {/* ── Main Content Grid ─────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+
+        {/* Left 2/3 column */}
+        <div className="space-y-6 lg:col-span-2">
+
+          {/* Recent Orders */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, delay: 0.25 }}
+            className="rounded-3xl border border-white/[0.06] bg-[#0F1214] p-6 shadow-lg"
+          >
+            <SectionHeader
+              icon={<Package className="h-4 w-4" />}
+              title="Commandes Récentes"
+              action={orders.length > 0 ? 'Tout voir' : undefined}
+              onAction={() => onNavigate('orders')}
+            />
+
+            {recentOrders.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-white/[0.04] text-neutral-600">
+                  <Package className="h-8 w-8" />
                 </div>
-                <h3 className="text-base font-bold text-neutral-900">
-                  Aucune commande pour le moment
-                </h3>
-                <p className="text-xs text-neutral-500 max-w-sm mx-auto mt-1 mb-5">
-                  Vous n'avez pas encore passé de commande sur notre boutique. Explorez nos produits haute performance dès maintenant.
+                <p className="text-sm font-semibold text-neutral-400">Aucune commande pour le moment</p>
+                <p className="mt-1 max-w-xs text-xs text-neutral-600">
+                  Explorez notre boutique et passez votre première commande.
                 </p>
                 <button
                   type="button"
                   onClick={onOpenStore}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#0A0D0E] text-white font-bold text-xs hover:bg-neutral-800 transition-all shadow-md cursor-pointer"
+                  className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#38E044] px-5 py-2.5 text-xs font-extrabold text-black shadow-lg shadow-[#38E044]/20 transition hover:bg-[#2fcf3a] cursor-pointer"
                 >
-                  <span>Découvrir la boutique</span>
-                  <ArrowRight className="w-3.5 h-3.5 text-[#38E044]" />
+                  Découvrir la boutique
+                  <ArrowRight className="h-3.5 w-3.5" />
                 </button>
               </div>
             ) : (
-              <div className="divide-y divide-neutral-100">
-                {orders.slice(0, 3).map((order, oidx) => {
-                  const firstItem = order.items[0];
-                  if (!firstItem) return null;
+              <div className="divide-y divide-white/[0.04]">
+                {recentOrders.map((order, idx) => {
+                  const item = order.items[0];
+                  if (!item) return null;
                   return (
-                    <div
-                      key={order.id || `order-${oidx}`}
-                      className="py-4.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 group"
+                    <motion.div
+                      key={order.id || idx}
+                      initial={{ opacity: 0, x: -8 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.25, delay: 0.28 + idx * 0.06 }}
+                      className="group flex items-center gap-4 py-4"
                     >
-                      <div className="flex items-center gap-3.5 min-w-0">
+                      <div className="relative h-12 w-12 shrink-0">
                         <img
-                          src={firstItem.productImage}
-                          alt={firstItem.productName}
-                          className="w-14 h-14 rounded-2xl object-cover border border-neutral-200 shrink-0"
+                          src={item.productImage}
+                          alt={item.productName}
+                          className="h-full w-full rounded-xl object-cover ring-1 ring-white/10"
                         />
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-mono font-bold text-neutral-900">
-                              {order.orderNumber}
-                            </span>
-                            <span className="text-[11px] text-neutral-400">
-                              • {order.date}
-                            </span>
-                          </div>
-                          <h4 className="text-sm font-semibold text-neutral-800 truncate mt-0.5">
-                            {firstItem.productName}
-                          </h4>
-                          <div className="text-xs text-neutral-500 mt-0.5">
-                            {order.items.length > 1
-                              ? `+ ${order.items.length - 1} autre(s) article(s)`
-                              : `Qté : ${firstItem.quantity}`}
-                          </div>
-                        </div>
+                        {order.status === 'in_transit' && (
+                          <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-sky-400 ring-2 ring-[#0F1214] shadow-[0_0_6px_#38BDF8]" />
+                        )}
                       </div>
 
-                      <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-4 shrink-0">
-                        <div className="text-right">
-                          <div className="text-sm font-extrabold text-neutral-900 font-mono">
-                            {order.totalTTC.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
-                          </div>
-                          <span
-                            className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full mt-1 ${
-                              order.status === 'delivered'
-                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                : order.status === 'in_transit'
-                                ? 'bg-sky-50 text-sky-700 border border-sky-200'
-                                : 'bg-amber-50 text-amber-700 border border-amber-200'
-                            }`}
-                          >
-                            {order.status === 'delivered'
-                              ? '✓ Livré'
-                              : order.status === 'in_transit'
-                              ? '🚚 En cours d\'acheminement'
-                              : '⏳ En préparation'}
-                          </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-xs font-bold text-neutral-300">{order.orderNumber}</span>
+                          <span className="text-[10px] text-neutral-600">· {order.date}</span>
                         </div>
-
-                        <button
-                          onClick={() => onNavigate('orders')}
-                          className="p-2 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-700 transition-colors cursor-pointer"
-                          title="Détails"
-                        >
-                          <ChevronRight className="w-4 h-4" />
-                        </button>
+                        <p className="mt-0.5 truncate text-sm font-semibold text-white">{item.productName}</p>
+                        {order.items.length > 1 && (
+                          <p className="text-[11px] text-neutral-600">+{order.items.length - 1} article(s)</p>
+                        )}
                       </div>
-                    </div>
+
+                      <div className="flex shrink-0 flex-col items-end gap-1.5">
+                        <span className="font-mono text-sm font-extrabold text-white">
+                          {order.totalTTC.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
+                        </span>
+                        <StatusBadge status={order.status} />
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => onNavigate('orders')}
+                        className="ml-2 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/[0.04] text-neutral-600 transition hover:bg-white/[0.08] hover:text-neutral-300 cursor-pointer"
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </button>
+                    </motion.div>
                   );
                 })}
               </div>
             )}
-          </div>
+          </motion.div>
 
-          {/* Invoices Quick Access */}
-          <div className="bg-white rounded-3xl border border-neutral-200/80 p-6 shadow-xs">
-            <div className="flex items-center justify-between pb-4 border-b border-neutral-100">
-              <div className="flex items-center gap-2.5">
-                <FileText className="w-5 h-5 text-neutral-900" />
-                <h2 className="text-base font-bold text-neutral-900">
-                  Mes Factures Certifiées
-                </h2>
-              </div>
-              <button
-                onClick={() => onNavigate('invoices')}
-                className="text-xs font-semibold text-neutral-600 hover:text-black flex items-center gap-1 cursor-pointer"
-              >
-                <span>Accéder à l'espace factures</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
+          {/* Recent Invoices */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, delay: 0.3 }}
+            className="rounded-3xl border border-white/[0.06] bg-[#0F1214] p-6 shadow-lg"
+          >
+            <SectionHeader
+              icon={<FileText className="h-4 w-4" />}
+              title="Factures Certifiées"
+              action={invoices.length > 0 ? 'Espace factures' : undefined}
+              onAction={() => onNavigate('invoices')}
+            />
 
-            {invoices.length === 0 ? (
-              <div className="py-6 text-center text-xs text-neutral-500">
-                <p>Aucune facture émise pour le moment.</p>
-                <p className="mt-1 text-neutral-400">
-                  {orders.length > 0
-                    ? 'Vous pouvez générer une facture pour vos commandes validées depuis l\'onglet "Mes factures".'
-                    : 'Vous devez avoir passé une commande avant de pouvoir demander une facture.'}
-                </p>
+            {recentInvoices.length === 0 ? (
+              <div className="rounded-2xl border border-white/[0.04] bg-white/[0.02] p-5 text-center text-xs text-neutral-600">
+                {orders.length > 0
+                  ? 'Générez une facture depuis l\'onglet "Mes factures" pour vos commandes validées.'
+                  : 'Passez votre première commande pour pouvoir demander une facture.'}
                 {orders.length > 0 && (
                   <button
+                    type="button"
                     onClick={() => onNavigate('invoices')}
-                    className="mt-3 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#0A0D0E] text-white font-semibold text-xs hover:bg-neutral-800 transition-colors cursor-pointer"
+                    className="mt-3 flex items-center gap-1.5 mx-auto rounded-xl border border-white/[0.06] px-4 py-2 text-xs font-semibold text-neutral-300 transition hover:bg-white/[0.06] cursor-pointer"
                   >
-                    <span>Demander une facture</span>
-                    <ChevronRight className="w-3.5 h-3.5 text-[#38E044]" />
+                    Demander une facture <ChevronRight className="h-3.5 w-3.5 text-[#38E044]" />
                   </button>
                 )}
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
-                {invoices.slice(0, 2).map((invoice, idx) => (
-                  <div
-                    key={invoice.id || `invoice-${idx}`}
-                    onClick={() => onViewInvoiceDetails(invoice)}
-                    className="p-4 rounded-2xl border border-neutral-200 hover:border-neutral-300 hover:shadow-md transition-all cursor-pointer bg-neutral-50/50"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <span className="text-[11px] font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-                          {invoice.invoiceNumber}
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                {recentInvoices.map((inv, idx) => {
+                  const statusCls: Record<string, string> = {
+                    'PAYÉE':      'bg-emerald-500/10 text-emerald-400 border-emerald-500/25',
+                    'EN ATTENTE': 'bg-amber-500/10 text-amber-400 border-amber-500/25',
+                    'ANNULÉE':    'bg-red-500/10 text-red-400 border-red-500/25',
+                  };
+                  const cls = statusCls[inv.status] ?? statusCls['EN ATTENTE'];
+                  return (
+                    <motion.div
+                      key={inv.id || idx}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.25, delay: 0.32 + idx * 0.05 }}
+                      onClick={() => onViewInvoiceDetails(inv)}
+                      className="group cursor-pointer rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4 transition-all hover:bg-white/[0.04] hover:border-white/10"
+                    >
+                      <div className="mb-3 flex items-start justify-between gap-2">
+                        <span className="font-mono text-[11px] font-bold text-[#38E044] bg-[#38E044]/10 px-2 py-0.5 rounded-md">
+                          {inv.invoiceNumber}
                         </span>
-                        <h4 className="text-xs font-bold text-neutral-800 mt-2 line-clamp-1">
-                          {invoice.productName}
-                        </h4>
-                        <div className="text-[11px] text-neutral-500 mt-0.5">
-                          Émise le {invoice.issueDate}
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-sm font-extrabold text-neutral-900 font-mono">
-                          {invoice.totalTTC.toFixed(2)} €
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${cls}`}>
+                          {inv.status}
                         </span>
-                        <span className="block text-[10px] text-neutral-400">TTC</span>
                       </div>
-                    </div>
-                  </div>
-                ))}
+                      <p className="text-xs font-semibold text-white line-clamp-1">{inv.productName}</p>
+                      <p className="mt-0.5 text-[11px] text-neutral-600">Émise le {inv.issueDate}</p>
+                      <p className="mt-2 font-mono text-sm font-extrabold text-white">{inv.totalTTC.toFixed(2)} €</p>
+                    </motion.div>
+                  );
+                })}
               </div>
             )}
-          </div>
+          </motion.div>
         </div>
 
-        {/* Right Column: Profil & Quick Tools (1 col) */}
-        <div className="space-y-6">
-          {/* Account Status Card */}
-          <div className="bg-white rounded-3xl border border-neutral-200/80 p-6 shadow-xs">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-400 mb-4">
-              Identité & Conformité Client
-            </h3>
+        {/* Right 1/3 column */}
+        <div className="space-y-5">
 
-            <div className="space-y-3.5 text-xs">
-              <div className="p-3 rounded-2xl bg-neutral-50 border border-neutral-200/80 space-y-1">
-                <div className="font-bold text-neutral-900">{user.name}</div>
-                <div className="text-neutral-500">{user.email || '—'}</div>
-                <div className="text-neutral-500">{user.phone || '—'}</div>
+          {/* Profile / Identity card */}
+          <motion.div
+            initial={{ opacity: 0, x: 12 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.35, delay: 0.22 }}
+            className="rounded-3xl border border-white/[0.06] bg-[#0F1214] p-5 shadow-lg"
+          >
+            <div className="mb-4 flex items-center gap-2.5">
+              <span className="text-[#38E044]"><User className="h-4 w-4" /></span>
+              <h3 className="text-sm font-bold text-white">Identité & Conformité</h3>
+            </div>
+
+            <div className="space-y-2.5 text-xs">
+              {/* User info */}
+              <div className="rounded-2xl border border-white/[0.05] bg-white/[0.03] p-3.5 space-y-2">
+                <p className="font-bold text-white text-sm">{user.name || '—'}</p>
+                <div className="flex items-center gap-2 text-neutral-500">
+                  <Mail className="h-3 w-3 shrink-0" />
+                  <span className="truncate">{user.email || '—'}</span>
+                  {user.emailVerified && (
+                    <CheckCircle2 className="ml-auto h-3.5 w-3.5 shrink-0 text-[#38E044]" />
+                  )}
+                </div>
+                {user.phone && (
+                  <div className="flex items-center gap-2 text-neutral-500">
+                    <Phone className="h-3 w-3 shrink-0" />
+                    <span>{user.phone}</span>
+                  </div>
+                )}
               </div>
 
+              {/* Company / Siret */}
               {user.siretVerified && user.companyName ? (
-                <div className="space-y-2">
-                  <div className="flex items-start gap-3 p-3 rounded-2xl bg-emerald-50/50 border border-emerald-200/80">
-                    <Building2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
-                    <div>
-                      <div className="font-bold text-neutral-900">{user.companyName}</div>
-                      <div className="text-neutral-600 mt-0.5 font-mono">
-                        SIRET : {user.siret}
-                      </div>
-                      <div className="text-[11px] text-neutral-500 mt-0.5 font-mono">
-                        TVA : {user.vatNumber || '—'}
-                      </div>
-                    </div>
+                <div className="rounded-2xl border border-[#38E044]/20 bg-[#38E044]/5 p-3.5 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Building2 className="h-4 w-4 text-[#38E044] shrink-0" />
+                    <span className="font-bold text-white truncate">{user.companyName}</span>
                   </div>
-                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-xs">
-                    <span className="text-neutral-600">Vérification Entreprise</span>
-                    <span className="inline-flex items-center gap-1 font-bold text-emerald-700 bg-emerald-100/70 px-2.5 py-0.5 rounded-full text-[11px]">
-                      <ShieldCheck className="w-3.5 h-3.5" />
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="font-mono text-neutral-400">SIRET : {user.siret}</span>
+                    <span className="inline-flex items-center gap-1 rounded-full border border-[#38E044]/30 bg-[#38E044]/10 px-2 py-0.5 text-[10px] font-bold text-[#38E044]">
+                      <ShieldCheck className="h-3 w-3" />
                       Certifié INSEE
                     </span>
                   </div>
+                  {user.vatNumber && (
+                    <p className="font-mono text-[11px] text-neutral-600">TVA : {user.vatNumber}</p>
+                  )}
                 </div>
               ) : (
-                <div className="p-3 rounded-2xl bg-neutral-50 border border-neutral-200/80 text-neutral-600">
+                <div className="rounded-2xl border border-white/[0.05] bg-white/[0.03] p-3.5">
                   <div className="flex items-center justify-between">
-                    <span>Statut de facturation :</span>
-                    <span className="font-semibold text-neutral-800">Particulier</span>
+                    <span className="text-neutral-500">Facturation :</span>
+                    <span className="font-semibold text-neutral-300">Particulier</span>
                   </div>
-                  <p className="text-[11px] text-neutral-400 mt-1">
-                    Vous pouvez vérifier une entreprise lors de l'émission d'une facture.
-                  </p>
+                  {onOpenSiretModal && (
+                    <button
+                      type="button"
+                      onClick={onOpenSiretModal}
+                      className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl border border-white/[0.06] px-3 py-2 text-[11px] font-semibold text-neutral-400 transition hover:border-sky-500/30 hover:bg-sky-500/10 hover:text-sky-400 cursor-pointer"
+                    >
+                      <Building2 className="h-3 w-3" />
+                      Certifier mon entreprise
+                    </button>
+                  )}
                 </div>
+              )}
+
+              {/* Email verification nudge */}
+              {!user.emailVerified && onOpenEmailModal && (
+                <button
+                  type="button"
+                  onClick={onOpenEmailModal}
+                  className="w-full flex items-center gap-2 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-3.5 text-left transition hover:bg-amber-500/10 cursor-pointer"
+                >
+                  <AlertCircle className="h-4 w-4 shrink-0 text-amber-400" />
+                  <div>
+                    <p className="text-xs font-semibold text-amber-400">E-mail non vérifié</p>
+                    <p className="text-[11px] text-amber-500/70 leading-tight">Cliquez pour vérifier votre adresse</p>
+                  </div>
+                </button>
               )}
             </div>
 
             <button
+              type="button"
               onClick={() => onNavigate('settings')}
-              className="w-full mt-4 py-2.5 px-4 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-800 font-semibold text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer"
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-white/[0.05] bg-white/[0.03] px-4 py-2.5 text-xs font-semibold text-neutral-400 transition hover:bg-white/[0.06] hover:text-neutral-200 cursor-pointer"
             >
-              <span>Gérer les paramètres du compte</span>
-              <ChevronRight className="w-3.5 h-3.5" />
+              Gérer les paramètres
+              <ChevronRight className="h-3.5 w-3.5 text-[#38E044]" />
             </button>
-          </div>
+          </motion.div>
 
-          {/* Litige Box */}
-          <div className="bg-amber-50/60 rounded-3xl border border-amber-200/80 p-6 shadow-xs">
-            <div className="flex items-start gap-3">
-              <div className="p-2 rounded-xl bg-amber-500 text-white shrink-0">
-                <AlertCircle className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="text-sm font-bold text-amber-950">
-                  Un problème avec une livraison ?
-                </h4>
-                <p className="text-xs text-amber-800/90 mt-1">
-                  Colis endommagé, retard ou erreur ? Notre support dédié traite vos réclamations sous 24h ouvrées.
-                </p>
-                <div className="mt-3 flex flex-wrap items-center gap-2">
+          {/* Quick Actions */}
+          <motion.div
+            initial={{ opacity: 0, x: 12 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.35, delay: 0.28 }}
+            className="rounded-3xl border border-white/[0.06] bg-[#0F1214] p-5 shadow-lg"
+          >
+            <div className="mb-4 flex items-center gap-2.5">
+              <span className="text-[#38E044]"><Zap className="h-4 w-4" /></span>
+              <h3 className="text-sm font-bold text-white">Actions Rapides</h3>
+            </div>
+
+            <div className="space-y-2">
+              <QuickAction
+                icon={<ShoppingBag className="h-5 w-5 text-[#38E044]" />}
+                label="Boutique PIXIATECH"
+                sub="Matériel informatique haute performance"
+                onClick={onOpenStore}
+                delay={0.3}
+              />
+              <QuickAction
+                icon={<FileText className="h-5 w-5 text-sky-400" />}
+                label="Mes factures"
+                sub={invoices.length > 0 ? `${invoices.length} facture(s) disponible(s)` : 'Demander une facture'}
+                onClick={() => onNavigate('invoices')}
+                delay={0.33}
+              />
+              <QuickAction
+                icon={<AlertTriangle className="h-5 w-5 text-amber-400" />}
+                label="Ouvrir un litige"
+                sub="Support réactif sous 24h ouvrées"
+                onClick={onOpenDisputeModal}
+                delay={0.36}
+              />
+            </div>
+          </motion.div>
+
+          {/* Dispute / Support CTA */}
+          {disputes.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.4 }}
+              className="rounded-3xl border border-amber-500/20 bg-amber-500/5 p-5"
+            >
+              <div className="flex items-start gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-500/20">
+                  <AlertCircle className="h-5 w-5 text-amber-400" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-amber-300">
+                    {openDisputes > 0 ? `${openDisputes} litige(s) en cours` : 'Tous vos litiges sont résolus'}
+                  </p>
+                  <p className="mt-0.5 text-[11px] text-amber-500/80">
+                    {openDisputes > 0
+                      ? 'Notre équipe traite vos réclamations.'
+                      : 'Aucun incident signalé actuellement.'}
+                  </p>
                   <button
-                    id="btn-open-dispute-dashboard"
                     type="button"
-                    onClick={onOpenDisputeModal}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-900 hover:bg-amber-950 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                    onClick={() => onNavigate('disputes')}
+                    className="mt-3 inline-flex items-center gap-1.5 rounded-xl border border-amber-500/25 bg-amber-500/10 px-3 py-1.5 text-[11px] font-semibold text-amber-400 transition hover:bg-amber-500/20 cursor-pointer"
                   >
-                    <AlertTriangle className="w-3.5 h-3.5" />
-                    <span>Ouvrir un litige</span>
+                    Suivi réclamations
+                    <ChevronRight className="h-3 w-3" />
                   </button>
-                  {disputes.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => onNavigate('disputes')}
-                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/80 hover:bg-white text-amber-900 text-xs font-semibold border border-amber-300 transition-colors cursor-pointer"
-                    >
-                      <span>Suivi réclamations ({disputes.length})</span>
-                      <ChevronRight className="w-3 h-3" />
-                    </button>
-                  )}
                 </div>
               </div>
+            </motion.div>
+          )}
+
+          {/* Trust / Security badge */}
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.44 }}
+            className="rounded-2xl border border-white/[0.04] bg-white/[0.02] p-4"
+          >
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[10px] text-neutral-600">
+              <span className="flex items-center gap-1.5">
+                <ShieldCheck className="h-3 w-3 text-[#38E044]" />
+                TLS 1.3
+              </span>
+              <span className="flex items-center gap-1.5">
+                <CheckCircle2 className="h-3 w-3 text-sky-500" />
+                Art. 289 CGI
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Building2 className="h-3 w-3 text-violet-400" />
+                INSEE / SIRENE
+              </span>
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
     </div>

@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Loader2, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { resetAnalyticsData } from './analytics-api';
+import { resetAnalyticsData, invalidateAnalyticsCache } from './analytics-api';
 
 interface DataMenuProps {
   t: (key: string, params?: Record<string, string | number>) => string;
@@ -19,6 +19,8 @@ export default function DataMenu({ t, onChanged }: DataMenuProps) {
     setBusy(true);
     try {
       const r = await resetAnalyticsData();
+      // Flush the in-memory SWR cache so stale data is never served after a reset
+      invalidateAnalyticsCache();
       toast.success(g('resetDone', { sessions: r.sessionsDeleted }));
       setOpen(false);
       onChanged();

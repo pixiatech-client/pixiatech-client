@@ -1,7 +1,7 @@
 {
   "version": 1,
   "exportedAt": "2026-09-24T00:00:00.000Z",
-  "comment": "Référence du méga-menu (Phase A), migrée de MEGA_COLUMNS (xeron-catalog.ts). Le menu référence les produits UNIQUEMENT par productSlug. Tant qu'un produit n'a pas de page, l'item garde catalogSlug et s'affiche grisé.",
+  "comment": "Référence du méga-menu (Phase A), migrée de MEGA_COLUMNS (pixiatech-catalog.ts). Le menu référence les produits UNIQUEMENT par productSlug. Tant qu'un produit n'a pas de page, l'item garde catalogSlug et s'affiche grisé.",
   "menu": {
     "columns": [
       {

@@ -10,6 +10,13 @@ import {
 } from '@/lib/analytics/constants';
 import type { AnalyticsEventPayload, AnalyticsEventRecord, AnalyticsSessionSummary } from '@/lib/analytics/types';
 
+/** Supprime les champs `undefined` d'un objet plat — Firestore Admin SDK les rejette. */
+function stripUndefined<T extends object>(obj: T): Partial<T> {
+  return Object.fromEntries(
+    Object.entries(obj).filter(([, v]) => v !== undefined)
+  ) as Partial<T>;
+}
+
 function pickStr(value: unknown, max = MAX_STRLEN): string | undefined {
   if (typeof value !== 'string') return undefined;
   const trimmed = value.trim();
@@ -192,7 +199,7 @@ async function applyEventsToSession(evts: AnalyticsEventPayload[], country?: str
     for (const ev of sorted) {
       applyEventToSession(s, ev, ev.ts ?? Date.now());
     }
-    txn.set(sessionRef, s, { merge: false });
+    txn.set(sessionRef, stripUndefined(s) as AnalyticsSessionSummary, { merge: false });
   });
 }
 
@@ -223,7 +230,7 @@ export async function ingestAnalyticsEvents(
   }
 
   const writeEvent = (ev: AnalyticsEventPayload): Promise<unknown> =>
-    eventsRef.add({ ...ev, ts, country } as AnalyticsEventRecord);
+    eventsRef.add(stripUndefined({ ...ev, ts, country }) as AnalyticsEventRecord);
 
   try {
     await Promise.all(

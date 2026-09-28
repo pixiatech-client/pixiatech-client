@@ -4,16 +4,15 @@ import React from 'react';
 import { Language } from '../data/translations';
 import { useCms } from '@/lib/site-web/cms-context';
 import type { ProductFieldwork } from '@/lib/products/types';
+import { text } from '@/lib/products/display';
 
 interface FieldworkSectionProps {
-  companyName: string;
   lang?: Language;
-  /** Données produit (template dynamique). Priorité : data ?? CMS ?? défaut. */
+  /** Données produit (template dynamique). Priorité : data ?? CMS. */
   data?: ProductFieldwork;
 }
 
 export const FieldworkSection: React.FC<FieldworkSectionProps> = ({
-  companyName,
   lang = 'FR',
   data,
 }) => {
@@ -21,44 +20,30 @@ export const FieldworkSection: React.FC<FieldworkSectionProps> = ({
   const cmsFieldwork = (pages[currentPageId]?.sections?.fieldwork as Record<string, unknown>) || {};
 
   const eyebrow =
-    data?.eyebrow ||
+    text(data?.eyebrow) ||
     (cmsFieldwork.eyebrow as string) ||
     (lang === 'FR' ? '05 / SUR LE TERRAIN' : '05 / IN THE FIELD');
-  const title1 =
-    data?.title ||
-    (cmsFieldwork.title as string) ||
-    (lang === 'FR' ? 'Projets réalisés' : 'Projects built');
-  const title2 = lang === 'FR' ? `avec ${companyName} Fine.` : `with ${companyName} Fine.`;
+  // Accroche du PDF uniquement : « Projets réalisés avec PixiaTech Fine. » était
+  // un texte figé qui mentionnait le produit de référence sur toutes les pages.
+  const heading = text(data?.title) ?? (cmsFieldwork.title as string);
   const allProjectsLink = lang === 'FR' ? 'TOUS LES PROJETS →' : 'ALL PROJECTS →';
 
-  const projects = data?.projects?.length
-    ? data.projects.map((proj) => {
-        const parts: string[] = [];
-        if (proj.title) parts.push(proj.title);
-        if (proj.location) parts.push(proj.location);
-        if (proj.pitch) parts.push(proj.pitch);
-        return {
-          img: proj.image || (proj as any).img || '',
-          alt: parts.join(' — '),
-          caption: proj.caption || parts.join(' — ').toUpperCase(),
-        };
-      })
-    : [
-    {
-      img: '/uploads/projects/westfield-paris-retail-led-screen.jpg',
-      alt: `${companyName}, Scenarchie and BTB Audiovisuel Deliver New Digital Impact in Paris — installation`,
-      caption: lang === 'FR'
-        ? `${companyName.toUpperCase()}, SCENARCHIE ET BTB AUDIOVISUEL ILLUMINENT WESTFIELD PARIS — France / 2026`
-        : `${companyName.toUpperCase()}, SCENARCHIE AND BTB AUDIOVISUEL DELIVER NEW DIGITAL IMPACT IN PARIS — France / 2026`,
-    },
-    {
-      img: '/uploads/projects/xeron-led-screens-for-saudi-arabias-ministry-of-culture.jpg',
-      alt: `${companyName} LED Screens for Saudi Arabia’s Ministry of Culture — installation`,
-      caption: lang === 'FR'
-        ? `ÉCRANS LED ${companyName.toUpperCase()} POUR LE MINISTÈRE DE LA CULTURE SAOUDIEN — Arabie Saoudite / 2026`
-        : `${companyName.toUpperCase()} LED SCREENS FOR SAUDI ARABIA’S MINISTRY OF CULTURE — Saudi Arabia / 2026`,
-    },
-  ];
+  // Un projet sans image est ignoré : une carte vide avec une légende mais sans
+  // photo n'apporte rien et occupancy la grille.
+  const projects = (data?.projects ?? [])
+    .filter((proj) => text(proj.title) || text(proj.caption) || text(proj.image))
+    .map((proj) => {
+      const parts: string[] = [];
+      if (text(proj.title)) parts.push(proj.title);
+      if (text(proj.location)) parts.push(proj.location);
+      if (text(proj.pitch)) parts.push(proj.pitch);
+      if (text(proj.year)) parts.push(proj.year);
+      return {
+        img: text(proj.image) ?? '',
+        alt: parts.join(' — '),
+        caption: text(proj.caption) ?? parts.join(' — ').toUpperCase(),
+      };
+    });
 
   return (
     <section id="fieldwork" className="section theme-light">
@@ -87,27 +72,28 @@ export const FieldworkSection: React.FC<FieldworkSectionProps> = ({
             marginBottom: '64px',
           }}
         >
-          <h2 className="h2" style={{ margin: 0 }}>
-            {title1}
-            <br />
-            {title2}
-          </h2>
+          {heading && (
+            <h2 className="h2" style={{ margin: 0 }}>
+              {heading}
+            </h2>
+          )}
           <a href="/web/projects" className="link-ul">
             {allProjectsLink}
           </a>
         </div>
 
-        {/* 2-Column Projects Showcase */}
+        {/* Projets : grille pilotée par le nombre réel de projets */}
+        {projects.length > 0 && (
         <div
           className="g2"
           style={{
             display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
+            gridTemplateColumns: `repeat(${Math.min(projects.length, 2)}, minmax(0, 1fr))`,
             gap: '24px',
           }}
         >
           {projects.map((proj, idx) => (
-            <div key={proj.img || `proj-${idx}`}>
+            <div key={proj.img || proj.caption || `proj-${idx}`}>
               <div
                 style={{
                   position: 'relative',
@@ -128,26 +114,26 @@ export const FieldworkSection: React.FC<FieldworkSectionProps> = ({
                       objectFit: 'cover',
                       display: 'block',
                     }}
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = `https://xeron.co${proj.img}`;
-                    }}
                   />
                 ) : null}
               </div>
-              <div
-                style={{
-                  fontSize: '11px',
-                  letterSpacing: '.2em',
-                  color: 'var(--muted, #8a8880)',
-                  marginTop: '16px',
-                  textTransform: 'uppercase',
-                }}
-              >
-                {proj.caption}
-              </div>
+              {proj.caption && (
+                <div
+                  style={{
+                    fontSize: '11px',
+                    letterSpacing: '.2em',
+                    color: 'var(--muted, #8a8880)',
+                    marginTop: '16px',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  {proj.caption}
+                </div>
+              )}
             </div>
           ))}
         </div>
+        )}
       </div>
     </section>
   );

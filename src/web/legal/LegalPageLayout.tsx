@@ -1,13 +1,13 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import '@/web/xeron.css';
-import { XerHeader } from '@/web/xeron/XerHeader';
-import { XerFooter } from '@/web/xeron/XerFooter';
-import { RevealRoot } from '@/web/xeron/RevealRoot';
-import { BackToTopButton } from '@/web/xeron/BackToTopButton';
-import { ConsultationModal } from '@/web/xeron/ConsultationModal';
-import { Language } from '@/web/xeron-translations';
+import '@/web/pixiatech.css';
+import { PixiaHeader } from '@/web/pixiatech/PixiaHeader';
+import { PixiaFooter } from '@/web/pixiatech/PixiaFooter';
+import { RevealRoot } from '@/web/pixiatech/RevealRoot';
+import { BackToTopButton } from '@/web/pixiatech/BackToTopButton';
+import { ConsultationModal } from '@/web/pixiatech/ConsultationModal';
+import { Language } from '@/web/pixiatech-translations';
 import { EditableWrapper } from '@/web/cms/EditableWrapper';
 import { useCms } from '@/lib/site-web/cms-context';
 import type { LegalPageData, LegalSection } from '@/web/data/legal-pages-content';
@@ -113,7 +113,7 @@ export function LegalPageLayout({ pageData, pageKey, isCookiePage = false }: Leg
 
   return (
     <RevealRoot className="xer-site" style={{ background: '#080808', color: '#f5f4f0' }}>
-      <XerHeader
+      <PixiaHeader
         companyName="PIXIATECH"
         lang={lang}
         onOpenConsultation={openConsultation}
@@ -359,7 +359,7 @@ export function LegalPageLayout({ pageData, pageKey, isCookiePage = false }: Leg
         </div>
       </main>
 
-      <XerFooter companyName="PIXIATECH" lang={lang} onOpenConsultation={openConsultation} />
+      <PixiaFooter companyName="PIXIATECH" lang={lang} onOpenConsultation={openConsultation} />
 
       <ConsultationModal
         isOpen={consultOpen}

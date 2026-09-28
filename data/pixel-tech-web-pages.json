@@ -4,10 +4,67 @@
       "id": "home",
       "name": "home",
       "slug": "/home",
-      "updatedAt": "2026-09-25T20:02:25.553Z",
+      "updatedAt": "2026-09-27T21:30:55.381Z",
       "sections": {
         "pixia-web": {
-          "text_1790257213042": "sdsdsdsdÉDITEUR DIRECT : CLIQUEZ SUR UN TEXTE OU UNE IMAGE"
+          "text_1790257213042": "sdsdsdsdÉDITEUR DIRECT : CLIQUEZ SUR UN TEXTE OU UNE IMAGE",
+          "_i18n": {
+            "title": {
+              "fr": {
+                "value": "Conçu pour chaque environnement. oui",
+                "status": "source",
+                "updatedAt": "2026-09-26T08:38:47.299Z",
+                "sourceText": "Conçu pour chaque environnement. oui"
+              },
+              "en": {
+                "value": "Built for every environment. yes",
+                "status": "manual",
+                "updatedAt": "2026-09-26T08:38:59.277Z",
+                "sourceText": "Conçu pour chaque environnement. oui"
+              }
+            },
+            "market_xr_image": {
+              "de": {
+                "value": "/uploads/cms/Hamid_MOKHTARI___.jpeg.jpg",
+                "status": "manual",
+                "updatedAt": "2026-09-26T08:39:37.976Z",
+                "sourceText": ""
+              }
+            },
+            "image": {
+              "de": {
+                "value": "/uploads/cms/Hamid_MOKHTARI___.jpeg.jpg",
+                "status": "manual",
+                "updatedAt": "2026-09-26T08:39:37.977Z",
+                "sourceText": ""
+              }
+            },
+            "heroImage": {
+              "de": {
+                "value": "/uploads/cms/Hamid_MOKHTARI___.jpeg.jpg",
+                "status": "manual",
+                "updatedAt": "2026-09-26T08:39:37.977Z",
+                "sourceText": ""
+              }
+            },
+            "primaryImage": {
+              "de": {
+                "value": "/uploads/cms/Hamid_MOKHTARI___.jpeg.jpg",
+                "status": "manual",
+                "updatedAt": "2026-09-26T08:39:37.977Z",
+                "sourceText": ""
+              }
+            },
+            "billboardImage": {
+              "de": {
+                "value": "/uploads/cms/Hamid_MOKHTARI___.jpeg.jpg",
+                "status": "manual",
+                "updatedAt": "2026-09-26T08:39:37.977Z",
+                "sourceText": ""
+              }
+            }
+          },
+          "title": "Conçu pour chaque environnement. oui"
         },
         "top": {
           "_i18n": {
@@ -58,11 +115,175 @@
                 "updatedAt": "2026-09-25T20:02:24.045Z",
                 "sourceText": ""
               }
+            },
+            "text_1790412029578": {
+              "fr": {
+                "value": "L'INGÉNIERIE OUI",
+                "status": "source",
+                "updatedAt": "2026-09-26T08:40:29.578Z",
+                "sourceText": "L'INGÉNIERIE OUI"
+              }
+            },
+            "text_1790412035579": {
+              "en": {
+                "value": "ENGINEERED YES",
+                "status": "manual",
+                "updatedAt": "2026-09-26T08:40:35.580Z",
+                "sourceText": ""
+              }
             }
           },
           "text_1790360060306": "L'INGÉNIERIE OUI",
           "text_1790366517806": "L'INGÉNIERIE 1",
-          "text_1790366537277": "L'INGÉNIERIE 1"
+          "text_1790366537277": "L'INGÉNIERIE 1",
+          "text_1790412029578": "L'INGÉNIERIE OUI"
+        },
+        "process": {
+          "_i18n": {
+            "text_1790511327180": {
+              "fr": {
+                "value": "SUPPORTQSZS",
+                "status": "source",
+                "updatedAt": "2026-09-27T12:15:27.180Z",
+                "sourceText": "SUPPORTQSZS"
+              }
+            },
+            "text_1790511351723": {
+              "fr": {
+                "value": "SUPPORT 2026",
+                "status": "source",
+                "updatedAt": "2026-09-27T12:15:51.723Z",
+                "sourceText": "SUPPORT 2026"
+              }
+            }
+          },
+          "text_1790511327180": "SUPPORTQSZS",
+          "text_1790511351723": "SUPPORT 2026",
+          "minHeight": 1394,
+          "paddingBottom": 40
+        },
+        "insights": {
+          "minHeight": 931,
+          "paddingBottom": 125,
+          "_i18n": {
+            "insight_1_image": {
+              "fr": {
+                "value": "/uploads/cms/41979b31a5e95bfbf7ba9a0bd568486a.jpg.jpg",
+                "status": "source",
+                "updatedAt": "2026-09-27T12:16:56.478Z",
+                "sourceText": "/uploads/cms/41979b31a5e95bfbf7ba9a0bd568486a.jpg.jpg"
+              }
+            }
+          },
+          "insight_1_image": "/uploads/cms/41979b31a5e95bfbf7ba9a0bd568486a.jpg.jpg"
+        },
+        "hero": {
+          "_i18n": {
+            "text_1790511441857": {
+              "fr": {
+                "value": "L'INGÉNIERIE DSFDSF",
+                "status": "source",
+                "updatedAt": "2026-09-27T12:17:21.857Z",
+                "sourceText": "L'INGÉNIERIE DSFDSF"
+              }
+            },
+            "text_1790512488250": {
+              "fr": {
+                "value": "L'INGÉNIERIEQSQSQSS",
+                "status": "source",
+                "updatedAt": "2026-09-27T12:34:48.251Z",
+                "sourceText": "L'INGÉNIERIEQSQSQSS"
+              }
+            }
+          },
+          "text_1790511441857": "L'INGÉNIERIE DSFDSF",
+          "text_1790512488250": "L'INGÉNIERIEQSQSQSS",
+          "_elements": {
+            "div:2/section:1/div:6/div:1/h1:1/span:1": {
+              "text": "L'INGÉNIERIE1",
+              "offsetX": 0,
+              "offsetY": 36
+            },
+            "div:2/section:1/div:6": {
+              "fontSize": "8px",
+              "offsetX": 0,
+              "offsetY": 248
+            },
+            "div:2/section:1/div:6/div:1/div:2/button:1": {
+              "text": "START A PROJECT →DFFDFDFDFDF",
+              "color": "#c3f910"
+            },
+            "div:2/section:1/div:6/div:1/h1:1/span:2": {
+              "text": "DU VISUEL. AH DANS LE LEADER JE JE PEUX PAS SÉLECTIONNER ET JE SAUVEG",
+              "offsetX": 0,
+              "offsetY": 72,
+              "fontSize": "54px"
+            },
+            "div:2/section:1/div:1/img:1": {
+              "src": "/uploads/cms/imgi_21_Fine-Pixel-Pitch-LED-Display.jpg.jpg",
+              "alt": "Installation LED — hall architectural avec structure illuminée"
+            },
+            "div:2/section:1/div:6/div:1/h1:1": {
+              "offsetX": 0,
+              "offsetY": -60
+            },
+            "div:2/section:1/div:6/div:1": {
+              "offsetX": 0,
+              "offsetY": 60
+            },
+            "div:2/section:1/div:6/div:2/span:2": {
+              "offsetX": 44,
+              "offsetY": 56
+            },
+            "div:2/section:1/div:6/div:1/div:1": {
+              "color": "#c3f910"
+            }
+          },
+          "minHeight": 946,
+          "paddingBottom": 129
+        },
+        "markets": {
+          "_elements": {
+            "div:2/div:1/div:1/div:1/h2:1": {
+              "fontSize": "68px",
+              "textAlign": "center"
+            }
+          }
+        },
+        "header": {
+          "_elements": {
+            "nav:1/div:1/a:1": {
+              "href": "#marketsv"
+            },
+            "nav:1/div:2/div:1/button:2": {
+              "color": "#c3f910"
+            }
+          }
+        },
+        "manifesto": {
+          "_elements": {
+            "div:2/section:1/div:1/h2:1/span:3": {
+              "text": "une partie intégrante a de l'espace.aaaaaa"
+            }
+          }
+        },
+        "pitch": {
+          "paddingTop": 16,
+          "_elements": {
+            "div:2/section:1/div:1": {
+              "color": "#c3f910"
+            },
+            "div:2/section:1/div:1/div:2": {
+              "color": "#c3f910"
+            },
+            "div:2/section:1/div:1/div:2/div:1/h2:1": {
+              "color": "#c3f910"
+            }
+          }
+        },
+        "projects": {
+          "minHeight": 1039,
+          "paddingBottom": 227
         }
       }
     },
@@ -246,5 +467,5 @@
       }
     }
   },
-  "updatedAt": "2026-09-25T20:02:25.553Z"
+  "updatedAt": "2026-09-27T21:30:55.381Z"
 }

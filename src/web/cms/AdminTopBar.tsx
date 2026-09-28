@@ -1,16 +1,19 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useCms } from '@/lib/site-web/cms-context';
-import { Edit3, Eye, Save, CheckCircle2, Server, LogOut, Layers } from 'lucide-react';
+import { Edit3, Eye, Save, CheckCircle2, AlertTriangle, RotateCcw, LogOut, Layers } from 'lucide-react';
+import { RestorePageDialog } from './RestorePageDialog';
 
 interface AdminTopBarProps {
+  /** Ouvre la console développeur. Volontairement hors de la barre visible. */
   onOpenBackendModal: () => void;
   currentPageTitle: string;
 }
 
 export const AdminTopBar: React.FC<AdminTopBarProps> = ({ onOpenBackendModal, currentPageTitle }) => {
-  const { isAdmin, isEditing, setIsEditing, saveCurrentPage, saveStatus, backendConnected, settings } = useCms();
+  const { isAdmin, isEditing, setIsEditing, saveCurrentPage, saveStatus, settings } = useCms();
+  const [isRestoreOpen, setIsRestoreOpen] = useState(false);
 
   // Mesure la hauteur réelle de la barre et l'expose à l'ensemble de la page
   // via --admin-bar-h posée sur l'ancêtre commun (#pixia-web). Aucun 42px
@@ -36,6 +39,7 @@ export const AdminTopBar: React.FC<AdminTopBarProps> = ({ onOpenBackendModal, cu
   if (!isAdmin) return null;
 
   return (
+    <>
     <aside
       id="admin-top-bar"
       data-cms-ui="true"
@@ -97,7 +101,12 @@ export const AdminTopBar: React.FC<AdminTopBarProps> = ({ onOpenBackendModal, cu
             ) : saveStatus === 'saved' ? (
               <>
                 <CheckCircle2 className="w-3.5 h-3.5 text-[#C3F910]" />
-                <span className="text-[#C3F910] font-bold">Enregistré !</span>
+                <span className="text-[#C3F910] font-bold">✓ Enregistré</span>
+              </>
+            ) : saveStatus === 'error' ? (
+              <>
+                <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
+                <span className="text-red-400 font-bold">⚠ Échec de l&apos;enregistrement</span>
               </>
             ) : (
               <>
@@ -109,12 +118,24 @@ export const AdminTopBar: React.FC<AdminTopBarProps> = ({ onOpenBackendModal, cu
 
           <button
             type="button"
-            onClick={onOpenBackendModal}
-            className="flex items-center gap-1.5 bg-[#171715] hover:bg-[#20201D] text-[#9A9A94] hover:text-white border border-[#2B2B28] px-2.5 py-1.5 rounded transition-colors cursor-pointer"
-            title="Console développeur & export JSON"
+            onClick={() => setIsRestoreOpen(true)}
+            className="flex items-center gap-1.5 bg-[#171715] hover:bg-[#20201D] text-[#9A9A94] hover:text-white border border-[#2B2B28] px-3 py-1.5 rounded transition-all cursor-pointer"
+            title="Relire la derniere version enregistree sur le serveur"
           >
-            <Server className={`w-3.5 h-3.5 ${backendConnected ? 'text-[#C3F910]' : 'text-amber-400'}`} />
-            <span className="hidden md:inline">Pixel Tech Web</span>
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span className="hidden md:inline">Restaurer la page</span>
+          </button>
+
+          {/* La console developpeur (JSON / API / export / reglages serveur) n'a
+              pas sa place dans l'interface CMS quotidienne : elle reste
+              accessible par raccourci, hors du bandeau. */}
+          <button
+            type="button"
+            onClick={onOpenBackendModal}
+            className="sr-only focus:not-sr-only focus:px-2.5"
+            title="Console developpeur (Ctrl+Shift+D)"
+          >
+            Console developpeur
           </button>
 
           <a
@@ -127,5 +148,7 @@ export const AdminTopBar: React.FC<AdminTopBarProps> = ({ onOpenBackendModal, cu
         </div>
       </div>
     </aside>
+    <RestorePageDialog open={isRestoreOpen} onClose={() => setIsRestoreOpen(false)} />
+    </>
   );
 };

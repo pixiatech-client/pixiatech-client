@@ -1,9 +1,12 @@
 'use client';
 
-import React, { useState, useRef, useLayoutEffect } from 'react';
+import React, { useState, useRef, useLayoutEffect, useEffect } from 'react';
 import { useCms } from '@/lib/site-web/cms-context';
-import { Eye, EyeOff, Settings } from 'lucide-react';
+import { Eye, EyeOff, Settings, GripVertical } from 'lucide-react';
 import { SectionResizeHandle } from './SectionResizeHandle';
+import { SectionStylePanel } from './SectionStylePanel';
+import { useSectionDragDrop } from './SectionDragDropManager';
+import { registerSection } from './section-registry';
 
 interface EditableWrapperProps {
   sectionKey: string;
@@ -24,15 +27,44 @@ export const EditableWrapper: React.FC<EditableWrapperProps> = ({
     isEditing,
     selectedBlockId,
     setSelectedBlockId,
-    setActiveTab,
     currentPageData,
     toggleSectionVisibility,
+    saveCurrentPage,
   } = useCms();
 
+  // La visibilité est une donnée persistée : on sauvegarde réellement au lieu de
+  // ne modifier que l'état local.
+  const toggleVisibility = React.useCallback(() => {
+    toggleSectionVisibility(sectionKey);
+    void saveCurrentPage();
+  }, [sectionKey, toggleSectionVisibility, saveCurrentPage]);
+
   const [isHovered, setIsHovered] = useState(false);
+  const [isStyleOpen, setIsStyleOpen] = useState(false);
   const [liveMinHeight, setLiveMinHeight] = useState<number | null>(null);
   const [livePaddingBottom, setLivePaddingBottom] = useState<number | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
+
+  // Réactivation du système de réordonnancement déjà présent dans le projet :
+  // `SectionDragDropProvider` était monté mais personne n'enregistrait son
+  // nœud de section ni ne consommait `useSectionDragDrop`, donc le
+  // glisser-déposer ne pouvait pas fonctionner.
+  const dragDrop = useSectionDragDrop();
+
+  // La clé sémantique réelle de la section est transmise explicitement au
+  // registre consommé par VisualInPlaceEditor. Aucune inférence DOM.
+  useEffect(() => {
+    const node = wrapperRef.current;
+    if (!node) return;
+    return registerSection(node, sectionKey);
+  }, [sectionKey]);
+
+  // Enregistrement du nœud pour le calcul de la destination de dépôt.
+  useEffect(() => {
+    if (!dragDrop) return;
+    dragDrop.registerSectionRef(sectionKey, wrapperRef.current);
+    return () => dragDrop.registerSectionRef(sectionKey, null);
+  }, [dragDrop, sectionKey]);
 
   const sectionData = currentPageData?.sections?.[sectionKey] as Record<string, unknown> | undefined;
   const layout = (sectionData?.layout as Record<string, unknown> | undefined) || {};
@@ -82,7 +114,7 @@ export const EditableWrapper: React.FC<EditableWrapperProps> = ({
   useLayoutEffect(() => {
     const root = wrapperRef.current;
     if (!root) return;
-    const sec = (root.querySelector(':scope > section') || root.querySelector('section')) as HTMLElement | null;
+    const sec = ((root.querySelector(':scope > section') || root.querySelector('section')) as HTMLElement | null) || root;
     if (!sec) return;
 
     if (pTop !== undefined) {
@@ -161,7 +193,8 @@ export const EditableWrapper: React.FC<EditableWrapperProps> = ({
       {/* Section Action Bar (Top Center/Right) */}
       {(isHovered || isSelected || !isVisible) && (
         <div
-          style={{ position: 'absolute', top: 8, right: 16, zIndex: 150, pointerEvents: 'auto' }}
+          data-cms-ui
+          style={{ position: 'absolute', top: 8, left: 16, zIndex: 150, pointerEvents: 'auto' }}
           className="flex items-center gap-1 bg-[#0e0e0d]/95 backdrop-blur-md border border-[#C3F910] rounded-md p-1 shadow-2xl animate-in fade-in duration-100 select-none"
           onClick={(e) => e.stopPropagation()}
         >
@@ -170,7 +203,6 @@ export const EditableWrapper: React.FC<EditableWrapperProps> = ({
             className="px-2 py-1 text-[#C3F910] hover:text-white font-mono text-[11px] font-bold cursor-pointer transition-colors"
             onClick={() => {
               setSelectedBlockId(sectionKey);
-              setActiveTab('content');
             }}
           >
             {sectionLabel.toUpperCase()}
@@ -179,7 +211,7 @@ export const EditableWrapper: React.FC<EditableWrapperProps> = ({
           {/* Visibility Eye Button 👁 */}
           <button
             type="button"
-            onClick={() => toggleSectionVisibility(sectionKey)}
+            onClick={toggleVisibility}
             className={`p-1.5 rounded transition-colors cursor-pointer flex items-center gap-1 ${
               isVisible
                 ? 'text-[#C3F910] hover:bg-[#C3F910]/20'
@@ -200,14 +232,35 @@ export const EditableWrapper: React.FC<EditableWrapperProps> = ({
             )}
           </button>
 
+          {/* Réordonner la section — système existant SectionDragDropManager */}
+          {dragDrop && (
+            <button
+              type="button"
+              onClick={(e) => {
+                if (dragDrop.activeDragKey === sectionKey) return;
+                dragDrop.startDrag(sectionKey, e);
+              }}
+              className={`p-1.5 rounded transition-colors cursor-grab active:cursor-grabbing ${
+                dragDrop.activeDragKey === sectionKey
+                  ? 'text-[#C3F910] bg-[#C3F910]/20'
+                  : 'text-[#9A9A94] hover:text-[#C3F910] hover:bg-[#1a1a17]'
+              }`}
+              title="Déplacer cette section : maintenez et glissez vers le haut ou le bas de la page"
+            >
+              <GripVertical className="w-3.5 h-3.5" />
+            </button>
+          )}
+
           {/* Settings / Style Tab Button ⚙ */}
           <button
             type="button"
             onClick={() => {
               setSelectedBlockId(sectionKey);
-              setActiveTab('style');
+              setIsStyleOpen((v) => !v);
             }}
-            className="p-1.5 text-[#9A9A94] hover:text-[#C3F910] hover:bg-[#1a1a17] rounded transition-colors cursor-pointer"
+            className={`p-1.5 rounded transition-colors cursor-pointer ${
+              isStyleOpen ? 'text-[#C3F910] bg-[#C3F910]/20' : 'text-[#9A9A94] hover:text-[#C3F910] hover:bg-[#1a1a17]'
+            }`}
             title="Ouvrir les réglages de style et espacement"
           >
             <Settings className="w-3.5 h-3.5" />
@@ -215,9 +268,22 @@ export const EditableWrapper: React.FC<EditableWrapperProps> = ({
         </div>
       )}
 
+
+
+      {/* Panneau de style contextuel — reprend les contrôles de l'ancien drawer
+          dans l'éditeur direct, sur le même système (useSectionStyle +
+          updateSectionField + saveCurrentPage). */}
+      {isVisible && isSelected && isStyleOpen && (
+        <SectionStylePanel
+          sectionKey={sectionKey}
+          sectionLabel={sectionLabel}
+          onClose={() => setIsStyleOpen(false)}
+        />
+      )}
+
       {/* Ghost Mask Overlay if Section is Hidden */}
       {!isVisible && (
-        <div className="absolute inset-0 bg-[#080808]/75 backdrop-blur-[3px] border-2 border-dashed border-[#ff4444]/60 z-[130] flex flex-col items-center justify-center p-6 text-center pointer-events-auto">
+        <div data-cms-ui className="absolute inset-0 bg-[#080808]/75 backdrop-blur-[3px] border-2 border-dashed border-[#ff4444]/60 z-[130] flex flex-col items-center justify-center p-6 text-center pointer-events-auto">
           <div className="flex items-center gap-2 bg-[#171715] border border-[#ff4444] text-[#ff6666] px-4 py-2 rounded-lg font-mono text-xs font-bold shadow-2xl mb-3">
             <EyeOff className="w-4 h-4" />
             <span>SECTION MASQUÉE SUR LE SITE PUBLIC ({sectionLabel.toUpperCase()})</span>
@@ -229,7 +295,7 @@ export const EditableWrapper: React.FC<EditableWrapperProps> = ({
             type="button"
             onClick={(e) => {
               e.stopPropagation();
-              toggleSectionVisibility(sectionKey);
+              toggleVisibility();
             }}
             className="flex items-center gap-1.5 bg-[#C3F910] text-black px-4 py-2 rounded-md font-mono text-xs font-bold hover:bg-white transition-colors cursor-pointer shadow-xl"
           >

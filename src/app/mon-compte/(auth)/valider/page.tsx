@@ -44,7 +44,7 @@ function ValidationPage() {
           // If the user came to "create a password", bring them straight to the
           // password page (the server already set the session cookie).
           const setPasswordMode = searchParams.get('set-password') === '1';
-          const target = setPasswordMode ? '/mon-compte/parametres/mot-de-passe' : '/mon-compte/commandes';
+          const target = setPasswordMode ? '/mon-compte/parametres/mot-de-passe' : '/mon-compte/tableau-de-bord';
           setTimeout(() => { window.location.href = target; }, 1200);
         } else {
           setStatus('error');

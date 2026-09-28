@@ -266,12 +266,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const isSiteWeb = pathname.startsWith('/admin/site-web');
 
   const SITE_WEB_ITEMS = useMemo(() => [
-    { id: 'sitewebDashboard', label: 'Pages', icon: Globe, color: 'text-emerald-500', roles: [UserRole.ADMINISTRATEUR] },
+    { id: 'sitewebAnalytics', label: t('admin.siteWeb.navAnalytics'), icon: BarChart3, color: 'text-sky-500', roles: [UserRole.ADMINISTRATEUR] },
     { id: 'sitewebMenu', label: t('admin.siteWeb.navMenu'), icon: LayoutTemplate, color: 'text-orange-500', roles: [UserRole.ADMINISTRATEUR] },
     { id: 'sitewebContact', label: t('admin.siteWeb.navContact'), icon: MessageSquare, color: 'text-emerald-500', roles: [UserRole.ADMINISTRATEUR] },
     { id: 'sitewebProduits', label: t('admin.siteWeb.navProduits'), icon: Box, color: 'text-yellow-500', roles: [UserRole.ADMINISTRATEUR] },
     { id: 'sitewebCategories', label: t('admin.siteWeb.navCategories'), icon: Tag, color: 'text-violet-500', roles: [UserRole.ADMINISTRATEUR] },
-    { id: 'sitewebAnalytics', label: t('admin.siteWeb.navAnalytics'), icon: BarChart3, color: 'text-sky-500', roles: [UserRole.ADMINISTRATEUR] },
+    { id: 'sitewebDashboard', label: 'Pages', icon: Globe, color: 'text-emerald-500', roles: [UserRole.ADMINISTRATEUR] },
   ], [t]);
 
   const initialItems = useMemo(() => {

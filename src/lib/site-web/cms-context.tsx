@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { DEFAULT_CMS_SETTINGS, type CmsBackendSettings, type CmsFieldTranslation, type CmsPageData } from './cms-types';
 import {
   CMS_DEFAULT_LANG,
@@ -42,7 +42,6 @@ interface CmsContextType {
   adminChecked: boolean;
   isEditing: boolean;
   selectedBlockId: string | null;
-  activeTab: 'content' | 'media' | 'style' | 'backend';
   pages: Record<string, CmsPageData>;
   currentPageId: string;
   currentPageData: CmsPageData | null;
@@ -54,9 +53,9 @@ interface CmsContextType {
   getText: (sectionKey: string, fieldKey: string, fallback?: string, lang?: string) => string;
   setIsEditing: (val: boolean) => void;
   setSelectedBlockId: (id: string | null) => void;
-  setActiveTab: (tab: 'content' | 'media' | 'style' | 'backend') => void;
   setCurrentPageId: (pageId: string) => void;
   updateSectionField: (sectionKey: string, fieldKey: string, value: unknown) => void;
+  updateElementStyle: (sectionKey: string, elementKey: string, patch: Record<string, unknown>) => Record<string, unknown>;
   updateSectionFieldLocalized: (sectionKey: string, fieldKey: string, value: unknown, lang?: string, isManual?: boolean) => void;
   getFieldTranslation: (sectionKey: string, fieldKey: string, lang?: string) => CmsFieldTranslation;
   autoTranslateField: (sectionKey: string, fieldKey: string, targetLangs?: string[]) => Promise<boolean>;
@@ -64,7 +63,8 @@ interface CmsContextType {
   updateNestedField: (path: string[], value: unknown) => void;
   updateSectionOrder: (newOrder: string[]) => void;
   toggleSectionVisibility: (sectionKey: string) => void;
-  saveCurrentPage: () => Promise<boolean>;
+  saveCurrentPage: (pageOverride?: CmsPageData) => Promise<boolean>;
+  restorePageFromServer: () => Promise<boolean>;
   uploadMedia: (file: File) => Promise<string>;
   exportPagesJson: () => string;
   importPagesJson: (json: string) => boolean;
@@ -85,9 +85,36 @@ export const CmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [adminChecked, setAdminChecked] = useState<boolean>(false);
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'content' | 'media' | 'style' | 'backend'>('content');
   const [currentPageId, setCurrentPageId] = useState<string>('home');
   const [pages, setPages] = useState<Record<string, CmsPageData>>({});
+  // Miroir synchrone de `pages`. Indispensable : une édition inline appelle
+  // `updateSectionField()` puis `saveCurrentPage()` dans le même tick. Le
+  // `setState` est asynchrone, donc `saveCurrentPage()` lirait sinon un état
+  // périmé et n'enverrait pas la valeur réellement modifiée au serveur.
+  const pagesRef = useRef<Record<string, CmsPageData>>({});
+  pagesRef.current = pages;
+
+  /**
+   * Applique une mutation de pages de façon synchrone : le miroir `pagesRef`
+   * est écrit immédiatement (pour qu'un `saveCurrentPage()` appelé dans le même
+   * tick envoie la bonne valeur), puis l'état React et le cache localStorage.
+   * `localStorage` reste un cache de premier paint, jamais la source de vérité :
+   * la persistance réelle est le PUT vers /api/site-web/pages/[pageId].
+   */
+  const commitPages = useCallback(
+    (updater: (prev: Record<string, CmsPageData>) => Record<string, CmsPageData>) => {
+      const next = updater(pagesRef.current);
+      pagesRef.current = next;
+      setPages(next);
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      } catch {
+        // ignore quota
+      }
+      return next;
+    },
+    []
+  );
   const [currentLang, setCurrentLangState] = useState<string>('fr');
   const [settings, setSettings] = useState<CmsBackendSettings>(settingsWithLocal);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
@@ -127,23 +154,15 @@ export const CmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     async function loadData() {
       // Premier paint depuis localStorage (peut être périmé, sera corrigé par le réseau).
       const local = loadLocalPages();
-      if (local) setPages(local);
+      if (local) commitPages(() => local);
       if (mounted) {
         try {
           const res = await fetch('/api/site-web/pages', { cache: 'no-store' });
           if (res.ok) {
             const data = await res.json();
             if (data?.pages && typeof data.pages === 'object' && mounted) {
-              setPages((prev) => {
-                // Les données serveur fraîches écrasent le fallback local
-                const next = { ...prev, ...data.pages };
-                try {
-                  localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-                } catch {
-                  // ignore
-                }
-                return next;
-              });
+              // Les données serveur fraîches écrasent le fallback local
+              commitPages((prev) => ({ ...prev, ...data.pages }));
               setBackendConnected(true);
             }
           }
@@ -171,15 +190,7 @@ export const CmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (res.ok) {
           const data = await res.json();
           if (data?.page && mounted) {
-            setPages((prev) => {
-              const next = { ...prev, [currentPageId]: data.page };
-              try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-              } catch {
-                // ignore
-              }
-              return next;
-            });
+            commitPages((prev) => ({ ...prev, [currentPageId]: data.page }));
             setBackendConnected(true);
           }
         }
@@ -196,7 +207,7 @@ export const CmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const updateSectionFieldLocalized = useCallback(
     (sectionKey: string, fieldKey: string, value: unknown, lang?: string, isManual: boolean = true) => {
       const targetLang = normalizeLang(lang || currentLang);
-      setPages((prev) => {
+      commitPages((prev) => {
         const active = prev[currentPageId] || {
           id: currentPageId,
           name: currentPageId,
@@ -208,6 +219,8 @@ export const CmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const currentSection = (active.sections?.[sectionKey] as Record<string, unknown> | undefined) || {};
         let updatedSection: Record<string, unknown>;
         if (typeof value === 'string') {
+          // Écrit dans la langue active uniquement : les autres langues ne sont
+          // jamais écrasées ni recopiées (indépendance FR/EN).
           updatedSection = setCmsFieldTranslation(currentSection, fieldKey, targetLang, value, {
             isManual,
             forceOverwrite: isManual,
@@ -221,16 +234,10 @@ export const CmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           updatedAt: new Date().toISOString(),
           sections: { ...(active.sections || {}), [sectionKey]: updatedSection },
         };
-        const next = { ...prev, [currentPageId]: updated };
-        try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-        } catch {
-          // ignore quota
-        }
-        return next;
+        return { ...prev, [currentPageId]: updated };
       });
     },
-    [currentPageId, currentLang]
+    [currentPageId, currentLang, commitPages]
   );
 
   const updateSectionField = useCallback(
@@ -238,6 +245,36 @@ export const CmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       updateSectionFieldLocalized(sectionKey, fieldKey, value, currentLang, true);
     },
     [updateSectionFieldLocalized, currentLang]
+  );
+
+  /**
+   * Lecture-écriture atomique d'un style dans `sections[sectionKey]._elements[elementKey]`.
+   *
+   * Indispensable : la barre contextuelle et l'édition inline_write toutes les
+   * deux dans le même sac. Si chacune rebuild le sac depuis `currentPageData`
+   * (état au rendu), la seconde écrase la première et un style disparaît
+   * silencieusement. Ici on part du miroir synchrone `pagesRef`, donc jamais
+   * périmé, et le PUT qui suit porte la valeur réellement écrite.
+   */
+  const updateElementStyle = useCallback(
+    (sectionKey: string, elementKey: string, patch: Record<string, unknown>) => {
+      const active = pagesRef.current[currentPageId];
+      const sections = (active?.sections || {}) as Record<string, Record<string, unknown>>;
+      const section = sections[sectionKey] || {};
+      const bag = (section._elements as Record<string, Record<string, unknown>>) || {};
+      const next: Record<string, Record<string, unknown>> = {
+        ...bag,
+        [elementKey]: { ...(bag[elementKey] || {}), ...patch },
+      };
+      const updatedPage: CmsPageData = {
+        ...(active || { id: currentPageId, name: currentPageId, slug: `/${currentPageId}` }),
+        updatedAt: new Date().toISOString(),
+        sections: { ...sections, [sectionKey]: { ...section, _elements: next } },
+      };
+      commitPages((prev) => ({ ...prev, [currentPageId]: updatedPage }));
+      return next[elementKey];
+    },
+    [currentPageId, commitPages]
   );
 
   const getFieldTranslation = useCallback(
@@ -262,7 +299,7 @@ export const CmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const autoTranslateField = useCallback(
     async (sectionKey: string, fieldKey: string, targetLangs?: string[]): Promise<boolean> => {
-      const active = pages[currentPageId];
+      const active = pagesRef.current[currentPageId];
       const section = active?.sections?.[sectionKey] as Record<string, unknown> | undefined;
       const sourceTrans = getCmsFieldTranslation(section, fieldKey, CMS_SOURCE_LANG);
       const sourceText = sourceTrans.value;
@@ -292,7 +329,7 @@ export const CmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (res.ok) {
           const data = await res.json();
           if (data?.translations && typeof data.translations === 'object') {
-            setPages((prev) => {
+            commitPages((prev) => {
               const activePage = prev[currentPageId];
               if (!activePage) return prev;
               let currentSec = (activePage.sections?.[sectionKey] as Record<string, unknown>) || {};
@@ -308,11 +345,7 @@ export const CmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 updatedAt: new Date().toISOString(),
                 sections: { ...(activePage.sections || {}), [sectionKey]: currentSec },
               };
-              const next = { ...prev, [currentPageId]: updatedPage };
-              try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-              } catch {}
-              return next;
+              return { ...prev, [currentPageId]: updatedPage };
             });
             return true;
           }
@@ -323,12 +356,12 @@ export const CmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return false;
       }
     },
-    [pages, currentPageId]
+    [pages, currentPageId, commitPages]
   );
 
   const autoTranslateSection = useCallback(
     async (sectionKey: string, targetLangs?: string[]): Promise<boolean> => {
-      const active = pages[currentPageId];
+      const active = pagesRef.current[currentPageId];
       const section = active?.sections?.[sectionKey] as Record<string, unknown> | undefined;
       if (!section) return false;
 
@@ -383,7 +416,7 @@ export const CmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (res.ok) {
           const data = await res.json();
           if (data?.translations) {
-            setPages((prev) => {
+            commitPages((prev) => {
               const activePage = prev[currentPageId];
               if (!activePage) return prev;
               let currentSec = (activePage.sections?.[sectionKey] as Record<string, unknown>) || {};
@@ -402,11 +435,7 @@ export const CmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 updatedAt: new Date().toISOString(),
                 sections: { ...(activePage.sections || {}), [sectionKey]: currentSec },
               };
-              const next = { ...prev, [currentPageId]: updatedPage };
-              try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-              } catch {}
-              return next;
+              return { ...prev, [currentPageId]: updatedPage };
             });
             return true;
           }
@@ -417,12 +446,12 @@ export const CmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return false;
       }
     },
-    [pages, currentPageId]
+    [currentPageId, commitPages]
   );
 
   const updateSectionOrder = useCallback(
     (newOrder: string[]) => {
-      setPages((prev) => {
+      commitPages((prev) => {
         const active = prev[currentPageId] || {
           id: currentPageId,
           name: currentPageId,
@@ -436,21 +465,15 @@ export const CmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           updatedAt: new Date().toISOString(),
           sectionOrder: newOrder,
         };
-        const next = { ...prev, [currentPageId]: updated };
-        try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-        } catch {
-          // ignore quota
-        }
-        return next;
+        return { ...prev, [currentPageId]: updated };
       });
     },
-    [currentPageId]
+    [currentPageId, commitPages]
   );
 
   const toggleSectionVisibility = useCallback(
     (sectionKey: string) => {
-      setPages((prev) => {
+      commitPages((prev) => {
         const active = prev[currentPageId] || {
           id: currentPageId,
           name: currentPageId,
@@ -475,22 +498,16 @@ export const CmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           updatedAt: new Date().toISOString(),
           sections: { ...(active.sections || {}), [sectionKey]: updatedSection },
         };
-        const next = { ...prev, [currentPageId]: updated };
-        try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-        } catch {
-          // ignore quota
-        }
-        return next;
+        return { ...prev, [currentPageId]: updated };
       });
     },
-    [currentPageId]
+    [currentPageId, commitPages]
   );
 
   const updateNestedField = useCallback(
     (path: string[], value: unknown) => {
       if (path.length === 0) return;
-      setPages((prev) => {
+      commitPages((prev) => {
         const active = prev[currentPageId] || {
           id: currentPageId,
           name: currentPageId,
@@ -508,20 +525,16 @@ export const CmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
         cursor[path[path.length - 1]] = value;
         const updated: CmsPageData = { ...active, updatedAt: new Date().toISOString(), sections };
-        const next = { ...prev, [currentPageId]: updated };
-        try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-        } catch {
-          // ignore quota
-        }
-        return next;
+        return { ...prev, [currentPageId]: updated };
       });
     },
-    [currentPageId]
+    [currentPageId, commitPages]
   );
 
-  const saveCurrentPage = async (): Promise<boolean> => {
-    const activePage = pages[currentPageId];
+  const saveCurrentPage = async (pageOverride?: CmsPageData): Promise<boolean> => {
+    // Le miroir synchrone garantit qu'on envoie la page réellement modifiée,
+    // y compris quand l'appel vient d'`updateSectionField()` dans le même tick.
+    const activePage = pageOverride ?? pagesRef.current[currentPageId];
     if (!activePage) {
       setSaveStatus('error');
       return false;
@@ -536,15 +549,7 @@ export const CmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (res.ok) {
         const data = await res.json();
         if (data?.page) {
-          setPages((prev) => {
-            const next = { ...prev, [currentPageId]: data.page };
-            try {
-              localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-            } catch {
-              // ignore
-            }
-            return next;
-          });
+          commitPages((prev) => ({ ...prev, [currentPageId]: data.page }));
         }
         setSaveStatus('saved');
         setBackendConnected(true);
@@ -555,6 +560,38 @@ export const CmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return false;
     } catch (err) {
       console.warn('[CMS] Save failed:', err);
+      setSaveStatus('error');
+      return false;
+    }
+  };
+
+  /**
+   * Restaure la page depuis la DERNIÈRE VERSION ENREGISTRÉE CÔTÉ SERVEUR.
+   *
+   * Ce n'est pas un reset : aucune écriture n'est envoyée. On relit le fichier
+   * JSON via GET `no-store` et on remplace l'état local par cette version.
+   * `localStorage` et l'état React courant sont donc ignorés — le serveur est
+   * la seule source de vérité.
+   */
+  const restorePageFromServer = async (): Promise<boolean> => {
+    if (!currentPageId) return false;
+    try {
+      const res = await fetch(`/api/site-web/pages/${currentPageId}`, { cache: 'no-store' });
+      if (!res.ok) {
+        setSaveStatus('error');
+        return false;
+      }
+      const data = await res.json();
+      if (!data?.page) {
+        setSaveStatus('error');
+        return false;
+      }
+      commitPages((prev) => ({ ...prev, [currentPageId]: data.page }));
+      setBackendConnected(true);
+      setSaveStatus('idle');
+      return true;
+    } catch (err) {
+      console.warn('[CMS] Restore failed:', err);
       setSaveStatus('error');
       return false;
     }
@@ -623,12 +660,7 @@ export const CmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       const parsed = JSON.parse(jsonStr);
       if (parsed.pages) {
-        setPages(parsed.pages);
-        try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed.pages));
-        } catch {
-          // ignore
-        }
+        commitPages(() => parsed.pages);
       }
       if (parsed.settings) {
         setSettings(parsed.settings);
@@ -646,15 +678,7 @@ export const CmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (res.ok) {
         const data = await res.json();
         if (data?.page) {
-          setPages((prev) => {
-            const next = { ...prev, [pageId]: data.page };
-            try {
-              localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-            } catch {
-              // ignore
-            }
-            return next;
-          });
+          commitPages((prev) => ({ ...prev, [pageId]: data.page }));
         }
       }
     } catch (err) {
@@ -683,7 +707,6 @@ export const CmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         adminChecked,
         isEditing,
         selectedBlockId,
-        activeTab,
         pages,
         currentPageId,
         currentPageData,
@@ -695,9 +718,9 @@ export const CmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         getText,
         setIsEditing,
         setSelectedBlockId,
-        setActiveTab,
         setCurrentPageId,
         updateSectionField,
+        updateElementStyle,
         updateSectionFieldLocalized,
         getFieldTranslation,
         autoTranslateField,
@@ -706,6 +729,7 @@ export const CmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updateSectionOrder,
         toggleSectionVisibility,
         saveCurrentPage,
+    restorePageFromServer,
         uploadMedia,
         exportPagesJson,
         importPagesJson,

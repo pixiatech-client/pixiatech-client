@@ -629,7 +629,7 @@ export function ClientPortal({ initialTab, initialDisputeId }: ClientPortalProps
   }
 
   return (
-    <div className="w-full flex min-h-screen flex-col bg-[#F4F6F8] font-sans text-neutral-900 antialiased selection:bg-[#38E044] selection:text-black">
+    <div className="w-full flex min-h-screen flex-col bg-[#080A0B] font-sans text-neutral-100 antialiased selection:bg-[#38E044] selection:text-black">
       {/* 1. Header (Identique aux captures) */}
       <Header
         user={user}
@@ -745,14 +745,14 @@ export function ClientPortal({ initialTab, initialDisputeId }: ClientPortalProps
       </main>
 
       {/* 5. Footer */}
-      <footer className="mt-12 w-full border-t border-neutral-200/80 bg-white py-6 text-xs text-neutral-500">
+      <footer className="mt-12 w-full border-t border-white/[0.04] bg-[#0A0D0E] py-6 text-xs text-neutral-600">
         <div className="mx-auto flex max-w-[1536px] flex-col items-center justify-between gap-4 px-4 sm:flex-row sm:px-6">
           <div className="flex items-center gap-2">
-            <span className="font-mono font-bold text-neutral-900">PIXIATECH CLIENT</span>
-            <span>—</span>
+            <span className="font-mono font-bold text-neutral-300">PIXIATECH CLIENT</span>
+            <span className="text-neutral-700">—</span>
             <span>Portail client sécurisé & facturation certifiée</span>
           </div>
-          <div className="flex items-center gap-4 text-neutral-400">
+          <div className="flex items-center gap-4 text-neutral-700">
             <span>Conformité fiscale Art. 289 CGI</span>
             <span>•</span>
             <span>Chiffrement TLS 1.3</span>
@@ -813,7 +813,7 @@ export function ClientPortal({ initialTab, initialDisputeId }: ClientPortalProps
 
 function SessionLoadingScreen() {
   return (
-    <div className="flex min-h-screen w-full flex-col items-center justify-center bg-[#F4F6F8] px-4 font-sans">
+    <div className="flex min-h-screen w-full flex-col items-center justify-center bg-[#080A0B] px-4 font-sans">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -823,7 +823,7 @@ function SessionLoadingScreen() {
           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#38E044] opacity-75" />
           <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#38E044]" />
         </span>
-        <p className="text-sm font-medium text-neutral-500">Chargement de votre espace client…</p>
+        <p className="text-sm font-medium text-neutral-400">Chargement de votre espace client…</p>
       </motion.div>
     </div>
   );
@@ -831,17 +831,17 @@ function SessionLoadingScreen() {
 
 function SessionExpiredScreen({ onLogin }: { onLogin: () => void }) {
   return (
-    <div className="flex min-h-screen w-full items-center justify-center bg-[#F4F6F8] px-4 font-sans">
+    <div className="flex min-h-screen w-full items-center justify-center bg-[#080A0B] px-4 font-sans">
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.25 }}
-        className="w-full max-w-sm rounded-3xl border border-neutral-200/80 bg-white p-8 text-center shadow-xl shadow-neutral-200/60"
+        className="w-full max-w-sm rounded-3xl border border-white/[0.06] bg-[#0F1214] p-8 text-center shadow-2xl"
       >
         <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-neutral-900">
           <XCircle size={26} className="text-white" />
         </div>
-        <h1 className="text-lg font-bold text-neutral-900">Session expirée</h1>
+        <h1 className="text-lg font-bold text-white">Session expirée</h1>
         <p className="mt-2 text-sm leading-relaxed text-neutral-500">
           Votre session n'est plus valide ou vous avez été déconnecté. Reconnectez-vous pour
           accéder à vos commandes et factures.

@@ -4,6 +4,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Language } from '../data/translations';
 import { useCms } from '@/lib/site-web/cms-context';
 import type { ProductFeatures, ProductFeature } from '@/lib/products/types';
+import { text } from '@/lib/products/display';
+import { getCmsText, normalizeLang } from '@/lib/site-web/cms-i18n';
 
 interface FeaturesSectionProps {
   lang?: Language;
@@ -18,146 +20,33 @@ export const FeaturesSection: React.FC<FeaturesSectionProps> = ({ lang = 'FR', d
 
   const { pages, currentPageId } = useCms();
   const cmsFeatures = (pages[currentPageId]?.sections?.features as Record<string, unknown>) || {};
+  const activeLang = normalizeLang(lang);
 
-  const eyebrow =
-    data?.eyebrow ||
-    (cmsFeatures.eyebrow as string) ||
-    (lang === 'FR' ? '03 / POINTS CLÉS' : '03 / KEY FEATURES');
-  const title1 =
-    data?.title ||
-    (cmsFeatures.title as string) ||
-    (lang === 'FR' ? "Façonné autour de" : 'Built around');
-  const title2 = lang === 'FR' ? "l'essentiel." : 'what matters.';
+  const eyebrow = getCmsText(
+    cmsFeatures,
+    'eyebrow',
+    activeLang,
+    text(data?.eyebrow) || (lang === 'FR' ? '03 / POINTS CLÉS' : '03 / KEY FEATURES')
+  );
+  const title = getCmsText(cmsFeatures, 'title', activeLang, text(data?.title) ?? '');
 
-  const totalFeatures = data?.items?.length ?? 7;
-  const toDisplayFeature = (item: ProductFeature, idx: number) => ({
+  const items = (data?.items ?? []).filter((item) => text(item.title));
+  const totalFeatures = items.length;
+  const featureList = items.map((item: ProductFeature, idx: number) => ({
     num: item.num || String(idx + 1).padStart(2, '0'),
     indexStr: `${String(idx + 1).padStart(2, '0')} / ${String(totalFeatures).padStart(2, '0')}`,
-    title: item.title,
-    desc: item.description || '',
-    img: item.image || '',
+    title: getCmsText(cmsFeatures, `feature_${idx}_title`, activeLang, item.title),
+    desc: getCmsText(cmsFeatures, `feature_${idx}_desc`, activeLang, item.description || ''),
+    img: (cmsFeatures[`feature_${idx}_image`] as string) || text(item.image) || '',
     contain: !!item.contain,
-  });
+  }));
 
-  const featureList = data?.items?.length
-    ? data.items.map(toDisplayFeature)
-    : lang === 'FR'
-    ? [
-        {
-          num: '01',
-          indexStr: '01 / 07',
-          title: "Plateforme d'efficacité énergétique durable",
-          desc: "Fonctionnement à basse température pour une stabilité accrue et des coûts d'exploitation réduits.",
-          img: '/uploads/products/wp/feature-1.jpg',
-          contain: false,
-        },
-        {
-          num: '02',
-          indexStr: '02 / 07',
-          title: 'Profil ultra-fin de 29,7 mm',
-          desc: 'S’intègre parfaitement dans les espaces restreints des intérieurs prestigieux et des salles de contrôle.',
-          img: '/uploads/products/wp/feature-2.jpg',
-          contain: true,
-        },
-        {
-          num: '03',
-          indexStr: '03 / 07',
-          title: "Qualité d'image Premium HDR10",
-          desc: 'Contraste saisissant et restitution visuelle ultra-stable pour les applications critiques.',
-          img: '/uploads/products/wp/feature-3.jpg',
-          contain: false,
-        },
-        {
-          num: '04',
-          indexStr: '04 / 07',
-          title: 'Contraste extrême de 30 000:1',
-          desc: 'Noirs d’une profondeur absolue et précision colorimétrique maximale pour les plateaux TV et la production virtuelle.',
-          img: '/uploads/products/wp/feature-4.jpg',
-          contain: false,
-        },
-        {
-          num: '05',
-          indexStr: '05 / 07',
-          title: 'Fréquence de rafraîchissement jusqu’à 7 680 Hz',
-          desc: 'Rendu parfait face caméra avec un temps de réponse instantané de l’ordre de la nanoseconde.',
-          img: '/uploads/products/wp/feature-5.jpg',
-          contain: false,
-        },
-        {
-          num: '06',
-          indexStr: '06 / 07',
-          title: 'Certification CEM Classe B',
-          desc: 'Répond aux normes les plus exigeantes pour les centres de commandement et les salles de crise.',
-          img: '/uploads/products/wp/feature-6.jpg',
-          contain: false,
-        },
-        {
-          num: '07',
-          indexStr: '07 / 07',
-          title: 'Maintenance intégrale par l’avant',
-          desc: 'Intervention magnétique sans interrompre le fonctionnement dans les environnements 24/7.',
-          img: '/uploads/products/wp/feature-7.jpg',
-          contain: false,
-        },
-      ]
-    : [
-        {
-          num: '01',
-          indexStr: '01 / 07',
-          title: 'Sustainable energy saving platform',
-          desc: 'Cooler operation for higher stability and lower operating cost.',
-          img: '/uploads/products/wp/feature-1.jpg',
-          contain: false,
-        },
-        {
-          num: '02',
-          indexStr: '02 / 07',
-          title: 'Ultra-Thin 29.7 mm Profile',
-          desc: 'Fits tight depth constraints in premium interiors and control rooms.',
-          img: '/uploads/products/wp/feature-2.jpg',
-          contain: true,
-        },
-        {
-          num: '03',
-          indexStr: '03 / 07',
-          title: 'Premium HDR10 image quality',
-          desc: 'Capable strong contrast and stable visuals for critical spaces.',
-          img: '/uploads/products/wp/feature-3.jpg',
-          contain: false,
-        },
-        {
-          num: '04',
-          indexStr: '04 / 07',
-          title: '30,000:1 Contrast',
-          desc: 'Extreme black levels and high color accuracy for broadcast and XR use.',
-          img: '/uploads/products/wp/feature-4.jpg',
-          contain: false,
-        },
-        {
-          num: '05',
-          indexStr: '05 / 07',
-          title: 'High Refresh up to 7,680Hz',
-          desc: 'Camera-ready visuals with nanosecond response playback.',
-          img: '/uploads/products/wp/feature-5.jpg',
-          contain: false,
-        },
-        {
-          num: '06',
-          indexStr: '06 / 07',
-          title: 'EMC Class B Certified',
-          desc: 'Meets strict control room and command center compliance requirements.',
-          img: '/uploads/products/wp/feature-6.jpg',
-          contain: false,
-        },
-        {
-          num: '07',
-          indexStr: '07 / 07',
-          title: 'Front service maintenance',
-          desc: 'Minimizes disruption in 24/7 environments',
-          img: '/uploads/products/wp/feature-7.jpg',
-          contain: false,
-        },
-      ];
+  // Visuel central décrit par le PDF (section 03) : affiché si l'admin l'a associé.
+  const visualUrl = text(data?.visual?.url);
+
+  // Le stage collant n'existe que s'il a une image à montrer. Sans visuel, la
+  // grille passe en pleine largeur au lieu d'afficher un cadre noir vide.
+  const hasStageImages = Boolean(visualUrl) || featureList.some((item) => item.img);
 
   // Scroll listener using IntersectionObserver to switch active feature seamlessly
   useEffect(() => {
@@ -207,6 +96,7 @@ export const FeaturesSection: React.FC<FeaturesSectionProps> = ({ lang = 'FR', d
       <div className="wrap">
         {/* Eyebrow */}
         <div
+          data-text-key="eyebrow"
           style={{
             fontSize: '11px',
             letterSpacing: '.24em',
@@ -219,23 +109,38 @@ export const FeaturesSection: React.FC<FeaturesSectionProps> = ({ lang = 'FR', d
           {eyebrow}
         </div>
 
-        {/* Title */}
-        <h2 className="h2" style={{ marginBottom: '72px' }}>
-          {title1}
-          <br />
-          {title2}
-        </h2>
+        {/* Title — absent si le PDF n'en fournit pas */}
+        {title && (
+          <h2 className="h2" data-text-key="title" style={{ marginBottom: '72px' }}>
+            {title}
+          </h2>
+        )}
 
         {/* Feature Stage Grid */}
         <div className="fstage">
-          {/* Sticky Visual Stage */}
+          {/* Sticky Visual Stage — masqué s'il n'y a aucun visuel à afficher */}
+          {hasStageImages && (
           <div className="fstage-stage">
             <div className="fstage-frame">
-              {featureList.map((item, idx) => {
+              {[
+                ...(visualUrl
+                  ? [
+                      {
+                        num: '',
+                        indexStr: '',
+                        title: text(data?.visual?.title) ?? text(data?.visual?.description) ?? '',
+                        desc: '',
+                        img: visualUrl ?? '',
+                        contain: false,
+                      },
+                    ]
+                  : []),
+                ...featureList.filter((item) => item.img),
+              ].map((item, idx) => {
                 const isActive = idx === activeIndex;
                 return (
                   <div
-                    key={item.title}
+                    key={`${item.title}-${idx}`}
                     className={`fstage-img ${isActive ? 'on' : ''}`}
                     style={{
                       opacity: isActive ? 1 : 0,
@@ -248,9 +153,6 @@ export const FeaturesSection: React.FC<FeaturesSectionProps> = ({ lang = 'FR', d
                         src={item.img}
                         alt={item.title}
                         className={`slot-img ${item.contain ? 'slot-contain' : ''}`}
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = `https://xeron.co${item.img}`;
-                        }}
                       />
                     ) : null}
                   </div>
@@ -261,6 +163,7 @@ export const FeaturesSection: React.FC<FeaturesSectionProps> = ({ lang = 'FR', d
               <div className="fstage-shade" aria-hidden="true" />
 
               {/* Footer with caption and interactive progress rail */}
+              {activeFeature && (
               <div className="fstage-foot">
                 <div className="fstage-caption">
                   <span style={{ color: '#C3F910', fontWeight: 700, letterSpacing: '.24em' }}>
@@ -291,8 +194,10 @@ export const FeaturesSection: React.FC<FeaturesSectionProps> = ({ lang = 'FR', d
                   })}
                 </div>
               </div>
+              )}
             </div>
           </div>
+          )}
 
           {/* Scrollable Steps List */}
           <div className="fstage-steps">
@@ -315,9 +220,6 @@ export const FeaturesSection: React.FC<FeaturesSectionProps> = ({ lang = 'FR', d
                       src={item.img}
                       alt={item.title}
                       className="slot-img"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = `https://xeron.co${item.img}`;
-                      }}
                     />
                   ) : null}
                   </div>
@@ -353,6 +255,7 @@ export const FeaturesSection: React.FC<FeaturesSectionProps> = ({ lang = 'FR', d
                     </div>
 
                     <h3
+                      data-text-key={`feature_${idx}_title`}
                       style={{
                         fontSize: 'clamp(28px, 2.6vw, 42px)',
                         lineHeight: 1.06,
@@ -365,17 +268,20 @@ export const FeaturesSection: React.FC<FeaturesSectionProps> = ({ lang = 'FR', d
                       {item.title}
                     </h3>
 
-                    <p
-                      style={{
-                        margin: 0,
-                        fontSize: '16px',
-                        lineHeight: 1.65,
-                        color: 'var(--dark-body, #a3a3a3)',
-                        maxWidth: '420px',
-                      }}
-                    >
-                      {item.desc}
-                    </p>
+                    {text(item.desc) && (
+                      <p
+                        data-text-key={`feature_${idx}_desc`}
+                        style={{
+                          margin: 0,
+                          fontSize: '16px',
+                          lineHeight: 1.65,
+                          color: 'var(--dark-body, #a3a3a3)',
+                          maxWidth: '420px',
+                        }}
+                      >
+                        {item.desc}
+                      </p>
+                    )}
                   </div>
                 </div>
               );

@@ -1,4 +1,4 @@
-import { Language } from '@/web/xeron-translations';
+import { Language } from '@/web/pixiatech-translations';
 
 export interface LegalSection {
   id: string;

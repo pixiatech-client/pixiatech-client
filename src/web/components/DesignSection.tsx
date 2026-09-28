@@ -4,10 +4,14 @@ import React, { useState } from 'react';
 import { Language } from '../data/translations';
 import { useCms } from '@/lib/site-web/cms-context';
 import type { ProductDesign } from '@/lib/products/types';
+import { dimensionForArt, text } from '@/lib/products/display';
+import { getCmsText, normalizeLang } from '@/lib/site-web/cms-i18n';
 
 interface DesignSectionProps {
   lang?: Language;
   data?: ProductDesign;
+  /** La matrice comparative du produit existe-t-elle ? Contrôle le lien #specs. */
+  hasSpecsTable?: boolean;
 }
 
 /* ── Hover-aware spec row (mirrors xeron.co behavior) ─────────────────────── */
@@ -71,12 +75,19 @@ function SpecsList({
   specsList,
   lang,
   onScrollToSpecs,
+  photo,
+  hasSpecsTable,
 }: {
   specsList: { label: string; val: string }[];
   lang: Language;
   onScrollToSpecs: (e: React.MouseEvent<HTMLAnchorElement>) => void;
+  /** Visuel de conception fourni par l'admin (section 02 du PDF). */
+  photo?: { title?: string; description?: string; url?: string };
+  /** La matrice comparative existe-t-elle ? Sinon pas de lien vers #specs. */
+  hasSpecsTable: boolean;
 }) {
   const [linkHovered, setLinkHovered] = useState(false);
+  const photoUrl = text(photo?.url);
   return (
     <div>
       <div style={{ borderTop: '1px solid var(--dark-line, #1f1f1f)' }}>
@@ -84,7 +95,9 @@ function SpecsList({
           <SpecRow key={item.label} label={item.label} val={item.val} />
         ))}
 
-        {/* Full technical data link row */}
+        {/* Full technical data link row — masqué si la matrice est absente,
+            pour ne pas proposer un lien vers une ancre qui n'existe pas. */}
+        {hasSpecsTable && (
         <div
           style={{
             display: 'flex',
@@ -130,30 +143,30 @@ function SpecsList({
             </a>
           </span>
         </div>
+        )}
       </div>
 
-      {/* Module photo 3 */}
-      <div
-        style={{
-          position: 'relative',
-          height: '220px',
-          marginTop: '28px',
-          overflow: 'hidden',
-          background: '#0e0e0d',
-        }}
-      >
-        <img
-          src="/uploads/products/wp/module-3.jpg"
-          alt="Module Detail"
-          className="slot-img"
-          loading="lazy"
-          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-          onError={(e) => {
-            (e.target as HTMLImageElement).src =
-              'https://xeron.co/uploads/products/wp/module-3.jpg';
+      {/* Visuel de conception — absent tant que l'admin n'a rien associé */}
+      {photoUrl && (
+        <div
+          style={{
+            position: 'relative',
+            height: '220px',
+            marginTop: '28px',
+            overflow: 'hidden',
+            background: '#0e0e0d',
           }}
-        />
-      </div>
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={photoUrl}
+            alt={text(photo?.title) ?? text(photo?.description) ?? ''}
+            className="slot-img"
+            loading="lazy"
+            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -190,23 +203,25 @@ function ConfigCard({ num, title, desc }: { num: string; title: string; desc: st
         style={{
           fontSize: '21px',
           fontWeight: 700,
-          marginBottom: '8px',
+          marginBottom: text(desc) ? '8px' : 0,
           color: hovered ? '#ffffff' : 'var(--dark-text, #f5f4f0)',
           transition: 'color .25s',
         }}
       >
         {title}
       </div>
-      <div
-        style={{
-          fontSize: '14px',
-          color: hovered ? 'var(--dark-text-2, #c9c7c1)' : 'var(--dark-body, #a3a3a3)',
-          lineHeight: 1.6,
-          transition: 'color .25s',
-        }}
-      >
-        {desc}
-      </div>
+      {text(desc) && (
+        <div
+          style={{
+            fontSize: '14px',
+            color: hovered ? 'var(--dark-text-2, #c9c7c1)' : 'var(--dark-body, #a3a3a3)',
+            lineHeight: 1.6,
+            transition: 'color .25s',
+          }}
+        >
+          {desc}
+        </div>
+      )}
     </div>
   );
 }
@@ -229,69 +244,41 @@ function ConfigGrid({ configs }: { configs: { num: string; title: string; desc: 
 }
 
 /* ── Main section ──────────────────────────────────────────────────────────── */
-export const DesignSection: React.FC<DesignSectionProps> = ({ lang = 'FR', data }) => {
+export const DesignSection: React.FC<DesignSectionProps> = ({
+  lang = 'FR',
+  data,
+  hasSpecsTable = false,
+}) => {
   const { pages, currentPageId } = useCms();
   const cmsDesign = (pages[currentPageId]?.sections?.design as Record<string, unknown>) || {};
+  const activeLang = normalizeLang(lang);
 
-  const eyebrow =
-    data?.eyebrow ||
-    (cmsDesign.eyebrow as string) ||
-    (lang === 'FR' ? '02 / CONCEPTION ARCHITECTURALE' : '02 / ARCHITECTURAL DESIGN');
-  const heading1 =
-    data?.title ||
-    (cmsDesign.title as string) ||
-    (lang === 'FR' ? "Usinage d'orfèvrerie & Châssis Monobloc" : 'Engineered as an object.');
-  const heading2 = lang === 'FR' ? 'Installé comme une surface.' : 'Installed as a surface.';
+  // getCmsText donne priorité au CMS, puis aux données produit, puis au défaut.
+  // data-text-key permet à l'éditeur visuel de persister les modifications.
+  const eyebrow = getCmsText(
+    cmsDesign,
+    'eyebrow',
+    activeLang,
+    text(data?.eyebrow) || (lang === 'FR' ? '02 / CONCEPTION ARCHITECTURALE' : '02 / ARCHITECTURAL DESIGN')
+  );
+  // Titre : CMS prend le dessus sur le PDF uniquement si l'admin a défini une valeur.
+  const heading1 = getCmsText(cmsDesign, 'title', activeLang, text(data?.title) ?? '');
 
-  const specsList = data?.specsList?.length
-    ? data.specsList.map((s) => ({ label: s.label, val: s.value }))
-    : [
-        { label: lang === 'FR' ? 'CHÂSSIS' : 'CABINET', val: '600×337.5 mm' },
-        { label: lang === 'FR' ? 'PITCH PIXEL' : 'PIXEL PITCH', val: '1.2–3.1 mm' },
-        { label: lang === 'FR' ? 'LUMINOSITÉ' : 'BRIGHTNESS', val: '800–1,500' },
-        {
-          label: lang === 'FR' ? 'ENVIRONNEMENT' : 'ENVIRONMENT',
-          val: lang === 'FR' ? 'INTÉRIEUR' : 'INDOOR',
-        },
-      ];
+  const specsList = (data?.specsList ?? [])
+    .filter((s) => text(s.value) && text(s.label))
+    .map((s) => ({ label: s.label, val: s.value }));
 
-  const configs = data?.configs?.length
-    ? data.configs.map((c) => ({ num: c.num, title: c.title, desc: c.description || '' }))
-    : lang === 'FR'
-    ? [
-        {
-          num: '01',
-          title: 'Fixation murale',
-          desc: 'Support ultra-fin avec seulement 37 mm de profondeur totale. Finition invisible et maintenance 100% avant sans décrocher le panneau.',
-        },
-        {
-          num: '02',
-          title: 'Totem mobile',
-          desc: 'Se transforme en écran mobile haute définition. Bordure de protection anti-choc sécurisant les diodes lors des déplacements.',
-        },
-        {
-          num: '03',
-          title: 'Angles créatifs',
-          desc: "Configurations d'angles pour espaces en L et enveloppants. Compatible avec la série XR Wrap pour installations courbes.",
-        },
-      ]
-    : [
-        {
-          num: '01',
-          title: 'Wall-mounted',
-          desc: 'Slim floating bracket. 37mm total depth. Flat, seamless finish — front service access without removing the panel.',
-        },
-        {
-          num: '02',
-          title: 'Mobile Stand',
-          desc: 'Transforms into a high-definition mobile display. Anti-collision safety rim protects LEDs in transit.',
-        },
-        {
-          num: '03',
-          title: 'Creative Corner',
-          desc: 'Corner-screen configurations for L-shaped and wrap-around spaces. Combine with XR Wrap for curved installations.',
-        },
-      ];
+  const configs = (data?.configs ?? [])
+    .filter((c) => text(c.title))
+    .map((c) => ({ num: c.num ?? '', title: c.title, desc: c.description ?? '' }));
+
+  // Cotes du plan : issues du produit. Une cote absente masque son annotation
+  // plutôt que d'afficher celle d'un autre châssis.
+  const moduleArt = dimensionForArt(data?.moduleDim);
+  const cabinetArt = dimensionForArt(data?.cabinetDim);
+  const depthArt = dimensionForArt(data?.depth);
+  // Photo du plan : média de design fourni par l'admin, sinon blueprint SVG.
+  const planPhoto = data?.visuals?.find((v) => text(v.url)) ?? undefined;
 
   const handleScrollToSpecs = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
@@ -311,6 +298,7 @@ export const DesignSection: React.FC<DesignSectionProps> = ({ lang = 'FR', data 
       <div className="wrap">
         {/* Eyebrow */}
         <div
+          data-text-key="eyebrow"
           style={{
             fontSize: '11px',
             letterSpacing: '.24em',
@@ -323,12 +311,12 @@ export const DesignSection: React.FC<DesignSectionProps> = ({ lang = 'FR', data 
           {eyebrow}
         </div>
 
-        {/* Title */}
-        <h2 className="h2" style={{ marginBottom: '64px' }}>
-          {heading1}
-          <br />
-          <span style={{ color: 'var(--muted, #8a8880)' }}>{heading2}</span>
-        </h2>
+        {/* Title — absent si le PDF n'en fournit pas */}
+        {heading1 && (
+          <h2 className="h2" data-text-key="title" style={{ marginBottom: '64px' }}>
+            {heading1}
+          </h2>
+        )}
 
         {/* 2-Column: Blueprint SVG + Specs */}
         <div
@@ -340,7 +328,7 @@ export const DesignSection: React.FC<DesignSectionProps> = ({ lang = 'FR', data 
             alignItems: 'center',
           }}
         >
-          {/* Blueprint SVG */}
+          {/* Blueprint SVG — cotes issues du produit courant */}
           <svg
             viewBox="0 0 560 282.8"
             style={{ width: '100%', height: 'auto', display: 'block' }}
@@ -353,38 +341,55 @@ export const DesignSection: React.FC<DesignSectionProps> = ({ lang = 'FR', data 
 
             {/* Active Highlighted Module in #C3F910 */}
             <rect x="80" y="50" width="150" height="84.4" fill="rgba(195, 249, 16, 0.08)" stroke="#C3F910" strokeWidth="1.8" />
-            <line x1="155" y1="50" x2="155" y2="24" stroke="#C3F910" strokeWidth="1" />
-            <circle cx="155" cy="50" r="2.5" fill="#C3F910" />
-            <text x="145" y="16" fontSize="11" fill="#C3F910" fontWeight="700" letterSpacing="0.08em">
-              MODULE — 300 × 168.8 mm
-            </text>
+            {moduleArt && (
+              <>
+                <line x1="155" y1="50" x2="155" y2="24" stroke="#C3F910" strokeWidth="1" />
+                <circle cx="155" cy="50" r="2.5" fill="#C3F910" />
+                <text x="145" y="16" fontSize="11" fill="#C3F910" fontWeight="700" letterSpacing="0.08em">
+                  MODULE — {moduleArt}
+                </text>
+              </>
+            )}
 
             {/* Cabinet Dimension Lines */}
             <line x1="80" y1="238.8" x2="380" y2="238.8" stroke="#4A4A46" strokeWidth="0.8" />
             <line x1="80" y1="230.8" x2="80" y2="246.8" stroke="#4A4A46" strokeWidth="0.8" />
             <line x1="380" y1="230.8" x2="380" y2="246.8" stroke="#4A4A46" strokeWidth="0.8" />
-            <text x="80" y="266.8" fontSize="11" fill="#C9C7C1" letterSpacing="0.08em" fontWeight="500">
-              CABINET — 600×337.5 mm
-            </text>
+            {cabinetArt && (
+              <text x="80" y="266.8" fontSize="11" fill="#C9C7C1" letterSpacing="0.08em" fontWeight="500">
+                CABINET — {cabinetArt}
+              </text>
+            )}
 
             {/* Side View with Depth */}
             <rect x="440" y="50" width="14.8" height="168.8" fill="rgba(195, 249, 16, 0.05)" stroke="#3A3A36" strokeWidth="1.2" />
             <line x1="440" y1="50" x2="440" y2="218.8" stroke="#C3F910" strokeWidth="2.8" />
-            <line x1="440" y1="238.8" x2="454.8" y2="238.8" stroke="#4A4A46" strokeWidth="0.8" />
-            <line x1="440" y1="230.8" x2="440" y2="246.8" stroke="#4A4A46" strokeWidth="0.8" />
-            <line x1="454.8" y1="230.8" x2="454.8" y2="246.8" stroke="#4A4A46" strokeWidth="0.8" />
-            <text x="418" y="266.8" fontSize="11" fill="#C9C7C1" letterSpacing="0.08em">
-              DEPTH — <tspan fill="#C3F910" fontWeight="700">29.5 mm</tspan>
-            </text>
+            {depthArt && (
+              <>
+                <line x1="440" y1="238.8" x2="454.8" y2="238.8" stroke="#4A4A46" strokeWidth="0.8" />
+                <line x1="440" y1="230.8" x2="440" y2="246.8" stroke="#4A4A46" strokeWidth="0.8" />
+                <line x1="454.8" y1="230.8" x2="454.8" y2="246.8" stroke="#4A4A46" strokeWidth="0.8" />
+                <text x="418" y="266.8" fontSize="11" fill="#C9C7C1" letterSpacing="0.08em">
+                  DEPTH — <tspan fill="#C3F910" fontWeight="700">{depthArt}</tspan>
+                </text>
+              </>
+            )}
             <text x="440" y="36" fontSize="11" fill="#7A7A76" fontWeight="600" letterSpacing="0.1em">SIDE</text>
             <text x="80" y="36" fontSize="11" fill="#7A7A76" fontWeight="600" letterSpacing="0.1em">FRONT</text>
           </svg>
 
           {/* Specs list + photo */}
-          <SpecsList specsList={specsList} lang={lang} onScrollToSpecs={handleScrollToSpecs} />
+          <SpecsList
+            specsList={specsList}
+            lang={lang}
+            onScrollToSpecs={handleScrollToSpecs}
+            photo={planPhoto}
+            hasSpecsTable={hasSpecsTable}
+          />
         </div>
 
-        {/* Configurations */}
+        {/* Configurations — masquées si le PDF n'en fournit pas */}
+        {configs.length > 0 && (
         <div
           style={{
             marginTop: '88px',
@@ -405,6 +410,7 @@ export const DesignSection: React.FC<DesignSectionProps> = ({ lang = 'FR', data 
           </div>
           <ConfigGrid configs={configs} />
         </div>
+        )}
       </div>
     </section>
   );

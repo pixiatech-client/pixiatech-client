@@ -1,14 +1,17 @@
 import React from "react";
 import { X, Printer } from "lucide-react";
 import { SpecModel } from "../types";
-import specsData from "../data/specs-data.json";
 import { Language } from "../data/translations";
+import type { Product, ProductSpecGroup } from '@/lib/products/types';
+import { text } from '@/lib/products/display';
 
 interface DatasheetModalProps {
   model: SpecModel | null;
   onClose: () => void;
   companyName: string;
   lang?: Language;
+  /** Produit courant : fournit les groupes et le nom affichés en en-tête. */
+  product?: Product;
 }
 
 export const DatasheetModal: React.FC<DatasheetModalProps> = ({
@@ -16,10 +19,28 @@ export const DatasheetModal: React.FC<DatasheetModalProps> = ({
   onClose,
   companyName,
   lang = "FR",
+  product,
 }) => {
   if (!model) return null;
 
-  const { groups } = specsData;
+  // Groupes du produit courant. À défaut (saisie manuelle sans structure), les
+  // lignes sont dérivées des clés présentes dans le modèle sélectionné — jamais
+  // de la matrice globale PXT Fine.
+  const groups: { label: string; rows: { key: string; label: string }[] }[] = (() => {
+    const productGroups: ProductSpecGroup[] = product?.specs?.groups ?? [];
+    if (productGroups.length > 0) {
+      return productGroups.map((g) => ({
+        label: g.label,
+        rows: g.rows.map((r) => ({ key: r.key, label: r.label })),
+      }));
+    }
+    const keys = Object.keys(model.specs ?? {});
+    return keys.length > 0
+      ? [{ label: '', rows: keys.map((key) => ({ key, label: key })) }]
+      : [];
+  })();
+
+  const productName = text(product?.name);
 
   const handlePrint = () => {
     window.print();
@@ -44,7 +65,12 @@ export const DatasheetModal: React.FC<DatasheetModalProps> = ({
   const printBtnText = lang === "FR" ? "IMPRIMER / PDF" : "PRINT / PDF";
   const certifiedSheetText = lang === "FR" ? "FICHE TECHNIQUE OFFICIELLE CERTIFIÉE" : "OFFICIAL CERTIFIED DATASHEET";
   const engineeringDeptText = lang === "FR" ? `DÉPARTEMENT TECHNIQUE ${companyName.toUpperCase()}` : `${companyName.toUpperCase()} ENGINEERING`;
-  const platformSubtitle = lang === "FR" ? "Plateforme PXT Fine · Format natif 16:9 · Technologie basse consommation ColdLED™" : "PXT Fine Platform · Native 16:9 Aspect Ratio · ColdLED™ Low Power Technology";
+  // Sous-titre : la plateforme décrite par le PDF, ou le nom du produit. La
+  // mention figée « Plateforme PXT Fine · 16:9 · ColdLED™ » est supprimée.
+  const platformSubtitle =
+    text(product?.series) ??
+    productName ??
+    (lang === "FR" ? "Fiche technique" : "Technical datasheet");
   const measuredFooter = lang === "FR" ? "MESURÉ CONFORMÉMENT À LA DIRECTIVE CE / CEM 2014/30/UE" : "MEASURED IN ACCORDANCE WITH CE / EMC DIRECTIVE 2014/30/EU";
 
   return (
@@ -89,11 +115,13 @@ export const DatasheetModal: React.FC<DatasheetModalProps> = ({
 
         {/* Technical Specification Matrix */}
         <div className="space-y-6">
-          {groups.map((group) => (
-            <div key={group.label} className="border border-[#1f1f1f] bg-[#0e0e0d]">
-              <div className="bg-[#141413] px-4 py-2 border-b border-[#1f1f1f] text-[10.5px] tracking-[0.2em] font-bold text-[#C3F910] uppercase font-mono">
-                {translateGroupLabel(group.label)}
-              </div>
+          {groups.map((group, groupIdx) => (
+            <div key={group.label || groupIdx} className="border border-[#1f1f1f] bg-[#0e0e0d]">
+              {group.label && (
+                <div className="bg-[#141413] px-4 py-2 border-b border-[#1f1f1f] text-[10.5px] tracking-[0.2em] font-bold text-[#C3F910] uppercase font-mono">
+                  {translateGroupLabel(group.label)}
+                </div>
+              )}
               <div className="divide-y divide-[#181817]">
                 {group.rows.map((row) => {
                   const valObj = (model.specs as Record<string, { v: string }>)[row.key];

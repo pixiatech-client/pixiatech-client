@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Box,
   Plus,
@@ -26,6 +26,7 @@ import {
   SlidersHorizontal,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { AnimatePresence, motion } from 'framer-motion';
 import { parseProductPdf } from '@/lib/products/product-pdf-parser';
 import { uploadProductPhoto, uploadProductHoverImage } from '@/lib/products/products-service';
 import { slugify, groupDisplayName, productCategoryIds, MAX_PRODUCT_NAME_LENGTH } from '@/lib/products/types';
@@ -33,6 +34,8 @@ import type { Product, ProductCategory, ProductCategoryGroup } from '@/lib/produ
 
 interface SiteWebProduitsModuleProps {
   initial?: Product[];
+  /** Slug à ouvrir directement en édition, lu côté serveur dans `?edit=`. */
+  editSlug?: string;
 }
 
 type ViewState =
@@ -167,6 +170,84 @@ function extractedSummary(p: Partial<Product>): { label: string; value: string }
   return rows;
 }
 
+/**
+ * Ce que l'import PDF n'a PAS pu fournir, à vérifier avant publication.
+ *
+ * Rien n'est perdu en silence : le parser conserve les libellés et valeurs
+ * inconnus, et cette fonction les remonte à l'administrateur. Les visuels ne
+ * sont pas extractibles (le PDF ne contient que des descriptions) : ils sont
+ * listés comme « à joindre » pour que la section ne reste pas vide en ligne.
+ */
+type ImportDiagnostic = { tone: 'warn' | 'info'; text: string };
+
+function importDiagnostics(p: Partial<Product>): ImportDiagnostic[] {
+  const out: ImportDiagnostic[] = [];
+
+  for (const warning of p.importWarnings ?? []) {
+    out.push({ tone: 'warn', text: warning });
+  }
+
+  // Visuels décrits par le PDF mais sans fichier : à joindre côté admin.
+  const mediaSlots: { label: string; title: string }[] = [];
+  const pushSlot = (label: string, title?: string, url?: string) => {
+    if (title && !url) mediaSlots.push({ label, title });
+  };
+  pushSlot('Aperçu — photo', p.overview?.photo?.title, p.overview?.photo?.url);
+  pushSlot('Aperçu — vidéo', p.overview?.video?.title, p.overview?.video?.url);
+  pushSlot('Conception — visuel', p.design?.visuals?.[0]?.title, p.design?.visuals?.[0]?.url);
+  pushSlot('Points forts — visuel', p.features?.visual?.title, p.features?.visual?.url);
+  (p.fieldwork?.projects ?? []).forEach((proj, i) => {
+    if (proj.title && !proj.image) {
+      mediaSlots.push({ label: `Projet ${i + 1}`, title: proj.title });
+    }
+  });
+  for (const slot of mediaSlots) {
+    out.push({ tone: 'info', text: `Visuel à joindre — ${slot.label} : « ${slot.title} »` });
+  }
+
+  // Valeurs laissées en attente dans la matrice : le gabarit les prévoit, le PDF
+  // ne les renseigne pas encore. Elles s'afficheront comme telles en ligne.
+  const pending = (p.specs?.models ?? []).reduce(
+    (count, model) =>
+      count + Object.values(model.specs ?? {}).filter((v) => v === 'PENDING' || v === '—').length,
+    0
+  );
+  if (pending > 0) {
+    out.push({
+      tone: 'info',
+      text: `${pending} valeur${pending > 1 ? 's' : ''} en attente dans la matrice (PENDING) — visible comme telle sur le site.`,
+    });
+  }
+
+  return out;
+}
+
+/** Avertissements + visuels à joindre, affichés après l'analyse du PDF. */
+function ImportDiagnosticsPanel({ items }: { items: ImportDiagnostic[] }) {
+  if (items.length === 0) return null;
+  return (
+    <div className="mt-3 rounded-xl border border-amber-500/30 bg-amber-500/[0.06] px-3 py-2.5">
+      <div className="flex items-center gap-1.5 text-[11px] font-bold text-amber-700 dark:text-amber-400 mb-1.5">
+        <AlertTriangle className="w-3.5 h-3.5" />
+        À vérifier avant publication ({items.length})
+      </div>
+      <ul className="space-y-1">
+        {items.map((item, i) => (
+          <li
+            key={`${item.tone}-${i}`}
+            className="text-[11px] leading-snug text-neutral-600 dark:text-neutral-300 flex gap-1.5"
+          >
+            <span aria-hidden className="text-amber-500 shrink-0">
+              {item.tone === 'warn' ? '•' : '◦'}
+            </span>
+            <span className="font-mono">{item.text}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function DerivedSlugHint({ name }: { name: string }) {
   const slug = slugify(name);
   return (
@@ -189,11 +270,51 @@ function Globe({ className }: { className?: string }) {
   );
 }
 
-export function SiteWebProduitsModule({ initial }: SiteWebProduitsModuleProps) {
+/**
+ * Traduit une erreur technique en message compréhensible.
+ *
+ * Le symptoms rapprochement etait un texte Firestore brut (« Missing or
+ * insufficient permissions », codes `permission-denied`/`unavailable`) affiche
+ * dans un toast : inutile pour un administrateur, qui ne peut pas y agir. On
+ * distingue ce qui est de son ressort (droits, session) de ce qui est
+ * transitoire (reseau), et on ne masque jamais une cause inconnue.
+ */
+function describeActionError(err: unknown, fallback: string): string {
+  const raw = err instanceof Error ? err.message : String(err ?? '');
+  const code = raw.includes('permission-denied')
+    || /insufficient permissions/i.test(raw)
+    || /missing or insufficient/i.test(raw)
+    || /PERMISSION_DENIED/i.test(raw)
+    ? 'permission'
+    : raw.includes('unavailable')
+      || /deadline exceeded/i.test(raw)
+      || /fetch failed/i.test(raw)
+      || /network/i.test(raw)
+      || /ENOTFOUND|ETIMEDOUT|ECONNREFUSED/i.test(raw)
+      ? 'reseau'
+      : null;
+
+  if (code === 'permission') {
+    return 'Vos droits ne permettent pas cette action. reconnectez-vous en tant qu’administrateur puis réessayez.';
+  }
+  if (code === 'reseau') {
+    return 'Connexion à la base interrompue. Vos données sont peut-être déjà enregistrées : rechargez la page pour vérifier avant de réessayer.';
+  }
+  // Un code Firestore inconnu reste traçable : on ne remplace pas une cause
+  // que l'on ne comprend pas par un texte générique qui masquerait le bug.
+  return raw.trim() || fallback;
+}
+
+export function SiteWebProduitsModule({ initial, editSlug }: SiteWebProduitsModuleProps) {
   const [state, setState] = useState<ViewState>({ view: 'list' });
   const [products, setProducts] = useState<Product[]>(initial ?? []);
   const [loading, setLoading] = useState(!initial);
   const [error, setError] = useState<string | null>(null);
+  // Suppression en deux temps : on demande confirmation, puis on exécute.
+  // Un seul slug à la fois, comme `deletingId` dans l'application Pixiatech :
+  // seule la ligne visée bascule en confirmation, les autres restent intactes.
+  const [deletingSlug, setDeletingSlug] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const refresh = async () => {
     setLoading(true);
@@ -201,7 +322,7 @@ export function SiteWebProduitsModule({ initial }: SiteWebProduitsModuleProps) {
     try {
       setProducts(await listProducts());
     } catch (err) {
-      setError((err as Error).message);
+      setError(describeActionError(err, 'Impossible de charger les produits.'));
     } finally {
       setLoading(false);
     }
@@ -212,24 +333,63 @@ export function SiteWebProduitsModule({ initial }: SiteWebProduitsModuleProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Deep-link « Modifier le produit » depuis la prévisualisation
+  // (`/admin/site-web/produits?edit=<slug>`). Appliqué une seule fois : sinon le
+  // rafraîchissement qui suit l'enregistrement rouvrirait l'éditeur en boucle.
+  const editSlugApplied = useRef(false);
+  useEffect(() => {
+    if (!editSlug || editSlugApplied.current) return;
+    const found = products.find((p) => p.slug === editSlug);
+    if (!found) return;
+    editSlugApplied.current = true;
+    setState({ view: 'edit', product: found });
+  }, [editSlug, products]);
+
   const goEdit = (product: Product) => setState({ view: 'edit', product });
 
-  const deleteProduct = async (product: Product) => {
-    if (!window.confirm(`Supprimer le produit « ${product.name} » ? Il disparaîtra de la liste.`)) return;
-    setError(null);
+  /** Étape 1 : ouvrir la confirmation. Ne touche pas à Firestore. */
+  const askDelete = (product: Product) => {
+    if (deleting) return;
+    setDeletingSlug(product.slug);
+  };
+
+  /**
+   * Étape 2 : exécuter la suppression validée.
+   *
+   * La ligne n'est retirée qu'après la réponse du backend. En cas d'échec elle
+   * repasse en état normal et l'erreur est affichée : l'administrateur peut
+   * donc relancer la suppression d'un second clic sur la corbeille.
+   */
+  const confirmDelete = async (slug: string) => {
+    if (deleting) return;
+    const product = products.find((p) => p.slug === slug);
+    if (!product) {
+      setDeletingSlug(null);
+      return;
+    }
+    setDeleting(true);
     try {
-      const res = await fetch(`/api/site-web/products/${encodeURIComponent(product.slug)}`, {
+      const res = await fetch(`/api/site-web/products/${encodeURIComponent(slug)}`, {
         method: 'DELETE',
         credentials: 'include',
       });
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.message || data.error || 'Échec de la suppression.');
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.success) {
+        throw new Error(data?.message || data?.error || 'La suppression a échoué.');
       }
-      toast.success('Produit supprimé.');
+      setProducts((current) => current.filter((p) => p.slug !== slug));
+      setDeletingSlug(null);
+      toast.success(`Produit « ${product.name} » supprimé.`);
+
+      // Le rafraîchissement est une étape secondaire : s'il échoue, la
+      // suppression est déjà faite et il ne faut pas la présenter comme un
+      // échec — c'est ce qui affichait un message Firestore trompeur.
       await refresh();
     } catch (err) {
-      toast.error((err as Error).message);
+      setDeletingSlug(null);
+      toast.error(describeActionError(err, 'La suppression a échoué.'));
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -286,8 +446,14 @@ export function SiteWebProduitsModule({ initial }: SiteWebProduitsModuleProps) {
       onRefresh={refresh}
       onNew={() => setState({ view: 'new' })}
       onEdit={goEdit}
-      onDelete={deleteProduct}
+      onDelete={askDelete}
       onDuplicate={duplicateProduct}
+      deletingSlug={deletingSlug}
+      deleting={deleting}
+      onConfirmDelete={confirmDelete}
+      onCancelDelete={() => {
+        if (!deleting) setDeletingSlug(null);
+      }}
     />
   );
 }
@@ -305,6 +471,10 @@ function ProductList({
   onEdit,
   onDelete,
   onDuplicate,
+  deletingSlug,
+  deleting,
+  onConfirmDelete,
+  onCancelDelete,
 }: {
   products: Product[];
   loading: boolean;
@@ -314,6 +484,12 @@ function ProductList({
   onEdit: (p: Product) => void;
   onDelete: (p: Product) => void;
   onDuplicate: (p: Product) => void;
+  /** Slug de la ligne actuellement en confirmation, `null` si aucune. */
+  deletingSlug: string | null;
+  /** Appel backend en cours : la ligne confirmée est verrouillée. */
+  deleting: boolean;
+  onConfirmDelete: (slug: string) => void;
+  onCancelDelete: () => void;
 }) {
   const [filter, setFilter] = useState<ProductFilter>('ALL');
   const [query, setQuery] = useState('');
@@ -474,8 +650,18 @@ function ProductList({
                 ) : (
                   filtered.map((p) => {
                     const photo = productPhoto(p);
+                    // Un brouillon n'est pas public : l'œil l'ouvre en
+                    // prévisualisation admin. L'URL ne vaut rien sans session
+                    // admin, la page refusera l'accès à un visiteur.
+                    const isDraft = p.status !== 'published';
+                    const viewHref = isDraft
+                      ? `/web/product/${p.slug}?preview=true`
+                      : `/web/product/${p.slug}`;
                     return (
-                      <tr key={p.slug} className="hover:bg-neutral-50/90 dark:hover:bg-white/[0.02] transition-colors">
+                      <tr
+                        key={p.slug}
+                        className="relative hover:bg-neutral-50/90 dark:hover:bg-white/[0.02] transition-colors"
+                      >
                         <td className="p-4">
                           {photo ? (
                             // eslint-disable-next-line @next/next/no-img-element
@@ -502,11 +688,11 @@ function ProductList({
                         <td className="p-4 text-right">
                           <div className="inline-flex items-center gap-2">
                             <a
-                              href={`/web/product/${p.slug}`}
+                              href={viewHref}
                               target="_blank"
                               rel="noreferrer"
                               className="p-2 rounded-xl text-neutral-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-colors cursor-pointer"
-                              title="Voir la page publique"
+                              title={isDraft ? 'Prévisualiser le brouillon' : 'Voir la page publique'}
                             >
                               <Eye className="w-4 h-4" />
                             </a>
@@ -529,13 +715,80 @@ function ProductList({
                             <button
                               type="button"
                               onClick={() => onDelete(p)}
-                              className="p-2 rounded-xl text-neutral-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors cursor-pointer"
+                              disabled={deleting}
+                              className="p-2 rounded-xl text-neutral-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                               title="Supprimer"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
                           </div>
                         </td>
+
+                        {/* Confirmation en ligne — pattern identique à
+                            `ProductListItem` (src/app/admin/produits) : la zone
+                            rouge recouvre la ligne depuis la droite, sans modal ni
+                            overlay. `relative` sur le <tr> en fait le référent. */}
+                        <AnimatePresence>
+                          {deletingSlug === p.slug && (
+                            <motion.td
+                              key={`delete-confirm-${p.slug}`}
+                              colSpan={4}
+                              initial={{ x: '100%' }}
+                              animate={{ x: 0 }}
+                              exit={{ x: '100%' }}
+                              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                              className="absolute inset-0 z-10 p-0"
+                            >
+                              <div
+                                role="group"
+                                aria-labelledby={`delete-confirm-title-${p.slug}`}
+                                className="h-full w-full bg-rose-600 flex items-center justify-between gap-3 px-3 sm:px-6"
+                              >
+                                <div className="flex items-center gap-3 min-w-0">
+                                  <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+                                    <AlertTriangle className="w-5 h-5 text-white" aria-hidden />
+                                  </div>
+                                  <div className="min-w-0">
+                                    <h4
+                                      id={`delete-confirm-title-${p.slug}`}
+                                      className="text-white font-bold text-sm truncate"
+                                    >
+                                      Supprimer ce produit&nbsp;?
+                                    </h4>
+                                    <p className="text-rose-100 text-[10px] uppercase font-bold tracking-wider truncate">
+                                      Cette action est irréversible
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                                  <button
+                                    type="button"
+                                    onClick={onCancelDelete}
+                                    disabled={deleting}
+                                    className="px-3 sm:px-4 py-2 text-xs font-bold text-white hover:bg-white/10 rounded-xl transition-colors cursor-pointer disabled:opacity-50"
+                                  >
+                                    Annuler
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => onConfirmDelete(p.slug)}
+                                    disabled={deleting}
+                                    className="px-3 sm:px-4 py-2 text-xs font-bold bg-white text-rose-600 rounded-xl hover:bg-rose-50 transition-all shadow-lg cursor-pointer disabled:opacity-70 inline-flex items-center gap-1.5"
+                                  >
+                                    {deleting ? (
+                                      <>
+                                        <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden />
+                                        Suppression…
+                                      </>
+                                    ) : (
+                                      'Supprimer'
+                                    )}
+                                  </button>
+                                </div>
+                              </div>
+                            </motion.td>
+                          )}
+                        </AnimatePresence>
                       </tr>
                     );
                   })
@@ -679,12 +932,45 @@ function ProductForm({
   const applicationCategoryIds = legacyBuckets['application'] ?? [];
 
   // ── Image au survol (hero.hoverImage) ──────────────────────────────────────
+  // Utilisable à la création (upload différé après création du document) comme
+  // en édition (upload immédiat sur le slug existant).
   const [hoverFile, setHoverFile] = useState<File | null>(null);
   const [hoverPreview, setHoverPreview] = useState<string | undefined>(
     existing?.hero?.hoverImage ?? undefined
   );
+  const [hoverLocalPreview, setHoverLocalPreview] = useState<string | undefined>(undefined);
   const [hoverUploading, setHoverUploading] = useState(false);
   const hoverInputRef = useRef<HTMLInputElement>(null);
+
+  // Aperçu effectif : en création on montre l'aperçu local du fichier choisi,
+  // en édition l'URL déjà enregistrée.
+  const hoverSrc = isNew ? hoverLocalPreview : hoverPreview;
+
+  const revokeHoverLocal = useCallback(() => {
+    setHoverLocalPreview((prev) => {
+      if (prev && prev.startsWith('blob:')) URL.revokeObjectURL(prev);
+      return undefined;
+    });
+  }, []);
+
+  // Libère l'object URL du fichier hover en attente à la destruction du formulaire.
+  useEffect(() => {
+    return () => {
+      if (hoverLocalPreview && hoverLocalPreview.startsWith('blob:')) URL.revokeObjectURL(hoverLocalPreview);
+    };
+  }, [hoverLocalPreview]);
+
+  const setNewHoverPhoto = (file: File) => {
+    revokeHoverLocal();
+    setHoverFile(file);
+    setHoverLocalPreview(URL.createObjectURL(file));
+  };
+
+  const clearNewHover = () => {
+    revokeHoverLocal();
+    setHoverFile(null);
+    setHoverPreview(undefined);
+  };
 
   const photoInputRef = useRef<HTMLInputElement>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
@@ -703,6 +989,14 @@ function ProductForm({
           ? { ...pdfReanalysis, name: cleanName || pdfReanalysis.name }
           : existing ?? { name: cleanName }
       );
+
+  // Avertissements d'import + visuels à joindre, pour l'analyse courante
+  // (nouveau produit ou réanalyse) et pour les données déjà enregistrées.
+  const diagnostics = importDiagnostics(
+    isNew
+      ? (pdfAnalysis ?? { name: cleanName })
+      : (pdfReanalysis ?? existing ?? { name: cleanName })
+  );
 
   const clearNewPhoto = () => {
     if (photoPreview && photoPreview.startsWith('blob:')) URL.revokeObjectURL(photoPreview);
@@ -816,9 +1110,15 @@ function ProductForm({
         applicationCategoryIds,
         categoryIds,
       });
+
+      // On enchaîne sur la version la plus récente du document à chaque étape.
+      let attached = product;
+      const warnings: string[] = [];
+
+      // 1. Image principale — rôle inchangé (photos du produit).
       if (photoFile) {
         try {
-          const upload = await uploadProductPhoto(product.slug, photoFile);
+          const upload = await uploadProductPhoto(attached.slug, photoFile);
           const photos = [
             {
               name: upload.name,
@@ -829,16 +1129,34 @@ function ProductForm({
             },
             ...(pdfAnalysis?.media?.photos ?? []),
           ];
-          const attached = await saveProduct(product.slug, { media: { photos } });
-          toast.success(`Produit « ${attached.name} » créé (brouillon).`);
-          await onCreated(attached);
-          return;
+          attached = await saveProduct(attached.slug, { media: { photos } });
         } catch {
-          toast.warning('Produit créé, mais la photo n’a pas pu être téléversée (vous pourrez l’ajouter plus tard).');
+          warnings.push('la photo principale n’a pas pu être téléversée');
         }
       }
-      toast.success(`Produit « ${product.name} » créé (brouillon).`);
-      await onCreated(product);
+
+      // 2. Image au survol — exécuté dans TOUS les chemins de création
+      //    (avec ou sans photo principale, même si l'upload photo a échoué).
+      //    L'ancien `return` dans la branche photo court-circuait cette étape.
+      if (hoverFile) {
+        try {
+          const { url } = await uploadProductHoverImage(attached.slug, hoverFile);
+          attached = await saveProduct(attached.slug, {
+            hero: { ...(attached.hero ?? {}), hoverImage: url },
+          });
+        } catch {
+          warnings.push('l’image au survol n’a pas pu être téléversée');
+        }
+      }
+
+      if (warnings.length > 0) {
+        toast.warning(
+          `Produit « ${attached.name} » créé (brouillon), mais ${warnings.join(' et ')} (vous pourrez les ajouter plus tard).`
+        );
+      } else {
+        toast.success(`Produit « ${attached.name} » créé (brouillon).`);
+      }
+      await onCreated(attached);
     } catch (err) {
       toast.error((err as Error).message);
     } finally {
@@ -1041,10 +1359,54 @@ function ProductForm({
                 )}
               </section>
 
-              {/* 3 · PDF technique */}
+              {/* 3 · IMAGE AU SURVOL */}
               <section>
                 <div className="flex items-center gap-2 mb-1.5">
                   <div className="flex items-center justify-center w-6 h-6 rounded-lg bg-[#38E044] text-black text-[11px] font-black font-mono shrink-0">3</div>
+                  <h2 className="text-sm font-bold text-neutral-900 dark:text-white">L&apos;image au survol</h2>
+                  <span className="text-[11px] text-neutral-400 font-medium">
+                    (optionnelle — affichée au survol dans « Tous les produits »)
+                  </span>
+                </div>
+                <div className="mt-3 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                  <div className="w-24 h-24 rounded-2xl border border-neutral-200 dark:border-white/10 bg-neutral-50 dark:bg-white/[0.03] flex items-center justify-center overflow-hidden shrink-0">
+                    {hoverSrc ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={hoverSrc} alt="Aperçu image au survol" className="w-full h-full object-cover" />
+                    ) : (
+                      <ImageIcon className="w-8 h-8 text-neutral-300" />
+                    )}
+                  </div>
+                  <div className="flex-1 w-full">
+                    <UploadZone
+                      label="Glissez l’image au survol ici ou cliquez pour choisir"
+                      hint="Remplace l’image principale au survol — ne la remplace pas"
+                      onFile={(file) => file && setNewHoverPhoto(file)}
+                      inputRef={hoverInputRef}
+                    />
+                  </div>
+                </div>
+                {hoverFile && (
+                  <div className="mt-3 flex items-center gap-2 text-[11px] text-neutral-500">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                    <span className="font-semibold">{hoverFile.name}</span> en attente — enregistrée dans
+                    <code className="font-mono text-[10px] px-1 rounded bg-neutral-100 dark:bg-white/10">hero.hoverImage</code>
+                    à la création.
+                    <button
+                      type="button"
+                      onClick={clearNewHover}
+                      className="ml-1 flex items-center gap-1 text-rose-500 hover:text-rose-700 font-bold transition-colors cursor-pointer"
+                    >
+                      <X className="w-3 h-3" /> Retirer
+                    </button>
+                  </div>
+                )}
+              </section>
+
+              {/* 4 · PDF technique */}
+              <section>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <div className="flex items-center justify-center w-6 h-6 rounded-lg bg-[#38E044] text-black text-[11px] font-black font-mono shrink-0">4</div>
                   <h2 className="text-sm font-bold text-neutral-900 dark:text-white">La fiche technique (PDF)</h2>
                   <span className="text-[11px] text-neutral-400 font-medium">(optionnelle — remplit automatiquement la fiche)</span>
                 </div>
@@ -1070,6 +1432,7 @@ function ProductForm({
                         {pdfName ? `Fiche technique analysée : ${pdfName}` : 'Données extraites'}
                       </div>
                       <SummaryGrid summary={summary} />
+                      <ImportDiagnosticsPanel items={diagnostics} />
                     </div>
                   )}
                 </div>
@@ -1227,6 +1590,7 @@ function ProductForm({
                       </button>
                     </div>
                     <SummaryGrid summary={summary} />
+                    <ImportDiagnosticsPanel items={diagnostics} />
                     <p className="mt-2 text-[11px] font-semibold text-neutral-400">
                       Ces données remplaceront les données techniques actuelles à l’enregistrement.
                     </p>
@@ -1243,6 +1607,7 @@ function ProductForm({
                     Informations à vérifier avant publication.
                   </p>
                   <SummaryGrid summary={summary} />
+                  <ImportDiagnosticsPanel items={diagnostics} />
                 </section>
               )}
             </>

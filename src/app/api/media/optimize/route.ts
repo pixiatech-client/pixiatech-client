@@ -1,4 +1,5 @@
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
@@ -14,7 +15,8 @@ import {
 import { deleteStagedSource, readStagedSource, type StagedSourceInfo } from '@/lib/media-stage';
 import { rateLimitExceeded } from '@/lib/rate-limit';
 import sharp from 'sharp';
-import { spawn } from 'child_process';
+// child_process is resolved at runtime only — opt out of static tracing
+const { spawn } = require(/* turbopackIgnore: true */ 'child_process') as typeof import('child_process');
 import { writeFile, unlink, readFile } from 'fs/promises';
 import { join } from 'path';
 import { tmpdir } from 'os';
@@ -24,16 +26,16 @@ import { randomBytes } from 'crypto';
 function resolveFFmpegPath(): string {
   // 1. Check system PATH first (works in Docker, local dev with ffmpeg installed)
   try {
-    const ffmpegStatic = require('ffmpeg-static') as string;
-    if (ffmpegStatic && require('fs').existsSync(ffmpegStatic)) return ffmpegStatic;
+    const ffmpegStatic = require(/* turbopackIgnore: true */ 'ffmpeg-static') as string;
+    if (ffmpegStatic && require(/* turbopackIgnore: true */ 'fs').existsSync(ffmpegStatic)) return ffmpegStatic;
   } catch {}
   return 'ffmpeg';
 }
 
 function resolveFFprobePath(): string {
   try {
-    const ffprobeStatic = require('ffprobe-static') as { path: string };
-    if (ffprobeStatic?.path && require('fs').existsSync(ffprobeStatic.path)) return ffprobeStatic.path;
+    const ffprobeStatic = require(/* turbopackIgnore: true */ 'ffprobe-static') as { path: string };
+    if (ffprobeStatic?.path && require(/* turbopackIgnore: true */ 'fs').existsSync(ffprobeStatic.path)) return ffprobeStatic.path;
   } catch {}
   return 'ffprobe';
 }

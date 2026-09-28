@@ -109,7 +109,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
 
   // Prefetch both module roots so switching is instant
   useEffect(() => {
-    try { router.prefetch('/admin'); router.prefetch('/admin/site-web'); } catch {}
+    try { router.prefetch('/admin'); router.prefetch('/admin/site-web/analytics'); } catch {}
   }, [router]);
 
   // Resolve the View Transition only after the new page has actually mounted
@@ -506,10 +506,10 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
               {roleId === 'admin' && (
                 <button
                   type="button"
-                  onMouseEnter={() => { try { router.prefetch(isSiteWeb ? '/admin' : '/admin/site-web'); } catch {} }}
-                  onFocus={() => { try { router.prefetch(isSiteWeb ? '/admin' : '/admin/site-web'); } catch {} }}
+                  onMouseEnter={() => { try { router.prefetch(isSiteWeb ? '/admin' : '/admin/site-web/analytics'); } catch {} }}
+                  onFocus={() => { try { router.prefetch(isSiteWeb ? '/admin' : '/admin/site-web/analytics'); } catch {} }}
                   onClick={() => {
-                    const target = isSiteWeb ? '/admin' : '/admin/site-web';
+                    const target = isSiteWeb ? '/admin' : '/admin/site-web/analytics';
                     slideNavigate(isSiteWeb ? 'back' : 'forward', () =>
                       new Promise<void>((resolve) => {
                         pendingNavResolveRef.current = resolve;

@@ -1,9 +1,13 @@
 // ============================================================================
-// Produits du site web — modèle de données canonique (Phase A)
+// Produits du site web — modèle de données canonique
 //
-// Un seul template (/web/pxt-fine) + des données propres à chaque produit.
-// Ce schéma reflète le format d'entrée structuré du PDF modèle
-// (docs/product-system/fiche-technique-modele.pdf), sections 1 à 17.
+// Un seul template (/web/product/[slug]) + des données propres à chaque produit.
+// Ce schéma reflète les 5 sections du PDF modèle
+// (docs/product-system/fiche-technique-modele.pdf) :
+//   01 APERCU PRODUIT · 02 CONCEPTION & FORMAT · 03 POINTS FORTS TECHNIQUES
+//   04 CARACTERISTIQUES TECHNIQUES (matrice groupes × variantes) · 05 REFERENCES TERRAIN
+// Tout champ absent du PDF reste ABSENT : aucune valeur n'est inventée ni
+// complétée depuis un autre produit.
 // Persistance : Firestore, collection "site_web_products" (lecture publique,
 // écriture admin), doc.id = slug du produit.
 // ============================================================================
@@ -138,6 +142,17 @@ export interface ProductSubItem {
   description?: string;
 }
 
+/**
+ * Emplacement média décrit par le PDF (titre + description).
+ * Le PDF ne contient que la description : le FICHIER est ajouté dans l'admin.
+ */
+export interface ProductMediaSlot {
+  title?: string;
+  description?: string;
+  /** Renseigné dans l'admin uniquement (jamais extrait du PDF). */
+  url?: string;
+}
+
 // ---------------------------------------------------------------------------
 // Sections 1-8 (base extraite du PDF par le parser existant)
 // ---------------------------------------------------------------------------
@@ -200,11 +215,12 @@ export interface ProductOverview {
   title?: string;
   description?: string;
   image?: string;
-  video?: {
+  video?: ProductMediaSlot & {
     poster?: string;
     /** Sources HTML <video> dans l'ordre de préférence. */
     sources?: { src: string; type?: string }[];
   };
+  photo?: ProductMediaSlot;
   stats?: ProductStat[];
   technologies?: ProductSubItem[];
 }
@@ -212,11 +228,15 @@ export interface ProductOverview {
 export interface ProductDesign {
   eyebrow?: string;
   title?: string;
+  moduleDim?: string;
   cabinetDim?: string;
+  depth?: string;
   weight?: string;
   material?: string;
   image?: string;
   specsList?: ProductKeyValue[];
+  /** Visuels techniques (côté / face) décrits par le PDF. */
+  visuals?: ProductMediaSlot[];
   configs?: ProductSubItem[];
 }
 
@@ -228,6 +248,8 @@ export interface ProductFeature extends ProductSubItem {
 export interface ProductFeatures {
   eyebrow?: string;
   title?: string;
+  /** Visuel produit central décrit par le PDF. */
+  visual?: ProductMediaSlot;
   items: ProductFeature[];
 }
 
@@ -258,6 +280,7 @@ export interface ProductFieldworkProject {
   title: string;
   location?: string;
   pitch?: string;
+  year?: string;
   image?: string;
   caption?: string;
 }
@@ -268,8 +291,10 @@ export interface ProductFieldwork {
   projects: ProductFieldworkProject[];
 }
 
+/** Entrée de navigation « série » lue dans le CTA du PDF. */
 export interface ProductNextSeries {
-  name: string;
+  name?: string;
+  url?: string;
   tagline?: string;
 }
 
@@ -311,7 +336,18 @@ export interface Product {
   status: ProductStatus;
   order?: number;
 
-  // Sections 1-8 (parser PDF)
+  /** Éditeur / société porteuse (masthead du PDF). */
+  company?: string;
+  /** Série du produit (masthead du PDF) : alimente le fil d'Ariane. */
+  series?: string;
+  /**
+   * Avertissements de l'import PDF (libellé inconnu, valeur hors colonne,
+   * cellule ignorée…). Rien n'est jamais perdu en silence : l'admin les affiche.
+   */
+  importWarnings?: string[];
+
+  // Données historiques (ancien format PDF 17 sections) — non alimentées par
+  // le gabarit actuel, conservées pour les produits déjà en base.
   badge?: string;
   environment?: ProductEnvironment;
   sellingModes?: SellingMode[];
@@ -335,7 +371,7 @@ export interface Product {
   environmentCategoryIds?: string[];
   applicationCategoryIds?: string[];
 
-  // Sections 9-17 (template web)
+  // Sections du gabarit PDF (template web)
   menu?: ProductMenuRef;
   hero?: ProductHero;
   overview?: ProductOverview;

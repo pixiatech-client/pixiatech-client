@@ -24,8 +24,7 @@ export const SectionResizeHandle: React.FC<SectionResizeHandleProps> = ({
   onLiveResize,
   onResizeEnd,
 }) => {
-  const { isEditing, selectedBlockId, setSelectedBlockId, setActiveTab, updateSectionField, saveCurrentPage } =
-    useCms();
+  const { isEditing, selectedBlockId, setSelectedBlockId, updateSectionField, saveCurrentPage } = useCms();
 
   const [isHovered, setIsHovered] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -158,6 +157,7 @@ export const SectionResizeHandle: React.FC<SectionResizeHandleProps> = ({
 
       {/* Resize Handle Container */}
       <div
+        data-cms-ui
         className="section-resize-handle absolute left-0 right-0 z-[160] flex items-center justify-center transition-all group"
         style={{
           bottom: -10,
@@ -171,7 +171,6 @@ export const SectionResizeHandle: React.FC<SectionResizeHandleProps> = ({
         onClick={(e) => {
           e.stopPropagation();
           setSelectedBlockId(sectionKey);
-          setActiveTab('style');
         }}
         title={`Glisser verticalement pour ajuster la hauteur de : ${sectionLabel}`}
       >

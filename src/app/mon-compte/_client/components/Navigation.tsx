@@ -76,7 +76,7 @@ export function Navigation({
         <div className="flex items-center justify-between gap-3">
           <nav
             id="pixiatech-top-capsule-nav"
-            className="hidden md:flex items-center gap-1.5 p-1.5 rounded-2xl bg-white border border-neutral-200/90 shadow-xs overflow-x-auto select-none"
+            className="hidden md:flex items-center gap-1.5 p-1.5 rounded-2xl bg-[#0F1214]/90 backdrop-blur-md border border-white/[0.08] shadow-2xl overflow-x-auto select-none"
           >
             {navItems.map((item) => {
               const isActive = activeTab === item.id;
@@ -87,13 +87,13 @@ export function Navigation({
                   type="button"
                   onClick={() => onNavigate(item.id)}
                   className={`relative px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-colors duration-150 cursor-pointer select-none ${
-                    isActive ? 'text-white' : 'text-neutral-600 hover:text-neutral-950 hover:bg-neutral-100/80'
+                    isActive ? 'text-white' : 'text-neutral-400 hover:text-white hover:bg-white/[0.04]'
                   }`}
                 >
                   {isActive && (
                     <motion.div
                       layoutId="active-top-nav-capsule"
-                      className="absolute inset-0 bg-[#0A0D0E] rounded-xl shadow-md border border-neutral-800 pointer-events-none"
+                      className="absolute inset-0 bg-[#161B1E] rounded-xl shadow-md border border-[#38E044]/30 pointer-events-none"
                       transition={{ type: 'spring', stiffness: 360, damping: 28, mass: 0.7 }}
                     />
                   )}
@@ -101,7 +101,7 @@ export function Navigation({
                   <div className="relative z-10 flex items-center gap-2">
                     {isActive && <span className="w-2 h-2 rounded-full bg-[#38E044] shadow-[0_0_8px_#38E044] shrink-0" />}
 
-                    <span className={isActive ? 'text-white' : 'text-neutral-500'}>{item.icon}</span>
+                    <span className={isActive ? 'text-white' : 'text-neutral-400'}>{item.icon}</span>
 
                     <span className="whitespace-nowrap">{item.label}</span>
 
@@ -109,8 +109,8 @@ export function Navigation({
                       <span
                         className={`ml-1 text-[11px] px-2 py-0.5 rounded-full font-bold ${
                           isActive
-                            ? 'bg-neutral-800 text-[#38E044] border border-neutral-700'
-                            : 'bg-neutral-100 text-neutral-600 border border-neutral-200'
+                            ? 'bg-[#38E044]/15 text-[#38E044] border border-[#38E044]/30'
+                            : 'bg-white/[0.06] text-neutral-400 border border-white/[0.08]'
                         }`}
                       >
                         {item.badge}
@@ -127,17 +127,17 @@ export function Navigation({
               id="btn-open-dispute-nav"
               type="button"
               onClick={onOpenDisputeModal}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white hover:bg-amber-50/50 border border-neutral-200 hover:border-amber-300 text-neutral-700 hover:text-amber-900 text-xs font-semibold shadow-xs transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#0F1214] hover:bg-amber-500/10 border border-white/[0.08] hover:border-amber-500/30 text-neutral-300 hover:text-amber-300 text-xs font-semibold shadow-xs transition-all cursor-pointer"
               title="Signaler un incident ou ouvrir une réclamation"
             >
-              <AlertCircle className="w-3.5 h-3.5 text-amber-500" />
+              <AlertCircle className="w-3.5 h-3.5 text-amber-400" />
               <span>Ouvrir un litige</span>
             </button>
           </div>
 
           <div className="flex md:hidden items-center justify-between w-full">
             <div className="flex items-center gap-2">
-              <span className="font-bold text-sm text-neutral-900 capitalize">
+              <span className="font-bold text-sm text-white capitalize">
                 {navItems.find((i) => i.id === activeTab)?.label}
               </span>
             </div>
@@ -146,16 +146,16 @@ export function Navigation({
                 id="btn-open-dispute-mobile"
                 type="button"
                 onClick={onOpenDisputeModal}
-                className="px-2.5 py-1.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs font-medium flex items-center gap-1"
+                className="px-2.5 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs font-medium flex items-center gap-1"
               >
-                <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
+                <AlertCircle className="w-3.5 h-3.5 text-amber-400" />
                 <span>Litige</span>
               </button>
               <button
                 id="btn-toggle-mobile-menu"
                 type="button"
                 onClick={() => setMobileMenuOpen(true)}
-                className="p-2 rounded-xl bg-white border border-neutral-200 text-neutral-700 shadow-xs"
+                className="p-2 rounded-xl bg-[#0F1214] border border-white/[0.08] text-white shadow-xs"
               >
                 <Menu className="w-5 h-5" />
               </button>
@@ -172,7 +172,7 @@ export function Navigation({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15 }}
-              className="fixed inset-0 bg-black/60 backdrop-blur-xs"
+              className="fixed inset-0 bg-black/70 backdrop-blur-xs"
               onClick={() => setMobileMenuOpen(false)}
             />
 
@@ -181,9 +181,9 @@ export function Navigation({
               animate={{ x: 0 }}
               exit={{ x: -280 }}
               transition={{ type: 'spring', stiffness: 320, damping: 32 }}
-              className="relative w-4/5 max-w-xs bg-white h-full shadow-2xl flex flex-col z-50"
+              className="relative w-4/5 max-w-xs bg-[#0F1214] border-r border-white/[0.08] h-full shadow-2xl flex flex-col z-50 text-white"
             >
-              <div className="p-4 bg-[#0A0D0E] text-white flex items-center justify-between">
+              <div className="p-4 bg-[#0A0D0E] text-white flex items-center justify-between border-b border-white/[0.08]">
                 <div className="flex items-center gap-2">
                   <span className="font-extrabold tracking-wider font-mono">PIXIATECH</span>
                   <span className="bg-[#38E044] text-black font-extrabold text-[10px] px-2 py-0.5 rounded-full">
@@ -198,29 +198,29 @@ export function Navigation({
                 </button>
               </div>
 
-              <div className="p-4 border-b border-neutral-100 bg-neutral-50/70">
+              <div className="p-4 border-b border-white/[0.08] bg-[#0A0D0E]/60">
                 <div className="flex items-center gap-3">
                   {user?.avatarUrl ? (
                     <img
                       src={user.avatarUrl}
                       alt={user.name}
-                      className="w-10 h-10 rounded-full object-cover border border-neutral-200"
+                      className="w-10 h-10 rounded-full object-cover border border-white/10"
                       referrerPolicy="no-referrer"
                     />
                   ) : (
-                    <span className="w-10 h-10 rounded-full bg-[#0A0D0E] text-[#38E044] text-lg font-bold flex items-center justify-center border border-neutral-200">
+                    <span className="w-10 h-10 rounded-full bg-[#161B1E] text-[#38E044] text-lg font-bold flex items-center justify-center border border-white/10">
                       {mobileAvatarFallback}
                     </span>
                   )}
                   <div className="min-w-0">
-                    <div className="font-bold text-sm text-neutral-900 truncate">{user?.name || 'Client'}</div>
-                    <div className="text-xs text-neutral-500 truncate">{user?.email || ''}</div>
+                    <div className="font-bold text-sm text-white truncate">{user?.name || 'Client'}</div>
+                    <div className="text-xs text-neutral-400 truncate">{user?.email || ''}</div>
                     {user?.companyName ? (
-                      <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full mt-1 inline-block">
+                      <span className="text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full mt-1 inline-block">
                         {user.companyName}
                       </span>
                     ) : (
-                      <span className="text-[10px] font-semibold text-neutral-600 bg-neutral-100 px-2 py-0.5 rounded-full mt-1 inline-block">
+                      <span className="text-[10px] font-semibold text-neutral-300 bg-white/[0.06] border border-white/[0.08] px-2 py-0.5 rounded-full mt-1 inline-block">
                         Espace Client
                       </span>
                     )}
@@ -229,7 +229,7 @@ export function Navigation({
               </div>
 
               <div className="flex-1 p-3 space-y-1 overflow-y-auto">
-                <div className="text-[11px] font-semibold text-neutral-400 px-3 py-1 uppercase tracking-wider">
+                <div className="text-[11px] font-semibold text-neutral-500 px-3 py-1 uppercase tracking-wider">
                   Navigation Principale
                 </div>
                 {navItems.map((item) => {
@@ -242,18 +242,22 @@ export function Navigation({
                         setMobileMenuOpen(false);
                       }}
                       className={`w-full flex items-center justify-between p-3 rounded-xl text-sm font-semibold transition-colors ${
-                        isActive ? 'bg-[#0A0D0E] text-white' : 'text-neutral-700 hover:bg-neutral-100'
+                        isActive
+                          ? 'bg-[#161B1E] text-white border border-[#38E044]/30'
+                          : 'text-neutral-300 hover:text-white hover:bg-white/[0.04]'
                       }`}
                     >
                       <div className="flex items-center gap-3">
                         {isActive && <span className="w-2 h-2 rounded-full bg-[#38E044]" />}
-                        <span className={isActive ? 'text-white' : 'text-neutral-500'}>{item.icon}</span>
+                        <span className={isActive ? 'text-[#38E044]' : 'text-neutral-400'}>{item.icon}</span>
                         <span>{item.label}</span>
                       </div>
                       {item.badge !== undefined && (
                         <span
                           className={`text-xs px-2 py-0.5 rounded-full font-bold ${
-                            isActive ? 'bg-neutral-800 text-[#38E044]' : 'bg-neutral-100 text-neutral-600'
+                            isActive
+                              ? 'bg-[#38E044]/15 text-[#38E044] border border-[#38E044]/30'
+                              : 'bg-white/[0.06] text-neutral-400'
                           }`}
                         >
                           {item.badge}
@@ -269,9 +273,9 @@ export function Navigation({
                       setMobileMenuOpen(false);
                       onOpenDisputeModal();
                     }}
-                    className="w-full flex items-center gap-3 p-3 rounded-xl text-sm font-medium text-amber-800 bg-amber-50 hover:bg-amber-100 transition-colors"
+                    className="w-full flex items-center gap-3 p-3 rounded-xl text-sm font-medium text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 transition-colors"
                   >
-                    <AlertCircle className="w-4 h-4 text-amber-600" />
+                    <AlertCircle className="w-4 h-4 text-amber-400" />
                     <span>Ouvrir un litige</span>
                   </button>
                 </div>
@@ -282,21 +286,21 @@ export function Navigation({
                       setMobileMenuOpen(false);
                       onOpenStore();
                     }}
-                    className="w-full flex items-center gap-3 p-3 rounded-xl text-sm font-medium text-neutral-700 hover:bg-neutral-100 transition-colors"
+                    className="w-full flex items-center gap-3 p-3 rounded-xl text-sm font-medium text-neutral-300 hover:text-white hover:bg-white/[0.04] transition-colors"
                   >
-                    <ShoppingBag className="w-4 h-4 text-neutral-500" />
+                    <ShoppingBag className="w-4 h-4 text-neutral-400" />
                     <span>Accéder à la boutique</span>
                   </button>
                 </div>
               </div>
 
-              <div className="p-3 border-t border-neutral-200">
+              <div className="p-3 border-t border-white/[0.08]">
                 <button
                   onClick={() => {
                     setMobileMenuOpen(false);
                     onLogout();
                   }}
-                  className="w-full flex items-center gap-3 p-3 rounded-xl text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors"
+                  className="w-full flex items-center gap-3 p-3 rounded-xl text-sm font-semibold text-rose-400 hover:bg-rose-500/10 transition-colors"
                 >
                   <LogOut className="w-4 h-4" />
                   <span>Déconnexion</span>

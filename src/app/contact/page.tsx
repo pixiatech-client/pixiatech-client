@@ -1,11 +1,11 @@
-import type { Metadata } from 'next';
-import { ContactModule } from '@/app/admin/site-web/contact/ContactModule';
+import { permanentRedirect } from 'next/navigation';
 
-export const metadata: Metadata = {
-  title: 'Contactez-nous | PIXIATECH',
-  description: "Contactez l'équipe PIXIATECH pour vos projets d'écrans LED, devis et solutions visuelles sur-mesure.",
-};
-
+/**
+ * La page Contact vit desormais cote site web (`/web/contact`), pour etre rendue
+ * avec le meme contexte que les autres pages du site (pas de header boutique).
+ * L'URL `/contact` reste un point d'entree : elle redirige en permanence, donc
+ * les liens existants (header boutique,/partages) ne cassent pas.
+ */
 export default function ContactPage() {
-  return <ContactModule isAdminPage={false} />;
+  permanentRedirect('/web/contact');
 }

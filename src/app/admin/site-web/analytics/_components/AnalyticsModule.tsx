@@ -10,7 +10,6 @@ import ProductsModule from './ProductsModule';
 import PagesModule from './PagesModule';
 import SourcesModule from './SourcesModule';
 import DimensionsModule from './DimensionsModule';
-import BehaviorModule from './BehaviorModule';
 import RealtimeModule from './RealtimeModule';
 import InsightsModule from './InsightsModule';
 import ProductDetailView from './ProductDetailView';
@@ -25,6 +24,7 @@ import {
   fetchLanguages,
   fetchDevices,
   fetchBehavior,
+  invalidateAnalyticsCache,
 } from './analytics-api';
 import { fillDays } from './analytics-utils';
 import type {
@@ -69,7 +69,9 @@ export default function AnalyticsModule() {
     devices: null,
     behavior: null,
   });
-  const [loading, setLoading] = useState(true);
+  // Independent loading flags so the UI can render progressively
+  const [loadingOverview, setLoadingOverview] = useState(true);
+  const [loadingSecondary, setLoadingSecondary] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const requestId = useRef(0);
 
@@ -78,13 +80,39 @@ export default function AnalyticsModule() {
     [from, to, filter]
   );
 
-  const load = useCallback(async () => {
+  /**
+   * Two-phase load:
+   *  Phase 1 — overview only → renders KPIs + chart instantly
+   *  Phase 2 — all secondary data in background (products, pages, geo …)
+   */
+  const load = useCallback(async (opts?: { hard?: boolean }) => {
     const id = ++requestId.current;
-    setLoading(true);
+    setLoadingOverview(true);
+    setLoadingSecondary(true);
     setError(null);
+
+    if (opts?.hard) {
+      invalidateAnalyticsCache();
+    }
+
+    // ─── Phase 1: overview (critical path) ────────────────────────────
     try {
-      const [overview, products, pages, sources, geo, languages, devices, behavior] = await Promise.all([
-        fetchOverview(from, to, { ...filter }),
+      const overview = await fetchOverview(from, to, { ...filter });
+      if (requestId.current !== id) return;
+      setData((prev) => ({ ...prev, overview }));
+    } catch (err: unknown) {
+      if (requestId.current !== id) return;
+      setError(err instanceof Error ? err.message : 'Erreur de chargement.');
+      setLoadingOverview(false);
+      setLoadingSecondary(false);
+      return;
+    } finally {
+      if (requestId.current === id) setLoadingOverview(false);
+    }
+
+    // ─── Phase 2: secondary data (background) ──────────────────────
+    try {
+      const [products, pages, sources, geo, languages, devices, behavior] = await Promise.all([
         fetchProducts(from, to, { ...filter }),
         fetchPages(from, to, { ...filter }),
         fetchSources(from, to, { ...filter }),
@@ -94,12 +122,14 @@ export default function AnalyticsModule() {
         fetchBehavior(from, to, { ...filter }),
       ]);
       if (requestId.current !== id) return;
-      setData({ overview, products, pages, sources, geo, languages, devices, behavior });
+      setData((prev) => ({ ...prev, products, pages, sources, geo, languages, devices, behavior }));
     } catch (err: unknown) {
-      if (requestId.current !== id) return;
-      setError(err instanceof Error ? err.message : 'Erreur de chargement.');
+      // Non-critical — overview already rendered, soft-fail
+      if (requestId.current === id) {
+        console.warn('[Analytics] Secondary data failed:', err);
+      }
     } finally {
-      if (requestId.current === id) setLoading(false);
+      if (requestId.current === id) setLoadingSecondary(false);
     }
   }, [from, to, filter]);
 
@@ -108,6 +138,7 @@ export default function AnalyticsModule() {
   }, [load, filterKey]);
 
   const overview = data.overview;
+  const loading = loadingOverview;
 
   const series = useMemo(() => {
     if (!overview) return [];
@@ -150,9 +181,9 @@ export default function AnalyticsModule() {
           <DataMenu t={t} onChanged={() => void load()} />
           <button
             type="button"
-            onClick={() => void load()}
+            onClick={() => void load({ hard: true })}
             className="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-bold transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-50"
-            disabled={loading}
+            disabled={loadingOverview}
           >
             {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
             {g('refresh')}
@@ -205,15 +236,17 @@ export default function AnalyticsModule() {
             <>
               <KpiCards current={overview.current} previous={overview.previous} conversions={overview.conversions} prevConversions={overview.prevConversions} t={t} />
               <TrafficChart series={series} t={t} />
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                <div className="lg:col-span-2">
-                  <ProductsModule current={data.products?.current ?? overview.current} t={t} onSelect={setSelectedProduct} />
-                </div>
-                <RealtimeModule t={t} />
+              {/* Secondary modules: render skeleton while loading, real data when ready */}
+              <div className="w-full">
+                {loadingSecondary && !data.products
+                  ? <div className="h-64 rounded-2xl bg-white/5 animate-pulse" />
+                  : <ProductsModule current={data.products?.current ?? overview.current} t={t} onSelect={setSelectedProduct} />}
               </div>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <SourcesModule rows={data.sources?.rows ?? []} t={t} />
-                <BehaviorModule rows={data.behavior?.rows ?? []} actions={data.behavior?.actions ?? {}} t={t} />
+                {loadingSecondary && !data.sources
+                  ? <div className="h-40 rounded-2xl bg-white/5 animate-pulse" />
+                  : <SourcesModule rows={data.sources?.rows ?? []} t={t} />}
+                <RealtimeModule t={t} />
               </div>
               <DimensionsModule
                 geo={data.geo?.rows ?? []}
@@ -225,7 +258,9 @@ export default function AnalyticsModule() {
                 t={t}
               />
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <PagesModule current={data.pages?.current ?? overview.current} t={t} />
+                {loadingSecondary && !data.pages
+                  ? <div className="h-40 rounded-2xl bg-white/5 animate-pulse" />
+                  : <PagesModule current={data.pages?.current ?? overview.current} t={t} />}
                 <InsightsModule current={overview.current} previous={overview.previous} conversions={overview.conversions} prevConversions={overview.prevConversions} t={t} onSelectProduct={setSelectedProduct} />
               </div>
             </>

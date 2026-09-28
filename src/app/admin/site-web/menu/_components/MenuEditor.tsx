@@ -696,7 +696,7 @@ export function MenuEditor() {
       )}
 
       {columns !== null && columns.length > 0 && (
-        <div className="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-6 items-start">
+        <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_360px] gap-6 items-start">
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
@@ -737,8 +737,8 @@ export function MenuEditor() {
             </SortableContext>
           </DndContext>
 
-          <div className="bg-white dark:bg-zinc-900 border border-neutral-200/80 dark:border-white/10 rounded-3xl overflow-hidden shadow-sm">
-            <div className="p-4 border-b border-neutral-200 dark:border-white/10">
+          <div className="xl:sticky xl:top-[88px] xl:self-start xl:h-[calc(100dvh-88px-2rem)] xl:flex xl:flex-col bg-white dark:bg-zinc-900 border border-neutral-200/80 dark:border-white/10 rounded-3xl overflow-hidden shadow-sm">
+            <div className="shrink-0 p-4 border-b border-neutral-200 dark:border-white/10">
               <h2 className="text-sm font-bold text-neutral-800 dark:text-white">Produits disponibles</h2>
               <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">
                 Sources : Firestore <span className="font-mono">site_web_products</span> (le menu n’en stocke
@@ -773,7 +773,7 @@ export function MenuEditor() {
                 </span>
               </div>
             </div>
-            <div className="max-h-[70vh] overflow-y-auto divide-y divide-neutral-100 dark:divide-white/5">
+            <div className="flex-1 min-h-0 overflow-y-auto divide-y divide-neutral-100 dark:divide-white/5">
               {products.length === 0 ? (
                 <p className="p-6 text-xs text-neutral-400">
                   Aucun produit Firestore trouvé. Créez d’abord des produits dans « Produits du site web ».

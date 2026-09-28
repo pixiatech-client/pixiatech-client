@@ -3,32 +3,53 @@
 import React from 'react';
 import { Language } from '../data/translations';
 import type { ProductNext } from '@/lib/products/types';
+import { text } from '@/lib/products/display';
 
 interface NextSectionProps {
   onOpenConsultation: () => void;
   lang?: Language;
-  /** Données produit (template dynamique). Nom des séries neutres, CTA FR uniquement. */
+  /** Données produit (template dynamique). */
   data?: ProductNext;
+  /** Nom du produit courant : évite d'afficher « PXT Ultra » par défaut. */
+  productTitle?: string;
 }
 
 export const NextSection: React.FC<NextSectionProps> = ({
   onOpenConsultation,
   lang = 'FR',
   data,
+  productTitle,
 }) => {
-  const prevName = data?.prev?.name || 'WK Series';
-  const nextName = data?.next?.name || 'PXT Ultra';
+  // Navigation de série : nom et tagline viennent du PDF. Aucune série
+  // inventée (« WK Series », « PXT Ultra ») : une carte sans donnée n'est pas
+  // rendue, sinon elle mentirait sur le catalogue.
+  const prevName = text(data?.prev?.name);
+  const nextName = text(data?.next?.name);
+  const prevTagline = text(data?.prev?.tagline);
+  const nextTagline = text(data?.next?.tagline);
+  const prevHref = text(data?.prev?.url) ?? '/web/products';
+  const nextHref = text(data?.next?.url) ?? '/web/products';
 
-  // Seuls les libellés FR sont portés par les données ; l'EN garde son texte.
-  const headline = lang === 'FR' ? (data?.headline || 'Donnons vie à votre affichage.') : "Let's build your display.";
-  const highlight = lang === 'FR' ? (data?.headlineHighlight || 'votre affichage.') : 'your display.';
-  const line1 = headline.split(highlight)[0] || headline;
-  const line2 = line1 === headline ? '' : highlight;
+  const seriesCards = [
+    { key: 'prev', name: prevName, tagline: prevTagline, href: prevHref },
+    { key: 'next', name: nextName, tagline: nextTagline, href: nextHref },
+  ].filter((c) => Boolean(c.name));
 
-  // Le CTA produit n'est piloté qu'en FR pour ne jamais transparaître en EN.
+  // Accroche CTA : celle du PDF, ou rien. Le texte EN n'existe pas dans la
+  // source, il ne doit donc pas être inventé à partir du FR.
+  const headline = text(data?.headline);
+  const highlight = text(data?.headlineHighlight);
+  const line1 = headline && highlight && headline.includes(highlight)
+    ? headline.slice(0, headline.indexOf(highlight))
+    : headline;
+  const line2 = headline && highlight && headline.includes(highlight) ? highlight : '';
+
+  // Libellé d'action du SITE quand le PDF n'en fournit pas.
   const ctaLabel =
-    (lang === 'FR' ? data?.cta : undefined) ||
-    (lang === 'FR' ? 'Démarrer un projet →' : 'Start a Project →');
+    text(data?.cta) ?? (lang === 'FR' ? 'Démarrer un projet →' : 'Start a Project →');
+
+  // Titre de repli : le nom du produit courant, jamais celui d'une autre série.
+  const fallbackTitle = productTitle ?? '';
 
   return (
     <section
@@ -42,139 +63,93 @@ export const NextSection: React.FC<NextSectionProps> = ({
       }}
     >
       <div className="wrap">
-        {/* Previous & Next Series Cards */}
+        {/* Navigation de série : une carte par série réellement nommée dans le PDF */}
+        {seriesCards.length > 0 && (
         <div
           className="g2"
           style={{
             display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
+            gridTemplateColumns: seriesCards.length === 1 ? '1fr' : '1fr 1fr',
             gap: '24px',
           }}
         >
-          {/* Previous Series */}
-          <a
-            href="/web/products"
-            className="next-series-card"
-            style={{
-              display: 'block',
-              border: '1px solid var(--dark-line, #1f1f1f)',
-              padding: '34px 32px',
-              transition: 'all .25s ease',
-              textDecoration: 'none',
-              background: 'transparent',
-              position: 'relative',
-              overflow: 'hidden',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = '#C3F910';
-              e.currentTarget.style.background = 'rgba(195, 249, 16, 0.05)';
-              e.currentTarget.style.boxShadow = '0 8px 30px rgba(195, 249, 16, 0.12)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = 'var(--dark-line, #1f1f1f)';
-              e.currentTarget.style.background = 'transparent';
-              e.currentTarget.style.boxShadow = 'none';
-            }}
-          >
-            <div
+          {seriesCards.map((card) => (
+            <a
+              key={card.key}
+              href={card.href}
+              className="next-series-card"
               style={{
-                fontSize: '10.5px',
-                letterSpacing: '.22em',
-                color: '#C3F910',
-                marginBottom: '14px',
-                textTransform: 'uppercase',
-                fontWeight: 700,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
+                display: 'block',
+                border: '1px solid var(--dark-line, #1f1f1f)',
+                padding: '34px 32px',
+                textAlign: card.key === 'next' ? 'right' : 'left',
+                transition: 'all .25s ease',
+                textDecoration: 'none',
+                background: 'transparent',
+                position: 'relative',
+                overflow: 'hidden',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = '#C3F910';
+                e.currentTarget.style.background = 'rgba(195, 249, 16, 0.05)';
+                e.currentTarget.style.boxShadow = '0 8px 30px rgba(195, 249, 16, 0.12)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = 'var(--dark-line, #1f1f1f)';
+                e.currentTarget.style.background = 'transparent';
+                e.currentTarget.style.boxShadow = 'none';
               }}
             >
-              <span>←</span> {lang === 'FR' ? 'SÉRIE PRÉCÉDENTE' : 'PREVIOUS SERIES'}
-            </div>
-            <div
-              style={{
-                fontSize: 'clamp(22px, 2.2vw, 32px)',
-                fontWeight: 700,
-                color: 'var(--dark-text, #f5f4f0)',
-                letterSpacing: '-.01em',
-              }}
-            >
-              {prevName}
-            </div>
-            <div
-              style={{
-                fontSize: '13px',
-                color: 'var(--dark-muted, #7a7a76)',
-                marginTop: '8px',
-              }}
-            >
-              {lang === 'FR' ? 'Écran LED fin pitch intérieur' : 'Indoor fine-pitch LED display'}
-            </div>
-          </a>
-
-          {/* Next Series */}
-          <a
-            href="/web/products"
-            className="next-series-card"
-            style={{
-              display: 'block',
-              border: '1px solid var(--dark-line, #1f1f1f)',
-              padding: '34px 32px',
-              textAlign: 'right',
-              transition: 'all .25s ease',
-              textDecoration: 'none',
-              background: 'transparent',
-              position: 'relative',
-              overflow: 'hidden',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = '#C3F910';
-              e.currentTarget.style.background = 'rgba(195, 249, 16, 0.05)';
-              e.currentTarget.style.boxShadow = '0 8px 30px rgba(195, 249, 16, 0.12)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = 'var(--dark-line, #1f1f1f)';
-              e.currentTarget.style.background = 'transparent';
-              e.currentTarget.style.boxShadow = 'none';
-            }}
-          >
-            <div
-              style={{
-                fontSize: '10.5px',
-                letterSpacing: '.22em',
-                color: '#C3F910',
-                marginBottom: '14px',
-                textTransform: 'uppercase',
-                fontWeight: 700,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'flex-end',
-                gap: '6px',
-              }}
-            >
-              {lang === 'FR' ? 'SÉRIE SUIVANTE' : 'NEXT SERIES'} <span>→</span>
-            </div>
-            <div
-              style={{
-                fontSize: 'clamp(22px, 2.2vw, 32px)',
-                fontWeight: 700,
-                color: 'var(--dark-text, #f5f4f0)',
-                letterSpacing: '-.01em',
-              }}
-            >
-              {nextName}
-            </div>
-            <div
-              style={{
-                fontSize: '13px',
-                color: 'var(--dark-muted, #7a7a76)',
-                marginTop: '8px',
-              }}
-            >
-              {lang === 'FR' ? 'Écran LED fin pitch intérieur' : 'Indoor fine-pitch LED display'}
-            </div>
-          </a>
+              <div
+                style={{
+                  fontSize: '10.5px',
+                  letterSpacing: '.22em',
+                  color: '#C3F910',
+                  marginBottom: '14px',
+                  textTransform: 'uppercase',
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: card.key === 'next' ? 'flex-end' : undefined,
+                  gap: '6px',
+                }}
+              >
+                {card.key === 'prev' ? (
+                  <>
+                    <span>&larr;</span>{' '}
+                    {lang === 'FR' ? 'SÉRIE PRÉCÉDENTE' : 'PREVIOUS SERIES'}
+                  </>
+                ) : (
+                  <>
+                    {lang === 'FR' ? 'SÉRIE SUIVANTE' : 'NEXT SERIES'} <span>&rarr;</span>
+                  </>
+                )}
+              </div>
+              <div
+                style={{
+                  fontSize: 'clamp(22px, 2.2vw, 32px)',
+                  fontWeight: 700,
+                  color: 'var(--dark-text, #f5f4f0)',
+                  letterSpacing: '-.01em',
+                }}
+              >
+                {card.name}
+              </div>
+              {card.tagline && (
+                <div
+                  style={{
+                    fontSize: '13px',
+                    color: 'var(--dark-muted, #7a7a76)',
+                    marginTop: '8px',
+                  }}
+                >
+                  {card.tagline}
+                </div>
+              )}
+            </a>
+          ))}
         </div>
+        )}
 
         {/* Call To Action Banner */}
         <div
@@ -184,11 +159,12 @@ export const NextSection: React.FC<NextSectionProps> = ({
             alignItems: 'center',
             gap: '28px',
             flexWrap: 'wrap',
-            borderTop: '1px solid var(--dark-line, #1f1f1f)',
-            marginTop: '72px',
-            paddingTop: '64px',
+            borderTop: seriesCards.length > 0 ? '1px solid var(--dark-line, #1f1f1f)' : 'none',
+            marginTop: seriesCards.length > 0 ? '72px' : 0,
+            paddingTop: seriesCards.length > 0 ? '64px' : 0,
           }}
         >
+          {(line1 || fallbackTitle) && (
           <h2
             style={{
               fontSize: 'clamp(34px, 3.6vw, 58px)',
@@ -198,7 +174,7 @@ export const NextSection: React.FC<NextSectionProps> = ({
               lineHeight: 1.06,
             }}
           >
-            {line1}
+            {line1 || fallbackTitle}
             {line2 && (
               <>
                 <br />
@@ -206,6 +182,7 @@ export const NextSection: React.FC<NextSectionProps> = ({
               </>
             )}
           </h2>
+          )}
 
           <button
             type="button"

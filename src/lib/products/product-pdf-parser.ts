@@ -1,991 +1,1455 @@
 /**
- * Deterministic parser for the PIXIATECH product sheet (site-web format).
+ * Parser déterministe de la fiche technique produit PIXIATECH (site web).
  *
- * Converts the model PDF (docs/product-system/fiche-technique-modele.pdf,
- * sections 1-17) into the Phase A `Product` model (src/lib/products/types.ts).
- * NO AI / LLM / API calls — pure regex and string parsing, like the boutique
- * parser (src/lib/product-pdf-parser.ts) that powers /admin/produits.
+ * SOURCE DE VÉRITÉ : docs/product-system/fiche-technique-modele.pdf
+ * Ce PDF est le gabarit officiel. Tous les PDFs produits sont générés depuis
+ * ce gabarit : le parser ne doit donc pas comprendre « n'importe quel PDF
+ * fabricant », seulement CE format — dont la géométrie a été mesurée et
+ * vérifiée item par item (voir `scratch/pdfaudit/reference-dump.txt`).
  *
- * The site-web sheet uses a strict layout: `KEY | VALUE` rows and
- * `MODULE | DESCRIPTION | RÉFÉRENCE` table columns, split by the text
- * extraction's X-gap detection (see extractProductPdfText). Free-text
- * paragraphs wrap onto standalone lines that are joined back.
+ * AUCUNE IA / AUCUN LLM / AUCUN appel réseau : extraction pdfjs-dist →
+ * regroupement des items en lignes par Y → analyse géométrique (X, taille).
  *
- * This parser is self-contained: it does NOT touch the boutique parser.
+ * ── Principes non négociables ────────────────────────────────────────────────
+ * 1. AUCUNE DONNÉE INVENTÉE. Un slot laissé vide par le gabarit (tiret `—`,
+ *    placeholder `[ … ]`) reste ABSENT. Jamais de valeur empruntée à un autre
+ *    produit, jamais de valeur par défaut, jamais de complétion.
+ * 2. `PENDING` est une VALEUR VALIDE du document source : conservée telle
+ *    quelle (l'admin peut la remplacer ; l'affichage peut la montrer en `—`).
+ * 3. Les UNITÉS font partie de la valeur (« 1.25 mm », « 800 nits ») : jamais
+ *    supprimées ni séparées du nombre.
+ * 4. ASSOCIATION VARIANTE → SPÉCIFICATION EXACTE. Le nombre de colonnes
+ *    correspond au nombre RÉEL de variantes du PDF ; chaque valeur est affectée
+ *    par proximité du CENTRE de colonne, donc une cellule vide ne décale jamais
+ *    les valeurs suivantes (voir `parseSpecMatrix`).
+ * 5. AUCUNE DONNÉE PERDUE EN SILENCE : un label ou un groupe inconnu du gabarit
+ *    est conservé via une clé dynamique + un avertissement.
+ * 6. Les MÉDIAS ne sont jamais extraits : le PDF ne porte que la description et
+ *    l'emplacement. Les fichiers restent gérés dans l'admin.
+ *
+ * ── Géométrie mesurée du gabarit (unités PDF, page A4 595 × 842) ────────────
+ * Rôles des tailles de police (relevées sur le PDF de référence) :
+ *   24.0 nom produit · 22.0 numéro de section · 14.0 accroche de section ·
+ *   13.0 accroche CTA · 11.5 valeur de badge · 10.0 sous-titre / groupe ·
+ *   9.0-9.5 titres de bloc, labels de boîte, médias, features, projets ·
+ *   8.5 série · 8.0 pays · 7.5 marchés · 6.8 matrice de specs · 6.6 label badge
+ *
+ * Colonnes de la matrice comparative : chaque cellule est CENTRÉE sur un centre
+ * de colonne fixe, et l'en-tête de variante partage exactement ce centre :
+ *   valeur `—`     x=137.2 w=6.8  → centre 140.60
+ *   en-tête `1 ]`   x=136.6 w=7.9  → centre 140.55
+ *   en-tête `[ Modele` x=126.8 w=27.6 → centre 140.60
+ * Le pas de colonne vaut 48.45 pt pour 10 colonnes.
+ *
+ * Pièges structurels du gabarit, traités explicitement :
+ *   - l'en-tête de variante est coupé sur deux lignes (`[ Modele` puis `1 ]`) ;
+ *   - les numéros de configuration sont coupés chiffre par chiffre (`0` puis
+ *     `1`, 13.5 pt d'écart) → reconstruits par proximité, jamais par index ;
+ *   - le libellé de tableau `SPEC` (x=70.3) est dans la zone des labels mais
+ *     n'appartient ni à l'en-tête ni aux lignes ;
+ *   - la page 4 (`STRUCTURE DE REFERENCE`) est de la DOCUMENTATION : la page
+ *     entière est ignorée ;
+ *   - le pied de page (`GABARIT VIERGE …` / `PAGE n`) est ignoré.
  */
 
-import { slugify, isValidSlug } from './types';
-import type { Product, ProductStat, SellingMode, ProductEnvironment } from './types';
+import type { Product } from './types';
 
-// ---------------------------------------------------------------------------
-// Globals
-// ---------------------------------------------------------------------------
+// ===========================================================================
+// 1. GÉOMÉTRIE PDF
+// ===========================================================================
 
-/** Keys accepted in the comparative matrix (section 15). Unknown keys are ignored. */
-export const PRODUCT_SPEC_KEYS = [
-  'env',
-  'arrangement',
-  'pitch',
-  'density',
-  'moduleRes',
-  'moduleDim',
-  'cabRes',
-  'cabDim',
-  'weight',
-  'brightness',
-  'refresh',
-  'scan',
-  'angle',
-  'maxPower',
-  'avgPower',
-  'powerSource',
-  'signal',
-  'ip',
-  'temp',
-  'certs',
-  'transparency',
-] as const;
-
-export type ProductSpecKey = (typeof PRODUCT_SPEC_KEYS)[number];
-
-const SPEC_KEY_TO_CANONICAL = new Map<string, ProductSpecKey>(
-  PRODUCT_SPEC_KEYS.map((k) => [k.toLowerCase(), k])
-);
-
-/** Standard matrix groups (same structure as the seed product). */
-export const PRODUCT_SPEC_GROUPS: NonNullable<Product['specs']>['groups'] = [
-  {
-    id: 'general',
-    label: 'GENERAL',
-    rows: [
-      { key: 'env', label: 'IN / OUT' },
-      { key: 'arrangement', label: 'LED ARRANGEMENT' },
-    ],
-  },
-  {
-    id: 'physical',
-    label: 'PHYSICAL',
-    rows: [
-      { key: 'pitch', label: 'PIXEL PITCH' },
-      { key: 'density', label: 'PHYSICAL DENSITY' },
-      { key: 'moduleRes', label: 'MODULE RESOLUTION (H/V)' },
-      { key: 'moduleDim', label: 'MODULE DIMENSIONS' },
-      { key: 'cabRes', label: 'CABINET RESOLUTION (H/V)' },
-      { key: 'cabDim', label: 'CABINET DIMENSIONS' },
-      { key: 'weight', label: 'CABINET WEIGHT' },
-    ],
-  },
-  {
-    id: 'optical',
-    label: 'OPTICAL',
-    rows: [
-      { key: 'brightness', label: 'BRIGHTNESS' },
-      { key: 'refresh', label: 'REFRESH RATE' },
-      { key: 'scan', label: 'SCAN RATE' },
-      { key: 'angle', label: 'VIEWING ANGLE (H/V)' },
-    ],
-  },
-  {
-    id: 'electrical',
-    label: 'ELECTRICAL',
-    rows: [
-      { key: 'maxPower', label: 'MAX POWER (W / PANEL)' },
-      { key: 'avgPower', label: 'AVG POWER (W / PANEL)' },
-      { key: 'powerSource', label: 'OPERATING POWER SOURCE' },
-      { key: 'signal', label: 'SIGNAL INPUT' },
-    ],
-  },
-  {
-    id: 'environmental',
-    label: 'ENVIRONMENTAL',
-    rows: [
-      { key: 'ip', label: 'IP RATING' },
-      { key: 'temp', label: 'OPERATING TEMPERATURE' },
-      { key: 'transparency', label: 'TRANSPARENCY' },
-      { key: 'certs', label: 'CERTIFICATIONS' },
-    ],
-  },
-];
-
-// ---------------------------------------------------------------------------
-// Result types
-// ---------------------------------------------------------------------------
-
-export interface ParsedProductText {
-  productName?: string;
-  sellingModes?: string[];
-  badge?: string;
-  environment?: string;
-  characteristics?: { key: string; value: string }[];
-  buttons?: { study?: string; datasheet?: string };
-  variants?: { name: string; value: string; reference?: string }[];
-  shortDescription?: string;
-  detailedDescription?: string;
-  keywords?: string[];
-  slug?: string;
-  menu?: { groupFr?: string; groupEn?: string; tag?: string };
-  hero?: { subtitle?: string; primaryCta?: string; bgColor?: string; tags?: string[] };
-  overview?: {
-    eyebrow?: string;
-    title?: string;
-    description?: string;
-    stats?: { value: string; label: string }[];
-  };
-  design?: { eyebrow?: string; title?: string; cabinetDim?: string; weight?: string; material?: string };
-  features?: { num?: string; title: string; description?: string }[];
-  specModels?: { name: string; specs: Record<string, string> }[];
-  fieldwork?: { title: string; location?: string; pitch?: string }[];
-  photoName?: string;
-  galleryNames?: string[];
-}
-
-// ---------------------------------------------------------------------------
-// Text helpers
-// ---------------------------------------------------------------------------
-
-const SPACED_BRAND = /^P\s*I\s*X\s*I\s*A\s*T\s*E\s*C\s*H/i;
-const SPACED_DOC = /^F\s*I\s*C\s*H\s*E\s*P\s*R\s*O\s*D\s*U\s*I\s*T/i;
-/** Standalone lines that never carry data. */
-const STOP_LINE = /^(P\s*I\s*X\s*I\s*A\s*T\s*E\s*C\s*H|F\s*I\s*C\s*H\s*E\s*P\s*R\s*O\s*D\s*U\s*I\s*T|Une\s+ligne|«|Pour\s+CHAQUE|Ajoutez\s+ou\s+supprimez|L'URL\s+publique\s+sera|\/web\/product|Fiche\s+Produit|Statistiques\s*:|Les\s+fichiers|Remplissez|Au\s+moment|Fichier)/i;
-const SECTION_HEADER = /^\s*\d+\.\s+[A-ZÀ-Ý]/;
-
-function cleanLine(line: string): string {
-  return line.replace(/\u00A0/g, ' ').replace(/\r/g, '').trim();
-}
-
-function splitCols(line: string): string[] {
-  return line
-    .split(/\s*\|\s*/)
-    .map(p => p.trim())
-    .filter(p => p.length > 0);
-}
-
-function isStopLine(line: string): boolean {
-  const c = cleanLine(line);
-  if (!c) return true;
-  if (SPACED_BRAND.test(c) || SPACED_DOC.test(c)) return true;
-  if (SECTION_HEADER.test(c)) return true;
-  if (STOP_LINE.test(c)) return true;
-  return false;
-}
-
-function keyOf(line: string): string {
-  const idx = line.indexOf('|');
-  return idx === -1 ? cleanLine(line) : line.slice(0, idx).trim();
-}
-
-function valueOf(line: string): string | undefined {
-  const idx = line.indexOf('|');
-  if (idx === -1) return undefined;
-  const v = line.slice(idx + 1).trim();
-  return v.length > 0 ? v : undefined;
-}
-
-// ---------------------------------------------------------------------------
-// PDF text extraction (client-side, same algorithm as the boutique parser)
-// ---------------------------------------------------------------------------
-
-interface PdfTextItem {
+export interface PdfTextItem {
   str: string;
+  /** abscisse du bord gauche (unités PDF) */
   x: number;
+  /** ordonnée de la ligne de base (unités PDF, Y vers le haut) */
   y: number;
+  /** largeur de l'item */
+  w: number;
+  /** hauteur d'origine = corps de police effectif */
+  size: number;
+  font: string;
+  /** abscisse du CENTRE de l'item : ancre de colonne du gabarit */
+  cx: number;
+}
+
+export interface PdfLine {
+  y: number;
+  items: PdfTextItem[];
+  text: string;
+}
+
+/** Marge gauche du gabarit : alignement des titres, corps de texte, labels. */
+const MARGIN_X = 48.5;
+/** Zone des libellés de la matrice (à gauche de la 1re colonne de valeurs). */
+const LABEL_ZONE_MAX_X = 112;
+/** Zone des en-têtes de groupe de specs (colonne « SPEC » incluse). */
+const GROUP_ZONE_MAX_X = 80;
+/** Les colonnes de variantes commencent ici (1re en-tête : x=126.8). */
+const SPEC_COL_MIN_X = 120;
+/** Zone de l'accroche de section (immédiatement après le numéro `NN`). */
+const HOOK_MIN_X = 70;
+const HOOK_MAX_X = 112;
+/** Écart de centre au-delà duquel deux items appartiennent à des colonnes. */
+const COLUMN_GAP = 20;
+/** Écart horizontal au-delà duquel deux items d'une ligne sont distincts. */
+const ITEM_GAP = 30;
+/** Un nombre « étroit » = chiffre isolé (le gabarit coupe `01` en `0`+`1`). */
+const NARROW_NUM_MAX_W = 14;
+/** Tolérance de regroupement des items sur une même ligne visuelle. */
+const Y_TOLERANCE = 3;
+
+/** Regroupe les items d'une page en lignes visuelles (tolérance sur Y). */
+export function groupItemsIntoLines(items: PdfTextItem[]): PdfLine[] {
+  const buckets: { y: number; items: PdfTextItem[] }[] = [];
+  for (const item of items) {
+    if (!item.str || !item.str.trim()) continue;
+    const y = Math.round(item.y);
+    const bucket = buckets.find((b) => Math.abs(b.y - y) <= Y_TOLERANCE);
+    if (bucket) bucket.items.push(item);
+    else buckets.push({ y, items: [item] });
+  }
+  buckets.sort((a, b) => b.y - a.y);
+  return buckets.map((bucket) => {
+    const sorted = [...bucket.items].sort((a, b) => a.x - b.x);
+    return { y: bucket.y, items: sorted, text: joinItems(sorted) };
+  });
 }
 
 /**
- * Groups a page's text items into display lines, inserting " | " between
- * columns separated by a large X-gap (same threshold as the boutique parser).
- * Exported as a pure function so tests can reuse the exact algorithm.
+ * Concatène les items d'une ligne. Deux items distants de moins de 2 pt sont
+ * recollés sans espace (`×` + `1080` → `×1080`) ; au-delà, un espace est ajouté
+ * (`800` + `nits` → `800 nits`).
  */
-export function itemsToLines(items: PdfTextItem[]): string[] {
-  // Group items by Y coordinate (same line)
-  const yTolerance = 3;
-  const rawYGroups: { y: number; items: PdfTextItem[] }[] = [];
-  for (const item of items) {
-    const y = Math.round(item.y);
-    const existing = rawYGroups.find(g => Math.abs(g.y - y) <= yTolerance);
-    if (existing) {
-      existing.items.push(item);
-    } else {
-      rawYGroups.push({ y, items: [item] });
+/**
+ * Concatène les items d'une même boîte en restituant les espaces.
+ *
+ * pdfjs coupe une boîte en items au niveau des runs de police : deux items qui
+ * se touchent (écart 0) sont la même suite de caractères (`px/m` + `2)`) et
+ * doivent être recollés SANS espace ; dès qu'un écart existe, un espace a été
+ * consommé dans le texte d'origine (`1.25` + `mm`) et doit être restitué.
+ */
+function joinItems(items: PdfTextItem[]): string {
+  let text = '';
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    if (i > 0) {
+      const prev = items[i - 1];
+      if (item.x - (prev.x + prev.w) > 0.5) text += ' ';
     }
+    text += item.str;
   }
-
-  rawYGroups.sort((a, b) => b.y - a.y);
-
-  const lines: string[] = [];
-  for (const group of rawYGroups) {
-    const contentItems = group.items
-      .filter(g => g.str.trim().length > 0)
-      .sort((a, b) => a.x - b.x);
-    if (contentItems.length === 0) continue;
-
-    let line = contentItems[0].str;
-    for (let j = 1; j < contentItems.length; j++) {
-      const gap = contentItems[j].x - contentItems[j - 1].x;
-      line += gap > 30 ? ' | ' : ' ';
-      line += contentItems[j].str;
-    }
-    lines.push(line.trim());
-  }
-  return lines;
+  return text;
 }
 
-/** Extracts plain text (with column pipes) from a product sheet PDF. */
-export async function extractProductPdfText(
-  data: File | ArrayBuffer | Uint8Array
-): Promise<string> {
-  // Lazy import keeps pdfjs out of the initial bundle.
-  const pdfjsLib = (await import('pdfjs-dist')) as typeof import('pdfjs-dist');
-  pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+/**
+ * Découpe une ligne en colonnes logiques. Le gabarit espace les boîtes d'une
+ * ligne de plus de 30 pt ; en deçà, les items appartiennent au même flux.
+ */
+function lineColumns(items: PdfTextItem[]): PdfTextItem[] {
+  const cols: PdfTextItem[] = [];
+  let current: PdfTextItem[] = [];
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    if (i > 0) {
+      const prev = items[i - 1];
+      if (item.x - (prev.x + prev.w) > ITEM_GAP) {
+        cols.push(mergeColumn(current));
+        current = [];
+      }
+    }
+    current.push(item);
+  }
+  if (current.length) cols.push(mergeColumn(current));
+  return cols;
+}
 
-  const buffer = data instanceof File ? (await data.arrayBuffer()) : data;
+/** Fusionne les items d'une colonne en un item synthétique (centre = moyenne). */
+function mergeColumn(items: PdfTextItem[]): PdfTextItem {
+  if (items.length === 1) return items[0];
+  const first = items[0];
+  const last = items[items.length - 1];
+  return {
+    ...first,
+    str: joinItems(items),
+    x: first.x,
+    w: last.x + last.w - first.x,
+    cx: (first.cx + last.cx) / 2,
+    size: Math.max(...items.map((i) => i.size)),
+  };
+}
+
+// ===========================================================================
+// 2. NORMALISATION
+// ===========================================================================
+
+/** Minuscules, sans accents, sans ponctuation, espaces compactés. */
+export function normLabel(raw: string): string {
+  return raw
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, ' ')
+    .trim()
+    .replace(/\s+/g, ' ');
+}
+
+const DASH_ONLY = /^[\u2010-\u2015\u2212]+$/;
+
+/**
+ * Un slot du gabarit est-il REMPLI ?
+ * `false` pour : vide, tiret seul (`—`), placeholder `[ … ]` (y compris
+ * `[ Modele` tronqué), `…`, et tout texte contenant un chevron de gabarit.
+ */
+export function isFilledSlot(raw: string | undefined | null): boolean {
+  if (raw === undefined || raw === null) return false;
+  const t = cleanValue(raw);
+  if (!t) return false;
+  if (DASH_ONLY.test(t)) return false;
+  if (t.includes('[') || t.includes(']')) return false;
+  return true;
+}
+
+/** Valeur textuelle nettoyée, unités conservées. */
+function cleanValue(raw: string): string {
+  return raw.replace(/\u00A0/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+/** Majuscules, sans accents. */
+function isUpperLabel(raw: string): boolean {
+  const t = normLabel(raw);
+  if (!t) return false;
+  return raw === raw.toUpperCase() && raw !== raw.toLowerCase();
+}
+
+// ===========================================================================
+// 3. ANCRES STRUCTURELLES DU GABARIT
+// ===========================================================================
+
+/** Titres de section, dans l'ordre imposé par le gabarit. */
+const SECTION_TITLES: { key: SectionKey; match: string }[] = [
+  { key: 'overview', match: 'APERCU PRODUIT' },
+  { key: 'design', match: 'CONCEPTION FORMAT' },
+  { key: 'features', match: 'POINTS FORTS TECHNIQUES' },
+  { key: 'specs', match: 'CARACTERISTIQUES TECHNIQUES' },
+  { key: 'fieldwork', match: 'REFERENCES TERRAIN' },
+];
+
+type SectionKey = 'masthead' | 'overview' | 'design' | 'features' | 'specs' | 'fieldwork';
+
+/**
+ * Textes STATIQUES du gabarit : présents à l'identique dans tout PDF produit,
+ * donc jamais des données. Couvrir les hints, les consignes et les libellés de
+ * bloc évite qu'un libellé de gabarit ne soit stocké comme donnée produit.
+ */
+const STATIC_TEXTS = new Set(
+  [
+    // hints de section
+    'Positionnement, technologie phare, usage cible',
+    'Dimensions, encombrement, configurations',
+    'Exactement 7 caracteristiques cles',
+    'Renseigner 1 colonne par modele/variante (3 a 10 recommande)',
+    '2 a 3 realisations (optionnel), 1 photo par projet',
+    // consignes
+    "Ecrire PENDING dans une cellule si la valeur n'est pas encore confirmee par le fabricant.",
+    'Navigation serie : Precedent = [ nom | url ] | Suivant = [ nom | url ]',
+    // libellés de bloc
+    'MEDIAS DE PRESENTATION (1 video + 1 photo)',
+    'TECHNOLOGIES EMBARQUEES (2)',
+    'VISUELS TECHNIQUES (cote + face)',
+    "CONFIGURATIONS D'INSTALLATION (1 a 3)",
+    'VISUEL PRODUIT',
+    // matrice
+    'SPEC',
+    'EMPLACEMENT MEDIA',
+  ].map(normLabel)
+);
+
+/** Le gabarit marque-t-il cette page comme documentation (et non produit) ? */
+function isDocumentationPage(lines: PdfLine[]): boolean {
+  return lines.some((l) => normLabel(l.text).startsWith('STRUCTURE DE REFERENCE'));
+}
+
+/** Pied de page récurrent. */
+function isFooterLine(line: PdfLine): boolean {
+  if (line.y < 40) return true;
+  const n = normLabel(line.text);
+  return n.startsWith('GABARIT VIERGE') || /^PAGE \d+$/.test(n);
+}
+
+/** Texte statique du gabarit (hint, consigne, libellé de bloc) ? */
+function isStaticText(raw: string): boolean {
+  return STATIC_TEXTS.has(normLabel(raw));
+}
+
+interface ParsedPage {
+  lines: PdfLine[];
+}
+
+/** Retire les pieds de page et la page de documentation. */
+function cleanPages(pages: ParsedPage[]): ParsedPage[] {
+  const out: ParsedPage[] = [];
+  for (const page of pages) {
+    if (isDocumentationPage(page.lines)) continue;
+    const lines = page.lines.filter((l) => !isFooterLine(l));
+    if (lines.length > 0) out.push({ lines });
+  }
+  return out;
+}
+
+/**
+ * Découpe le document en segments ordonnés délimités par les titres de section.
+ * Le segment d'index 0 est le MASTHEAD. La lecture est linéaire : un segment
+ * peut traverser deux pages (le bloc « visuels techniques » du §02 commence
+ * page 1 et se poursuit page 2).
+ */
+function segmentBySections(pages: ParsedPage[]): Map<SectionKey, PdfLine[]> {
+  const segments = new Map<SectionKey, PdfLine[]>();
+  segments.set('masthead', []);
+  let current: SectionKey = 'masthead';
+  for (const page of pages) {
+    for (const line of page.lines) {
+      const titleMatch = matchSectionTitle(line);
+      if (titleMatch) {
+        current = titleMatch;
+        if (!segments.has(current)) segments.set(current, []);
+        continue;
+      }
+      segments.get(current)!.push(line);
+    }
+  }
+  return segments;
+}
+
+/**
+ * Un titre de section = item unique, dans la zone de titre, correspondant
+ * exactement à un titre connu du gabarit.
+ */
+function matchSectionTitle(line: PdfLine): SectionKey | null {
+  if (line.items.length !== 1) return null;
+  const item = line.items[0];
+  if (item.x < HOOK_MIN_X || item.x > HOOK_MAX_X) return null;
+  const n = normLabel(line.text);
+  return SECTION_TITLES.find((s) => s.match === n)?.key ?? null;
+}
+
+// ===========================================================================
+// 4. RÉSULTAT PARSÉ
+// ===========================================================================
+
+/** Emplacement média décrit par le PDF (titre + description). Jamais un fichier. */
+export interface ParsedMediaSlot {
+  title?: string;
+  description?: string;
+}
+
+export interface ParsedFiche {
+  company?: string;
+  series?: string;
+  productName?: string;
+  subtitle?: string;
+  markets?: string[];
+  badges?: { label: string; value: string }[];
+
+  overview?: {
+    hook?: string;
+    description?: string;
+    video?: ParsedMediaSlot;
+    photo?: ParsedMediaSlot;
+    stats?: { value: string; label: string }[];
+    technologies?: ProductSubItemDraft[];
+  };
+
+  design?: {
+    hook?: string;
+    dimensions?: { label: string; value: string }[];
+    visuals?: ParsedMediaSlot[];
+    configs?: ProductSubItemDraft[];
+  };
+
+  features?: {
+    hook?: string;
+    visual?: ParsedMediaSlot;
+    items?: ProductSubItemDraft[];
+  };
+
+  specs?: {
+    groups: { id: string; label: string; rows: { key: string; label: string }[] }[];
+    models: { name: string; specs: Record<string, string> }[];
+  };
+
+  fieldwork?: {
+    hook?: string;
+    projects?: { name: string; country?: string; year?: string }[];
+  };
+
+  cta?: { title?: string; buttonLabel?: string };
+  seriesNavigation?: {
+    previous?: { name?: string; url?: string };
+    next?: { name?: string; url?: string };
+  };
+
+  /** Avertissements : rien n'est jamais perdu en silence. */
+  warnings: string[];
+}
+
+interface ProductSubItemDraft {
+  num?: string;
+  title: string;
+  description?: string;
+}
+
+// ===========================================================================
+// 5. OUTILS D'ASSOCIATION PAR COLONNE
+// ===========================================================================
+
+/**
+ * Regroupe des items en « cellules » par proximité de CENTRE.
+ * Deux items d'une même cellule (valeur + unité) partagent le centre de
+ * colonne ; deux cellules distinctes sont séparées d'un pas complet.
+ */
+function clusterByCenter(items: PdfTextItem[]): { cx: number; text: string }[] {
+  const sorted = [...items].sort((a, b) => a.cx - b.cx);
+  const cells: { cx: number; text: string; items: PdfTextItem[] }[] = [];
+  for (const item of sorted) {
+    const last = cells[cells.length - 1];
+    if (last && item.cx - last.items[last.items.length - 1].cx <= COLUMN_GAP) {
+      last.items.push(item);
+      last.cx = last.items.reduce((acc, i) => acc + i.cx, 0) / last.items.length;
+    } else {
+      cells.push({ cx: item.cx, text: item.str, items: [item] });
+    }
+  }
+  return cells.map((c) => ({ cx: c.cx, text: joinItems(c.items) }));
+}
+
+/**
+ * Colonne de gauche la plus proche d'une cellule, sous la forme d'un index.
+ * `-1` si aucune colonne n'est dans la limite d'un demi-pas : c'est la garantie
+ * qu'aucune valeur n'est stockée sous la mauvaise variante.
+ */
+function nearestColumn(centers: number[], cellCx: number, halfPitch: number): number {
+  let best = -1;
+  let bestDist = Infinity;
+  centers.forEach((cx, idx) => {
+    const d = Math.abs(cellCx - cx);
+    if (d < bestDist) {
+      bestDist = d;
+      best = idx;
+    }
+  });
+  return bestDist <= halfPitch ? best : -1;
+}
+
+/** Demi-pas de colonne : garde-fou d'affectation. */
+function halfPitchOf(centers: number[]): number {
+  if (centers.length < 2) return Infinity;
+  let minGap = Infinity;
+  for (let i = 1; i < centers.length; i++) {
+    const gap = centers[i] - centers[i - 1];
+    if (gap > 0 && gap < minGap) minGap = gap;
+  }
+  return Number.isFinite(minGap) ? minGap / 2 : Infinity;
+}
+
+// ===========================================================================
+// 6. PRIMITIVES DE SECTION
+// ===========================================================================
+
+/** Nombre étroit et isolé : chiffre du numéro de liste du gabarit. */
+function isNarrowNumber(item: PdfTextItem): boolean {
+  return item.w <= NARROW_NUM_MAX_W && /^\d{1,2}$/.test(item.str.trim());
+}
+
+/** Retire les chiffres de numéro d'une ligne et renvoie le reste. */
+function stripNumbers(items: PdfTextItem[]): PdfTextItem[] {
+  return items.filter((i) => !isNarrowNumber(i));
+}
+
+/**
+ * Numéro de liste dont le gabarit a coupé les chiffres sur plusieurs lignes
+ * (`0` puis `1`, 13.5 pt d'écart) : on recolle les chiffres proches par Y, du
+ * plus haut au plus bas. Aucun index n'est supposé. La fenêtre est asymétrique
+ * car les chiffres sont TOUJOURS dessinés sous la ligne de contenu
+ * (y = baseY − 1.5 puis baseY − 14.5 sur le gabarit) : sans cela, le dernier
+ * chiffre d'une configuration viendrait s'agréger à la configuration suivante.
+ */
+function joinSplitNumber(lines: PdfLine[], baseY: number, minX: number, maxX: number): string | undefined {
+  const digits = lines
+    .filter((l) => l.y <= baseY + 6 && l.y >= baseY - 22)
+    .flatMap((l) => l.items)
+    .filter((i) => isNarrowNumber(i) && i.x >= minX && i.x <= maxX)
+    .sort((a, b) => b.y - a.y);
+  if (digits.length === 0) return undefined;
+  return digits.map((d) => d.str.trim()).join('');
+}
+
+/**
+ * Accroche de section : ligne `NN` (chiffre large, x≈48.5) suivie du texte de
+ * l'accroche (x∈[70,112), corps 14). La ligne d'aide qui suit est un texte
+ * statique du gabarit et n'est donc jamais retenue.
+ */
+function parseHook(lines: PdfLine[]): string | undefined {
+  for (const line of lines) {
+    const number = line.items.find((i) => i.x < HOOK_MIN_X && i.size >= 20);
+    if (!number) continue;
+    const text = line.items
+      .filter((i) => i.x >= HOOK_MIN_X && i.x <= HOOK_MAX_X)
+      .map((i) => i.str)
+      .join(' ')
+      .trim();
+    if (isFilledSlot(text) && !isStaticText(text)) return cleanValue(text);
+  }
+  return undefined;
+}
+
+/**
+ * Paragraphe de description : suite de lignes consécutives ancrées à la marge
+ * gauche, jusqu'au premier titre de bloc statique. Gère le gabarit « 3 à 4
+ * lignes » : toutes les lignes sont conservées, dans l'ordre.
+ */
+function parseBodyParagraph(lines: PdfLine[], startIndex: number): string | undefined {
+  const parts: string[] = [];
+  for (const line of lines.slice(startIndex)) {
+    const item = line.items[0];
+    // Un texte statique du gabarit (ligne d'aide) ne clôt pas le paragraphe
+    // tant qu'aucune ligne de corps n'a été lue.
+    if (!isStaticText(line.text)) {
+      if (!item || line.items.length > 1 || Math.abs(item.x - MARGIN_X) > 3) break;
+      if (!isFilledSlot(line.text)) break;
+    } else if (parts.length > 0) {
+      break;
+    }
+    if (isFilledSlot(line.text) && !isStaticText(line.text)) parts.push(cleanValue(line.text));
+  }
+  return parts.length ? parts.join(' ') : undefined;
+}
+
+/**
+ * Bloc « valeur au-dessus / libellé en dessous » (badges du masthead, stats).
+ * L'appariement se fait par proximité de centre de colonne.
+ */
+function pairValueOverLabel(
+  lines: PdfLine[],
+  startIndex: number,
+  minColumns: number
+): { pairs: { value: string; label: string }[]; endIndex: number } {
+  const valueLine = lines[startIndex];
+  const labelLine = lines[startIndex + 1];
+  if (!valueLine || !labelLine) return { pairs: [], endIndex: startIndex };
+  const values = lineColumns(valueLine.items);
+  const labels = lineColumns(labelLine.items);
+  if (values.length < minColumns || labels.length !== values.length) {
+    return { pairs: [], endIndex: startIndex };
+  }
+  const pairs: { value: string; label: string }[] = [];
+  for (const value of values) {
+    let bestLabel: PdfTextItem | null = null;
+    let bestDist = Infinity;
+    for (const label of labels) {
+      const d = Math.abs(label.cx - value.cx);
+      if (d < bestDist) {
+        bestDist = d;
+        bestLabel = label;
+      }
+    }
+    const v = cleanValue(value.str);
+    const l = bestLabel ? cleanValue(bestLabel.str) : '';
+    if (isFilledSlot(v) && isFilledSlot(l)) pairs.push({ label: l.toUpperCase(), value: v });
+  }
+  return { pairs, endIndex: startIndex + 1 };
+}
+
+// ===========================================================================
+// 7. PARSERS DE SECTION
+// ===========================================================================
+
+/**
+ * MASTHEAD — structure fixe du gabarit, lue dans l'ordre :
+ *   logo/entreprise · série · nom · sous-titre · 4 marchés · 4 badges
+ *   (valeur au-dessus, libellé en dessous).
+ */
+function parseMasthead(lines: PdfLine[]): Partial<ParsedFiche> {
+  const out: Partial<ParsedFiche> = {};
+  const slots: { key: 'series' | 'productName' | 'subtitle'; x: number; size: number }[] = [
+    { key: 'series', x: 60.5, size: 8.5 },
+    { key: 'productName', x: 60.5, size: 24 },
+    { key: 'subtitle', x: 60.5, size: 10 },
+  ];
+
+  for (const line of lines) {
+    // Ligne entreprise : 2 items, le premier est le logo (x≈46.5).
+    if (line.items.length >= 2 && line.items[0].x < MARGIN_X) {
+      const company = cleanValue(line.items[0].str);
+      if (isFilledSlot(company) && out.company === undefined) out.company = company;
+      continue;
+    }
+    // Lignes à un seul emplacement (série / nom / sous-titre) : le gabarit les
+    // distingue par leur abscisse ET leur corps de police.
+    if (line.items.length === 1) {      const item = line.items[0];
+      const text = cleanValue(item.str);
+      if (!isFilledSlot(text)) continue;
+      const match = slots.find((s) => {
+        if (out[s.key] !== undefined) return false;
+        return Math.abs(item.x - s.x) <= 3 && Math.abs(item.size - s.size) <= 1.5;
+      });
+      if (match) out[match.key] = text;
+      continue;
+    }
+  }
+
+  // Grille de badges : 4 VALEURS en corps 11.5, puis 4 libellés en corps 6.6
+  // partageant exactement les mêmes centres. On ancre sur les valeurs, sinon
+  // les libellés (corps 6.6) passent pour une grille de marchés (corps 7.5).
+  const badgeIndex = lines.findIndex((line) => {
+    const cols = lineColumns(line.items);
+    return cols.length === 4 && cols.every((i) => i.size >= 10.5);
+  });
+  if (badgeIndex !== -1) {
+    const labels = lines[badgeIndex + 1] ? lineColumns(lines[badgeIndex + 1].items) : [];
+    if (labels.length === 4) {
+      const { pairs } = pairValueOverLabel(lines, badgeIndex, 4);
+      if (pairs.length) out.badges = pairs;
+    }
+  }
+
+  // Marchés : grille de 4 items en corps 7.5, située AU-DESSUS des badges
+  // (en coordonnées PDF, « au-dessus » = Y plus grand).
+  const badgeY = badgeIndex !== -1 ? lines[badgeIndex].y : -Infinity;
+  for (const line of lines) {
+    if (line.y <= badgeY) continue;
+    const cols = lineColumns(line.items);
+    if (cols.length !== 4) continue;
+    if (!cols.every((i) => i.size >= 6.9 && i.size <= 8.1)) continue;
+    const markets = cols.map((i) => cleanValue(i.str)).filter(isFilledSlot);
+    if (markets.length && out.markets === undefined) out.markets = markets;
+  }
+  return out;
+}
+
+/** Numéro de liste « étroit » du gabarit, dans la gouttière des Puces. */
+function listNumber(line: PdfLine): string | undefined {
+  const item = line.items.find((i) => isNarrowNumber(i) && i.x >= 55 && i.x <= 80);
+  return item ? cleanValue(item.str) : undefined;
+}
+
+/** Items de contenu d'une ligne de liste, une fois le numéro retiré. */
+function listContent(line: PdfLine, minX: number): PdfTextItem[] {
+  return line.items.filter((i) => i.x >= minX && !isNarrowNumber(i));
+}
+
+/** 01 · APERÇU PRODUIT */
+function parseOverview(lines: PdfLine[]): ParsedFiche['overview'] {
+  const out: NonNullable<ParsedFiche['overview']> = {};
+  let hookIndex = -1;
+  for (let i = 0; i < lines.length; i++) {
+    if (!lines[i].items.find((it) => it.x < HOOK_MIN_X && it.size >= 20)) continue;
+    hookIndex = i;
+    const text = lines[i].items
+      .filter((it) => it.x >= HOOK_MIN_X && it.x <= HOOK_MAX_X)
+      .map((it) => it.str)
+      .join(' ')
+      .trim();
+    if (isFilledSlot(text) && !isStaticText(text)) out.hook = cleanValue(text);
+    break;
+  }
+
+  // Description : après l'accroche, jusqu'au libellé « MEDIAS DE PRESENTATION ».
+  const description = parseBodyParagraph(lines, hookIndex + 1);
+  if (description) out.description = description;
+
+  // Médias : 2 titres (video / photo) puis 2 descriptions.
+  // On exige EXACTEMENT 2 colonnes : le libellé statique « MEDIAS DE
+  // PRESENTATION (1 video + 1 photo) » contient aussi les deux mots, mais tient
+  // sur une seule colonne — sans ce filtre il deviendrait le titre du média.
+  const titleIndex = lines.findIndex((l) => {
+    if (!/video/i.test(l.text) || !/photo/i.test(l.text)) return false;
+    return lineColumns(l.items).length === 2;
+  });
+  if (titleIndex !== -1) {
+    const titles = lineColumns(lines[titleIndex].items);
+    const descs = lines[titleIndex + 1] ? lineColumns(lines[titleIndex + 1].items) : [];
+    if (descs.length === 2) {
+      const video = mediaSlot(titles[0], descs[0]);
+      const photo = mediaSlot(titles[1], descs[1]);
+      if (video) out.video = video;
+      if (photo) out.photo = photo;
+    }
+  }
+
+  // 3 statistiques : valeur (corps 15) au-dessus, label (corps 7.5) en dessous.
+  for (let i = 0; i < lines.length; i++) {
+    const cols = lineColumns(lines[i].items);
+    if (cols.length < 2) continue;
+    if (!cols.every((c) => c.size >= 12)) continue;
+    const { pairs, endIndex } = pairValueOverLabel(lines, i, 2);
+    if (pairs.length) {
+      out.stats = pairs;
+      i = endIndex;
+      break;
+    }
+  }
+
+  // Technologies : une ligne de liste par technologie (« Nom — description »).
+  const technologies: ProductSubItemDraft[] = [];
+  for (const line of lines) {
+    const num = listNumber(line);
+    if (!num) continue;
+    const rest = listContent(line, HOOK_MIN_X);
+    if (rest.length === 0) continue;
+    const joined = cleanValue(joinItems(rest));
+    if (!isFilledSlot(joined) || isStaticText(joined)) continue;
+    const [title, ...tail] = joined.split(/\s+[\u2013\u2014\u2212-]\s+/);
+    technologies.push({
+      num,
+      title: cleanValue(title),
+      ...(tail.length ? { description: cleanValue(tail.join(' - ')) } : {}),
+    });
+  }
+  if (technologies.length) out.technologies = technologies;
+
+  return Object.keys(out).length ? out : undefined;
+}
+
+function mediaSlot(title?: PdfTextItem, description?: PdfTextItem): ParsedMediaSlot | undefined {
+  const t = title ? cleanValue(title.str) : '';
+  // Un média est identifié par son TITRE : une description orpheline (sans
+  // titre) n'est pas un visuel, c'est du texte qui déborde d'un autre bloc.
+  if (!isFilledSlot(t)) return undefined;
+  const d = description ? cleanValue(description.str) : '';
+  return { title: t, ...(isFilledSlot(d) ? { description: d } : {}) };
+}
+
+/** 02 · CONCEPTION & FORMAT */
+function parseDesign(lines: PdfLine[]): ParsedFiche['design'] {
+  const out: NonNullable<ParsedFiche['design']> = {};
+  const hook = parseHook(lines);
+  if (hook) out.hook = hook;
+
+  // Dimensions : 3 labels de boîte (corps 9, 1er à la marge) puis les valeurs.
+  for (let i = 0; i < lines.length; i++) {
+    const labels = lineColumns(lines[i].items);
+    if (labels.length < 2) continue;
+    if (Math.abs(labels[0].x - MARGIN_X) > 3) continue;
+    if (!labels.every((l) => l.size >= 8.8 && l.size < 11)) continue;
+    const values = lines[i + 1] ? lineColumns(lines[i + 1].items) : [];
+    if (values.length !== labels.length) continue;
+    const dimensions: { label: string; value: string }[] = [];
+    const taken = new Set<number>();
+    for (const label of labels) {
+      let best = -1;
+      let bestDist = Infinity;
+      values.forEach((value, idx) => {
+        if (taken.has(idx)) return;
+        const d = Math.abs(value.x - label.x);
+        if (d < bestDist) {
+          bestDist = d;
+          best = idx;
+        }
+      });
+      if (best === -1) continue;
+      taken.add(best);
+      const value = cleanValue(values[best].str);
+      if (isFilledSlot(value)) dimensions.push({ label: cleanValue(label.str), value });
+    }
+    if (dimensions.length) {
+      out.dimensions = dimensions;
+      i++;
+    }
+    break;
+  }
+
+  // Visuels techniques : 2 blocs côte/face (colonnes opposées, titre + desc.).
+  const visuals: ParsedMediaSlot[] = [];
+  for (let i = 0; i < lines.length; i++) {
+    if (isStaticText(lines[i].text)) continue;
+    const cols = lineColumns(lines[i].items);
+    if (cols.length !== 2) continue;
+    if (cols[1].x - cols[0].x < 200) continue;
+    if (!cols.every((c) => c.size < 11 && c.x > MARGIN_X + 10)) continue;
+    const descs = lines[i + 1] ? lineColumns(lines[i + 1].items) : [];
+    if (descs.length !== cols.length) continue;
+    for (let k = 0; k < cols.length; k++) {
+      const slot = mediaSlot(cols[k], descs[k]);
+      if (slot) visuals.push(slot);
+    }
+  }
+  if (visuals.length) out.visuals = visuals;
+
+  // Configurations : numéro (chiffres coupés) + nom + description.
+  const configs: ProductSubItemDraft[] = [];
+  for (const line of lines) {
+    const num = joinSplitNumber(lines, line.y, 58, 80);
+    if (!num) continue;
+    const cols = lineColumns(listContent(line, 80));
+    if (cols.length < 2) continue;
+    const name = cleanValue(cols[0].str);
+    if (!isFilledSlot(name)) continue;
+    const description = cleanValue(cols.slice(1).map((c) => c.str).join(' '));
+    configs.push({
+      num,
+      title: name,
+      ...(isFilledSlot(description) ? { description } : {}),
+    });
+  }
+  if (configs.length) out.configs = configs;
+
+  return Object.keys(out).length ? out : undefined;
+}
+
+/** 03 · POINTS FORTS TECHNIQUES */
+function parseFeatures(lines: PdfLine[]): ParsedFiche['features'] {
+  const out: NonNullable<ParsedFiche['features']> = {};
+  const hook = parseHook(lines);
+  if (hook) out.hook = hook;
+
+  // Visuel produit : titre + description sous le libellé « VISUEL PRODUIT ».
+  const visualIndex = lines.findIndex((l) => normLabel(l.text).startsWith('VISUEL PRODUIT'));
+  if (visualIndex !== -1) {
+    for (let i = visualIndex + 1; i < lines.length; i++) {
+      const cols = lineColumns(lines[i].items);
+      if (cols.length !== 1) continue;
+      const descs = lines[i + 1] ? lineColumns(lines[i + 1].items) : [];
+      const slot = mediaSlot(cols[0], descs[0]);
+      if (slot) out.visual = slot;
+      break;
+    }
+  }
+
+  // Features : numéro + titre + description.
+  const items: ProductSubItemDraft[] = [];
+  for (const line of lines) {
+    const numItem = line.items.find((i) => isNarrowNumber(i) && i.x < HOOK_MIN_X);
+    if (!numItem) continue;
+    const rest = stripNumbers(line.items);
+    if (rest.length === 0) continue;
+    const cols = lineColumns(rest);
+    const title = cleanValue(cols[0].str);
+    if (!isFilledSlot(title)) continue;
+    const description = cleanValue(cols.slice(1).map((c) => c.str).join(' '));
+    items.push({
+      num: cleanValue(numItem.str),
+      title,
+      ...(isFilledSlot(description) ? { description } : {}),
+    });
+  }
+  if (items.length) out.items = items;
+
+  return Object.keys(out).length ? out : undefined;
+}
+
+// ---------------------------------------------------------------------------
+// 04 · MATRICE COMPARATIVE
+// ---------------------------------------------------------------------------
+
+/** Groupes du gabarit → clé canonique. */
+const SPEC_GROUP_IDS: { match: string; id: string }[] = [
+  { match: 'GENERAL', id: 'general' },
+  { match: 'PHYSIQUE', id: 'physical' },
+  { match: 'OPTIQUE', id: 'optical' },
+  { match: 'ELECTRIQUE', id: 'electrical' },
+  { match: 'ENVIRONNEMENT', id: 'environmental' },
+];
+
+/**
+ * Libellés de lignes du gabarit → clés canoniques.
+ *
+ * Correspondance EXACTE du libellé normalisé, jamais par préfixe : une
+ * correspondance partielle mapperait silencieusement un label métier inconnu
+ * sur une spec existante. Les libellés du gabarit officiel (`Density (px/m²)`)
+ * et leurs équivalents français exacts sont listés côte à côte ; tout autre
+ * libellé est conservé tel quel via une clé dynamique + avertissement (§5).
+ */
+const SPEC_LABEL_KEYS: Record<string, string> = {
+  // Gabarit officiel
+  'USAGE IN OUT': 'env',
+  'LED ARRANGEMENT': 'arrangement',
+  'PIXEL PITCH': 'pitch',
+  'DENSITY PX M': 'density',
+  'DENSITY PX M 2': 'density', // Density (px/m²) : le ² superscript survit à la normalisation
+  'MODULE RES': 'moduleRes',
+  'CABINET RES': 'cabRes',
+  'MODULE DIM': 'moduleDim',
+  'CABINET DIM': 'cabDim',
+  'POIDS CABINET': 'weight',
+  BRIGHTNESS: 'brightness',
+  'REFRESH RATE': 'refresh',
+  'SCAN RATE': 'scan',
+  'VIEWING ANGLE': 'angle',
+  'MAX POWER': 'maxPower',
+  'AVG POWER': 'avgPower',
+  'POWER SOURCE': 'powerSource',
+  'SIGNAL INPUT': 'signal',
+  'IP RATING': 'ip',
+  TEMPERATURE: 'temp',
+  TRANSPARENCY: 'transparency',
+  CERTIFICATIONS: 'certs',
+  // Équivalents français exacts (accents et casse insensibles)
+  DENSITE: 'density',
+  'RESOLUTION MODULE': 'moduleRes',
+  'RESOLUTION CABINET': 'cabRes',
+  'TAILLE MODULE': 'moduleDim',
+  'TAILLE CABINET': 'cabDim',
+  'ANGLE DE VISION': 'angle',
+  'CONSOMMATION MAX': 'maxPower',
+  'CONSOMMATION MOY': 'avgPower',
+  'CONSOMMATION MOYENNE': 'avgPower',
+  ALIMENTATION: 'powerSource',
+  'ENTREE SIGNAL': 'signal',
+  'INDICE IP': 'ip',
+  TRANSPARENCE: 'transparency',
+  LUMINOSITE: 'brightness',
+  'FREQUENCE DE RAFRAICHISSEMENT': 'refresh',
+  'FREQUENCE DE BALAYAGE': 'scan',
+};
+
+/**
+ * Les en-têtes de groupe sont parfois préfixés par le module dans les
+ * saisies dérivées (`LED / PHYSIQUE`), et le gabarit officiel les écrit
+ * `PHYSIQUE`. On compare donc sur le dernier segment du texte BRUT, mais on
+ * conserve le libellé original pour l'affichage.
+ */
+function groupTail(label: string): string {
+  const parts = label.split('/');
+  return normLabel(parts[parts.length - 1]);
+}
+
+function isGroupHeaderLine(line: PdfLine): boolean {
+  if (line.items.length !== 1) return false;
+  const item = line.items[0];
+  if (item.x < MARGIN_X - 2 || item.x > GROUP_ZONE_MAX_X) return false;
+  if (item.size < 8.8) return false; // les libellés de lignes sont en corps 6.8
+  return isUpperLabel(line.text);
+}
+
+/**
+ * Matrice comparative — la partie critique du parser.
+ *
+ * Colonnes = en-têtes de variante réellement présents. Nombre STRICT : une
+ * colonne sans nom n'est pas une variante, aucune variante n'est complétée.
+ * Chaque valeur est affectée à la variante dont le CENTRE de colonne est le
+ * plus proche, dans la limite d'un demi-pas : une cellule vide ne peut donc
+ * pas décaler les valeurs suivantes, et une valeur ne peut pas atterrir sous
+ * la mauvaise variante.
+ */
+/** Une ligne dont tous les items sont dans la zone des colonnes de la matrice. */
+function isHeaderZoneLine(line: PdfLine): boolean {
+  return line.items.length > 0 && line.items.every((i) => i.x >= SPEC_COL_MIN_X);
+}
+
+/** Libellé statique « SPEC » posé à gauche de la zone colonnes. */
+function isSpecLabelLine(line: PdfLine): boolean {
+  return line.items.length === 1 && normLabel(line.text) === 'SPEC';
+}
+
+function parseSpecMatrix(lines: PdfLine[]): {
+  groups: NonNullable<ParsedFiche['specs']>['groups'];
+  models: { name: string; specs: Record<string, string> }[];
+  warnings: string[];
+} {
+  const warnings: string[] = [];
+  const groups: NonNullable<ParsedFiche['specs']>['groups'] = [];
+  const models: { name: string; specs: Record<string, string> }[] = [];
+
+  // 1. Région d'en-tête : le préambule du gabarit (numéro de section `04 |` à
+  //    x=48.5 + ligne d'aide) précède toujours la zone de tête : on l'atteint
+  //    avant de chercher les colonnes, sinon le premier `x < 120` ferait
+  //    conclure à tort à une matrice sans en-tête.
+  //    On collecte ensuite les lignes consécutives dont TOUS les items sont
+  //    dans la zone colonnes. Le libellé statique `SPEC` (x=70.3) est ignoré,
+  //    mais le décrochement d'en-tête (`[ Modele` puis `1 ]`) est conservé.
+  let start = 0;
+  while (start < lines.length && !isHeaderZoneLine(lines[start]) && !isSpecLabelLine(lines[start])) {
+    start++;
+  }
+  const headerLines: PdfLine[] = [];
+  let cursor = start;
+  for (; cursor < lines.length; cursor++) {
+    const line = lines[cursor];
+    if (isHeaderZoneLine(line)) {
+      headerLines.push(line);
+      continue;
+    }
+    if (isSpecLabelLine(line)) continue;
+    break;
+  }
+  if (headerLines.length === 0) {
+    warnings.push('Aucun en-tête de colonne détecté dans la matrice des caractéristiques.');
+    return { groups, models, warnings };
+  }
+
+  // 2. Colonnes : regroupement des items d'en-tête par centre.
+  const headerCells = clusterByCenter(headerLines.flatMap((l) => l.items));
+  const variants: { cx: number; name: string }[] = [];
+  let skippedColumns = 0;
+  for (const cell of headerCells) {
+    const name = cleanValue(cell.text);
+    if (isFilledSlot(name)) variants.push({ cx: cell.cx, name });
+    else skippedColumns++;
+  }
+  if (skippedColumns > 0) {
+    warnings.push(
+      `${skippedColumns} colonne(s) d'en-tête sans nom de modèle ignorée(s) : un nom de variante est obligatoire.`
+    );
+  }
+  if (variants.length === 0) {
+    warnings.push("Aucun nom de variante exploitable : la matrice ne contient que des placeholders du gabarit.");
+    return { groups, models, warnings };
+  }
+  for (const v of variants) models.push({ name: v.name, specs: {} });
+  const centers = variants.map((v) => v.cx);
+  const halfPitch = halfPitchOf(centers);
+
+  // 3. Lignes : en-tête de groupe, ou ligne de caractéristique.
+  let currentGroup: (typeof groups)[number] | null = null;
+  const usedKeys = new Map<string, number>();
+
+  for (const line of lines.slice(cursor)) {
+    if (isGroupHeaderLine(line)) {
+      const label = cleanValue(line.text);
+      const known = SPEC_GROUP_IDS.find((g) => g.match === groupTail(label));
+      if (!known) {
+        warnings.push(`Groupe de specs non standard conservé tel quel : « ${label} ».`);
+      }
+      const id = known?.id ?? `group-${groups.length + 1}`;
+      currentGroup = groups.find((g) => g.id === id) ?? { id, label, rows: [] };
+      if (!groups.includes(currentGroup)) groups.push(currentGroup);
+      continue;
+    }
+
+    const label = cleanValue(joinItems(line.items.filter((i) => i.x < LABEL_ZONE_MAX_X)));
+    if (!isFilledSlot(label) || isStaticText(label)) continue;
+    if (!currentGroup) {
+      currentGroup = { id: 'general', label: 'GENERAL', rows: [] };
+      warnings.push(`Ligne de caractéristique hors groupe : « ${label} » rattachée à un groupe implicite.`);
+      groups.push(currentGroup);
+    }
+
+    // Clé canonique si le libellé est connu, clé dynamique sinon (donnée
+    // conservée + avertissement) : jamais de libellé écrasé par un autre.
+    const normalized = normLabel(label);
+    const known = SPEC_LABEL_KEYS[normalized];
+    if (!known) {
+      warnings.push(`Libellé technique non standard conservé tel quel : « ${label} ».`);
+    }
+    let key = known ?? normalized.toLowerCase().replace(/[^a-z0-9]+/g, '');
+    if (usedKeys.has(key)) {
+      // Deux lignes homonymes : la seconde est conservée sous une clé distincte
+      // pour ne perdre aucune donnée.
+      const count = (usedKeys.get(key) ?? 1) + 1;
+      usedKeys.set(key, count);
+      key = `${key}${count}`;
+      warnings.push(`Libellé en double dans la matrice, conservé sous la clé « ${key} » : « ${label} ».`);
+    } else {
+      usedKeys.set(key, 1);
+    }
+    currentGroup.rows.push({ key, label });
+
+    // Valeurs : cellules regroupées par centre, puis affectées par proximité.
+    const valueCells = clusterByCenter(line.items.filter((i) => i.cx >= LABEL_ZONE_MAX_X));
+    for (const cell of valueCells) {
+      const value = cleanValue(cell.text);
+      if (!isFilledSlot(value)) continue; // cellule vide → rien (aucune invention)
+      const target = nearestColumn(centers, cell.cx, halfPitch);
+      if (target === -1) {
+        warnings.push(`Valeur « ${value} » ignorée : hors colonne de variante (ligne « ${label} »).`);
+        continue;
+      }
+      models[target].specs[key] = value;
+    }
+  }
+
+  const pruned = groups.filter((g) => g.rows.length > 0);
+  if (variants.length === 1) {
+    warnings.push('Matrice à une seule variante : une seule colonne générée.');
+  }
+  return { groups: pruned, models, warnings };
+}
+
+/** 05 · RÉFÉRENCES TERRAIN */
+function parseFieldwork(lines: PdfLine[]): ParsedFiche['fieldwork'] {
+  const out: NonNullable<ParsedFiche['fieldwork']> = {};
+  const hook = parseHook(lines);
+  if (hook) out.hook = hook;
+
+  // Projets : ligne des noms (2+ colonnes, corps 9.2) puis ligne « Pays · Année ».
+  for (let i = 0; i < lines.length; i++) {
+    const names = lineColumns(lines[i].items);
+    if (names.length < 2) continue;
+    if (!names.every((c) => c.x > MARGIN_X + 10 && c.size >= 8.8)) continue;
+    const places = lines[i + 1] ? lineColumns(lines[i + 1].items) : [];
+    if (places.length !== names.length) continue;
+    const projects: { name: string; country?: string; year?: string }[] = [];
+    names.forEach((nameItem, idx) => {
+      const name = cleanValue(nameItem.str);
+      if (!isFilledSlot(name)) return;
+      const place = cleanValue(places[idx]?.str ?? '');
+      const parts = place.split(/\s*[\u00B7\u2022|]\s*/).filter((p) => isFilledSlot(p));
+      projects.push({
+        name,
+        ...(parts[0] ? { country: parts[0] } : {}),
+        ...(parts[1] ? { year: parts[1] } : {}),
+      });
+    });
+    if (projects.length) {
+      out.projects = projects;
+      break;
+    }
+  }
+  return Object.keys(out).length ? out : undefined;
+}
+
+/**
+ * Bloc final : accroche CTA, libellé de bouton et navigation de série.
+ *
+ * Détection GÉOMÉTRIQUE et non textuelle : une fois le PDF rempli, les
+ * placeholders `[ Accroche finale / CTA ]` ont disparu — les rechercher par
+ * leur texte rendrait l'extraction muette sur tout PDF réellement saisi. On
+ * s'appuie donc sur la mise en page : accroche = item unique de la zone basse
+ * en corps 13 ; bouton = item précédant une flèche en zone droite.
+ */
+function parseCta(lines: PdfLine[]): Pick<ParsedFiche, 'cta' | 'seriesNavigation'> {
+  const out: Pick<ParsedFiche, 'cta' | 'seriesNavigation'> = {};
+  for (const line of lines) {
+    // Accroche CTA : texte de grand corps seul en zone gauche. On tolère la
+    // fusion avec le bouton (baseline à 3.5 pt d'écart dans le gabarit), donc
+    // on cherche l'item et non « la ligne à un item ». L'accroche de section
+    // (`05 | …`, corps 22 + 14) est écartée par la présence de son partner
+    // en zone d'accroche.
+    const isSectionHook = line.items.some((i) => i.x >= 70 && i.x <= 112 && i.size >= 14);
+    if (!isSectionHook) {
+      const titleItem = line.items.find((i) => i.size >= 12 && i.x <= 60);
+      const title = titleItem ? cleanValue(titleItem.str) : '';
+      if (titleItem && isFilledSlot(title) && !isStaticText(title)) {
+        out.cta = { ...(out.cta ?? {}), title };
+      }
+    }
+    const arrow = line.items.findIndex((i) => /^[\u2192\u00BB]$/.test(cleanValue(i.str)));
+    if (arrow > 0) {
+      const label = cleanValue(line.items[arrow - 1].str);
+      if (isFilledSlot(label)) out.cta = { ...(out.cta ?? {}), buttonLabel: label };
+    }
+    // Le libellé statique « Navigation série » subsite : seul son contenu compte.
+    const text = cleanValue(line.text);
+    if (/Navigation s[ée]rie/i.test(text)) {
+      const nav = parseSeriesNavigation(text);
+      if (Object.keys(nav).length) out.seriesNavigation = nav;
+    }
+  }
+  return out;
+}
+
+/**
+ * `Navigation serie : Precedent = PXT Pro | /web/… | Suivant = INK | /web/…`
+ *
+ * Le découpage se fait sur `|` en conservant l'ordre : un segment
+ * `Libellé = nom` ouvre une cible, le segment suivant en est l'URL. Isoler
+ * d'abord chaque paire nom/URL perdrait les URL, séparées du nom par `|`.
+ */
+function parseSeriesNavigation(text: string): NonNullable<ParsedFiche['seriesNavigation']> {
+  const result: NonNullable<ParsedFiche['seriesNavigation']> = {};
+  let open: 'previous' | 'next' | null = null;
+  for (const part of text.split(/\s*\|\s*/)) {
+    const match = part.match(/(Pr[ée]c[ée]dent|Suivant)\s*=\s*(.*)$/i);
+    if (match) {
+      const target = /^Pr[ée]c[ée]dent/i.test(match[1]) ? 'previous' : 'next';
+      const name = cleanValue(match[2]);
+      if (isFilledSlot(name)) {
+        result[target] = { ...(result[target] ?? {}), name };
+        open = target;
+      } else {
+        open = null;
+      }
+      continue;
+    }
+    if (open) {
+      const url = cleanValue(part);
+      if (isFilledSlot(url)) result[open] = { ...(result[open] ?? {}), url };
+      open = null;
+    }
+  }
+  return result;
+}
+
+// ===========================================================================
+// 8. ASSEMBLAGE
+// ===========================================================================
+
+/** Point d'entrée « layout » : pages nettoyées → fiche parsée. */
+export function parseProductFichePages(pages: ParsedPage[]): ParsedFiche {
+  const cleaned = cleanPages(pages);
+  const segments = segmentBySections(cleaned);
+  const warnings: string[] = [];
+  const fiche: ParsedFiche = { warnings };
+
+  const masthead = parseMasthead(segments.get('masthead') ?? []);
+  if (masthead.company !== undefined) fiche.company = masthead.company;
+  if (masthead.series !== undefined) fiche.series = masthead.series;
+  if (masthead.productName !== undefined) fiche.productName = masthead.productName;
+  if (masthead.subtitle !== undefined) fiche.subtitle = masthead.subtitle;
+  if (masthead.markets !== undefined) fiche.markets = masthead.markets;
+  if (masthead.badges !== undefined) fiche.badges = masthead.badges;
+
+  const overview = parseOverview(segments.get('overview') ?? []);
+  if (overview) fiche.overview = overview;
+
+  const design = parseDesign(segments.get('design') ?? []);
+  if (design) fiche.design = design;
+
+  const features = parseFeatures(segments.get('features') ?? []);
+  if (features) fiche.features = features;
+
+  const specLines = segments.get('specs') ?? [];
+  if (specLines.length) {
+    const { groups, models, warnings: specWarnings } = parseSpecMatrix(specLines);
+    warnings.push(...specWarnings);
+    if (groups.length || models.length) fiche.specs = { groups, models };
+  }
+
+  const fieldwork = parseFieldwork(segments.get('fieldwork') ?? []);
+  if (fieldwork) fiche.fieldwork = fieldwork;
+
+  // Le CTA vit après la dernière section produit : recherche sur le document
+  // linéaire nettoyé (la page de documentation a déjà été retirée).
+  const cta = parseCta(cleaned.flatMap((p) => p.lines));
+  if (cta.cta) fiche.cta = cta.cta;
+  if (cta.seriesNavigation) fiche.seriesNavigation = cta.seriesNavigation;
+
+  // Avertissements de complétude.
+  if (!fiche.productName) warnings.push("Nom de produit introuvable dans le PDF.");
+  if (!fiche.specs?.models.length) {
+    warnings.push('Aucune variante détectée dans la matrice des caractéristiques.');
+  } else {
+    const pending = fiche.specs.models.reduce(
+      (acc, m) => acc + Object.values(m.specs).filter((v) => /^pending$/i.test(v)).length,
+      0
+    );
+    if (pending > 0) warnings.push(`${pending} valeur(s) PENDING conservée(s) telles quelles.`);
+  }
+  return fiche;
+}
+
+// ===========================================================================
+// 9. EXTRACTION PDF
+// ===========================================================================
+
+/**
+ * Normalise l'entrée en ArrayBuffer.
+ * La copie pour `Uint8Array` est obligatoire : pdfjs-dist TRANSFÈRE le buffer
+ * au worker, ce qui le détache — sans copie, les données de l'appelant sont
+ * invalidées après `getDocument`.
+ */
+async function toArrayBuffer(data: File | ArrayBuffer | Uint8Array): Promise<ArrayBuffer> {
+  if (data instanceof ArrayBuffer) return data;
+  if (data instanceof Uint8Array) {
+    const copy = new Uint8Array(data.byteLength);
+    copy.set(data);
+    return copy.buffer;
+  }
+  return data.arrayBuffer(); // File, côté navigateur
+}
+
+/** Extrait la mise en page (items + positions) d'un PDF produit. */
+export async function extractProductPdfLayout(
+  data: File | ArrayBuffer | Uint8Array
+): Promise<ParsedPage[]> {
+  const pdfjsLib = (await import('pdfjs-dist')) as typeof import('pdfjs-dist');
+  // En navigateur, le worker est un asset public ; sous Node (tests/scripts),
+  // pdfjs-dist utilise son worker interne.
+  if (typeof window !== 'undefined') {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+  }
+
+  const buffer = await toArrayBuffer(data);
   const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
 
-  const allLines: string[] = [];
+  const pages: ParsedPage[] = [];
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i);
     const content = await page.getTextContent();
-    const items = content.items
-      .map((it) =>
-        'str' in it
-          ? { str: it.str, x: Math.round(it.transform[4]), y: Math.round(it.transform[5]) }
-          : null
-      )
-      .filter((it): it is { str: string; x: number; y: number } => it !== null);
-    const pageLines = itemsToLines(items);
-    for (const line of pageLines) {
-      if (SPACED_BRAND.test(line) || SPACED_DOC.test(line)) continue;
-      if (!line) continue;
-      allLines.push(line);
-    }
-  }
-  return allLines.join('\n');
-}
-
-// ---------------------------------------------------------------------------
-// Section routing
-// ---------------------------------------------------------------------------
-
-function toSections(text: string): Map<number, string[]> {
-  const sections = new Map<number, string[]>();
-  let current: string[] = [];
-  let hasCurrent = false;
-  for (const raw of text.split('\n')) {
-    const line = cleanLine(raw);
-    if (!line) continue;
-    const m = line.match(/^\s*(\d+)\.\s+[A-ZÀ-Ý]/);
-    if (m) {
-      current = [line];
-      sections.set(Number(m[1]), current);
-      hasCurrent = true;
-    } else if (hasCurrent) {
-      current.push(line);
-    }
-  }
-  return sections;
-}
-
-/**
- * Value of a `.field` row whose key matches `keyRegex`.
- * Returns the text after the first " | " plus any wrapped continuation lines
- * (when `collectContinuation` — free-text fields only).
- */
-function fieldValue(
-  section: string[],
-  keyRegex: RegExp,
-  collectContinuation = false
-): string | undefined {
-  for (let i = 0; i < section.length; i++) {
-    if (!keyRegex.test(section[i])) continue;
-    const rest = valueOf(section[i]);
-    if (!rest) return undefined;
-    if (!collectContinuation) {
-      return rest.replace(/\s+/g, ' ').trim();
-    }
-    const parts: string[] = [rest];
-    for (let j = i + 1; j < section.length; j++) {
-      const line = section[j];
-      if (isStopLine(line)) break;
-      if (line.includes('|')) break;
-      parts.push(line);
-    }
-    return parts
-      .join(' ')
-      .replace(/\s+/g, ' ')
-      .trim();
-  }
-  return undefined;
-}
-
-/** Rows of a table section (skips hints and the column header). */
-function tableRows(
-  section: string[],
-  opts: { header: RegExp; hint?: RegExp; minParts: number; startAfterHeader?: boolean }
-): string[][] {
-  const { header, hint, minParts, startAfterHeader = true } = opts;
-  const rows: string[][] = [];
-  let started = !startAfterHeader;
-  for (const line of section) {
-    if (!started && header.test(line)) {
-      started = true;
-      continue;
-    }
-    if (!started) continue;
-    if (header.test(line)) continue;
-    if (hint && hint.test(line)) continue;
-    if (SECTION_HEADER.test(line)) break;
-    const parts = splitCols(line);
-    if (parts.length >= minParts && parts[0] && parts[1]) {
-      rows.push(parts);
-    }
-  }
-  return rows;
-}
-
-// ---------------------------------------------------------------------------
-// Section parsers
-// ---------------------------------------------------------------------------
-
-function parseName(section: string[]): string | undefined {
-  return fieldValue(section, /D[ée]nomination/);
-}
-
-function parseSellingModes(section: string[]): string[] | undefined {
-  const v = fieldValue(section, /^\s*vente\s*\/\s*location/);
-  if (!v) return undefined;
-  const modes: string[] = [];
-  const s = v.toLowerCase();
-  if (s.includes('vente')) modes.push('vente');
-  if (s.includes('location')) modes.push('location');
-  if (s.includes('sur commande') || s.includes('sur-commande')) modes.push('sur commande');
-  return modes.length > 0 ? modes : undefined;
-}
-
-function parseBadge(section: string[]): string | undefined {
-  return fieldValue(section, /^\s*nouveau\s*\/\s*populaire\s*\/\s*promotion/);
-}
-
-function parseEnvironment(section: string[]): string | undefined {
-  return fieldValue(section, /^\s*int[ée]rieur\s*\/\s*ext[ée]rieur/);
-}
-
-function parseCharacteristics(section: string[]): { key: string; value: string }[] {
-  const items: { key: string; value: string }[] = [];
-  let started = false;
-  for (const line of section) {
-    if (!started && /^CARACT[ÉE]RISTIQUE\s*\|/.test(line)) {
-      started = true;
-      continue;
-    }
-    if (!started) continue;
-    if (/^CARACT[ÉE]RISTIQUE\s*\|/.test(line)) continue;
-    if (/^Une\s+ligne/.test(line)) continue;
-    if (SECTION_HEADER.test(line)) break;
-    const key = keyOf(line);
-    const value = valueOf(line);
-    if (key && value) {
-      items.push({ key, value });
-    }
-  }
-  return items;
-}
-
-function parseButtons(section: string[]): { study?: string; datasheet?: string } {
-  const study = fieldValue(section, /Bouton\s+1\s*\(CTA\s+principal\)/);
-  const datasheet = fieldValue(section, /Bouton\s+2\s*\(CTA\s+secondaire\)/);
-  return {
-    ...(study ? { study } : {}),
-    ...(datasheet ? { datasheet } : {}),
-  };
-}
-
-function parseVariants(section: string[]): { name: string; value: string; reference?: string }[] {
-  const items: { name: string; value: string; reference?: string }[] = [];
-  let started = false;
-  for (const line of section) {
-    if (!started && /^NOM\s+DU\s+MOD[ÈE]LE\s*\|/.test(line)) {
-      started = true;
-      continue;
-    }
-    if (!started) continue;
-    if (/^NOM\s+DU\s+MOD[ÈE]LE\s*\|/.test(line)) continue;
-    if (/^Nom\s+du\s+mod[èe]le/.test(line)) continue;
-    if (/tableau\s+comparatif/.test(line)) continue;
-    if (SECTION_HEADER.test(line)) break;
-    const parts = splitCols(line);
-    if (parts.length >= 2) {
+    const items: PdfTextItem[] = [];
+    for (const it of content.items) {
+      if (!('str' in it)) continue;
+      const tr = it.transform;
+      const w = it.width ?? 0;
       items.push({
-        name: parts[0],
-        value: parts[1],
-        reference: parts.length >= 3 ? parts[2] : undefined,
+        str: it.str,
+        x: tr[4],
+        y: tr[5],
+        w,
+        size: tr[0],
+        font: it.fontName,
+        cx: tr[4] + w / 2,
       });
     }
+    pages.push({ lines: groupItemsIntoLines(items) });
   }
-  return items;
+  return pages;
 }
 
-function parseDescription(section: string[]): {
-  shortDescription?: string;
-  detailedDescription?: string;
-  keywords?: string[];
-} {
-  const shortDescription = fieldValue(section, /Petite\s+description\s*:/i, true);
-  const detailedDescription = fieldValue(section, /Description\s+d[ée]taill[ée]e\s*:/i, true);
-  const kw = fieldValue(section, /Mots-cl[ée]s\s*\(s[ée]par[ée]s\s+par\s+•\)\s*:/i);
-  const keywords = kw
-    ? kw
-        .split('•')
-        .map(k => k.trim())
-        .filter(k => k.length > 0)
-    : undefined;
-  return {
-    ...(shortDescription ? { shortDescription } : {}),
-    ...(detailedDescription ? { detailedDescription } : {}),
-    ...(keywords && keywords.length > 0 ? { keywords } : {}),
-  };
-}
-
-function parseSlug(section: string[]): string | undefined {
-  const v = fieldValue(section, /Identifiant\s+d'URL/);
-  if (!v) return undefined;
-  return isValidSlug(v) ? v : undefined;
-}
-
-function parseMenu(section: string[]): { groupFr?: string; groupEn?: string; tag?: string } {
-  const groupFr = fieldValue(section, /Groupe\s*\(fran[çc]ais\)/);
-  const groupEn = fieldValue(section, /Groupe\s*\(anglais\)/);
-  const tag = fieldValue(section, /[ÉE]tiquette\s*\(tag\)/);
-  return {
-    ...(groupFr ? { groupFr } : {}),
-    ...(groupEn ? { groupEn } : {}),
-    ...(tag ? { tag } : {}),
-  };
-}
-
-function parseHero(section: string[]): {
-  subtitle?: string;
-  primaryCta?: string;
-  bgColor?: string;
-  tags?: string[];
-} {
-  const subtitle = fieldValue(section, /Slogan\s*\/\s*sous-titre/, true);
-  const primaryCta = fieldValue(section, /^\s*CTA\s+principal/);
-  const bgColor = fieldValue(section, /Couleur\s+de\s+fond/);
-  const tagsRaw = fieldValue(section, /[ÉE]tiquettes\s*\(tags,\s*s[ée]par[ée]es\s+par\s+•\)/, true);
-  const tags = tagsRaw
-    ? tagsRaw
-        .split('•')
-        .map(t => t.trim())
-        .filter(t => t.length > 0)
-    : undefined;
-  return {
-    ...(subtitle ? { subtitle } : {}),
-    ...(primaryCta ? { primaryCta } : {}),
-    ...(bgColor ? { bgColor } : {}),
-    ...(tags && tags.length > 0 ? { tags } : {}),
-  };
-}
-
-function parseOverview(section: string[]): {
-  eyebrow?: string;
-  title?: string;
-  description?: string;
-  stats?: { value: string; label: string }[];
-} {
-  const eyebrow = fieldValue(section, /Liser[ée]\s*\(eyebrow\)/);
-  const title = fieldValue(section, /^\s*Titre\b/);
-  const description = fieldValue(section, /^\s*Description\b/, true);
-  const stats = tableRows(section, {
-    header: /^VALEUR\s*\|/,
-    minParts: 2,
-  }).map(([value, label]) => ({ value, label }));
-  return {
-    ...(eyebrow ? { eyebrow } : {}),
-    ...(title ? { title } : {}),
-    ...(description ? { description } : {}),
-    ...(stats.length > 0 ? { stats } : {}),
-  };
-}
-
-function parseDesign(section: string[]): {
-  eyebrow?: string;
-  title?: string;
-  cabinetDim?: string;
-  weight?: string;
-  material?: string;
-} {
-  const eyebrow = fieldValue(section, /Liser[ée]\s*\(eyebrow\)/);
-  const title = fieldValue(section, /^\s*Titre\b/);
-  const cabinetDim = fieldValue(section, /Dimensions\s+ch[âa]ssis/);
-  const weight = fieldValue(section, /^\s*Poids\b/);
-  const material = fieldValue(section, /Mat[ée]riau/);
-  return {
-    ...(eyebrow ? { eyebrow } : {}),
-    ...(title ? { title } : {}),
-    ...(cabinetDim ? { cabinetDim } : {}),
-    ...(weight ? { weight } : {}),
-    ...(material ? { material } : {}),
-  };
-}
-
-function parseFeatures(
-  section: string[]
-): { num?: string; title: string; description?: string }[] {
-  const items: { num?: string; title: string; description?: string }[] = [];
-  let started = false;
-  for (const line of section) {
-    if (!started && /^N\s*°\s*\|\s*TITRE\s*\|/.test(line)) {
-      started = true;
-      continue;
-    }
-    if (!started) continue;
-    if (/^N\s*°\s*\|\s*TITRE\s*\|/.test(line)) continue;
-    if (/^«/.test(line)) continue;
-    if (SECTION_HEADER.test(line)) break;
-    if (line.includes('|')) {
-      const [num, title, ...rest] = splitCols(line);
-      if (title) {
-        items.push({
-          ...(num ? { num } : {}),
-          title,
-          description: rest.length > 0 ? rest.join(' ') : undefined,
-        });
-      }
-      continue;
-    }
-    // Wrapped description continuation
-    if (items.length > 0 && items[items.length - 1].description) {
-      items[items.length - 1].description += (items[items.length - 1].description ? ' ' : '') + line;
-    }
-  }
-  return items;
-}
-
-function parseSpecs(section: string[]): { name: string; specs: Record<string, string> }[] {
-  const models: { name: string; specs: Record<string, string> }[] = [];
-  let started = false;
-  let current: { name: string; specs: Record<string, string> } | null = null;
-  for (const line of section) {
-    if (!started && /^CL[ÉE]\s*\(SP[ÉE]CIFICATION\)/.test(line)) {
-      started = true;
-      continue;
-    }
-    if (!started) continue;
-    if (/^CL[ÉE]\s*\(SP[ÉE]CIFICATION\)/.test(line)) continue;
-    if (SECTION_HEADER.test(line)) break;
-    const m = line.match(/^MODELE\s+(.+)$/i);
-    if (m) {
-      current = { name: m[1].trim(), specs: {} };
-      models.push(current);
-      continue;
-    }
-    if (!current) continue;
-    if (line.includes('|')) {
-      const raw = keyOf(line).trim().toLowerCase();
-      const key = SPEC_KEY_TO_CANONICAL.get(raw);
-      const value = valueOf(line);
-      if (value && key) {
-        current.specs[key] = value;
-      }
-    }
-  }
-  return models;
-}
-
-function parseFieldwork(section: string[]): { title: string; location?: string; pitch?: string }[] {
-  const projects: { title: string; location?: string; pitch?: string }[] = [];
-  let started = false;
-  for (const line of section) {
-    if (!started && /^N\s*°\s*\|\s*LIEU\s*\/\s*ANN[ÉE]E?/.test(line)) {
-      started = true;
-      continue;
-    }
-    if (!started) continue;
-    if (/^N\s*°\s*\|\s*LIEU\s*\/\s*ANN[ÉE]E?/.test(line)) continue;
-    if (/^«/.test(line)) continue;
-    if (SECTION_HEADER.test(line)) break;
-    if (line.includes('|')) {
-      const [num, location, ...rest] = splitCols(line);
-      if (location) {
-        projects.push({
-          title: rest.length > 0 ? rest.join(' ') : '',
-          location: location,
-          pitch: num,
-        });
-      }
-      continue;
-    }
-    if (projects.length > 0 && projects[projects.length - 1].title) {
-      projects[projects.length - 1].title += ' ' + line;
-    }
-  }
-  return projects;
-}
-
-function parseFiles(section: string[]): { photo?: string; gallery?: string[] } {
-  const photo = fieldValue(section, /Photo\s+principale/);
-  const galleryRaw = fieldValue(section, /Galerie\s*\(noms/);
-  const gallery = galleryRaw
-    ? galleryRaw
-        .split('•')
-        .map(n => n.trim())
-        .filter(n => n.length > 0)
-    : undefined;
-  return {
-    ...(photo ? { photo } : {}),
-    ...(gallery && gallery.length > 0 ? { gallery } : {}),
-  };
-}
-
-// ---------------------------------------------------------------------------
-// Main parser
-// ---------------------------------------------------------------------------
-
-export function parseProductFicheText(text: string): ParsedProductText {
-  const sections = toSections(text);
-  const get = (num: number): string[] => sections.get(num) ?? [];
-
-  const parsed: ParsedProductText = {};
-
-  const name = parseName(get(1));
-  if (name) parsed.productName = name;
-
-  const sellingModes = parseSellingModes(get(2));
-  if (sellingModes) parsed.sellingModes = sellingModes;
-
-  const badge = parseBadge(get(3));
-  if (badge) parsed.badge = badge;
-
-  const environment = parseEnvironment(get(4));
-  if (environment) parsed.environment = environment;
-
-  const characteristics = parseCharacteristics(get(5));
-  if (characteristics.length > 0) parsed.characteristics = characteristics;
-
-  const buttons = parseButtons(get(6));
-  if (Object.keys(buttons).length > 0) parsed.buttons = buttons;
-
-  const variants = parseVariants(get(7));
-  if (variants.length > 0) parsed.variants = variants;
-
-  const desc = parseDescription(get(8));
-  if (Object.keys(desc).length > 0) {
-    if (desc.shortDescription) parsed.shortDescription = desc.shortDescription;
-    if (desc.detailedDescription) parsed.detailedDescription = desc.detailedDescription;
-    if (desc.keywords) parsed.keywords = desc.keywords;
-  }
-
-  const slug = parseSlug(get(9));
-  if (slug) parsed.slug = slug;
-
-  const menu = parseMenu(get(10));
-  if (Object.keys(menu).length > 0) parsed.menu = menu;
-
-  const hero = parseHero(get(11));
-  if (Object.keys(hero).length > 0) parsed.hero = hero;
-
-  const overview = parseOverview(get(12));
-  if (Object.keys(overview).length > 0) parsed.overview = overview;
-
-  const design = parseDesign(get(13));
-  if (Object.keys(design).length > 0) parsed.design = design;
-
-  const features = parseFeatures(get(14));
-  if (features.length > 0) parsed.features = features;
-
-  const specModels = parseSpecs(get(15));
-  if (specModels.length > 0) parsed.specModels = specModels;
-
-  const fieldwork = parseFieldwork(get(16));
-  if (fieldwork.length > 0) parsed.fieldwork = fieldwork;
-
-  const files = parseFiles(get(17));
-  if (files.photo) parsed.photoName = files.photo;
-  if (files.gallery) parsed.galleryNames = files.gallery;
-
-  return parsed;
-}
-
-// ---------------------------------------------------------------------------
-// Mapping: ParsedProductText → Product (Phase A model)
-// ---------------------------------------------------------------------------
-
-const SELLING_MODE_MAP: Record<string, SellingMode> = {
-  vente: 'sale',
-  location: 'rental',
-  'sur commande': 'sale',
-  'sur-commande': 'sale',
-};
-
-function toEnvironment(raw: string | undefined): ProductEnvironment | undefined {
-  if (!raw) return undefined;
-  const s = raw.toLowerCase().replace(/\s+/g, ' ');
-  if (s.includes('semi')) return 'showcase';
-  if (s.includes('extérieur') || s.includes('exterieur') || s.includes('outdoor')) {
-    if (s.includes('intérieur') || s.includes('interieur') || s.includes('indoor')) return 'both';
-    return 'outdoor';
-  }
-  if (s.includes('intérieur') || s.includes('interieur') || s.includes('indoor')) return 'indoor';
-  return undefined;
-}
-
-function environmentLabels(env: ProductEnvironment | undefined): { fr: string; en: string } | undefined {
-  switch (env) {
-    case 'indoor':
-      return { fr: 'ÉCRAN LED INTÉRIEUR', en: 'INDOOR LED DISPLAY' };
-    case 'outdoor':
-      return { fr: 'ÉCRAN LED EXTÉRIEUR', en: 'OUTDOOR LED DISPLAY' };
-    case 'showcase':
-      return { fr: 'ÉCRAN LED VITRINE', en: 'SHOWCASE LED DISPLAY' };
-    case 'both':
-      return { fr: 'ÉCRAN LED INTÉRIEUR & EXTÉRIEUR', en: 'INDOOR & OUTDOOR LED DISPLAY' };
-    default:
-      return undefined;
-  }
-}
-
-function normalizeKey(key: string): string {
-  return key
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, ' ')
-    .trim();
-}
-
-// ---------------------------------------------------------------------------
-// Caractéristiques canoniques (une caractéristique = une propriété)
-// ---------------------------------------------------------------------------
-
-export interface ProductCoreSpecs {
-  pixelPitch?: string;
-  brightness?: string;
-  cabinetDimensions?: string;
-  cabinetWeight?: string;
-}
+// ===========================================================================
+// 10. MAPPING  →  Product
+//
+//   PDF                                        Product                  Composant
+//   Masthead · nom produit                     name / slug              HeroSection
+//   Masthead · série                           hero.breadcrumbCategory  HeroSection
+//   Masthead · sous-titre                      hero.subtitle            HeroSection
+//   Masthead · marchés (4)                     hero.tags                HeroSection
+//   Masthead · 4 badges                        hero.specs               HeroSection
+//   01 · accroche / description                overview.title/desc      OverviewSection
+//   01 · média vidéo / photo                   overview.video/photo     OverviewSection
+//   01 · 3 statistiques                       overview.stats           OverviewSection
+//   01 · 2 technologies                       overview.technologies    OverviewSection
+//   02 · accroche                              design.title             DesignSection
+//   02 · module/cabinet/profondeur             design.specsList         DesignSection
+//   02 · visuels techniques                    design.visuals           DesignSection
+//   02 · configurations                        design.configs           DesignSection
+//   03 · accroche / visuel / 7 features        features                 FeaturesSection
+//   04 · en-tête de colonne                    specs.models[].name      SpecsSection
+//   04 · groupe + libellé de ligne             specs.groups[].rows      SpecsSection
+//   04 · valeur de cellule                     specs.models[].specs[k]  SpecsSection
+//   05 · accroche / projets                    fieldwork                FieldworkSection
+//   CTA · accroche / bouton                    next.headline/cta        NextSection
+//   CTA · navigation série                     next.prev/next.next      NextSection
+// ===========================================================================
 
 /**
- * Extraction sémantique STRICTE des caractéristiques de la section 5.
- * Chaque clé PDF normalisée est mappée vers UNE propriété canonique unique.
- * Aucun fallback croisé (ex. dimensions ⇒ pitch) : une caractéristique absente
- * reste absente. Références sémantiques acceptées sur le même champ :
- * - pitch          → "Pitch pixel"
- * - brightness     → "Luminosité (nits)" / "Luminosité"
- * - cabinetDim     → "Dimensions châssis"
- * - cabinetWeight  → "Poids châssis"
+ * Convertit la fiche parsée en brouillon `Product`.
+ * Rien n'est complété, réordonné ou emprunté : un champ absent reste absent.
+ * `environment` et `sellingModes` ne sont jamais déduits : ils relèvent de la
+ * taxonomie choisie par l'administrateur dans le CMS. Le `slug` n'est pas
+ * produit ici : il appartient à l'admin, qui le dérive du nom et gère les
+ * collisions.
  */
-export function deriveCoreSpecs(
-  characteristics: { key: string; value: string }[]
-): ProductCoreSpecs {
-  const map = new Map(characteristics.map((c) => [normalizeKey(c.key), c.value.trim()]));
-  const specs: ProductCoreSpecs = {};
-  const pitch = map.get('pitch pixel');
-  if (pitch) specs.pixelPitch = pitch;
-  const brightness = map.get('luminosite nits') ?? map.get('luminosite');
-  if (brightness) specs.brightness = brightness;
-  const cabinetDimensions = map.get('dimensions chassis');
-  if (cabinetDimensions) specs.cabinetDimensions = cabinetDimensions;
-  const cabinetWeight = map.get('poids chassis');
-  if (cabinetWeight) specs.cabinetWeight = cabinetWeight;
-  return specs;
-}
+export function mapParsedToProduct(parsed: ParsedFiche, fallbackName?: string): Partial<Product> {
+  const product: Partial<Product> = { status: 'draft' };
+  if (parsed.warnings.length) product.importWarnings = [...parsed.warnings];
 
-/** Select the section-5 characteristics that form the hero/design highlights. */
-function deriveHighlights(
-  characteristics: { key: string; value: string }[],
-  env: ProductEnvironment | undefined
-): ProductStat[] {
-  const specs = deriveCoreSpecs(characteristics);
-  const highlights: ProductStat[] = [];
-  if (specs.pixelPitch) highlights.push({ label: 'PITCH PIXEL', value: specs.pixelPitch });
-  if (specs.brightness) highlights.push({ label: 'LUMINOSITÉ · NITS', value: specs.brightness });
-  if (specs.cabinetDimensions) {
-    highlights.push({ label: 'CHÂSSIS', value: specs.cabinetDimensions });
-  }
-  const labels = environmentLabels(env);
-  highlights.push({ label: 'ENVIRONNEMENT', value: labels ? labels.fr : 'INTÉRIEUR' });
-  return highlights;
-}
-
-/**
- * Converts raw parsed data into a `Product`-shaped draft.
- * Everything is optional except `name`/`slug`/`status`, filled from the PDF
- * when present (slug falls back to the slugified name). The human validates
- * the result in the admin form before saving (status is 'draft').
- */
-export function mapParsedToProduct(
-  parsed: ParsedProductText,
-  fallbackName?: string
-): Partial<Product> {
-  const product: Partial<Product> = {
-    status: 'draft',
-  };
-
-  const name = (parsed.productName ?? fallbackName ?? '').replace(/\s+/g, ' ').trim();
+  // Masthead
+  const name = cleanValue(parsed.productName ?? fallbackName ?? '');
   if (name) product.name = name;
-  if (parsed.slug) {
-    product.slug = parsed.slug;
-  } else if (name) {
-    product.slug = slugify(name);
-  }
+  if (parsed.series) product.series = parsed.series;
+  if (parsed.company) product.company = parsed.company;
 
-  if (parsed.badge) product.badge = parsed.badge;
-  const environment = toEnvironment(parsed.environment);
-  if (environment) product.environment = environment;
-
-  const sellingModes = parsed.sellingModes
-    ?.map(m => SELLING_MODE_MAP[m.toLowerCase().trim()])
-    .filter((m): m is SellingMode => Boolean(m));
-  if (sellingModes && sellingModes.length > 0) {
-    const unique: SellingMode[] = [];
-    for (const mode of sellingModes) {
-      if (!unique.includes(mode)) unique.push(mode);
-    }
-    product.sellingModes = unique;
-  }
-
-  if (parsed.characteristics && parsed.characteristics.length > 0) {
-    product.characteristics = parsed.characteristics.map(c => ({
-      key: c.key.trim(),
-      value: c.value.replace(/\s+/g, ' ').trim(),
-    }));
-  }
-
-  const study = parsed.buttons?.study;
-  const datasheet = parsed.buttons?.datasheet;
-  if (study || datasheet) {
-    product.buttons = {
-      ...(study ? { study: study.toUpperCase() } : {}),
-      ...(datasheet ? { datasheet: datasheet.toUpperCase() } : {}),
-    };
-  }
-
-  if (parsed.variants && parsed.variants.length > 0) {
-    product.variants = parsed.variants.map(v => ({
-      name: v.name,
-      value: v.value,
-      ...(v.reference ? { reference: v.reference } : {}),
-    }));
-  }
-
-  if (
-    parsed.shortDescription ||
-    parsed.detailedDescription ||
-    (parsed.keywords && parsed.keywords.length > 0)
-  ) {
-    product.description = {
-      shortFr: parsed.shortDescription ?? '',
-      detailedFr: parsed.detailedDescription ?? '',
-      ...(parsed.keywords && parsed.keywords.length > 0 ? { keywords: parsed.keywords } : {}),
-    };
-  }
-
-  if (parsed.menu && (parsed.menu.groupFr || parsed.menu.groupEn || parsed.menu.tag)) {
-    product.menu = {
-      groupFr: parsed.menu.groupFr ?? '',
-      groupEn: parsed.menu.groupEn ?? '',
-      ...(parsed.menu.tag ? { tag: parsed.menu.tag } : {}),
-    };
-  }
-
-  const coreSpecs = deriveCoreSpecs(parsed.characteristics ?? []);
-  if (coreSpecs.pixelPitch) product.pixelPitch = coreSpecs.pixelPitch;
-  if (coreSpecs.brightness) product.brightness = coreSpecs.brightness;
-  if (coreSpecs.cabinetDimensions) product.cabinetDimensions = coreSpecs.cabinetDimensions;
-  if (coreSpecs.cabinetWeight) product.cabinetWeight = coreSpecs.cabinetWeight;
-
-  const highlights = deriveHighlights(parsed.characteristics ?? [], environment);
-  const labels = environmentLabels(environment);
-  if (parsed.hero || highlights.length > 0) {
+  // hero
+  if (name || parsed.subtitle || parsed.markets?.length || parsed.badges?.length || parsed.series) {
     product.hero = {
-      title: name || '',
-      ...(parsed.hero?.subtitle ? { subtitle: parsed.hero.subtitle } : {}),
-      ...(parsed.hero?.primaryCta ? { primaryCta: parsed.hero.primaryCta } : {}),
-      ...(datasheet ? { secondaryCta: datasheet.toUpperCase() } : {}),
-      ...(parsed.hero?.bgColor ? { bgColor: parsed.hero.bgColor } : {}),
-      ...(parsed.hero?.tags && parsed.hero.tags.length > 0 ? { tags: parsed.hero.tags } : {}),
-      ...(labels ? { breadcrumbCategoryFr: labels.fr, breadcrumbCategoryEn: labels.en } : {}),
-      ...(highlights.length > 0 ? { specs: highlights } : {}),
-    };
-  }
-
-  if (parsed.overview) {
-    product.overview = {
-      ...(parsed.overview.eyebrow ? { eyebrow: parsed.overview.eyebrow } : {}),
-      ...(parsed.overview.title ? { title: parsed.overview.title } : {}),
-      ...(parsed.overview.description ? { description: parsed.overview.description } : {}),
-      ...(parsed.overview.stats && parsed.overview.stats.length > 0
-        ? { stats: parsed.overview.stats }
+      title: name,
+      ...(parsed.subtitle ? { subtitle: parsed.subtitle } : {}),
+      ...(parsed.markets?.length ? { tags: parsed.markets } : {}),
+      ...(parsed.badges?.length ? { specs: parsed.badges } : {}),
+      ...(parsed.series
+        ? { breadcrumbCategoryFr: parsed.series, breadcrumbCategoryEn: parsed.series }
         : {}),
     };
   }
 
-  if (parsed.design) {
-    product.design = {
-      ...(parsed.design.eyebrow ? { eyebrow: parsed.design.eyebrow } : {}),
-      ...(parsed.design.title ? { title: parsed.design.title } : {}),
-      ...(parsed.design.cabinetDim ? { cabinetDim: parsed.design.cabinetDim } : {}),
-      ...(parsed.design.weight ? { weight: parsed.design.weight } : {}),
-      ...(parsed.design.material ? { material: parsed.design.material } : {}),
+  // 01 · overview
+  const o = parsed.overview;
+  if (o && (o.hook || o.description || o.stats?.length || o.technologies?.length || o.video || o.photo)) {
+    product.overview = {
+      ...(o.hook ? { title: o.hook } : {}),
+      ...(o.description ? { description: o.description } : {}),
+      ...(o.stats?.length ? { stats: o.stats } : {}),
+      ...(o.technologies?.length ? { technologies: o.technologies } : {}),
+      ...(o.video ? { video: o.video } : {}),
+      ...(o.photo ? { photo: o.photo } : {}),
     };
   }
 
-  if (parsed.features && parsed.features.length > 0) {
-    product.features = { items: parsed.features };
+  // 02 · design
+  const d = parsed.design;
+  if (d && (d.hook || d.dimensions?.length || d.visuals?.length || d.configs?.length)) {
+    const design: NonNullable<Product['design']> = {
+      ...(d.hook ? { title: d.hook } : {}),
+      ...(d.dimensions?.length ? { specsList: d.dimensions } : {}),
+      ...(d.visuals?.length ? { visuals: d.visuals } : {}),
+      ...(d.configs?.length ? { configs: d.configs } : {}),
+    };
+    // Rôles explicites du gabarit (MODULE / CABINET / PROFONDEUR).
+    for (const dim of d.dimensions ?? []) {
+      const n = normLabel(dim.label);
+      if (n === 'MODULE') design.moduleDim = dim.value;
+      else if (n === 'CABINET') design.cabinetDim = dim.value;
+      else if (n === 'PROFONDEUR' || n === 'DEPTH') design.depth = dim.value;
+    }
+    product.design = design;
   }
 
-  if (parsed.specModels && parsed.specModels.length > 0) {
+  // 03 · features
+  const f = parsed.features;
+  if (f && (f.hook || f.visual || f.items?.length)) {
+    product.features = {
+      items: f.items ?? [],
+      ...(f.hook ? { title: f.hook } : {}),
+      ...(f.visual ? { visual: f.visual } : {}),
+    };
+  }
+
+  // 04 · specs
+  if (parsed.specs?.models.length) {
     product.specs = {
-      groups: PRODUCT_SPEC_GROUPS.map(g => ({
-        ...g,
-        rows: g.rows.map(r => ({ ...r })),
+      groups: parsed.specs.groups.map((g) => ({
+        id: g.id,
+        label: g.label,
+        rows: g.rows.map((r) => ({ key: r.key, label: r.label })),
       })),
-      models: parsed.specModels.map(m => ({
-        name: m.name,
-        tag: 'DATASHEET',
-        specs: { ...m.specs },
-      })),
+      models: parsed.specs.models.map((m) => ({ name: m.name, specs: { ...m.specs } })),
     };
   }
 
-  if (parsed.fieldwork && parsed.fieldwork.length > 0) {
-    product.fieldwork = { projects: parsed.fieldwork };
+  // 05 · fieldwork
+  const fw = parsed.fieldwork;
+  if (fw && (fw.hook || fw.projects?.length)) {
+    product.fieldwork = {
+      projects: (fw.projects ?? []).map((p) => ({
+        title: p.name,
+        ...(p.country ? { location: p.country } : {}),
+        ...(p.year ? { year: p.year } : {}),
+      })),
+      ...(fw.hook ? { title: fw.hook } : {}),
+    };
   }
 
-  const photoNames = [
-    ...(parsed.photoName ? [parsed.photoName] : []),
-    ...(parsed.galleryNames ?? []),
-  ];
-  if (photoNames.length > 0) {
-    product.media = { photos: photoNames.map(name => ({ name })) };
+  // CTA
+  if (parsed.cta || parsed.seriesNavigation) {
+    const next: NonNullable<Product['next']> = {};
+    if (parsed.cta?.title) next.headline = parsed.cta.title;
+    if (parsed.cta?.buttonLabel) next.cta = parsed.cta.buttonLabel;
+    if (parsed.seriesNavigation?.previous) next.prev = parsed.seriesNavigation.previous;
+    if (parsed.seriesNavigation?.next) next.next = parsed.seriesNavigation.next;
+    if (Object.keys(next).length) product.next = next;
   }
 
-  if (parsed.shortDescription) {
-    product.seo = { description: parsed.shortDescription };
+  // Source unique pour la description longue et le SEO.
+  if (o?.description) {
+    product.description = { shortFr: o.description, detailedFr: o.description };
+    product.seo = { ...(name ? { title: name } : {}), description: o.description };
   }
 
   return product;
 }
 
-/** Full browser pipeline: Sheet PDF → text → parsed → Product draft. */
+/** Pipeline complet : PDF → layout → fiche parsée → brouillon `Product`. */
 export async function parseProductPdf(
   data: File | ArrayBuffer | Uint8Array,
   fallbackName?: string
 ): Promise<Partial<Product> | null> {
   try {
-    const text = await extractProductPdfText(data);
-    const parsed = parseProductFicheText(text);
+    const pages = await extractProductPdfLayout(data);
+    const parsed = parseProductFichePages(pages);
     const hasContent =
-      parsed.productName ||
-      parsed.characteristics?.length ||
-      parsed.variants?.length ||
-      parsed.specModels?.length ||
-      parsed.overview ||
-      parsed.hero;
+      !!parsed.productName ||
+      !!parsed.overview?.description ||
+      !!parsed.overview?.stats?.length ||
+      !!parsed.design?.dimensions?.length ||
+      !!parsed.features?.items?.length ||
+      !!parsed.specs?.models.length ||
+      !!parsed.fieldwork?.projects?.length;
     if (!hasContent) return null;
     return mapParsedToProduct(parsed, fallbackName);
-  } catch (err: unknown) {
-    console.warn('[product-pdf-parser] Échec de l', err);
+  } catch (err) {
+    console.warn('[product-pdf-parser] Échec de l’analyse du PDF :', err);
     return null;
   }
 }

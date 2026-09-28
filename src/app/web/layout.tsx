@@ -31,7 +31,7 @@ export default function WebLayout({ children }: { children: React.ReactNode }) {
       <div
         id="pixia-web"
         className="min-h-screen w-full bg-[#080808] text-[#f5f4f0] antialiased"
-        style={{ paddingTop: 'var(--admin-bar-h, 0px)' }}
+        style={{ paddingTop: 'calc(var(--admin-bar-h, 0px) + var(--preview-bar-h, 0px))' }}
       >
         <WebCmsShell>{children}</WebCmsShell>
       </div>

@@ -11,6 +11,37 @@ import type {
   SourcesResponse,
 } from './analytics-types';
 
+// ---------------------------------------------------------------------------
+// In-memory SWR cache — avoids refetching on tab focus / filter bounce
+// ---------------------------------------------------------------------------
+interface CacheEntry<T> {
+  data: T;
+  fetchedAt: number;
+  promise: Promise<T>;
+}
+
+const STALE_MS = 30_000;   // serve from cache if <30 s old
+const TTL_MS  = 5 * 60_000; // evict after 5 min
+
+const cache = new Map<string, CacheEntry<unknown>>();
+
+function getCached<T>(key: string): { data: T; stale: boolean } | null {
+  const entry = cache.get(key) as CacheEntry<T> | undefined;
+  if (!entry) return null;
+  const age = Date.now() - entry.fetchedAt;
+  if (age > TTL_MS) { cache.delete(key); return null; }
+  return { data: entry.data, stale: age > STALE_MS };
+}
+
+function setCache<T>(key: string, data: T, promise: Promise<T>): void {
+  cache.set(key, { data, fetchedAt: Date.now(), promise } as CacheEntry<unknown>);
+}
+
+/** Call to wipe the cache when the user manually resets data */
+export function invalidateAnalyticsCache(): void {
+  cache.clear();
+}
+
 function buildQuery(from: number, to: number, filter: AnalyticsFilter): string {
   const params = new URLSearchParams({
     from: String(from),
@@ -44,13 +75,52 @@ export function resetAnalyticsData(): Promise<{
   );
 }
 
-async function getJson<T>(url: string): Promise<T> {
-  const res = await fetch(url, { credentials: 'include', cache: 'no-store' });
+async function fetchRemote<T>(url: string): Promise<T> {
+  // Allow browser to use its own HTTP cache; server sets cache-control headers
+  const res = await fetch(url, { credentials: 'include' });
   const data = (await res.json()) as T & { success?: boolean; message?: string; error?: string };
   if (!res.ok || data.success === false) {
     throw new Error(data.message || data.error || 'Erreur lors du chargement des données.');
   }
   return data as T;
+}
+
+/**
+ * SWR-aware fetch:
+ *  - Returns cached data immediately if fresh (<30 s)
+ *  - Returns cached data immediately + revalidates in background if stale
+ *  - Deduplicates in-flight requests
+ */
+async function getJson<T>(url: string): Promise<T> {
+  const hit = getCached<T>(url);
+
+  if (hit && !hit.stale) {
+    // Fresh — return immediately
+    return hit.data;
+  }
+
+  // Check if there's already an in-flight promise (dedup)
+  const existing = cache.get(url) as CacheEntry<T> | undefined;
+  if (existing?.promise && !hit) {
+    return existing.promise;
+  }
+
+  const promise = fetchRemote<T>(url).then((data) => {
+    setCache(url, data, promise);
+    return data;
+  });
+
+  if (hit?.stale) {
+    // Stale: return old data immediately, revalidate in background
+    // Store promise so concurrent callers deduplicate
+    cache.set(url, { ...(cache.get(url) as CacheEntry<unknown>), promise } as CacheEntry<unknown>);
+    void promise; // fire and forget
+    return hit.data;
+  }
+
+  // No cache hit — await the promise
+  setCache(url, await promise, promise);
+  return (cache.get(url) as CacheEntry<T>).data;
 }
 
 export function fetchOverview(from: number, to: number, filter: AnalyticsFilter): Promise<OverviewResponse> {

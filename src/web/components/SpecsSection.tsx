@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useRef, useState, useEffect } from 'react';
-import specsData from '../data/specs-data.json';
 import { SpecModel, SpecValue } from '../types';
 import { Language } from '../data/translations';
 import type { ProductSpecs, ProductSpecModel } from '@/lib/products/types';
@@ -9,7 +8,7 @@ import type { ProductSpecs, ProductSpecModel } from '@/lib/products/types';
 interface SpecsSectionProps {
   onSelectDatasheet: (model: SpecModel) => void;
   lang?: Language;
-  /** Matrice produit (template dynamique). À défaut, specs-data.json global. */
+  /** Matrice produit (template dynamique). */
   specs?: ProductSpecs;
 }
 
@@ -26,9 +25,28 @@ export const SpecsSection: React.FC<SpecsSectionProps> = ({ onSelectDatasheet, l
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
 
-  const models: SpecModel[] = specs?.models?.length
-    ? specs.models.map(toSpecModel)
-    : (specsData.models as SpecModel[]);
+  // Modèles du produit courant, sans repli global : la matrice PXT Fine qui
+  // vivait dans `specs-data.json` s'affichait pour tout produit sans matrice.
+  // Ce fichier a été supprimé ; une matrice absente masque la section.
+  const models: SpecModel[] = (specs?.models ?? []).map(toSpecModel);
+
+  // Groupes : structure du PDF (libellé + lignes). À défaut de groupes, les
+  // lignes sont dérivées de l'union des clés réellement présentes dans les
+  // modèles — aucune ligne n'est ajoutée pour une caractéristique absente.
+  const groups = (() => {
+    if (specs?.groups?.length) {
+      return specs.groups.map((g) => ({
+        label: g.label,
+        rows: g.rows.map((r) => ({ key: r.key, label: r.label })),
+      }));
+    }
+    const keys = new Set<string>();
+    for (const model of models) {
+      for (const key of Object.keys(model.specs ?? {})) keys.add(key);
+    }
+    const rows = Array.from(keys).map((key) => ({ key, label: key }));
+    return rows.length > 0 ? [{ label: '', rows }] : [];
+  })();
 
   const modelCount = String(models.length).padStart(2, '0');
 
@@ -57,59 +75,6 @@ export const SpecsSection: React.FC<SpecsSectionProps> = ({ onSelectDatasheet, l
     scrollRef.current.scrollBy({ left: offset, behavior: 'smooth' });
   };
 
-  const groups = [
-    {
-      name: 'GENERAL',
-      label: lang === 'FR' ? 'GÉNÉRAL' : 'GENERAL',
-      rows: [
-        { key: 'env', label: lang === 'FR' ? 'INTÉRIEUR / EXTÉRIEUR' : 'IN / OUT' },
-        { key: 'arrangement', label: lang === 'FR' ? 'AGENCEMENT LED' : 'LED ARRANGEMENT' },
-      ],
-    },
-    {
-      name: 'PHYSICAL',
-      label: lang === 'FR' ? 'PHYSIQUE & MÉCANIQUE' : 'PHYSICAL',
-      rows: [
-        { key: 'pitch', label: lang === 'FR' ? 'PITCH PIXEL' : 'PIXEL PITCH' },
-        { key: 'density', label: lang === 'FR' ? 'DENSITÉ PHYSIQUE' : 'PHYSICAL DENSITY' },
-        { key: 'moduleRes', label: lang === 'FR' ? 'RÉSOLUTION MODULE (H/V)' : 'MODULE RESOLUTION (H/V)' },
-        { key: 'moduleDim', label: lang === 'FR' ? 'DIMENSIONS MODULE' : 'MODULE DIMENSIONS' },
-        { key: 'cabRes', label: lang === 'FR' ? 'RÉSOLUTION CHÂSSIS (H/V)' : 'CABINET RESOLUTION (H/V)' },
-        { key: 'cabDim', label: lang === 'FR' ? 'DIMENSIONS CHÂSSIS' : 'CABINET DIMENSIONS' },
-        { key: 'weight', label: lang === 'FR' ? 'POIDS DU CHÂSSIS' : 'CABINET WEIGHT' },
-      ],
-    },
-    {
-      name: 'OPTICAL',
-      label: lang === 'FR' ? 'OPTIQUE' : 'OPTICAL',
-      rows: [
-        { key: 'brightness', label: lang === 'FR' ? 'LUMINOSITÉ' : 'BRIGHTNESS' },
-        { key: 'refresh', label: lang === 'FR' ? 'TAUX DE RAFRAÎCHISSEMENT' : 'REFRESH RATE' },
-        { key: 'scan', label: lang === 'FR' ? 'TAUX DE BALAYAGE' : 'SCAN RATE' },
-        { key: 'angle', label: lang === 'FR' ? 'ANGLE DE VISION (H/V)' : 'VIEWING ANGLE (H/V)' },
-      ],
-    },
-    {
-      name: 'ELECTRICAL',
-      label: lang === 'FR' ? 'ÉLECTRIQUE' : 'ELECTRICAL',
-      rows: [
-        { key: 'maxPower', label: lang === 'FR' ? 'PUISSANCE MAX (W / PANNEAU)' : 'MAX POWER (W / PANEL)' },
-        { key: 'avgPower', label: lang === 'FR' ? 'PUISSANCE MOYENNE (W / PANNEAU)' : 'AVG POWER (W / PANEL)' },
-        { key: 'power', label: lang === 'FR' ? 'SOURCE D’ALIMENTATION' : 'OPERATING POWER SOURCE' },
-        { key: 'signal', label: lang === 'FR' ? 'ENTRÉES DU SIGNAL' : 'SIGNAL INPUT' },
-      ],
-    },
-    {
-      name: 'ENVIRONMENTAL',
-      label: lang === 'FR' ? 'ENVIRONNEMENT & CERTIFICATIONS' : 'ENVIRONMENTAL',
-      rows: [
-        { key: 'ip', label: lang === 'FR' ? 'INDICE IP' : 'IP RATING' },
-        { key: 'temp', label: lang === 'FR' ? 'TEMPÉRATURE DE FONCTIONNEMENT' : 'OPERATING TEMPERATURE' },
-        { key: 'transparency', label: lang === 'FR' ? 'TRANSPARENCE' : 'TRANSPARENCY' },
-        { key: 'certs', label: lang === 'FR' ? 'CERTIFICATIONS' : 'CERTIFICATIONS' },
-      ],
-    },
-  ];
 
   return (
     <section id="specs" className="section theme-dark">
@@ -132,20 +97,8 @@ export const SpecsSection: React.FC<SpecsSectionProps> = ({ onSelectDatasheet, l
           {lang === 'FR' ? 'Données techniques.' : 'Technical data.'}
         </h2>
 
-        {/* Description */}
-        <p
-          style={{
-            margin: '0 0 44px',
-            maxWidth: '560px',
-            fontSize: '15.5px',
-            lineHeight: 1.6,
-            color: 'var(--dark-body, #a3a3a3)',
-          }}
-        >
-          {lang === 'FR'
-            ? 'Données détaillées par modèle pour la plateforme Fine. Les valeurs certifiées sont extraites des fiches techniques constructeur.'
-            : 'Model-level data for the XR Fine platform. Values not yet confirmed are marked and will be populated from the official datasheets.'}
-        </p>
+        {/* Description — supprimée : elle nommait la « plateforme Fine »,
+            donc la matrice PXT Fine, sur la page de n'importe quel produit. */}
 
         {/* Controls: Model Count & Scroll Arrows */}
         <div
@@ -343,9 +296,11 @@ export const SpecsSection: React.FC<SpecsSectionProps> = ({ onSelectDatasheet, l
             </div>
 
             {/* Spec Groups */}
-            {groups.map((grp) => (
-              <div key={grp.name}>
-                {/* Group Heading Row */}
+            {groups.map((grp, grpIdx) => (
+              <div key={grp.label || grpIdx}>
+                {/* En-tête de groupe — absent quand les lignes n'ont pas de
+                    libellé de groupe (matrice saisie sans structure). */}
+                {grp.label && (
                 <div
                   style={{
                     display: 'flex',
@@ -376,6 +331,7 @@ export const SpecsSection: React.FC<SpecsSectionProps> = ({ onSelectDatasheet, l
                   </div>
                   <div style={{ flex: 1, minWidth: '280px' }} />
                 </div>
+                )}
 
                 {/* Group Rows */}
                 {grp.rows.map((row) => (

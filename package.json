@@ -13,6 +13,7 @@
     "push": "node scripts/push.mjs",
     "setup:hooks": "node scripts/install-git-hooks.mjs",
     "test:version": "node --experimental-strip-types scripts/test-versioning.ts",
+    "test:pdf-parser": "node --experimental-strip-types scripts/test-product-pdf-parser.ts",
     "prebuild": "npm run build:info && npm run build:widget"
   },
   "dependencies": {
