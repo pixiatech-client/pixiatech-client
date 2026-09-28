@@ -194,13 +194,11 @@ header a, header button {
   text-decoration: none !important;
 }
 
-/* Pile mono du site : JetBrains Mono, chargee dans src/app/web/layout.tsx.
-   Token global pour que les libelles en petites capitales de la replica
-   rendent tous la meme police. Avant, ces libelles utilisaient `monospace`
-   generique, qui tombe sur Consolas sous Windows et parait donc etranger
-   au reste du site. */
+/* Pile mono du site : remappee sur la police du site (Satoshi) — l'utilisateur
+   veut que tout texte qui utilisait la police mono soit rendu dans la font du
+   site. On garde le token pour ne pas toucher a des dizaines de fichiers. */
 :root {
-  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  --font-mono: "Satoshi", "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 #pixia-web {
   font-family: var(--font, "Satoshi", "Helvetica Neue", Helvetica, Arial, sans-serif);
@@ -209,6 +207,6 @@ header a, header button {
   font-family: var(--font-mono);
 }
 #pixia-web ::selection {
-  background: var(--accent, #C3F910);
+  background: var(--black, #080808);
   color: #fff;
 }

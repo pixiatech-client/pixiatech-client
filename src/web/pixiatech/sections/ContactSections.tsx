@@ -1,10 +1,23 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  motion,
+  useMotionValue,
+  useReducedMotion,
+  useScroll,
+  useSpring,
+  useTransform,
+} from 'framer-motion';
 import { trackFormSubmit } from '@/lib/analytics/tracker';
 import { DEFAULT_PAGE_CONTENT } from '@/lib/site-web/defaultPageContent';
 import type { ContactSubmissionPayload, PageContentConfig } from '@/lib/site-web/types';
 import type { Language } from '../../pixiatech-translations';
+
+/* Drapeau temporaire : masque l'etape "choisissez votre type de projet"
+   (fieldset des categories) pour raccourcir la tablette. Passez a `true`
+   pour la restaurer. */
+const SHOW_PROJECT_TYPE_STEP = false;
 
 /* ──────────────────────────────  Styles  ──────────────────────────────
    Repris de web.css / pixiatech.css : encre #080808, accent lime #C3F910, mono
@@ -55,7 +68,7 @@ const CONTACT_CSS = `
 .ct-area { resize: vertical; min-height: 132px; }
 .ct-label {
   display: block;
-  font-family: var(--font-mono);
+  font-family: var(--font);
   font-size: 10.5px;
   letter-spacing: .18em;
   text-transform: uppercase;
@@ -78,8 +91,7 @@ const CONTACT_CSS = `
 .ct-row-label { transition: color .2s ease; }
 .ct-row:hover .ct-row-label { color: #C3F910; }
 
-/* Titre de carte en Satoshi, comme tous les titres du site ; le mono revient
-   sur la seule ligne de precision (.ct-chip-sub). */
+/* Titre de carte en Satoshi, comme tous les titres du site. */
 .ct-chip {
   font-family: var(--font);
   font-size: 14.5px;
@@ -117,7 +129,7 @@ const CONTACT_CSS = `
 }
 .ct-chip-sub {
   display: block;
-  font-family: var(--font-mono);
+  font-family: var(--font);
   font-size: 9.5px;
   letter-spacing: .16em;
   text-transform: uppercase;
@@ -321,14 +333,535 @@ const CONTACT_CSS = `
 /* Carte selectionnee : le lime plein est deja la couleur, le voile s'eteint. */
 .ct-chip[aria-pressed='true'] { --ct-mesh-op: 0; }
 
-@media (min-width: 768px) {
-  .ct-input, .ct-area { font-size: 15px; }
+/* ── Hero : zoom au scroll (faccon topology.vc) ─────────────────────────
+   La section est epinglee (sticky) plein ecran ; contenu + voile mesh
+   grandissent de 1 → 1.18 pendant que la section suivante, opaque et au-dessus
+   (z-index inline), glisse par-dessus. Sur mobile on renonce a l'epingle : la
+   section reprend le flux normal, avec juste le zoom leger a la sortie. */
+.ct-zoom-pin { height: calc(100svh + 62vh); }
+.ct-zoom-hero {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  overflow: hidden;
 }
+.ct-zoom-scale { position: relative; min-height: 100svh; }
+.ct-zoom-bg {
+  position: absolute;
+  inset: -45%;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(38% 42% at 14% 20%, var(--mesh-1, #C3F910) 0px, transparent 100%),
+    radial-gradient(40% 38% at 86% 14%, var(--mesh-2, #8FE83A) 0px, transparent 100%),
+    radial-gradient(42% 44% at 80% 86%, var(--mesh-3, #4AE07A) 0px, transparent 100%),
+    radial-gradient(36% 40% at 18% 84%, var(--mesh-2, #8FE83A) 0px, transparent 100%);
+  filter: blur(55px);
+  opacity: .14;
+  animation: ct-mesh-drift 34s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+/* ── Tablette « Our fastest-ever POS » (Shopify Editions Spring 2026) ───────
+   Composition fidèle au référence : fond noir #080808, environnement studio
+   sombre avec lumière diffuse haute et texture merch, grande tablette widescreen
+   en aluminium anodisé avec chanfrein diamant CNC, caméra paysage, boutons
+   physiques, reflets spéculaires et perspective 3D pilotée par la souris. */
+.ct-retail-section {
+  position: relative;
+  background: var(--black, #080808);
+  overflow: hidden;
+  padding: clamp(80px, 10vh, 120px) 0 clamp(80px, 10vh, 130px);
+}
+.ct-retail-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 24px 40px;
+  margin-bottom: clamp(36px, 4.5vw, 64px);
+  position: relative;
+  z-index: 2;
+}
+.ct-retail-head-title {
+  max-width: 680px;
+}
+.ct-retail-head-side {
+  max-width: 480px;
+}
+.ct-stage {
+  position: relative;
+  perspective: 1600px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px 0 30px;
+}
+.ct-device-glow {
+  position: absolute;
+  inset: -16%;
+  z-index: -1;
+  background:
+    radial-gradient(56% 62% at 50% 38%, rgba(255, 255, 255, .08), transparent 66%),
+    radial-gradient(44% 54% at 80% 84%, rgba(130, 142, 160, .06), transparent 72%);
+  filter: blur(60px);
+  pointer-events: none;
+}
+.ct-device-3d {
+  position: relative;
+  transform: rotateX(7.5deg);
+  transform-style: preserve-3d;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+.ct-device-frame {
+  position: relative;
+  width: min(100%, 1160px);
+  margin-inline: auto;
+  transform-style: preserve-3d;
+}
+.ct-device {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  padding: clamp(14px, 1.6vw, 22px);
+  border-radius: clamp(30px, 3.4vw, 44px);
+  background: linear-gradient(160deg, #3d3c42 0%, #29282e 30%, #1c1b20 70%, #141317 100%);
+  border: 1px solid rgba(255, 255, 255, .22);
+  box-shadow:
+    /* Hairline métallique extérieur */
+    0 0 0 1px rgba(255, 255, 255, .08),
+    /* Épaisseur 3D métallique extrudée (chanfrein latéral) */
+    0 1px 0 #3a393f,
+    0 2px 0 #323136,
+    0 3px 0 #2a292e,
+    0 4px 0 #222126,
+    0 5px 0 #1b1a1f,
+    0 6px 0 #151418,
+    0 7px 1px rgba(0, 0, 0, .55),
+    /* Ombres flottantes d'ambiance studio */
+    0 25px 50px -12px rgba(0, 0, 0, .88),
+    0 70px 140px -30px rgba(0, 0, 0, .98),
+    0 0 100px rgba(0, 0, 0, .75),
+    /* Chanfrein diamant CNC et liseré supérieur */
+    inset 0 1.5px 0.5px rgba(255, 255, 255, .45),
+    inset 1px 0 0 rgba(255, 255, 255, .2),
+    inset -1px 0 0 rgba(0, 0, 0, .6),
+    inset 0 -1.5px 0.5px rgba(0, 0, 0, .85);
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+.ct-device::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(120deg, rgba(255, 255, 255, .14), transparent 22%, transparent 76%, rgba(255, 255, 255, .08));
+}
+.ct-device::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .2), rgba(255, 255, 255, .04) 8%, transparent 24%),
+    linear-gradient(0deg, rgba(0, 0, 0, .65), transparent 12%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .12),
+    inset 0 0 0 1px rgba(255, 255, 255, .04);
+}
+
+/* Caméra paysage & capteur au centre du bord supérieur */
+.ct-dev-cam {
+  position: absolute;
+  top: clamp(6px, .8vw, 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #2a3c50 0%, #0d1722 55%, #05080c 100%);
+  box-shadow: inset 0 0 2px rgba(0, 0, 0, .9), 0 0 0 1px rgba(255, 255, 255, .15);
+  z-index: 5;
+  pointer-events: none;
+}
+.ct-dev-sensor {
+  position: absolute;
+  top: clamp(8px, .95vw, 12px);
+  left: calc(50% + 14px);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #0d1218;
+  box-shadow: inset 0 0 1px rgba(0, 0, 0, .8), 0 0 0 1px rgba(255, 255, 255, .08);
+  z-index: 5;
+  pointer-events: none;
+}
+
+/* Boutons physiques tranches : volume à gauche, power en haut à droite */
+.ct-dev-vol, .ct-dev-power {
+  position: absolute;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(180deg, #717078, #3c3b41 55%, #232226);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, .55),
+    inset 0 1px 0 rgba(255, 255, 255, .25),
+    inset 0 -1px 0 rgba(0, 0, 0, .45);
+}
+.ct-dev-vol {
+  left: -6px;
+  width: 6px;
+  height: clamp(30px, 3.2vw, 42px);
+  border-radius: 4px 0 0 4px;
+}
+.ct-dev-vol-1 { top: clamp(75px, 9vw, 130px); }
+.ct-dev-vol-2 { top: calc(clamp(75px, 9vw, 130px) + clamp(38px, 4.2vw, 54px)); }
+.ct-dev-power {
+  right: clamp(48px, 6vw, 90px);
+  top: -6px;
+  width: clamp(40px, 4.5vw, 60px);
+  height: 6px;
+  border-radius: 4px 4px 0 0;
+}
+
+/* Écran tablette */
+.ct-device-screen {
+  position: relative;
+  border-radius: clamp(22px, 2.6vw, 32px);
+  overflow: hidden;
+  background: linear-gradient(180deg, #0d0e13 0%, #0a0b10 100%);
+  border: 1px solid rgba(255, 255, 255, .09);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, .04),
+    inset 0 2px 28px rgba(0, 0, 0, .92),
+    inset 0 0 120px rgba(0, 0, 0, .82);
+  /* Subtle active-display ambient glow */
+  isolation: isolate;
+}
+/* Glass sheen overlay */
+.ct-device-screen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(
+    128deg,
+    rgba(255,255,255,.055) 0%,
+    transparent 28%,
+    transparent 72%,
+    rgba(255,255,255,.02) 100%
+  );
+}
+/* Scrollable inner area so form is never clipped */
+.ct-screen-scroll {
+  max-height: clamp(480px, 56vh, 720px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,.12) transparent;
+}
+.ct-screen-scroll::-webkit-scrollbar { width: 4px; }
+.ct-screen-scroll::-webkit-scrollbar-track { background: transparent; }
+.ct-screen-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,.14); border-radius: 2px; }
+
+/* OS status bar */
+.ct-os-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 9px clamp(14px, 2vw, 26px) 8px;
+  background: rgba(10, 11, 16, .9);
+  border-bottom: 1px solid rgba(255, 255, 255, .06);
+  font-family: var(--font);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .12em;
+  color: rgba(255, 255, 255, .55);
+  user-select: none;
+  position: relative;
+  z-index: 3;
+}
+.ct-os-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ct-os-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #C3F910;
+  box-shadow: 0 0 6px #C3F910;
+  flex: none;
+  animation: ct-dot-pulse 2.8s ease-in-out infinite;
+}
+@keyframes ct-dot-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 6px #C3F910; }
+  50% { opacity: .6; box-shadow: 0 0 10px #C3F910; }
+}
+.ct-os-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.ct-os-signal {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 10px;
+}
+.ct-os-signal span {
+  width: 3px;
+  background: rgba(255,255,255,.5);
+  border-radius: 1px;
+  display: block;
+}
+.ct-os-signal span:nth-child(1) { height: 4px; }
+.ct-os-signal span:nth-child(2) { height: 6px; }
+.ct-os-signal span:nth-child(3) { height: 8px; }
+.ct-os-signal span:nth-child(4) { height: 10px; }
+.ct-os-battery {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 9px;
+  color: rgba(255,255,255,.55);
+}
+.ct-os-battery-icon {
+  width: 18px;
+  height: 9px;
+  border: 1.5px solid rgba(255,255,255,.4);
+  border-radius: 2px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 1px;
+}
+.ct-os-battery-icon::after {
+  content: '';
+  position: absolute;
+  right: -5px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 5px;
+  background: rgba(255,255,255,.35);
+  border-radius: 0 1px 1px 0;
+}
+.ct-os-battery-fill {
+  height: 100%;
+  width: 72%;
+  background: #C3F910;
+  border-radius: 1px;
+}
+
+/* App bar below OS bar */
+.ct-tablet-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 11px clamp(14px, 2vw, 26px) 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, .06);
+  background: rgba(13, 14, 20, .8);
+  font-family: var(--font);
+  font-size: 10.5px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  font-weight: 700;
+  position: relative;
+  z-index: 2;
+}
+.ct-tablet-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: rgba(255, 255, 255, .72);
+}
+.ct-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #C3F910;
+  box-shadow: 0 0 8px #C3F910;
+  flex: none;
+}
+.ct-tablet-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  letter-spacing: .14em;
+  color: #C3F910;
+  background: rgba(195, 249, 16, .1);
+  border: 1px solid rgba(195, 249, 16, .25);
+  padding: 3px 9px;
+}
+.ct-device-screen .ct-form-shell {
+  position: relative;
+  z-index: 2;
+  padding: clamp(16px, 2vw, 28px);
+}
+
+/* Widescreen 2-colonnes pour la tablette */
+.ct-form-cols {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 28px;
+}
+@media (min-width: 900px) {
+  .ct-form-cols {
+    grid-template-columns: 1.05fr 1fr;
+    gap: clamp(28px, 3.2vw, 48px);
+    align-items: start;
+  }
+}
+.ct-reassurance-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 22px 0 24px;
+  padding-top: 18px;
+  border-top: 1px solid var(--ct-line-strong);
+}
+.ct-reassurance-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--font);
+  font-size: 12.5px;
+  color: var(--ct-sub);
+  letter-spacing: .02em;
+}
+.ct-reassurance-dash {
+  width: 14px;
+  height: 2px;
+  background: #C3F910;
+  flex: none;
+}
+
+/* Ombre de contact au sol */
+.ct-floor-shadow {
+  position: absolute;
+  bottom: -40px;
+  left: 4%;
+  right: 4%;
+  height: 60px;
+  background: radial-gradient(ellipse at 50% 50%, rgba(0, 0, 0, .95) 0%, rgba(0, 0, 0, .5) 45%, transparent 75%);
+  filter: blur(28px);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Console coordonnées sous la tablette */
+.ct-coords-console {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 16px;
+  max-width: 1160px;
+  margin: clamp(48px, 6vh, 80px) auto 0;
+  position: relative;
+  z-index: 2;
+}
+.ct-coord-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 18px 20px;
+  background: rgba(255, 255, 255, .02);
+  border: 1px solid var(--ct-line-strong);
+  transition: border-color .2s ease, background .2s ease;
+}
+.ct-coord-card:hover {
+  border-color: #3a3a3a;
+  background: rgba(255, 255, 255, .035);
+}
+.ct-coord-label {
+  font-family: var(--font);
+  font-size: 10.5px;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--ct-muted);
+}
+.ct-coord-value {
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--ct-text);
+}
+.ct-coord-value a { color: var(--ct-text); }
+.ct-coord-value a:hover { color: #C3F910; }
+.ct-coord-sub {
+  display: block;
+  font-size: 12px;
+  color: var(--ct-muted);
+  margin-top: 4px;
+}
+
+/* ─── Environnement « studio sombre » ─────────────────────────────────────── */
+.ct-retail-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background: radial-gradient(120% 85% at 50% 30%, #0c0c0f 0%, #09090b 44%, #050507 100%);
+}
+.ct-retail-bg > div {
+  position: absolute;
+  inset: 0;
+}
+.ct-retail-merch {
+  position: absolute;
+  inset: 0;
+  background: url('/web/contact/retail-merch.webp') center 22% / cover no-repeat;
+  opacity: .32;
+  mix-blend-mode: screen;
+  filter: contrast(1.08) brightness(.9);
+  pointer-events: none;
+}
+.ct-retail-key {
+  background: radial-gradient(52% 60% at 50% 20%, rgba(255, 255, 255, .06), rgba(255, 255, 255, .015) 55%, transparent 78%);
+}
+.ct-retail-halo {
+  inset: -12% -18%;
+  background: radial-gradient(34% 42% at 50% 44%, rgba(255, 255, 255, .04), transparent 68%);
+  filter: blur(22px);
+}
+.ct-retail-fluid {
+  background-image:
+    radial-gradient(40% 46% at 30% 36%, rgba(48, 66, 88, .12) 0, transparent 62%),
+    radial-gradient(44% 48% at 72% 20%, rgba(30, 44, 60, .10) 0, transparent 64%),
+    radial-gradient(52% 46% at 66% 82%, rgba(40, 36, 52, .09) 0, transparent 62%),
+    radial-gradient(36% 42% at 16% 74%, rgba(52, 58, 70, .07) 0, transparent 58%);
+  filter: blur(46px) saturate(.9);
+  animation: ct-fluid-drift 46s ease-in-out infinite alternate;
+  will-change: transform;
+}
+@keyframes ct-fluid-drift {
+  0%   { transform: translate3d(-3%, -2%, 0) scale(1); }
+  50%  { transform: translate3d(2.5%, 3%, 0) scale(1.07); }
+  100% { transform: translate3d(-2%, 2.4%, 0) scale(1.03); }
+}
+.ct-retail-vignette {
+  background: radial-gradient(120% 95% at 50% 45%, transparent 40%, rgba(3, 3, 4, .44) 82%, rgba(2, 2, 3, .8) 100%);
+}
+.ct-retail-section > .wrap {
+  position: relative;
+  z-index: 1;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ct-input, .ct-area, .ct-chip, .ct-link, .ct-check, .ct-btn,
   .ct-faq-q, .ct-faq-plus, .ct-row-label { transition: none; }
   .ct-chip:active, .ct-btn:active, .ct-faq-btn[aria-expanded='true'] .ct-faq-plus { transform: none; }
-  .ct-mesh::before { animation: none; }
+  .ct-mesh::before, .ct-zoom-bg, .ct-retail-fluid { animation: none; }
 }
 `;
 
@@ -405,7 +938,7 @@ const eyebrowDark: React.CSSProperties = {
   fontSize: 11,
   letterSpacing: '.24em',
   textTransform: 'uppercase',
-  fontFamily: 'var(--font-mono)',
+  fontFamily: 'var(--font)',
   fontWeight: 700,
   color: DARK_MUTED,
   marginBottom: 28,
@@ -418,36 +951,18 @@ const digits = (value: string) => value.replace(/[^0-9]/g, '');
 
 /* ──────────────────────────────  Primitives  ────────────────────────────── */
 
-function InfoRow({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div
-      className="ct-row"
-      style={{
-        display: 'grid',
-        gridTemplateColumns: 'minmax(120px, 168px) 1fr',
-        gap: '8px 24px',
-        padding: '18px 0',
-        borderTop: `1px solid ${DARK_LINE_2}`,
-        alignItems: 'start',
-      }}
-    >
-      <span
-        className="ct-row-label"
-        style={{
-          fontFamily: 'var(--font-mono)',
-          fontSize: 10.5,
-          letterSpacing: '.18em',
-          textTransform: 'uppercase',
-          fontWeight: 700,
-          color: DARK_MUTED,
-          paddingTop: 2,
-        }}
-      >
-        {label}
-      </span>
-      <div style={{ fontSize: 15, lineHeight: 1.55, color: DARK_TEXT_2 }}>{children}</div>
-    </div>
+/* Horloge live pour la barre de status OS */
+function OsTime() {
+  const [time, setTime] = useState(() =>
+    new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
   );
+  useEffect(() => {
+    const id = setInterval(() => {
+      setTime(new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }));
+    }, 30_000);
+    return () => clearInterval(id);
+  }, []);
+  return <span>{time}</span>;
 }
 
 function Field({
@@ -653,7 +1168,7 @@ function ContactFormCard({
         </div>
       )}
 
-      {visibility.formCategorySelection && categories.length > 0 && (
+      {SHOW_PROJECT_TYPE_STEP && visibility.formCategorySelection && categories.length > 0 && (
         <fieldset style={{ border: 0, padding: 0, margin: '30px 0 0' }}>
           <legend className="ct-label" style={{ marginBottom: 12 }}>
             {form.step1Title}
@@ -809,7 +1324,7 @@ function ContactFormCard({
         </ActionButton>
         <span
           style={{
-            fontFamily: 'var(--font-mono)',
+            fontFamily: 'var(--font)',
             fontSize: 10.5,
             letterSpacing: '.14em',
             textTransform: 'uppercase',
@@ -820,6 +1335,274 @@ function ContactFormCard({
         </span>
       </div>
     </form>
+  );
+}
+
+/* ──────────────────────  Retail : tablette + coordonnées  ──────────────────
+   Recréation en CSS de la section « Our fastest-ever POS » des Shopify
+   Editions Spring 2026 : fond quasi noir, tablette aluminium argentée au
+   centre (col 3 → 10 de la grille), et un volant de coordonnées dans la
+   colonne de gauche — la ou le reference pose ses onglets « Add product… ».
+   Le formulaire vit sur l'écran de la tablette (la couleur de l'écran est
+   conservee). Un parallaxe souris incline la tablette et decale le halo,
+   sauf si l'utilisateur reduit les animations. */
+function RetailContact({
+  info,
+  form,
+  visibility,
+  lang,
+}: {
+  info: PageContentConfig['info'];
+  form: PageContentConfig['form'];
+  visibility: PageContentConfig['visibility'];
+  lang: Language;
+}) {
+  const reduceMotion = useReducedMotion();
+  // Sur ecran tactile (pas de souris) la scene reste statique : l'orientation
+  // par defaut est donnee par le CSS (.ct-device-3d), sans calcul JS.
+  const [coarse, setCoarse] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(hover: none), (pointer: coarse)');
+    setCoarse(mq.matches);
+    const onChange = (e: MediaQueryListEvent) => setCoarse(e.matches);
+    mq.addEventListener?.('change', onChange);
+    return () => mq.removeEventListener?.('change', onChange);
+  }, []);
+
+  // Parallaxe souris : position normalisée (-0.5..0.5) déposée dans mx/my,
+  // amortie par deux ressorts souples, puis répercutée en 3D sur la tablette et le halo.
+  const mx = useMotionValue(0);
+  const my = useMotionValue(0);
+  const sx = useSpring(mx, { stiffness: 65, damping: 20, mass: 0.8 });
+  const sy = useSpring(my, { stiffness: 65, damping: 20, mass: 0.8 });
+
+  // Rotation 3D de la tablette (perspective) façon Shopify Editions Spring 2026 POS :
+  // - Au repos : tablette légèrement inclinée vers l'arrière (~7.5°)
+  // - Souris vers le haut (sy < 0) : s'incline/pivote davantage vers l'arrière pour faire face au curseur (~13°)
+  // - Souris vers le bas (sy > 0) : s'incline vers l'avant (~2°)
+  const devRotX = useTransform(sy, [-0.5, 0.5], [13, 2]);
+
+  // - Souris vers la gauche (sx < 0) : pivote vers la gauche (-9°)
+  // - Souris vers la droite (sx > 0) : pivote vers la droite (+9°)
+  const devRotY = useTransform(sx, [-0.5, 0.5], [-9, 9]);
+
+  // Roulis Z léger pour le réalisme physique
+  const devRotZ = useTransform(sx, [-0.5, 0.5], [-1.2, 1.2]);
+
+  // Micro-translation parallaxe X / Y
+  const devX = useTransform(sx, [-0.5, 0.5], [-14, 14]);
+  const devY = useTransform(sy, [-0.5, 0.5], [-10, 10]);
+
+  // Déplacement opposé du halo studio pour une sensation de profondeur optique
+  const glowX = useTransform(sx, [-0.5, 0.5], [26, -26]);
+  const glowY = useTransform(sy, [-0.5, 0.5], [18, -18]);
+
+  const onPointerMove = (e: React.PointerEvent<HTMLElement>) => {
+    if (reduceMotion || e.pointerType !== 'mouse') return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    mx.set((e.clientX - rect.left) / rect.width - 0.5);
+    my.set((e.clientY - rect.top) / rect.height - 0.5);
+  };
+  const onPointerLeave = () => {
+    // Retour doux à la position initiale de repos
+    mx.set(0);
+    my.set(0);
+  };
+
+  const deviceActive = !reduceMotion && !coarse;
+  const whatsappHref = `https://wa.me/${digits(info.whatsappNumber)}?text=${encodeURIComponent(
+    "Bonjour PIXIATECH, je souhaite échanger sur un projet d'affichage / écran LED.",
+  )}`;
+
+  return (
+    <section
+      className="theme-dark ct-retail-section"
+      style={{
+        ...TONE_DARK,
+        position: 'relative',
+        zIndex: 2,
+        background: 'var(--black, #080808)',
+        overflow: 'hidden',
+        padding: 'clamp(64px, 8vh, 110px) 0 clamp(80px, 10vh, 130px)',
+      }}
+      onPointerMove={onPointerMove}
+      onPointerLeave={onPointerLeave}
+    >
+      {/* Environnement studio sombre avec texture Shopify POS */}
+      <div className="ct-retail-bg" aria-hidden="true">
+        <div className="ct-retail-merch" />
+        <div className="ct-retail-key" />
+        <div className="ct-retail-halo" />
+        <div className="ct-retail-fluid" />
+        <div className="ct-retail-vignette" />
+      </div>
+
+      <div className="wrap">
+        {/* En-tête façon Shopify : Titre showroom & consultation */}
+        {visibility.contactInfoCard && (
+          <header className="ct-retail-head">
+            <div className="ct-retail-head-title">
+              <div style={eyebrowDark}>{info.hqBadge}</div>
+              <h2 className="display" style={{ margin: 0, color: DARK_TEXT, fontSize: 'clamp(30px, 3.4vw, 48px)', maxWidth: 720 }}>
+                {info.hqTitle}
+              </h2>
+            </div>
+            <div className="ct-retail-head-side">
+              <p style={{ margin: 0, color: DARK_BODY, fontSize: 16, lineHeight: 1.62 }}>{info.hqDesc}</p>
+            </div>
+          </header>
+        )}
+
+        {/* Scène centrale : Grande tablette 3D widescreen flottante */}
+        <div
+          className="ct-stage"
+          id="contact-form"
+          style={{
+            scrollMarginTop: 'calc(var(--nav-h) + 32px)',
+          }}
+        >
+          <motion.div
+            className="ct-device-glow"
+            aria-hidden="true"
+            style={deviceActive ? { x: glowX, y: glowY } : undefined}
+          />
+          <motion.div
+            className="ct-device-3d"
+            style={{
+              transformStyle: 'preserve-3d',
+              ...(deviceActive ? { rotateX: devRotX, rotateY: devRotY, rotateZ: devRotZ, x: devX, y: devY } : {}),
+            }}
+          >
+            <div className="ct-device-frame">
+              {/* Boutons physiques sur les tranches */}
+              <span className="ct-dev-vol ct-dev-vol-1" aria-hidden="true" />
+              <span className="ct-dev-vol ct-dev-vol-2" aria-hidden="true" />
+              <span className="ct-dev-power" aria-hidden="true" />
+
+              {/* Châssis métallique 3D */}
+              <div className="ct-device">
+                {/* Caméra frontale & capteur au centre du bord supérieur */}
+                <span className="ct-dev-cam" aria-hidden="true" />
+                <span className="ct-dev-sensor" aria-hidden="true" />
+
+                {/* Écran avec reflet de verre */}
+                <div className="ct-device-screen">
+                  {/* Barre de status OS façon POS */}
+                  <div className="ct-os-bar" aria-hidden="true">
+                    <div className="ct-os-bar-left">
+                      <span className="ct-os-dot" />
+                      <span>PIXIATECH POS</span>
+                    </div>
+                    <div className="ct-os-bar-right">
+                      <OsTime />
+                      <div className="ct-os-signal">
+                        <span /><span /><span /><span />
+                      </div>
+                      <div className="ct-os-battery">
+                        <div className="ct-os-battery-icon">
+                          <div className="ct-os-battery-fill" />
+                        </div>
+                        72%
+                      </div>
+                    </div>
+                  </div>
+                  {/* App bar */}
+                  <div className="ct-tablet-bar">
+                    <div className="ct-tablet-bar-left">
+                      <span className="ct-status-dot" aria-hidden="true" />
+                      <span style={{ color: 'rgba(255,255,255,.72)' }}>
+                        {lang === 'FR' ? 'Formulaire de contact' : 'Contact form'}
+                      </span>
+                    </div>
+                    <span className="ct-tablet-badge">
+                      {lang === 'FR' ? 'Réponse sous 2h' : 'Reply within 2h'}
+                    </span>
+                  </div>
+                  {/* Formulaire scrollable à l'intérieur de la tablette */}
+                  <div className="ct-screen-scroll">
+                    <div className="ct-form-shell" style={TONE_DARK}>
+                      <ContactFormCard form={form} visibility={visibility} lang={lang} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Ombre de contact au sol */}
+              <div className="ct-floor-shadow" aria-hidden="true" />
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Console de coordonnées réelles sous la tablette */}
+        {visibility.contactInfoCard && (
+          <div className="ct-coords-console">
+            {visibility.infoAddressRow && (
+              <div className="ct-coord-card">
+                <span className="ct-coord-label">{info.addressLabel}</span>
+                <span className="ct-coord-value">
+                  {info.addressValue}{' '}
+                  <a
+                    href={mapsUrl(info.addressValue)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="ct-link"
+                    style={{ whiteSpace: 'nowrap' }}
+                  >
+                    {lang === 'FR' ? 'Itinéraire ↗' : 'Directions ↗'}
+                  </a>
+                </span>
+              </div>
+            )}
+            {visibility.infoPhonesRow && (
+              <div className="ct-coord-card">
+                <span className="ct-coord-label">{info.phonesLabel}</span>
+                <span className="ct-coord-value">
+                  <a href={`tel:${digits(info.phone1)}`} className="ct-link">
+                    {info.phone1}
+                  </a>
+                  {info.phone2 && (
+                    <>
+                      {' · '}
+                      <a href={`tel:${digits(info.phone2)}`} className="ct-link">
+                        {info.phone2}
+                      </a>
+                    </>
+                  )}
+                </span>
+              </div>
+            )}
+            {visibility.infoEmailRow && (
+              <div className="ct-coord-card">
+                <span className="ct-coord-label">{info.emailLabel}</span>
+                <span className="ct-coord-value">
+                  <a href={`mailto:${info.emailValue}`} className="ct-link">
+                    {info.emailValue}
+                  </a>
+                </span>
+              </div>
+            )}
+            {visibility.infoWhatsappRow && (
+              <div className="ct-coord-card">
+                <span className="ct-coord-label">{info.whatsappLabel}</span>
+                <span className="ct-coord-value">
+                  <a href={whatsappHref} target="_blank" rel="noreferrer" className="ct-link">
+                    {info.whatsappNumber}
+                  </a>
+                  <span className="ct-coord-sub">{info.whatsappSubtext}</span>
+                </span>
+              </div>
+            )}
+            {visibility.infoWorkingHoursRow && (
+              <div className="ct-coord-card">
+                <span className="ct-coord-label">{info.hoursLabel.replace(':', '')}</span>
+                <span className="ct-coord-value">{info.hoursValue}</span>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </section>
   );
 }
 
@@ -852,7 +1635,7 @@ function FaqList({ faq }: { faq: PageContentConfig['faq'] }) {
                 <span
                   style={{
                     display: 'block',
-                    fontFamily: 'var(--font-mono)',
+                    fontFamily: 'var(--font)',
                     fontSize: 10.5,
                     letterSpacing: '.18em',
                     textTransform: 'uppercase',
@@ -888,6 +1671,11 @@ function FaqList({ faq }: { faq: PageContentConfig['faq'] }) {
 
 export function ContactSections({ lang }: { lang: Language }) {
   const [content, setContent] = useState<PageContentConfig>(DEFAULT_PAGE_CONTENT);
+  const pinRef = useRef<HTMLDivElement>(null);
+  const reduceMotion = useReducedMotion();
+  const { scrollYProgress } = useScroll({ target: pinRef, offset: ['start start', 'end start'] });
+  const zoom = useTransform(scrollYProgress, [0, 1], [1, 1.18]);
+  const heroScale = reduceMotion ? 1 : zoom;
 
   useEffect(() => {
     let alive = true;
@@ -919,235 +1707,113 @@ export function ContactSections({ lang }: { lang: Language }) {
     document.getElementById('contact-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
   const stats = [hero.stat1Text, hero.stat2Text, hero.stat3Text].filter(Boolean);
-  const whatsappHref = `https://wa.me/${digits(info.whatsappNumber)}?text=${encodeURIComponent(
-    "Bonjour PIXIATECH, je souhaite échanger sur un projet d'affichage / écran LED.",
-  )}`;
 
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: CONTACT_CSS }} />
 
-      {/* ── Hero ─────────────────────────────────────────────── */}
-      <section
-        id="contact"
-        className="theme-dark ct-mesh ct-mesh-1"
-        style={{
-          ...TONE_DARK,
-          ...meshVars(0),
-          position: 'relative',
-          background: 'var(--black, #080808)',
-          padding: 'calc(var(--nav-h) + clamp(48px, 7vh, 92px)) 0 clamp(64px, 8vh, 104px)',
-        }}
-      >
-        <div className="wrap">
-          {visibility.heroBadge && (
-            <div style={eyebrowDark}>
-              {lang === 'FR' ? 'PIXIATECH / CONTACT' : 'PIXIATECH / CONTACT'}
-            </div>
-          )}
-          {visibility.heroTitle && (
-            <h1 className="display" style={{ margin: 0, color: DARK_TEXT, maxWidth: 1020 }}>
-              {hero.titleLine1}
-              {hero.titleHighlight && (
-                <>
-                  <br />
-                  <span style={{ color: ACCENT }}>{hero.titleHighlight}</span>
-                </>
-              )}
-            </h1>
-          )}
-          {visibility.heroSubtitle && (
-            <p
-              className="lede"
-              data-reveal="true"
-              style={{ margin: '30px 0 0', maxWidth: 660, color: DARK_BODY, fontSize: 17, lineHeight: 1.62 }}
-            >
-              {hero.subtitle}
-            </p>
-          )}
-
-          {visibility.heroStatsPills && stats.length > 0 && (
+      {/* ── Hero : epingle, zoom au scroll (faccon topology.vc) ── */}
+      <div ref={pinRef} className="ct-zoom-pin" style={{ position: 'relative' }}>
+        <section
+          id="contact"
+          className="theme-dark ct-mesh ct-mesh-1 ct-zoom-hero"
+          style={{ ...TONE_DARK, ...meshVars(0), background: 'var(--black, #080808)' }}
+        >
+          <motion.div className="ct-zoom-scale" style={{ scale: heroScale, willChange: 'transform' }}>
+            <div className="ct-zoom-bg" aria-hidden="true" />
             <div
-              data-reveal="true"
+              className="wrap"
               style={{
+                position: 'relative',
+                zIndex: 1,
+                minHeight: '100svh',
                 display: 'flex',
-                flexWrap: 'wrap',
-                gap: '14px 44px',
-                marginTop: 48,
-                paddingTop: 26,
-                borderTop: `1px solid ${DARK_LINE}`,
+                flexDirection: 'column',
+                justifyContent: 'center',
+                padding: 'calc(var(--nav-h) + clamp(16px, 3vh, 40px)) 24px clamp(48px, 7vh, 92px)',
               }}
             >
-              {stats.map((stat) => (
-                <span
-                  key={stat}
+              {visibility.heroBadge && (
+                <div style={eyebrowDark}>
+                  {lang === 'FR' ? 'PIXIATECH / CONTACT' : 'PIXIATECH / CONTACT'}
+                </div>
+              )}
+              {visibility.heroTitle && (
+                <h1 className="display" style={{ margin: 0, color: DARK_TEXT, maxWidth: 1020 }}>
+                  {hero.titleLine1}
+                  {hero.titleHighlight && (
+                    <>
+                      <br />
+                      <span style={{ color: ACCENT }}>{hero.titleHighlight}</span>
+                    </>
+                  )}
+                </h1>
+              )}
+              {visibility.heroSubtitle && (
+                <p
+                  className="lede"
+                  data-reveal="true"
+                  style={{ margin: '22px 0 0', maxWidth: 660, color: DARK_BODY, fontSize: 17, lineHeight: 1.62 }}
+                >
+                  {hero.subtitle}
+                </p>
+              )}
+
+              {visibility.heroStatsPills && stats.length > 0 && (
+                <div
+                  data-reveal="true"
                   style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 10,
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: 11,
-                    letterSpacing: '.14em',
-                    textTransform: 'uppercase',
-                    fontWeight: 600,
-                    color: DARK_TEXT_2,
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: '14px 44px',
+                    marginTop: 26,
+                    paddingTop: 18,
+                    borderTop: `1px solid ${DARK_LINE}`,
                   }}
                 >
-                  <span
-                    aria-hidden="true"
-                    style={{ width: 14, height: 2, background: ACCENT, flex: 'none' }}
-                  />
-                  {stat}
-                </span>
-              ))}
-            </div>
-          )}
-
-          {visibility.heroCtaButton && (
-            <div style={{ marginTop: 38 }}>
-              <ActionButton onClick={scrollToForm}>
-                {hero.ctaButtonText}
-                <span aria-hidden="true">↓</span>
-              </ActionButton>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* ── Coordonnées + formulaire ─────────────────────────────
-          Section blanche : c'est le rythme noir → blanc → noir demandé, et ça
-          donne au formulaire le même contraste que les pages produit du site. */}
-      <section
-        className="theme-light"
-        style={{
-          ...TONE_LIGHT,
-          background: 'var(--paper, #f5f4f0)',
-          padding: 'clamp(72px, 9vh, 120px) 0',
-        }}
-      >
-        <div className="wrap">
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-              gap: 'clamp(40px, 5vw, 88px)',
-              alignItems: 'start',
-            }}
-          >
-            {/* Colonne gauche : coordonnées */}
-            {visibility.contactInfoCard && (
-              <div>
-                <div style={eyebrowDark}>{info.hqBadge}</div>
-                <h2 className="display" style={{ margin: 0, color: DARK_TEXT, fontSize: 'clamp(26px, 2.8vw, 38px)' }}>
-                  {info.hqTitle}
-                </h2>
-                <p style={{ margin: '18px 0 0', color: DARK_BODY, fontSize: 15, lineHeight: 1.62 }}>
-                  {info.hqDesc}
-                </p>
-
-                <div style={{ marginTop: 34 }}>
-                  <div
-                    style={{
-                      display: 'grid',
-                      gridTemplateColumns: 'repeat(2, 1fr)',
-                      gap: 12,
-                      paddingBottom: 8,
-                    }}
-                  >
-                    {[
-                      { label: info.stat1Label, value: info.stat1Value },
-                      { label: info.stat2Label, value: info.stat2Value, accent: true },
-                    ].map((stat, i) => (
-                      <div
-                        key={stat.label}
-                        className={mesh(i)}
-                        style={{
-                          ...meshVars(i),
-                          border: `1px solid ${DARK_LINE_2}`,
-                          background: 'var(--paper-2, #fff)',
-                          padding: '18px 20px',
-                        }}
-                      >
-                        <div
-                          style={{
-                            fontFamily: 'var(--font-mono)',
-                            fontSize: 10.5,
-                            letterSpacing: '.18em',
-                            textTransform: 'uppercase',
-                            color: DARK_MUTED,
-                            marginBottom: 8,
-                          }}
-                        >
-                          {stat.label}
-                        </div>
-                        <div style={{ fontSize: 20, fontWeight: 700, color: stat.accent ? ACCENT_TEXT : DARK_TEXT }}>
-                          {stat.value}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {visibility.infoAddressRow && (
-                  <InfoRow label={info.addressLabel}>
-                    {info.addressValue}{' '}
-                    <a
-                      href={mapsUrl(info.addressValue)}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="ct-link"
-                      style={{ whiteSpace: 'nowrap' }}
+                  {stats.map((stat) => (
+                    <span
+                      key={stat}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 10,
+                        fontFamily: 'var(--font)',
+                        fontSize: 11,
+                        letterSpacing: '.14em',
+                        textTransform: 'uppercase',
+                        fontWeight: 600,
+                        color: DARK_TEXT_2,
+                      }}
                     >
-                      {lang === 'FR' ? 'Itinéraire' : 'Directions'}
-                    </a>
-                  </InfoRow>
-                )}
-                {visibility.infoPhonesRow && (
-                  <InfoRow label={info.phonesLabel}>
-                    <a href={`tel:${digits(info.phone1)}`} className="ct-link">
-                      {info.phone1}
-                    </a>
-                    {info.phone2 && (
-                      <>
-                        {' · '}
-                        <a href={`tel:${digits(info.phone2)}`} className="ct-link">
-                          {info.phone2}
-                        </a>
-                      </>
-                    )}
-                  </InfoRow>
-                )}
-                {visibility.infoEmailRow && (
-                  <InfoRow label={info.emailLabel}>
-                    <a href={`mailto:${info.emailValue}`} className="ct-link">
-                      {info.emailValue}
-                    </a>
-                  </InfoRow>
-                )}
-                {visibility.infoWhatsappRow && (
-                  <InfoRow label={info.whatsappLabel}>
-                    <a href={whatsappHref} target="_blank" rel="noreferrer" className="ct-link">
-                      {info.whatsappNumber}
-                    </a>
-                    <div style={{ marginTop: 6, color: DARK_MUTED, fontSize: 13.5 }}>{info.whatsappSubtext}</div>
-                  </InfoRow>
-                )}
-                {visibility.infoWorkingHoursRow && (
-                  <InfoRow label={info.hoursLabel.replace(':', '')}>
-                    {info.hoursValue}
-                  </InfoRow>
-                )}
-              </div>
-            )}
+                      <span
+                        aria-hidden="true"
+                        style={{ width: 14, height: 2, background: ACCENT, flex: 'none' }}
+                      />
+                      {stat}
+                    </span>
+                  ))}
+                </div>
+              )}
 
-            {/* Colonne droite : formulaire. Le header est fixed sur 88px, on
-                décale la cible du scroll pour que rien ne passe dessous. */}
-            <div id="contact-form" style={{ scrollMarginTop: 'calc(var(--nav-h) + 24px)' }}>
-              <ContactFormCard form={form} visibility={visibility} lang={lang} />
+              {visibility.heroCtaButton && (
+                <div style={{ marginTop: 26 }}>
+                  <ActionButton onClick={scrollToForm}>
+                    {hero.ctaButtonText}
+                    <span aria-hidden="true">↓</span>
+                  </ActionButton>
+                </div>
+              )}
             </div>
-          </div>
-        </div>
-      </section>
+          </motion.div>
+        </section>
+      </div>
+
+      {/* ── Coordonnées dans la tablette : la section « Our fastest-ever
+          POS » des Shopify Editions Spring 2026. Le formulaire vit à
+          l'écran de la tablette (sa couleur claire est conservée), les
+          coordonnées flottent à gauche, et la souris incline l'ensemble. */}
+      <RetailContact info={info} form={form} visibility={visibility} lang={lang} />
 
       {/* ── FAQ ────────────────────────────────────────────────
           Retour au noir pour refermer l'alternance. */}
@@ -1155,7 +1821,12 @@ export function ContactSections({ lang }: { lang: Language }) {
         <section
           id="faq"
           className="theme-dark"
-          style={{ ...TONE_DARK, background: 'var(--black, #080808)', padding: 'clamp(72px, 9vh, 120px) 0' }}
+          style={{
+            ...TONE_DARK,
+            background: 'var(--black, #080808)',
+            borderTop: '1px solid var(--dark-line-2, #161615)',
+            padding: 'clamp(72px, 9vh, 120px) 0',
+          }}
         >
           <div className="wrap">
             <div style={eyebrowDark}>{faq.badge}</div>

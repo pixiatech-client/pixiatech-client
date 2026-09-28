@@ -257,7 +257,11 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
           left: 0,
           right: 0,
           zIndex: 200,
-        }}
+          /* web.css force `a:hover { color: var(--accent) !important }`. La
+             feuille globale (shadcn) redefinit --accent sur :root : on le
+             rebranche sur le lime du site pour que le header reste coherent. */
+          '--accent': '#C3F910',
+        } as React.CSSProperties}
       >
         <style>{`
           .pxt-nav-link {
