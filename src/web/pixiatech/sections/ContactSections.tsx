@@ -559,17 +559,17 @@ const CONTACT_CSS = `
     rgba(255,255,255,.02) 100%
   );
 }
-/* Scrollable inner area so form is never clipped */
+/* Scrollable inner area so form is never clipped. La barre de scroll est
+   masquee : le formulaire compacte rentre dans l'ecran ; s'il reste un
+   trop-plein, la molette/le doigt scrollent sans barre visible. */
 .ct-screen-scroll {
-  max-height: clamp(480px, 56vh, 720px);
+  max-height: clamp(560px, 72vh, 880px);
   overflow-y: auto;
   overflow-x: hidden;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255,255,255,.12) transparent;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
-.ct-screen-scroll::-webkit-scrollbar { width: 4px; }
-.ct-screen-scroll::-webkit-scrollbar-track { background: transparent; }
-.ct-screen-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,.14); border-radius: 2px; }
+.ct-screen-scroll::-webkit-scrollbar { display: none; }
 
 /* OS status bar */
 .ct-os-bar {
@@ -706,7 +706,14 @@ const CONTACT_CSS = `
 .ct-device-screen .ct-form-shell {
   position: relative;
   z-index: 2;
-  padding: clamp(16px, 2vw, 28px);
+  padding: clamp(14px, 1.6vw, 24px);
+}
+/* Formulaire compacte : doit tenir dans l'ecran de la tablette sans barre de
+   defilement. Le textarea est ramene a une hauteur fixe coherente avec
+   l'ecran (pas de barre verticale). */
+.ct-device-screen .ct-area {
+  min-height: 88px;
+  resize: none;
 }
 
 /* Widescreen 2-colonnes pour la tablette */
@@ -1140,14 +1147,14 @@ function ContactFormCard({
         ...meshVars(0),
         border: `1px solid ${DARK_LINE_2}`,
         background: DARK_SURFACE,
-        padding: 'clamp(24px, 3.4vw, 44px)',
+        padding: 'clamp(16px, 2vw, 26px)',
       }}
     >
       <div style={eyebrowDark}>{form.badge}</div>
-      <h3 className="display" style={{ margin: 0, color: DARK_TEXT, fontSize: 'clamp(24px, 2.6vw, 34px)' }}>
+      <h3 className="display" style={{ margin: 0, color: DARK_TEXT, fontSize: 'clamp(18px, 1.9vw, 24px)' }}>
         {form.title}
       </h3>
-      <p style={{ margin: '16px 0 0', color: DARK_BODY, fontSize: 15, lineHeight: 1.6, maxWidth: 560 }}>
+      <p style={{ margin: '10px 0 0', color: DARK_BODY, fontSize: 13, lineHeight: 1.55, maxWidth: 560 }}>
         {form.subtitle}
       </p>
 
@@ -1194,7 +1201,7 @@ function ContactFormCard({
         </fieldset>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 18, marginTop: 30 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12, marginTop: 14 }}>
         <Field
           id="ct-name"
           label={lang === 'FR' ? 'Nom complet' : 'Full name'}
@@ -1248,7 +1255,7 @@ function ContactFormCard({
         )}
       </div>
 
-      <div style={{ marginTop: 18 }}>
+      <div style={{ marginTop: 12 }}>
         <label className="ct-label" htmlFor="ct-message">
           {form.step3Title}
         </label>
@@ -1256,7 +1263,7 @@ function ContactFormCard({
           id="ct-message"
           name="message"
           className="ct-area"
-          rows={5}
+          rows={4}
           required
           value={fields.message}
           onChange={(e) => set('message')(e.target.value)}
@@ -1274,9 +1281,9 @@ function ContactFormCard({
           display: 'flex',
           gap: 12,
           alignItems: 'flex-start',
-          marginTop: 22,
+          marginTop: 12,
           color: DARK_TEXT_2,
-          fontSize: 13,
+          fontSize: 12,
           lineHeight: 1.55,
           cursor: 'pointer',
         }}
@@ -1313,7 +1320,7 @@ function ContactFormCard({
         </span>
       </label>
 
-      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 20, marginTop: 30 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 20, marginTop: 16 }}>
         <ActionButton type="submit" disabled={sending} variant="solid">
           {sending
             ? lang === 'FR'
