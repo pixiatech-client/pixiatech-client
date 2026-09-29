@@ -2,6 +2,8 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { Language } from '../../pixiatech-translations';
+import { useCms } from '@/lib/site-web/cms-context';
+import { useSectionStyle } from '../../cms/useSectionStyle';
 
 interface ShowreelSectionProps {
   lang?: Language;
@@ -9,6 +11,9 @@ interface ShowreelSectionProps {
 }
 
 export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', onOpenConsultation }) => {
+  const { pages } = useCms();
+  const cmsData = (pages['home']?.sections?.showreel as Record<string, unknown>) || {};
+  const cms = useSectionStyle(cmsData);
   const containerRef = useRef<HTMLDivElement>(null);
   const stickyRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -1199,9 +1204,13 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
       className="sr-wrap"
       style={{
         position: 'relative',
-        background: '#050505',
+        background: cms.section.backgroundColor ?? '#050505',
         color: '#F5F4F0',
         height: '600vh',
+        backgroundImage: cms.section.backgroundImage,
+        backgroundSize: cms.section.backgroundSize,
+        backgroundPosition: cms.section.backgroundPosition,
+        backgroundRepeat: cms.section.backgroundRepeat,
       }}
     >
       <div
@@ -1487,6 +1496,22 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
             </span>
           ))}
         </div>
+
+        {/* Voile CMS optionnel (bgImage + overlayOpacity). Uniquement de la
+            gestion de background : pointer-events none, ne touche pas au
+            canvas ni à l'empilement existant. */}
+        {cms.hasOverlay && (
+          <div
+            data-cms-bg-overlay
+            style={{
+              position: 'absolute',
+              inset: 0,
+              backgroundColor: cms.overlayColor,
+              pointerEvents: 'none',
+              zIndex: 2,
+            }}
+          />
+        )}
       </div>
     </div>
   );

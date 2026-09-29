@@ -165,6 +165,19 @@ export const CmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               commitPages((prev) => ({ ...prev, ...data.pages }));
               setBackendConnected(true);
             }
+            // Serveur = source de vérité pour les settings aussi : les valeurs
+            // renvoyées par /api/site-web/pages écrasent le cache local
+            // (DEFAULT + localStorage), et le cache est resynchronisé pour que
+            // le prochain refresh et n'importe quel autre onglet reçoivent la
+            // même valeur, sans jamais surcharger une donnée serveur.
+            if (mounted && data?.settings && typeof data.settings === 'object') {
+              setSettings(data.settings as CmsBackendSettings);
+              try {
+                localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(data.settings));
+              } catch {
+                // ignore quota
+              }
+            }
           }
         } catch (err) {
           console.warn('[CMS] Pages fetch failed, using local fallback:', err);

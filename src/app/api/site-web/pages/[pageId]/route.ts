@@ -51,6 +51,10 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       // Même règle pour `meta` : `body.meta` absent ne doit plus écraser une
       // valeur enregistrée avec `undefined`.
       meta: body.meta ?? existing?.meta,
+      // `sectionOrder` est une donnée persistée (réordonnancement par drag & drop).
+      // Si la requête ne le transmet pas, on conserve la valeur enregistrée —
+      // sinon l'ordre du serveur serait perdu silencieusement à chaque edit.
+      sectionOrder: body.sectionOrder ?? existing?.sectionOrder,
     });
     const page = db.pages?.[pageId];
     return NextResponse.json({
