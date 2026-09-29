@@ -5,6 +5,7 @@ import { useCms } from '@/lib/site-web/cms-context';
 import { Eye, EyeOff, Settings, GripVertical } from 'lucide-react';
 import { SectionResizeHandle } from './SectionResizeHandle';
 import { SectionStylePanel } from './SectionStylePanel';
+import type { StyleKey } from './SectionStylePanel';
 import { useSectionDragDrop } from './SectionDragDropManager';
 import { registerSection } from './section-registry';
 
@@ -14,6 +15,13 @@ interface EditableWrapperProps {
   children: React.ReactNode;
   className?: string;
   style?: React.CSSProperties;
+  /**
+   * Propriétés de style réellement rendues par la section (voir
+   * `SectionStylePanel.capabilities`). Défaut : espacement seul, appliqué par
+   * ce wrapper (`SPACING_KEYS`). À passer quand la section consomme en plus
+   * `useSectionStyle` (fond, voile, typo, marges…).
+   */
+  styleCapabilities?: readonly StyleKey[];
 }
 
 export const EditableWrapper: React.FC<EditableWrapperProps> = ({
@@ -22,6 +30,7 @@ export const EditableWrapper: React.FC<EditableWrapperProps> = ({
   children,
   className = '',
   style,
+  styleCapabilities,
 }) => {
   const {
     isEditing,
@@ -278,6 +287,7 @@ export const EditableWrapper: React.FC<EditableWrapperProps> = ({
           sectionKey={sectionKey}
           sectionLabel={sectionLabel}
           onClose={() => setIsStyleOpen(false)}
+          capabilities={styleCapabilities}
         />
       )}
 

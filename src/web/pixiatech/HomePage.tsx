@@ -27,10 +27,29 @@ import {
 import { NextSection } from './sections/NextSection';
 
 import { EditableWrapper } from '../cms/EditableWrapper';
+import type { StyleKey } from '../cms/SectionStylePanel';
+import {
+  BGMAP_STYLE_KEYS,
+  BGMAP_TITLELESS_KEYS,
+  FULL_STYLE_KEYS,
+  SHOWREEL_STYLE_KEYS,
+} from '../cms/SectionStylePanel';
 import { SectionDragDropProvider } from '../cms/SectionDragDropManager';
 import { useCms } from '@/lib/site-web/cms-context';
 
 const HOME_PAGE_ID = 'home';
+
+/**
+ * Propriétés de style réellement rendues par chaque section (audit des
+ * consommateurs, étape 4) : le panneau de style ne propose que ce que le
+ * renderer applique, jamais de propriété orpheline.
+ */
+const HOME_SECTION_STYLE_CAPS: Record<string, readonly StyleKey[]> = {
+  hero: BGMAP_STYLE_KEYS, // Hero : cms.section complet, pas de voile rendu
+  experience: BGMAP_STYLE_KEYS, // Experience (StaticSections) : pas de voile
+  markets: BGMAP_TITLELESS_KEYS, // pas de cms.title, pas de voile
+  showreel: SHOWREEL_STYLE_KEYS, // fond + voile + padding ; pas de marges/typo/texte
+};
 
 export const DEFAULT_HOME_SECTION_ORDER = [
   'hero',
@@ -162,7 +181,12 @@ export function PixiaHomePage() {
             const sec = HOME_SECTIONS[key];
             if (!sec) return null;
             return (
-              <EditableWrapper key={key} sectionKey={key} sectionLabel={sec.label}>
+              <EditableWrapper
+                key={key}
+                sectionKey={key}
+                sectionLabel={sec.label}
+                styleCapabilities={HOME_SECTION_STYLE_CAPS[key] ?? FULL_STYLE_KEYS}
+              >
                 {sec.render({ lang: effectiveLang, openConsultation })}
               </EditableWrapper>
             );

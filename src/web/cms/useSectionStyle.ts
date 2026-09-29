@@ -12,7 +12,6 @@ export interface SectionStyleResult {
   title:   React.CSSProperties;
   hasOverlay: boolean;
   overlayColor: string;
-  bgImage: string | undefined;
 }
 
 function px(val: unknown): string | undefined {
@@ -73,5 +72,5 @@ export function useSectionStyle(cmsData: Record<string, unknown>): SectionStyleR
     ...(textColor     !== undefined && { color: textColor }),
   };
 
-  return { section: sectionStyle, title: titleStyle, hasOverlay, overlayColor, bgImage };
+  return { section: sectionStyle, title: titleStyle, hasOverlay, overlayColor };
 }

@@ -8,6 +8,13 @@ interface SectionStylePanelProps {
   sectionKey: string;
   sectionLabel: string;
   onClose: () => void;
+  /**
+   * Propriétés de style réellement rendues par la section : le panneau
+   * n'expose jamais de champ dont la valeur n'aurait aucun effet visible
+   * (propriété orpheline). Défaut : espacement seul (`SPACING_KEYS`),
+   * ce qu'`EditableWrapper` applique à toutes les sections.
+   */
+  capabilities?: readonly StyleKey[];
 }
 
 type Status = 'idle' | 'dirty' | 'saving' | 'saved' | 'error';
@@ -28,7 +35,7 @@ const TEXT_KEYS = ['bgColor', 'textColor', 'bgImage', 'overlayColor'] as const;
 
 type NumericKey = (typeof NUMERIC_KEYS)[number];
 type TextKey = (typeof TEXT_KEYS)[number];
-type StyleKey = NumericKey | TextKey;
+export type StyleKey = NumericKey | TextKey;
 
 const NUMERIC_META: Record<NumericKey, { label: string; step: number; min: number; max: number; unit: string }> = {
   paddingTop: { label: 'Padding haut', step: 4, min: 0, max: 400, unit: 'px' },
@@ -51,6 +58,49 @@ const TEXT_META: Record<TextKey, { label: string; type: 'color' | 'text' | 'url'
 
 const ALL_KEYS: readonly StyleKey[] = [...NUMERIC_KEYS, ...TEXT_KEYS];
 
+/**
+ * Propriétés orphelines — jeu de propriétés RÉELLEMENT appliqué par section.
+ *
+ * `EditableWrapper` applique au DOM : padding* + minHeight (toutes sections).
+ * Les propriétés suivantes (marges, couleurs, image, voile, taille du titre) ne
+ * sont rendues QUE par les sections qui consomment `useSectionStyle`. Une
+ * propriété écrite par le panneau mais jamais lue par le renderer de la section
+ * est une propriété orpheline : aucun effet visible, pourtant persistée.
+ *
+ * Chaque page passe donc à `EditableWrapper` (`styleCapabilities`) le jeu exact
+ * que le renderer de la section consomme. Les capacités restent déclarées AU
+ * POINT D'UTILISATION (où le renderer est instancié), jamais par simple clé :
+ * une même clé (`hero`) peut être pleine sur l'accueil et réduite sur les
+ * fiches produit.
+ */
+export const SPACING_KEYS: readonly StyleKey[] = ['paddingTop', 'paddingBottom', 'paddingLeft', 'paddingRight', 'minHeight'];
+
+/** Toutes les clés : sections qui écrivent cms.section complet (via useSectionStyle). */
+export const FULL_STYLE_KEYS: readonly StyleKey[] = ALL_KEYS;
+
+/** Styles du fond pleins mais sans voile (Hero, Experience : pas d'overlay rendu). */
+export const BGMAP_STYLE_KEYS: readonly StyleKey[] = ALL_KEYS.filter(
+  (k) => k !== 'overlayOpacity' && k !== 'overlayColor'
+);
+
+/** Fond + voile, sans typo de titre (Markets : pas de cms.title). */
+export const BGMAP_TITLELESS_KEYS: readonly StyleKey[] = ALL_KEYS.filter(
+  (k) => k !== 'overlayOpacity' && k !== 'overlayColor' && k !== 'titleFontSize'
+);
+
+/** Padding + fond + voile, sans marges / typo / couleur texte (Showreel). */
+export const SHOWREEL_STYLE_KEYS: readonly StyleKey[] = [
+  'paddingTop',
+  'paddingBottom',
+  'paddingLeft',
+  'paddingRight',
+  'minHeight',
+  'bgColor',
+  'bgImage',
+  'overlayOpacity',
+  'overlayColor',
+];
+
 function readEffectiveValue(
   sectionData: Record<string, unknown> | undefined,
   key: StyleKey
@@ -72,14 +122,19 @@ function readEffectiveValue(
  * réellement via `saveCurrentPage()` — le même enchaînement que
  * `SectionResizeHandle`.
  */
-export const SectionStylePanel: React.FC<SectionStylePanelProps> = ({ sectionKey, sectionLabel, onClose }) => {
+export const SectionStylePanel: React.FC<SectionStylePanelProps> = ({
+  sectionKey,
+  sectionLabel,
+  onClose,
+  capabilities = SPACING_KEYS,
+}) => {
   const { currentPageData, updateSectionField, saveCurrentPage } = useCms();
 
   const sectionData = currentPageData?.sections?.[sectionKey] as Record<string, unknown> | undefined;
 
   const [values, setValues] = useState<Record<string, string>>(() => {
     const initial: Record<string, string> = {};
-    for (const key of ALL_KEYS) initial[key] = readEffectiveValue(sectionData, key);
+    for (const key of capabilities) initial[key] = readEffectiveValue(sectionData, key);
     return initial;
   });
 
@@ -94,7 +149,7 @@ export const SectionStylePanel: React.FC<SectionStylePanelProps> = ({ sectionKey
     setValues((prev) => {
       let changed = false;
       const next: Record<string, string> = {};
-      for (const key of ALL_KEYS) {
+      for (const key of capabilities) {
         const val = readEffectiveValue(sectionData, key);
         next[key] = val;
         if (prev[key] !== val) {
@@ -103,7 +158,7 @@ export const SectionStylePanel: React.FC<SectionStylePanelProps> = ({ sectionKey
       }
       return changed ? next : prev;
     });
-  }, [sectionKey, sectionData]);
+  }, [sectionKey, sectionData, capabilities]);
 
   const flushSave = useCallback(async () => {
     if (saveTimer.current) {
@@ -157,15 +212,15 @@ export const SectionStylePanel: React.FC<SectionStylePanelProps> = ({ sectionKey
   );
 
   const resetAll = useCallback(() => {
-    for (const key of ALL_KEYS) {
+    for (const key of capabilities) {
       if (values[key] !== '') updateSectionField(sectionKey, key, undefined);
     }
     const empty: Record<string, string> = {};
-    for (const key of ALL_KEYS) empty[key] = '';
+    for (const key of capabilities) empty[key] = '';
     setValues(empty);
     scheduleSave();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sectionKey, updateSectionField, scheduleSave, values]);
+  }, [sectionKey, updateSectionField, scheduleSave, values, capabilities]);
 
   const groups = useMemo(
     () => [
@@ -179,6 +234,15 @@ export const SectionStylePanel: React.FC<SectionStylePanelProps> = ({ sectionKey
       { id: 'background', title: 'ARRIÈRE-PLAN', keys: ['bgImage', 'overlayOpacity', 'overlayColor'] as StyleKey[] },
     ],
     []
+  );
+
+  // Filtre chaque groupe sur le jeu de propriétés réellement rendues.
+  const visibleGroups = useMemo(
+    () =>
+      groups
+        .map((g) => ({ ...g, keys: g.keys.filter((k) => (capabilities as readonly string[]).includes(k)) }))
+        .filter((g) => g.keys.length > 0),
+    [groups, capabilities]
   );
 
   const inputCls =
@@ -229,7 +293,7 @@ export const SectionStylePanel: React.FC<SectionStylePanelProps> = ({ sectionKey
 
       {/* Corps scrollable — seule zone scrollable du panneau */}
       <div className="max-h-[min(60vh,460px)] overflow-y-auto p-3 space-y-3">
-        {groups.map((group) => (
+        {visibleGroups.map((group) => (
           <div key={group.id} className="space-y-1.5">
             <div className="text-[#6b6b64] font-mono text-[9px] font-bold tracking-wider">{group.title}</div>
             {group.keys.map((key) => {
