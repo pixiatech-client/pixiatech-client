@@ -1204,7 +1204,7 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
       className="sr-wrap"
       style={{
         position: 'relative',
-        background: cms.section.backgroundColor ?? '#050505',
+        backgroundColor: cms.section.backgroundColor ?? '#050505',
         color: '#F5F4F0',
         height: '600vh',
         backgroundImage: cms.section.backgroundImage,
