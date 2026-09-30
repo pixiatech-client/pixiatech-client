@@ -25,6 +25,7 @@ import {
   X,
   Sparkles,
   SlidersHorizontal,
+  Lock,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -36,8 +37,14 @@ import {
   uploadProductHoverImage,
   deleteProductMedia,
 } from '@/lib/products/products-service';
-import { slugify, groupDisplayName, productCategoryIds, MAX_PRODUCT_NAME_LENGTH } from '@/lib/products/types';
-import type { Product, ProductCategory, ProductCategoryGroup, ProductMediaItem } from '@/lib/products/types';
+import { slugify, groupDisplayName, productCategoryIds, MAX_PRODUCT_NAME_LENGTH, isValidShopUrl, normalizeShopUrl, sanitizeShopLinks } from '@/lib/products/types';
+import {
+  SYSTEM_TEMPLATE_LABEL,
+  SYSTEM_TEMPLATE_PROTECTED_MESSAGE,
+  isSystemTemplate,
+  partitionDeletableProducts,
+} from '@/lib/products/system-template';
+import type { Product, ProductCategory, ProductCategoryGroup, ProductMediaItem, ProductShopLinks } from '@/lib/products/types';
 
 interface SiteWebProduitsModuleProps {
   initial?: Product[];
@@ -57,21 +64,6 @@ const ENVIRONMENT_LABEL: Record<string, string> = {
   showcase: 'Vitrine',
 };
 
-const STATUS_BADGE: Record<string, string> = {
-  published:
-    'text-emerald-800 bg-emerald-50 border-emerald-300 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/30',
-  draft:
-    'text-amber-800 bg-amber-50 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/30',
-  deleted:
-    'text-neutral-600 bg-neutral-50 border-neutral-200 dark:bg-white/5 dark:text-neutral-400 dark:border-white/10',
-};
-
-const STATUS_LABEL: Record<string, string> = {
-  published: 'Publié',
-  draft: 'Brouillon',
-  deleted: 'Archivé',
-};
-
 const BACKOFFICE_HEADER =
   'flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl';
 
@@ -85,12 +77,44 @@ function productPhoto(p: Product): string | undefined {
   );
 }
 
-function statusClass(status?: string): string {
-  return STATUS_BADGE[status || 'draft'] || STATUS_BADGE.draft;
-}
-
-function statusText(status?: string): string {
-  return STATUS_LABEL[status || 'draft'] || 'Brouillon';
+/**
+ * Case à cocher de sélection.
+ *
+ * L'état « certaines cochées » n'existe pas en HTML : `indeterminate` ne passe
+ * que par l'API DOM, d'où le `ref` piloté dans un effet. Sans lui, une
+ * sélection partielle afficherait la case « tout cocher » comme décochée, ce
+ * qui ferait croire que rien n'est sélectionné alors que c'est l'inverse.
+ */
+function SelectBox({
+  checked,
+  indeterminate,
+  onChange,
+  label,
+  disabled,
+}: {
+  checked: boolean;
+  indeterminate?: boolean;
+  onChange: () => void;
+  label: string;
+  /** Ligne non sélectionnable : le template système ne doit jamais entrer dans
+   *  une cible de suppression groupée. */
+  disabled?: boolean;
+}) {
+  const ref = React.useRef<HTMLInputElement>(null);
+  React.useEffect(() => {
+    if (ref.current) ref.current.indeterminate = Boolean(indeterminate);
+  }, [indeterminate]);
+  return (
+    <input
+      ref={ref}
+      type="checkbox"
+      checked={checked}
+      onChange={onChange}
+      disabled={disabled}
+      aria-label={label}
+      className="w-4 h-4 rounded accent-[#38E044] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+    />
+  );
 }
 
 async function listProducts(): Promise<Product[]> {
@@ -357,36 +381,84 @@ export function SiteWebProduitsModule({ initial, editSlug }: SiteWebProduitsModu
   /** Étape 1 : ouvrir la confirmation. Ne touche pas à Firestore. */
   const askDelete = (product: Product) => {
     if (deleting) return;
+    // Le template n'a pas d'action de suppression à confirmer : la corbeille
+    // en ligne ne doit même pas s'ouvrir pour lui.
+    if (isSystemTemplate(product)) {
+      toast.error(SYSTEM_TEMPLATE_PROTECTED_MESSAGE);
+      return;
+    }
     setDeletingSlug(product.slug);
   };
 
   /**
    * Étape 2 : exécuter la suppression validée.
    *
-   * La ligne n'est retirée qu'après la réponse du backend. En cas d'échec elle
-   * repasse en état normal et l'erreur est affichée : l'administrateur peut
-   * donc relancer la suppression d'un second clic sur la corbeille.
+   * Accepte un slug (corbeille sur une ligne) ou une liste (action groupée sur
+   * la sélection) : la suppression passe par le même appel dans les deux cas,
+   * donc pas deux implémentations à garder cohérentes.
+   *
+   * Les lignes ne sont retirées qu'après la réponse du backend. En cas d'échec
+   * elles repassent en état normal et l'erreur est affichée : l'administrateur
+   * peut donc relancer la suppression d'un second clic sur la corbeille.
    */
-  const confirmDelete = async (slug: string) => {
+  const confirmDelete = async (target: string | string[]) => {
     if (deleting) return;
-    const product = products.find((p) => p.slug === slug);
-    if (!product) {
+    const slugs = Array.isArray(target) ? target : [target];
+    const victims = slugs
+      .map((slug) => products.find((p) => p.slug === slug))
+      .filter((p): p is Product => Boolean(p));
+    // Le template est retiré de la sélection AVANT tout appel réseau. Le serveur
+    // le refuserait de toute façon, mais une sélection groupée qui part avec lui
+    // afficherait « 3 produits supprimés, 1 en échec » pour un produit qui n'a
+    // jamais été visé : ici il n'entre pas dans la sélection.
+    const { deletable: targets, protectedItems } = partitionDeletableProducts(victims);
+    if (protectedItems.length > 0) {
+      toast.error(SYSTEM_TEMPLATE_PROTECTED_MESSAGE);
+    }
+    if (targets.length === 0) {
       setDeletingSlug(null);
       return;
     }
     setDeleting(true);
     try {
-      const res = await fetch(`/api/site-web/products/${encodeURIComponent(slug)}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-      const data = await res.json().catch(() => null);
-      if (!res.ok || !data?.success) {
-        throw new Error(data?.message || data?.error || 'La suppression a échoué.');
-      }
-      setProducts((current) => current.filter((p) => p.slug !== slug));
+      // `allSettled` plutôt qu'un `for` : une suppression refusée par le backend
+      // ne doit pas empêcher les autres d'aboutir. Les échecs sont comptés et
+      // annoncés, pas avalés.
+      const results = await Promise.allSettled(
+        targets.map(async (product) => {
+          const res = await fetch(`/api/site-web/products/${encodeURIComponent(product.slug)}`, {
+            method: 'DELETE',
+            credentials: 'include',
+          });
+          const data = await res.json().catch(() => null);
+          if (!res.ok || !data?.success) {
+            throw new Error(data?.message || data?.error || 'La suppression a échoué.');
+          }
+          return product;
+        })
+      );
+      const deletedSlugs = new Set(
+        results
+          .filter((r): r is PromiseFulfilledResult<Product> => r.status === 'fulfilled')
+          .map((r) => r.value.slug)
+      );
+      const failed = results.length - deletedSlugs.size;
+
+      setProducts((current) => current.filter((p) => !deletedSlugs.has(p.slug)));
       setDeletingSlug(null);
-      toast.success(`Produit « ${product.name} » supprimé.`);
+      if (deletedSlugs.size === 1) {
+        const name = victims.find((p) => deletedSlugs.has(p.slug))?.name;
+        toast.success(`Produit « ${name} » supprimé.`);
+      } else if (deletedSlugs.size > 1) {
+        toast.success(`${deletedSlugs.size} produits supprimés.`);
+      }
+      if (failed > 0) {
+        toast.error(
+          deletedSlugs.size > 0
+            ? `${deletedSlugs.size} produits supprimés, ${failed} en échec — regardez la console si nécessaire.`
+            : `La suppression a échoué pour ${failed} produit${failed > 1 ? 's' : ''}.`
+        );
+      }
 
       // Le rafraîchissement est une étape secondaire : s'il échoue, la
       // suppression est déjà faite et il ne faut pas la présenter comme un
@@ -404,17 +476,32 @@ export function SiteWebProduitsModule({ initial, editSlug }: SiteWebProduitsModu
     const used = new Set(products.map((p) => p.slug));
     const base = product.name || 'Produit';
     const makeVariantName = (idx: number): string => {
-      const suffix = ` ${idx}`;
-      if (base.length + suffix.length <= MAX_PRODUCT_NAME_LENGTH) return base + suffix;
-      return `${base.slice(0, Math.max(1, MAX_PRODUCT_NAME_LENGTH - suffix.length))}${suffix}`;
+      // Le nom dupliqué n'est JAMAIS tronqué : « IL-FISS-IRWP1.2 Lite 2 » doit
+      // rester lisible en entier. Si le suffixe déborde de la garde-fou, on
+      // remonte une erreur explicite plutôt que de mutiler le nom — le slug,
+      // lui, reste calculé séparément et peut être raccourpi si besoin.
+      const candidate = `${base} ${idx}`;
+      if (candidate.length > MAX_PRODUCT_NAME_LENGTH) {
+        throw new Error(
+          `Le nom « ${candidate} » dépasse ${MAX_PRODUCT_NAME_LENGTH} caractères : impossible de dupliquer sans tronquer le nom.`
+        );
+      }
+      return candidate;
     };
     let idx = 2;
-    let name = makeVariantName(idx);
-    let slug = slugify(name);
-    while (used.has(slug)) {
-      idx += 1;
+    let name: string;
+    let slug: string;
+    try {
       name = makeVariantName(idx);
       slug = slugify(name);
+      while (used.has(slug)) {
+        idx += 1;
+        name = makeVariantName(idx);
+        slug = slugify(name);
+      }
+    } catch (err) {
+      toast.error((err as Error).message);
+      return;
     }
     const { createdAt, updatedAt, ...rest } = product;
     try {
@@ -495,11 +582,19 @@ function ProductList({
   deletingSlug: string | null;
   /** Appel backend en cours : la ligne confirmée est verrouillée. */
   deleting: boolean;
-  onConfirmDelete: (slug: string) => void;
+  onConfirmDelete: (slugs: string | string[]) => Promise<void>;
   onCancelDelete: () => void;
 }) {
   const [filter, setFilter] = useState<ProductFilter>('ALL');
   const [query, setQuery] = useState('');
+
+  /**
+   * Sélection courante, en `Record` plutôt qu'en `Set` : le rendu de la table
+   * ne dépend que d'un objet, donc une seule comparaison de référence suffit
+   * pour re-rendre, et la clé est un slug (jamais l'index de ligne, qui change
+   * dès qu'un filtre bouge).
+   */
+  const [selected, setSelected] = useState<Record<string, boolean>>({});
 
   const filtered = products.filter((p) => {
     if (filter !== 'ALL' && p.status !== filter) return false;
@@ -514,10 +609,186 @@ function ProductList({
     published: products.filter((p) => p.status === 'published').length,
   };
 
-  return (
+/**
+   * Publier / dépublier depuis la liste, sans ouvrir l'éditeur.
+   *
+   * Le bouton EST l'action : auparavant le seul moyen de publier d'ici était le
+   * stylo. Un seul champ part au backend (`status`) et le PUT fusionne par-dessus
+   * le document existant, donc le reste de la fiche n'est pas touché.
+   *
+   * Asymétrie volontaire : publier est instantané (c'est l'action demandée),
+   * dépublier passe par une confirmation. Retirer un produit en ligne par un
+   * faux clic coûte plus cher que l'absence de raccourci — même logique que la
+   * suppression en deux temps déjà présente dans cette page.
+   *
+   * L'affichage ne devine jamais : `onRefresh` recharge la liste une fois
+   * l'écriture confirmée par le serveur.
+   */
+  const [statusPending, setStatusPending] = useState<Record<string, boolean>>({});
+  const [unpublishAsk, setUnpublishAsk] = useState<string | null>(null);
+
+/**
+   * Écrit le statut d'UN produit et renvoie `false` en cas d'échec.
+   *
+   * Deux options pour l'action groupée, qui doit parler une seule fois au lieu
+   * de N fois : `announce` coupe le toast (un résumé le remplace) et `refresh`
+   * coupe le rechargement — sinon 20 produits cochés déclencheraient 20
+   * rechargements de la liste et 20 toasts empilés.
+   *
+   * Elle ne propage pas l'erreur : ses appelants en ligne l'appellent en
+   * `void`, une promesse rejetée y deviendrait un rejet non traité. En
+   * renvoyant le résultat plutôt que de lever, l'action groupée peut additionner
+   * les succès et les échecs au lieu de les confondre.
+   */
+  const writeStatus = async (
+    p: Product,
+    next: Product['status'],
+    opts: { announce?: boolean; refresh?: boolean } = {}
+  ): Promise<boolean> => {
+    const { announce = true, refresh = true } = opts;
+    if (statusPending[p.slug]) return false;
+    setStatusPending((prev) => ({ ...prev, [p.slug]: true }));
+    try {
+      await saveProduct(p.slug, { status: next });
+      if (announce) {
+        toast.success(
+          next === 'published'
+            ? `Produit « ${p.name} » publié.`
+            : `Produit « ${p.name} » repassé en brouillon.`
+        );
+      }
+      if (refresh) onRefresh();
+      return true;
+    } catch (err) {
+      if (announce) {
+        toast.error(
+          describeActionError(
+            err,
+            next === 'published'
+              ? 'Publication impossible. La base est momentanément indisponible — réessayez dans un instant.'
+              : 'Dépublication impossible. La base est momentanément indisponible — réessayez dans un instant.'
+          )
+        );
+      }
+      return false;
+    } finally {
+      setStatusPending((prev) => {
+        const rest = { ...prev };
+        delete rest[p.slug];
+        return rest;
+      });
+    }
+  };
+
+
+/* --- Sélection multiple -------------------------------------------------
+   *
+   * La sélection est bornée à ce qui est VISIBLE. Deux raisons, et la seconde
+   * est celle qui compte : un filtre ou une recherche qui change ferait
+   * disparaître de l'écran des produits qui restent cochés, et l'action
+   * groupée porterait alors sur des lignes que l'administrateur ne voit plus.
+   * On vide donc la sélection à chaque changement de vue plutôt que de laisser
+   * invisibles des produits cochés.
+   */
+  /**
+   * Slugs réellement sélectionnables : le template en est retiré, et sa case est
+   * désactivée plus bas. C'est l'option forte — « exclure le template de la
+   * sélection » plutôt que « le laisser coché et refuser au dernier moment » :
+   * un « Tout sélectionner » suivi de « Supprimer » ne peut alors même pas
+   * composer une cible destructive contre lui. Le serveur garde la même règle.
+   */
+  const selectableSlugs = filtered.filter((p) => !isSystemTemplate(p)).map((p) => p.slug);
+  const selectedSlugs = selectableSlugs.filter((slug) => selected[slug]);
+  const selectedCount = selectedSlugs.length;
+  const allVisibleSelected = selectableSlugs.length > 0 && selectedCount === selectableSlugs.length;
+  const someVisibleSelected = selectedCount > 0 && !allVisibleSelected;
+
+  /**
+   * Action groupée : un seul PUT par produit, comme `writeStatus`, et les
+   * résultats sont additionnés au lieu d'empiler N toasts. Les échecs
+   * partiels sont annoncés — une sélection de 20 produits dont 2 échouent ne
+   * doit pas afficher « 20 publiés ».
+   */
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkConfirm, setBulkConfirm] = useState<'publish' | 'unpublish' | 'delete' | null>(null);
+
+  useEffect(() => {
+    setSelected({});
+    // La confirmation est désarmée avec la sélection : sans ça, changer de
+    // filtre en pleine confirmation laisserait la barre armée, et elle
+    // réapparaîtrait en mode « Confirmer ? » sur une sélection toute nouvelle.
+    setBulkConfirm(null);
+  }, [filter, query]);
+
+  const toggleOne = (slug: string) =>
+    setSelected((prev) => ({ ...prev, [slug]: !prev[slug] }));
+
+  const toggleAllVisible = () => {
+    setSelected((prev) => {
+      const next = { ...prev };
+      if (allVisibleSelected) selectableSlugs.forEach((slug) => delete next[slug]);
+      else selectableSlugs.forEach((slug) => { next[slug] = true; });
+      return next;
+    });
+  };
+
+  const clearSelection = () => setSelected({});
+
+  const runBulkStatus = async (next: Product['status']) => {
+    if (bulkBusy || selectedCount === 0) return;
+    const targets = filtered.filter((p) => selected[p.slug] && !isSystemTemplate(p));
+    if (targets.length === 0) return;
+    setBulkBusy(true);
+    setBulkConfirm(null);
+    try {
+      // `announce: false` et `refresh: false` : un seul résumé, un seul
+      // rechargement, pour toute la sélection.
+      const results = await Promise.all(
+        targets.map((p) => writeStatus(p, next, { announce: false, refresh: false }))
+      );
+      const failed = results.filter((ok) => !ok).length;
+      if (failed === 0) {
+        toast.success(
+          next === 'published'
+            ? `${targets.length} produit${targets.length > 1 ? 's' : ''} publié${targets.length > 1 ? 's' : ''}.`
+            : `${targets.length} produit${targets.length > 1 ? 's' : ''} repassé${targets.length > 1 ? 's' : ''} en brouillon.`
+        );
+      } else {
+        toast.error(
+          `${targets.length - failed} sur ${targets.length} produits traités, ${failed} en échec.`
+        );
+      }
+      clearSelection();
+      onRefresh();
+    } finally {
+      setBulkBusy(false);
+    }
+  };
+
+  /**
+   * Suppression groupée. La promesse est attendue pour que la barre reste
+   * affichée, « En cours… », jusqu'à la réponse du backend : la faire
+   * disparaître immédiatement laisserait l'administrateur sans aucune preuve
+   * que son clic était parti.
+   */
+  const confirmBulkDelete = async () => {
+    if (bulkBusy || selectedCount === 0) return;
+    const targets = selectedSlugs;
+    setBulkConfirm(null);
+    setBulkBusy(true);
+    try {
+      await onConfirmDelete(targets);
+    } finally {
+      setBulkBusy(false);
+      clearSelection();
+    }
+  };
+
+return (
     <div id="admin-products-workspace" className="space-y-6">
-      {/* Bandeau titre backoffice */}
+{/* Bandeau titre backoffice */}
       <div className={`bg-[#0A0D0E] border border-neutral-800 rounded-3xl p-5 sm:p-6 text-white ${BACKOFFICE_HEADER}`}>
+
         <div className="flex items-center gap-4 min-w-0">
           <div className="w-12 h-12 rounded-2xl bg-[#141B1E] border border-neutral-700 flex items-center justify-center shrink-0">
             <Box className="w-6 h-6 text-[#38E044]" />
@@ -616,6 +887,111 @@ function ProductList({
         </div>
       )}
 
+      {/* Barre d'actions groupées : n'apparaît que s'il y a une sélection,
+          et ne vise que les produits réellement visibles (cf. `selectedSlugs`). */}
+      <AnimatePresence>
+        {selectedCount > 0 && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden"
+          >
+            <div
+              role="region"
+              aria-label="Actions sur les produits sélectionnés"
+              className="flex flex-col sm:flex-row sm:items-center gap-3 bg-[#0A0D0E] border border-neutral-800 rounded-2xl px-4 py-3 text-white shadow-lg"
+            >
+              <span className="text-xs font-bold shrink-0" aria-live="polite">
+                {selectedCount} produit{selectedCount > 1 ? 's' : ''} sélectionné
+                {selectedCount > 1 ? 's' : ''}
+              </span>
+
+              {/* Confirmation : on nomme l'impact réel avant de l'exécuter. */}
+              {bulkConfirm ? (
+                <>
+                  <span className="text-xs text-neutral-300 flex-1 min-w-0">
+                    {bulkConfirm === 'delete'
+                      ? `Supprimer ${selectedCount} produit${selectedCount > 1 ? 's' : ''} définitivement ?`
+                      : bulkConfirm === 'unpublish'
+                        ? `Retirer ${selectedCount} produit${selectedCount > 1 ? 's' : ''} du site ?`
+                        : `Publier ${selectedCount} produit${selectedCount > 1 ? 's' : ''} ?`}
+                  </span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setBulkConfirm(null)}
+                      disabled={bulkBusy || deleting}
+                      className="px-3 py-1.5 text-[11px] font-bold text-white hover:bg-white/10 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+                    >
+                      Annuler
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (bulkConfirm === 'delete') void confirmBulkDelete();
+                        else void runBulkStatus(bulkConfirm === 'unpublish' ? 'draft' : 'published');
+                      }}
+                      disabled={bulkBusy || deleting}
+                      className="px-3 py-1.5 text-[11px] font-bold bg-white text-rose-600 rounded-lg hover:bg-rose-50 transition-all cursor-pointer disabled:opacity-70 inline-flex items-center gap-1.5"
+                    >
+                      {bulkBusy || deleting ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden />
+                          En cours…
+                        </>
+                      ) : (
+                        'Confirmer'
+                      )}
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center gap-2 flex-wrap flex-1">
+                    <button
+                      type="button"
+                      onClick={() => setBulkConfirm('publish')}
+                      disabled={bulkBusy}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-wide rounded-full bg-[#38E044] text-black border border-[#38E044] hover:bg-[#2fcb3c] transition-colors cursor-pointer disabled:opacity-60"
+                    >
+                      <Globe className="w-3.5 h-3.5" />
+                      Publier
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setBulkConfirm('unpublish')}
+                      disabled={bulkBusy}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold rounded-full border border-white/15 hover:bg-white/10 text-white transition-colors cursor-pointer disabled:opacity-60"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      Repasser en brouillon
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setBulkConfirm('delete')}
+                      disabled={bulkBusy || deleting}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold rounded-full border border-rose-500/40 text-rose-300 hover:bg-rose-500/15 transition-colors cursor-pointer disabled:opacity-60"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Supprimer
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={clearSelection}
+                    disabled={bulkBusy}
+                    className="shrink-0 px-2.5 py-1.5 text-[11px] font-bold text-neutral-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors cursor-pointer disabled:opacity-60"
+                  >
+                    Tout désélectionner
+                  </button>
+                </>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {loading ? (
         <div className="flex min-h-[40vh] items-center justify-center">
           <Loader2 className="w-6 h-6 animate-spin text-neutral-400" />
@@ -626,6 +1002,18 @@ function ProductList({
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="bg-neutral-50 dark:bg-white/[0.02] border-b border-neutral-200 dark:border-white/10 font-mono text-neutral-500 uppercase tracking-wider text-[11px]">
+                  <th className="p-4 w-10">
+                    <SelectBox
+                      checked={allVisibleSelected}
+                      indeterminate={someVisibleSelected}
+                      onChange={toggleAllVisible}
+                      label={
+                        allVisibleSelected
+                          ? 'Tout désélectionner'
+                          : 'Sélectionner tous les produits affichés'
+                      }
+                    />
+                  </th>
                   <th className="p-4">Photo</th>
                   <th className="p-4">Nom</th>
                   <th className="p-4">Statut</th>
@@ -635,7 +1023,7 @@ function ProductList({
               <tbody className="divide-y divide-neutral-100 dark:divide-white/5">
                 {filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="p-12">
+                    <td colSpan={5} className="p-12">
                       <div className="flex flex-col items-center justify-center gap-3 text-center">
                         <div className="p-3 rounded-2xl bg-neutral-100 dark:bg-white/5">
                           <Inbox className="w-7 h-7 text-neutral-400" />
@@ -657,6 +1045,10 @@ function ProductList({
                 ) : (
                   filtered.map((p) => {
                     const photo = productPhoto(p);
+                    // Ressource système : éditable et publiable comme les
+                    // autres, jamais supprimable. Le même predicate que celui
+                    // du serveur, importé — pas recopié ici.
+                    const isTemplate = isSystemTemplate(p);
                     // Un brouillon n'est pas public : l'œil l'ouvre en
                     // prévisualisation admin. L'URL ne vaut rien sans session
                     // admin, la page refusera l'accès à un visiteur.
@@ -667,8 +1059,24 @@ function ProductList({
                     return (
                       <tr
                         key={p.slug}
-                        className="relative hover:bg-neutral-50/90 dark:hover:bg-white/[0.02] transition-colors"
+                        className={`relative transition-colors ${
+                          selected[p.slug]
+                            ? 'bg-[#38E044]/10 dark:bg-[#38E044]/5'
+                            : 'hover:bg-neutral-50/90 dark:hover:bg-white/[0.02]'
+                        }`}
                       >
+                        <td className="p-4">
+                          <SelectBox
+                            checked={Boolean(selected[p.slug])}
+                            onChange={() => toggleOne(p.slug)}
+                            disabled={isTemplate}
+                            label={
+                              isTemplate
+                                ? `« ${p.name} » est un template système : non sélectionnable`
+                                : `Sélectionner « ${p.name} »`
+                            }
+                          />
+                        </td>
                         <td className="p-4">
                           {photo ? (
                             // eslint-disable-next-line @next/next/no-img-element
@@ -684,13 +1092,92 @@ function ProductList({
                           )}
                         </td>
                         <td className="p-4">
-                          <div className="font-extrabold text-neutral-900 dark:text-white text-xs">{p.name}</div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <div className="font-extrabold text-neutral-900 dark:text-white text-xs">{p.name}</div>
+                            {isTemplate && (
+                              <span
+                                title={SYSTEM_TEMPLATE_PROTECTED_MESSAGE}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-extrabold uppercase tracking-wide bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/40"
+                              >
+                                <Lock className="w-3 h-3" aria-hidden />
+                                {SYSTEM_TEMPLATE_LABEL}
+                              </span>
+                            )}
+                          </div>
                           <div className="text-[11px] text-neutral-400 font-mono mt-0.5">/web/product/{p.slug}</div>
                         </td>
                         <td className="p-4">
-                          <span className={`inline-flex items-center text-[11px] font-bold px-3 py-1 rounded-full border ${statusClass(p.status)}`}>
-                            {statusText(p.status)}
-                          </span>
+                          {/* Le statut EST l'action : un brouillon affiche un
+                              bouton « Publier » plein et contrasté ; un produit
+                              en ligne affiche « Publié » avec la coche, et un
+                              clic propose de le remettre en brouillon. Aucun
+                              badge décoratif qui obligerait à ouvrir l'éditeur
+                              pour agir sur le produit. */}
+                          {(() => {
+                            const busy = Boolean(statusPending[p.slug]);
+                            const isPublished = p.status === 'published';
+                            if (isPublished) {
+                              // Étape 1 : ce clic n'atteint pas Firestore, il
+                              // ouvre seulement la confirmation. Le produit
+                              // reste en ligne tant que l'admin n'a pas confirmé.
+                              if (unpublishAsk === p.slug) {
+                                return (
+                                  <div className="flex flex-col gap-1.5">
+                                    <div className="flex items-center gap-1.5">
+                                      <button
+                                        type="button"
+                                        onClick={() => void writeStatus(p, 'draft')}
+                                        disabled={busy}
+                                        className="text-[11px] font-bold px-2.5 py-1.5 rounded-full border transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-wait text-amber-800 bg-amber-50 border-amber-300 hover:bg-amber-100 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/30"
+                                      >
+                                        {busy ? 'Dépublication…' : 'Confirmer'}
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => setUnpublishAsk(null)}
+                                        disabled={busy}
+                                        className="text-[11px] font-bold px-2.5 py-1.5 rounded-full border transition-colors cursor-pointer disabled:opacity-60 text-neutral-600 bg-white border-neutral-200 hover:bg-neutral-50 dark:bg-white/5 dark:text-neutral-300 dark:border-white/10 dark:hover:bg-white/10"
+                                      >
+                                        Annuler
+                                      </button>
+                                    </div>
+                                    <span className="text-[10px] text-neutral-500 dark:text-neutral-400">
+                                      Repasser en brouillon ?
+                                    </span>
+                                  </div>
+                                );
+                              }
+                              return (
+                                <button
+                                  type="button"
+                                  onClick={() => setUnpublishAsk(p.slug)}
+                                  aria-label={`« ${p.name} » est publié. Cliquer pour proposer un retour en brouillon.`}
+                                  title="Publié — cliquer pour le remettre en brouillon"
+                                  className="inline-flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-full border transition-colors cursor-pointer text-emerald-800 bg-emerald-50 border-emerald-300 hover:bg-amber-50 hover:border-amber-300 hover:text-amber-800 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/30 dark:hover:bg-amber-500/10 dark:hover:text-amber-400 dark:hover:border-amber-500/30"
+                                >
+                                  <CheckCircle2 className="w-3 h-3" />
+                                  Publié
+                                </button>
+                              );
+                            }
+                            return (
+                              <button
+                                type="button"
+                                onClick={() => void writeStatus(p, 'published')}
+                                disabled={busy}
+                                aria-label={`Publier « ${p.name} »`}
+                                title="Publier ce produit sur le site web"
+                                className="inline-flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wide px-3.5 py-2 rounded-full border transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-wait bg-[#38E044] text-black border-[#38E044] hover:bg-[#2ec235] hover:border-[#2ec235] shadow-[0_0_12px_rgba(56,224,68,0.35)]"
+                              >
+                                {busy ? (
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                ) : (
+                                  <Globe className="w-3.5 h-3.5" />
+                                )}
+                                Publier
+                              </button>
+                            );
+                          })()}
                         </td>
                         <td className="p-4 text-right">
                           <div className="inline-flex items-center gap-2">
@@ -719,6 +1206,11 @@ function ProductList({
                             >
                               <Copy className="w-4 h-4" />
                             </button>
+                            {/* La corbeille n'existe pas pour le template : pas de
+                              bouton du tout, plutôt qu'un bouton désactivé
+                              qui laisserait croire à une panne. La garde
+                              serveur reste, elle. */}
+                          {!isTemplate && (
                             <button
                               type="button"
                               onClick={() => onDelete(p)}
@@ -728,6 +1220,7 @@ function ProductList({
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
+                          )}
                           </div>
                         </td>
 
@@ -736,10 +1229,10 @@ function ProductList({
                             rouge recouvre la ligne depuis la droite, sans modal ni
                             overlay. `relative` sur le <tr> en fait le référent. */}
                         <AnimatePresence>
-                          {deletingSlug === p.slug && (
+                          {deletingSlug === p.slug && !isTemplate && (
                             <motion.td
                               key={`delete-confirm-${p.slug}`}
-                              colSpan={4}
+                              colSpan={5}
                               initial={{ x: '100%' }}
                               animate={{ x: 0 }}
                               exit={{ x: '100%' }}
@@ -844,6 +1337,19 @@ function ProductForm({
   );
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  /**
+   * Liens boutique par variante, indexés par nom de modèle.
+   *
+   * Clé racine du produit (et non `specs.models`) car `specs` est reconstruit
+   * à chaque analyse de PDF : un lien stocké dans la matrice disparaîtrait à la
+   * réanalyse. Ici la fusion superficielle de `saveProduct` préserve la map.
+   *
+   * On conserve la saisie BRUTE (même invalide) pour que l'admin voie son
+   * erreur au lieu que sa frappe disparaisse ; `sanitizeShopLinks` ne persiste
+   * que les entrées réellement valides.
+   */
+  const [shopLinks, setShopLinks] = useState<ProductShopLinks>(existing?.shopLinks ?? {});
 
   /**
    * Bibliothèque média — POINTS 7 à 10.
@@ -1100,6 +1606,28 @@ function ProductForm({
   const nameValid = cleanName.length > 0 && cleanName.length <= MAX_PRODUCT_NAME_LENGTH;
   const previewUrl = isNew ? photoPreview : undefined;
 
+  /**
+   * Variantes à équiper d'un lien boutique. La source est la matrice RÉELLEMENT
+   * enregistrée (ou en attente de réanalyse, qui la remplacera à l'identique) :
+   * c'est elle que le site public affiche en colonnes.
+   *
+   * Une réanalyse peut supprimer une variante ; son lien devient orphelin et
+   * n'est simplement jamais lu par `SpecsSection`.
+   */
+  const variantNames: string[] = (isNew
+    ? (pdfAnalysis?.specs?.models ?? [])
+    : (pdfReanalysis?.specs?.models ?? existing?.specs?.models ?? [])
+  )
+    .map((model) => model.name)
+    .filter((modelName) => typeof modelName === 'string' && modelName.trim() !== '');
+
+  // Clés saisies qui ne correspondent à aucune variante affichée : le lien
+  // serait impossible à nettoyer depuis l'admin, puisque aucun champ ne le
+  // porte. Les lister permet de le supprimer explicitement.
+  const orphanShopLinkKeys = Object.keys(shopLinks).filter(
+    (key) => !variantNames.includes(key)
+  );
+
   const summary = isNew
     ? extractedSummary(
         pdfAnalysis ? { ...pdfAnalysis, name: cleanName || pdfAnalysis.name } : { name: cleanName }
@@ -1247,7 +1775,13 @@ function ProductForm({
         setPdfReanalysis(built);
       } else {
         setPdfAnalysis(built);
-        if (!cleanName && built.name) setName(built.name);
+        // Le nom pré-rempli vient du PDF, PAS du produit construit. `built`
+        // fusionne le template maître, et sa ligne 239 fait
+        // `overlay.name || master.name` : quand le parser n'a rien lu, c'est
+        // donc le nom du gabarit — la page Démo — qui atterrissait dans le
+        // champ, puis dans le slug du brouillon créé. Un produit ne doit
+        // jamais hériter de l'identité du template qui sert à le générer.
+        if (!cleanName && parsed.name) setName(parsed.name);
       }
     } catch {
       toast.error('Échec de l’analyse du PDF.');
@@ -1349,6 +1883,17 @@ function ProductForm({
       // ajoutées, remplacées ou promues depuis.
       if (pdfReanalysis && existing) {
         body.media = { ...pdfReanalysis.media, photos: mediaPhotos };
+      }
+      // Liens boutique : racine du produit, donc hors du `specs` reconstruit
+      // par la réanalyse. Seules les URL valides sont persistées — une saisie
+      // erronée ne se transformera jamais en lien mort sur le site.
+      const cleanShopLinks = sanitizeShopLinks(shopLinks);
+      if (Object.keys(cleanShopLinks).length > 0) {
+        body.shopLinks = cleanShopLinks;
+      } else if (existing?.shopLinks) {
+        // Plus aucun lien valide : on efface la map pour ne pas laisser une
+        // dernière saisie invalide survivre dans le produit.
+        body.shopLinks = {};
       }
       const next = await saveProduct(existing.slug, body);
       onSaved(next.status === 'published' ? `Produit « ${next.name} » publié.` : `Produit « ${next.name} » enregistré.`);
@@ -1467,7 +2012,7 @@ function ProductForm({
                 <div className="flex items-center gap-2 mb-1.5">
                   <div className="flex items-center justify-center w-6 h-6 rounded-lg bg-[#38E044] text-black text-[11px] font-black font-mono shrink-0">1</div>
                   <h2 className="text-sm font-bold text-neutral-900 dark:text-white">Le nom du produit</h2>
-                  <span className="text-[11px] text-neutral-400 font-medium">(12 caractères max)</span>
+                  <span className="text-[11px] text-neutral-400 font-medium">({MAX_PRODUCT_NAME_LENGTH} caractères max)</span>
                 </div>
                 <input
                   type="text"
@@ -1888,6 +2433,167 @@ function ProductForm({
                 </section>
               )}
             </>
+          )}
+
+          {/* ── Liens boutique par variante ──
+              CE BLOC EST UN CONTRÔLE D'ÉDITION, PAS LE BOUTON PUBLIC.
+
+              Il est conditionné à l'EXISTENCE DES VARIANTES du matrice, jamais
+              à l'existence d'un lien. Le gate est donc volontairement
+              `!isNew && variantNames.length > 0`, et il ne doit surtout pas
+              devenir `&& Object.keys(shopLinks).length > 0` : sinon
+              l'administrateur ne pourrait plus saisir le PREMIER lien, puisque
+              le contrôle disparaîtrait justement quand il n'y en a pas encore.
+
+              Symétrie voulue :
+                - EDITION, sans lien  -> champ affiché, vide, saisissable.
+                - EDITION, avec lien  -> champ affiché, URL pré-remplie.
+                - PUBLIC, sans lien   -> aucun bouton.
+                - PUBLIC, avec lien  -> bouton « Acheter le produit ».
+
+              « Masqué publiquement » ne signifie pas « inexistant dans le CMS ». */}
+          {!isNew && variantNames.length > 0 && (
+            <section>
+              <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                <h2 className="text-sm font-bold text-neutral-900 dark:text-white">
+                  Liens boutique par variante
+                </h2>
+                <span className="text-[11px] text-neutral-400 font-medium">
+                  {variantNames.length} variante{variantNames.length > 1 ? 's' : ''}
+                </span>
+              </div>
+              <p className="text-[11px] text-neutral-400 mb-3">
+                Une colonne par variante, comme la matrice du site. Chaque contrôle
+                est rattaché à sa colonne et alimente le bouton
+                «&nbsp;Acheter le produit&nbsp;» de cette seule variante. Le champ
+                reste vide tant qu&apos;aucun lien n&apos;est saisi, et le bouton
+                n&apos;apparaît alors pas. Renseignez une URL pour l&apos;afficher,
+                videz-la pour le retirer.
+              </p>
+
+              {/* Une colonne par variante, comme la matrice publique.
+                  La colonne est rendue par `variantNames.map`, donc le contrôle
+                  vit DANS la colonne de son propre nom : impossible qu'il soit
+                  lu comme appartenant à la variante voisine. Une variante = un
+                  contrôle, il n'y a pas de second rendu global plus bas.
+                  Débordement horizontal + largeur fixe : les colonnes restent
+                  alignées quand la liste défile, et la colonne d'en-tête de
+                  gauche reste visible (sticky) pour situer la ligne. */}
+              <div className="overflow-x-auto rounded-2xl border border-neutral-300 dark:border-white/10">
+                <div className="flex min-w-max">
+                  {/* Colonne de tête : elle nomme la ligne, pas une variante. */}
+                  <div className="sticky left-0 z-10 shrink-0 w-[220px] bg-white dark:bg-[#0A0D0E] border-r border-neutral-300 dark:border-white/10 p-3">
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                      Variante
+                    </p>
+                    <p className="mt-1 text-[10px] leading-snug text-neutral-400 dark:text-neutral-500">
+                      Un contrôle par colonne. Champ vide = aucun bouton sur le
+                      site.
+                    </p>
+                  </div>
+
+                  {variantNames.map((variantName) => {
+                    const raw = shopLinks[variantName] ?? '';
+                    const blank = raw.trim() === '';
+                    const valid = !blank && isValidShopUrl(raw);
+                    return (
+                      <div
+                        key={variantName}
+                        className="shrink-0 w-[300px] p-3 border-l border-neutral-300 dark:border-white/10"
+                      >
+                        {/* En-tête de colonne : le nom EXACT de la variante,
+                            repris tel quel de la matrice. */}
+                        <p
+                          className="text-[12px] font-bold text-neutral-900 dark:text-white break-words"
+                          title={variantName}
+                        >
+                          {variantName}
+                        </p>
+                        <p className="mt-0.5 mb-2 text-[10px] font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+                          Acheter le produit
+                        </p>
+
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="url"
+                            inputMode="url"
+                            autoComplete="off"
+                            aria-label={`Lien boutique — ${variantName}`}
+                            value={raw}
+                            onChange={(ev) =>
+                              setShopLinks((prev) => ({ ...prev, [variantName]: ev.target.value }))
+                            }
+                            placeholder="https://boutique…"
+                            aria-invalid={!blank && !valid}
+                            className="flex-1 min-w-0 px-3 py-1.5 rounded-xl text-[11px] font-semibold bg-white dark:bg-zinc-800 text-neutral-900 dark:text-white border border-neutral-300 dark:border-white/10 focus:ring-2 focus:ring-[#38E044]/40 outline-none transition-all"
+                          />
+                          {valid && (
+                            <a
+                              href={normalizeShopUrl(raw)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              title="Ouvrir le lien dans un nouvel onglet"
+                              className="shrink-0 w-8 h-8 rounded-xl inline-flex items-center justify-center border border-neutral-300 dark:border-white/10 text-neutral-500 dark:text-neutral-300 hover:text-[#38E044] hover:border-[#38E044]/60 transition-colors"
+                            >
+                              <ExternalLink className="h-3.5 w-3.5" />
+                            </a>
+                          )}
+                          {!blank && (
+                            <button
+                              type="button"
+                              title="Retirer le lien"
+                              onClick={() =>
+                                setShopLinks((prev) => ({ ...prev, [variantName]: '' }))
+                              }
+                              className="shrink-0 w-8 h-8 rounded-xl inline-flex items-center justify-center border border-neutral-300 dark:border-white/10 text-neutral-500 dark:text-neutral-300 hover:text-rose-500 hover:border-rose-500/60 transition-colors cursor-pointer"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                        </div>
+                        {!blank && !valid && (
+                          <p className="mt-1 text-[11px] font-semibold text-rose-500">
+                            Lien ignoré : saisissez une URL complète (https://…) ou un
+                            chemin interne (/boutique).
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {orphanShopLinkKeys.length > 0 && (
+                <div className="mt-4 rounded-2xl border border-amber-300/60 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/5 p-3">
+                  <p className="text-[11px] font-bold text-amber-800 dark:text-amber-300 mb-2">
+                    {orphanShopLinkKeys.length} lien
+                    {orphanShopLinkKeys.length > 1 ? 's' : ''} sans variante correspondante
+                  </p>
+                  <div className="space-y-2">
+                    {orphanShopLinkKeys.map((key) => (
+                      <div key={key} className="flex items-center gap-2">
+                        <span className="flex-1 min-w-0 truncate text-[11px] font-semibold text-neutral-600 dark:text-neutral-300">
+                          {key} — {shopLinks[key] || '(vide)'}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setShopLinks((prev) => {
+                              const next = { ...prev };
+                              delete next[key];
+                              return next;
+                            })
+                          }
+                          className="shrink-0 px-2 py-1 rounded-lg text-[10px] font-bold border border-neutral-300 dark:border-white/10 text-neutral-600 dark:text-neutral-200 hover:text-rose-500 hover:border-rose-500/60 transition-colors cursor-pointer"
+                        >
+                          Supprimer
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </section>
           )}
 
           {/* ── Catégories (taxonomie CMS) ── */}

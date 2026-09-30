@@ -15,6 +15,10 @@
     "test:version": "node --experimental-strip-types scripts/test-versioning.ts",
     "test:pdf-parser": "node --experimental-strip-types scripts/test-product-pdf-parser.ts",
     "test:master-template": "node --experimental-strip-types --import ./scripts/ts-resolve-hooks.mjs scripts/test-master-template.ts",
+    "test:system-template": "node --experimental-strip-types --import ./scripts/ts-resolve-hooks.mjs scripts/test-system-template-lock.ts",
+    "test:pdf-name-prefill": "node --experimental-strip-types --import ./scripts/ts-resolve-hooks.mjs scripts/test-pdf-name-prefill.ts",
+    "test:product-name-length": "node --experimental-strip-types --import ./scripts/ts-resolve-hooks.mjs scripts/test-product-name-length.ts",
+    "test:shop-links": "node --experimental-strip-types scripts/test-shop-links.ts",
     "test:analytics-session": "node --experimental-strip-types scripts/test-analytics-api-session.ts",
     "check:client-boundary": "node scripts/check-client-server-boundary.mjs",
     "prebuild": "npm run build:info && npm run build:widget"

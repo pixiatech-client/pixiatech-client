@@ -1,5 +1,6 @@
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { MEGA_MENU_SETTING_ID, type MegaMenu, type Product } from './types';
+import { assertDeletableProduct } from './system-template';
 
 const PRODUCTS_COLLECTION = 'site_web_products';
 const SETTINGS_COLLECTION = 'settings';
@@ -34,6 +35,11 @@ export async function saveProduct(slug: string, data: Partial<Product>): Promise
 }
 
 export async function deleteProduct(slug: string): Promise<boolean> {
+  // Dernière barrière, côté données : elle tient même si l'API est contournée,
+  // et elle est placée AVANT l'ouverture du Firestore pour que le document ne
+  // soit jamais lu ni touché. Une garde dans le seul handler DELETE protégerait
+  // l'écran, pas la donnée.
+  assertDeletableProduct(slug);
   const { adminDb } = getFirebaseAdmin();
   const docRef = adminDb.collection(PRODUCTS_COLLECTION).doc(slug);
   const docSnap = await docRef.get();

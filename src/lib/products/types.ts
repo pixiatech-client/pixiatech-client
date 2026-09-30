@@ -16,7 +16,23 @@ export const PRODUCTS_COLLECTION = 'site_web_products';
 export const PRODUCT_CATEGORIES_COLLECTION = 'product_categories';
 export const PRODUCT_CATEGORY_GROUPS_COLLECTION = 'product_category_groups';
 export const MEGA_MENU_SETTING_ID = 'mega_menu';
-export const MAX_PRODUCT_NAME_LENGTH = 12;
+/**
+ * Garde-fou de saisie, PAS une contrainte de nom court.
+ *
+ * Historique : la valeur initiale de 12 came du Cahier des charges Phase C
+ * (« nom court »), écrit avant l'import de fiches PDF. Aucun système en
+ * dépend : Firestore indexe sur le slug, les routes sont `/web/product/[slug]`,
+ * le SEO prend le nom tel quel et l'affichage gère le débordement en CSS.
+ *
+ * Les noms réels des fiches PDF ne rentrent pas dans 12 caractères
+ * (« IL-FISS-IRWP1.2 Lite » = 21) : cette limite bloquait la création alors
+ * que le nom extrait du PDF était correct. 100 laisse largement la place aux
+ * références catalogue tout en refusant un pavé collé par erreur.
+ *
+ * Le slug, lui, reste indépendant et sans limite de longueur dédiée : c'est
+ * lui qui devient la clé de document Firestore et le segment d'URL.
+ */
+export const MAX_PRODUCT_NAME_LENGTH = 100;
 export const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 export type ProductStatus = 'draft' | 'published' | 'deleted';
@@ -278,6 +294,20 @@ export interface ProductSpecs {
   models: ProductSpecModel[];
 }
 
+/**
+ * Liens boutique par variante, indexés par NOM DE MODÈLE (`ProductSpecModel.name`).
+ *
+ * Volontairement à la RACINE du produit et non dans `specs.models` :
+ * `specs` est intégralement reconstruit à chaque import/réanalyse de PDF
+ * (`product-from-template.ts` et `product-pdf-parser.ts` repartent de zéro),
+ * ce qui effacerait toute donnée d'édition posée à côté. En étant une clé
+ * racine, la fusion superficielle de `saveProduct` la préserve telle quelle :
+ * le PDF reste la source des caractéristiques, l'admin la source des liens.
+ *
+ * Clé absente ou vide = aucun lien = aucun bouton sur le site public.
+ */
+export type ProductShopLinks = Record<string, string>;
+
 export interface ProductFieldworkProject {
   title: string;
   location?: string;
@@ -383,6 +413,11 @@ export interface Product {
   design?: ProductDesign;
   features?: ProductFeatures;
   specs?: ProductSpecs;
+  /**
+   * Liens boutique par variante (clé = nom de modèle). Donnée d'ADMIN, jamais
+   * extraite du PDF. Voir {@link ProductShopLinks} pour le choix de stockage.
+   */
+  shopLinks?: ProductShopLinks;
   fieldwork?: ProductFieldwork;
   next?: ProductNext;
   seo?: ProductSeo;
@@ -449,6 +484,77 @@ export function slugify(name: string): string {
 
 export function isValidSlug(slug: string): boolean {
   return SLUG_PATTERN.test(slug);
+}
+
+/**
+ * Protocoles autorisés pour un lien boutique saisi par un administrateur.
+ * Volontairement une liste blanche : `javascript:`, `data:` ou `vbscript:`
+ * deviendraient un vecteur XSS dès que le lien est rendu dans un `href`.
+ */
+const SHOP_URL_PROTOCOLS = ['http://', 'https://'] as const;
+
+/**
+ * Normalise un lien boutique saisi par un administrateur.
+ *
+ * Renvoie une chaîne VIDE pour toute valeur absente ou non sûre : l'appelant
+ * traite alors l'absence de lien comme le cas normal, et aucun bouton ne peut
+ * s'afficher avec une URL fantaisiste.
+ *
+ * Un chemin interne (`/boutique/pxt-fine`) est accepté tel quel, sans protocole.
+ */
+export function normalizeShopUrl(value: unknown): string {
+  if (typeof value !== 'string') return '';
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+  // Un chemin interne relatif est autorisé ; tout le reste doit déclarer un protocole.
+  if (trimmed.startsWith('/') && !trimmed.startsWith('//')) return trimmed;
+  const isAllowed = SHOP_URL_PROTOCOLS.some((protocol) => trimmed.toLowerCase().startsWith(protocol));
+  if (!isAllowed) return '';
+  // Un espace ou un retour ligne dans une URL est toujours une saisie erronée :
+  // `new URL()` échouerait au clic, sur une page déjà rendue.
+  if (/\s/.test(trimmed)) return '';
+  try {
+    return new URL(trimmed).toString();
+  } catch {
+    return '';
+  }
+}
+
+/** `true` si la valeur est un lien boutique affichable tel quel. */
+export function isValidShopUrl(value: unknown): boolean {
+  return normalizeShopUrl(value) !== '';
+}
+
+/**
+ * Règle unique du bouton public : le lien d'UNE variante, ou une chaîne vide.
+ *
+ * Centralise la décision « ce bouton existe-t-il ? » pour que l'affichage et
+ * les tests partagent exactement le même code. Une chaîne vide garantit
+ * l'absence du bouton (et non un `href` vide ou un `#`).
+ */
+export function shopLinkForVariant(
+  shopLinks: ProductShopLinks | undefined | null,
+  modelName: string
+): string {
+  if (!shopLinks || typeof shopLinks !== 'object') return '';
+  return normalizeShopUrl(shopLinks[modelName]);
+}
+
+/**
+ * Ne conserve que les liens boutique valides d'un formulaire d'édition.
+ * Une URL erronée est supprimée plutôt que persistée : le site public n'a
+ * ainsi jamais à traiter une valeur invalide, même si l'admin l'a saisie.
+ */
+export function sanitizeShopLinks(input: Record<string, unknown> | undefined | null): ProductShopLinks {
+  const out: ProductShopLinks = {};
+  if (!input || typeof input !== 'object') return out;
+  for (const [modelName, value] of Object.entries(input)) {
+    const key = modelName.trim();
+    if (!key) continue;
+    const url = normalizeShopUrl(value);
+    if (url) out[key] = url;
+  }
+  return out;
 }
 
 export function assertValidProductName(name: string): string {

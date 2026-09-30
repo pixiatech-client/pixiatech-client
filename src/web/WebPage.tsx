@@ -161,6 +161,7 @@ function WebPageView({ seedProduct }: { seedProduct?: Product } = {}) {
         {hasSpecs(product?.specs) && (
         <SpecsSection
           specs={product?.specs}
+          shopLinks={product?.shopLinks}
           onSelectDatasheet={(model) => setActiveDatasheetModel(model)}
           lang={lang}
         />
