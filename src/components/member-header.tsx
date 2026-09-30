@@ -26,7 +26,7 @@ export function MemberHeader({ customerEmail, customerId }: { customerEmail: str
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => window.open('/', '_blank')}
+            onClick={() => window.open('/web', '_blank')}
             title={t('admin.siteAccess')}
             className={cn(
               "group h-11 w-11 rounded-xl shadow-sm transition-all duration-200 hidden md:flex",

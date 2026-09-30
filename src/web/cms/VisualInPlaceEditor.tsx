@@ -7,6 +7,7 @@ import { findSectionKey, getSectionNode, resolveElementKey, setSelectedElement }
 
 import { FloatingElementToolbar } from './FloatingElementToolbar';
 import { applyElementStyle, type ElementStyle } from './useCmsElementStyles';
+import { saveContactField } from './contact-edit';
 
 type MediaKind = 'image' | 'video';
 
@@ -173,14 +174,30 @@ export const VisualInPlaceEditor: React.FC = () => {
         return;
       }
 
+      const contactKey = target.getAttribute('data-contact-key');
+      const sectionKey = getSectionKey(target);
+
+      // Un élément n'est marqué éditable que s'il appartient à une section CMS
+      // reconnue (avec une destination de sauvegarde valide) OU porte
+      // explicitement une clé Contact. Tout le reste (y compris les éléments
+      // anonymes) ne reçoit plus le survol vert ni le mode édition.
       if (target.tagName === 'IMG' || target.tagName === 'VIDEO') {
-        target.classList.add('pixia-editable-img-hover');
-        hoveredElementRef.current = target;
-      } else if (EDITABLE_TEXT_TAGS.includes(target.tagName) || target.hasAttribute('data-editable') || target.hasAttribute('data-text-key')) {
-        if (target.children.length <= 3) {
-          target.classList.add('pixia-editable-text-hover');
+        if (sectionKey) {
+          target.classList.add('pixia-editable-img-hover');
           hoveredElementRef.current = target;
         }
+      } else if (contactKey) {
+        target.classList.add('pixia-editable-text-hover');
+        hoveredElementRef.current = target;
+      } else if (
+        sectionKey &&
+        target.children.length <= 3 &&
+        (EDITABLE_TEXT_TAGS.includes(target.tagName) ||
+          target.hasAttribute('data-editable') ||
+          target.hasAttribute('data-text-key'))
+      ) {
+        target.classList.add('pixia-editable-text-hover');
+        hoveredElementRef.current = target;
       }
     };
 
@@ -198,23 +215,55 @@ export const VisualInPlaceEditor: React.FC = () => {
         return;
       }
 
+      const contactKey = target.getAttribute('data-contact-key');
+
+      // Cas 0: Édition d'un champ Contact (source Firestore, via l'API
+      // existante). Le texte est éditable, la sauvegarde passe par
+      // `saveContactField` — aucune écriture dans le JSON du CMS.
+      if (contactKey) {
+        if (target.isContentEditable) {
+          return;
+        }
+        e.preventDefault();
+        e.stopPropagation();
+        target.classList.add('pixia-el-selected');
+        target.contentEditable = 'true';
+        target.focus();
+
+        const originalText = target.innerText;
+
+        const onBlur = () => {
+          target.contentEditable = 'false';
+          target.removeEventListener('blur', onBlur);
+          target.classList.remove('pixia-el-selected');
+          if (!target.isConnected) return;
+          const newText = target.innerText;
+          if (newText === originalText) return;
+
+          showToast('Sauvegarde…', 'pending');
+          saveContactField(contactKey, newText)
+            .then(() => showToast(`✓ ${contactKey} — sauvegardé`, 'ok'))
+            .catch(() => showToast('✕ Échec de la sauvegarde (serveur)', 'error'));
+        };
+
+        target.addEventListener('blur', onBlur);
+        return;
+      }
+
+      const sectionKey = getSectionKey(target);
+      if (!sectionKey) {
+        // Pas une section CMS reconnue : le clic n'est PAS intercepté.
+        // Liens, boutons et navigation fonctionnent normalement (aucun faux
+        // contrôle vert, aucun blocage hors édition réelle).
+        return;
+      }
+
       // En mode édition : intercepter TOUT clic sur un lien, bouton ou ancre
       // pour éviter la navigation intempestive et permettre la sélection / édition (Point 5).
       const clickableParent = target.closest('a, button, [role="button"]') as HTMLElement | null;
       if (clickableParent) {
         e.preventDefault();
         e.stopPropagation();
-      }
-
-      const sectionKey = getSectionKey(target);
-      if (!sectionKey) {
-        // Même si pas de section officielle, si on a cliqué sur un lien ou bouton,
-        // on bloque la navigation pour ne pas perdre le contexte d'édition.
-        if (clickableParent) {
-          e.preventDefault();
-          e.stopPropagation();
-        }
-        return;
       }
 
       const sectionRoot = getSectionNode(sectionKey);
@@ -325,7 +374,7 @@ export const VisualInPlaceEditor: React.FC = () => {
       const el = document.getElementById('pixia-visual-editor-styles');
       if (el) el.remove();
     };
-  }, [isEditing, isAdmin, uploadMedia, updateSectionField, setSelectedBlockId, persist, openImageModalForElement]);
+  }, [isEditing, isAdmin, uploadMedia, updateSectionField, setSelectedBlockId, persist, openImageModalForElement, showToast]);
 
   // Appliquer le remplacement de l'image
   const handleApplyImage = async (srcToApply?: string) => {

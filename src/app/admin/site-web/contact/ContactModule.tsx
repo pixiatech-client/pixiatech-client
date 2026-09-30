@@ -110,7 +110,29 @@ export function ContactModule({ isAdminPage = true }: ContactModuleProps) {
   };
 
   const handleUpdateInfo = (patch: Partial<PageContentConfig['info']>) => {
-    setPageContent(prev => ({ ...prev, info: { ...prev.info, ...patch } }));
+    // SOURCE UNIQUE : `PageContentConfig.info` ne contient que de la mise en
+    // forme. Les VALEURS (adresse, téléphones, e-mail, WhatsApp, horaires)
+    // appartiennent à `contactInfo`, document canonique lu par la page
+    // publique. On les écarte donc du patch de page et on les écrit à leur
+    // place ; sinon l'admin enregistrerait une valeur que rien n'affiche.
+    const { addressValue, phone1, phone2, emailValue, whatsappNumber, hoursValue, ...presentation } = patch;
+    const contactValues: Partial<ContactInfo> = {};
+    if (addressValue !== undefined) contactValues.address = addressValue;
+    if (phone1 !== undefined) contactValues.phone1 = phone1;
+    if (phone2 !== undefined) contactValues.phone2 = phone2;
+    if (emailValue !== undefined) contactValues.primaryEmail = emailValue;
+    if (whatsappNumber !== undefined) contactValues.whatsappNumber = whatsappNumber;
+    if (hoursValue !== undefined) contactValues.workingHours = hoursValue;
+    if (Object.keys(contactValues).length > 0) {
+      // Pas d'import de `firestore` ici : ce module est un Client Component et
+      // `firebase-admin` est serveur-only (le bundler navigateur échoue sur
+      // `child_process`). Tant que `contactInfo` est null, la saisie est
+      // ignorée — la carte affiche de toute façon le repli de la page.
+      setContactInfo((prev) => (prev ? { ...prev, ...contactValues } : prev));
+    }
+    if (Object.keys(presentation).length > 0) {
+      setPageContent(prev => ({ ...prev, info: { ...prev.info, ...presentation } }));
+    }
   };
 
   const handleUpdateFaq = (patch: Partial<PageContentConfig['faq']>) => {
@@ -145,6 +167,26 @@ export function ContactModule({ isAdminPage = true }: ContactModuleProps) {
     setIsSaving(true);
     setStatusNotification(null);
     try {
+      // Les VALEURS de contact sont d'abord écrites dans la source canonique
+      // `contactInfo`. Si cet appel échoue, on n'enregistre pas la page : sinon
+      // l'admin afficherait « enregistré » alors que la page publique garderait
+      // les anciennes coordonnées.
+      if (contactInfo) {
+        const infoRes = await fetch('/api/site-web/contact/info', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(contactInfo),
+        });
+        const infoJson = await infoRes.json();
+        if (!infoRes.ok || !infoJson?.success) {
+          setStatusNotification({
+            type: 'error',
+            message: infoJson?.error || "Erreur lors de l'enregistrement des coordonnées.",
+          });
+          return;
+        }
+      }
+
       const res = await fetch('/api/site-web/contact/page-content', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -243,7 +285,18 @@ export function ContactModule({ isAdminPage = true }: ContactModuleProps) {
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 items-start">
             <div className="lg:col-span-5 space-y-6">
               <ContactInfoCard
-                content={pageContent.info}
+                content={{
+                  ...pageContent.info,
+                  // Affiche les VALEURS canoniques : l'admin doit montrer ce que
+                  // la page publique affiche, sinon l'on ne peut pas contrôler
+                  // ce que l'on vient de saisir.
+                  addressValue: contactInfo?.address || pageContent.info.addressValue,
+                  phone1: contactInfo?.phone1 || pageContent.info.phone1,
+                  phone2: contactInfo?.phone2 || pageContent.info.phone2,
+                  emailValue: contactInfo?.primaryEmail || pageContent.info.emailValue,
+                  whatsappNumber: contactInfo?.whatsappNumber || pageContent.info.whatsappNumber,
+                  hoursValue: contactInfo?.workingHours || pageContent.info.hoursValue,
+                }}
                 visibility={pageContent.visibility}
                 isAdmin={isAdminMode}
                 onUpdateInfo={handleUpdateInfo}

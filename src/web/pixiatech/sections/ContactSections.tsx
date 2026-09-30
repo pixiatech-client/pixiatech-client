@@ -11,13 +11,18 @@ import {
 } from 'framer-motion';
 import { trackFormSubmit } from '@/lib/analytics/tracker';
 import { DEFAULT_PAGE_CONTENT } from '@/lib/site-web/defaultPageContent';
-import type { ContactSubmissionPayload, PageContentConfig } from '@/lib/site-web/types';
+import AuroraBackground from '@/components/ui/aurora-background';
+import type { ContactInfo, ContactSubmissionPayload, PageContentConfig } from '@/lib/site-web/types';
 import type { Language } from '../../pixiatech-translations';
+import { CONTACT_REFRESH_EVENT } from '../../cms/contact-edit';
 
 /* Drapeau temporaire : masque l'etape "choisissez votre type de projet"
    (fieldset des categories) pour raccourcir la tablette. Passez a `true`
    pour la restaurer. */
 const SHOW_PROJECT_TYPE_STEP = false;
+
+/* Fond de la carte tablette : blanc uni. Tous les arrière-plans décoratifs
+   (studio sombre, texture merch, nuages 3D) ont été retirés. */
 
 /* ──────────────────────────────  Styles  ──────────────────────────────
    Repris de web.css / pixiatech.css : encre #080808, accent lime #C3F910, mono
@@ -786,8 +791,15 @@ const CONTACT_CSS = `
   transition: border-color .2s ease, background .2s ease;
 }
 .ct-coord-card:hover {
-  border-color: #3a3a3a;
-  background: rgba(255, 255, 255, .035);
+  border-color: rgba(195, 249, 16, .55);
+  background: rgba(195, 249, 16, .06);
+}
+.ct-coord-card:hover .ct-coord-label {
+  color: #C3F910;
+}
+.ct-coord-card:hover .ct-coord-value,
+.ct-coord-card:hover .ct-coord-value a {
+  color: #C3F910;
 }
 .ct-coord-label {
   font-family: var(--font);
@@ -796,11 +808,13 @@ const CONTACT_CSS = `
   text-transform: uppercase;
   font-weight: 700;
   color: var(--ct-muted);
+  transition: color .2s ease;
 }
 .ct-coord-value {
   font-size: 14.5px;
   line-height: 1.5;
   color: var(--ct-text);
+  transition: color .2s ease;
 }
 .ct-coord-value a { color: var(--ct-text); }
 .ct-coord-value a:hover { color: #C3F910; }
@@ -811,53 +825,14 @@ const CONTACT_CSS = `
   margin-top: 4px;
 }
 
-/* ─── Environnement « studio sombre » ─────────────────────────────────────── */
-.ct-retail-bg {
+/* Carte tablette : fond Aurora animé (nouveau) en couche de fond, contenu par
+   dessus. Les étoiles scintillent, les halos violets/indigo pulsent. */
+.ct-retail-aurora {
   position: absolute;
   inset: 0;
   z-index: 0;
   overflow: hidden;
   pointer-events: none;
-  background: radial-gradient(120% 85% at 50% 30%, #0c0c0f 0%, #09090b 44%, #050507 100%);
-}
-.ct-retail-bg > div {
-  position: absolute;
-  inset: 0;
-}
-.ct-retail-merch {
-  position: absolute;
-  inset: 0;
-  background: url('/web/contact/retail-merch.webp') center 22% / cover no-repeat;
-  opacity: .32;
-  mix-blend-mode: screen;
-  filter: contrast(1.08) brightness(.9);
-  pointer-events: none;
-}
-.ct-retail-key {
-  background: radial-gradient(52% 60% at 50% 20%, rgba(255, 255, 255, .06), rgba(255, 255, 255, .015) 55%, transparent 78%);
-}
-.ct-retail-halo {
-  inset: -12% -18%;
-  background: radial-gradient(34% 42% at 50% 44%, rgba(255, 255, 255, .04), transparent 68%);
-  filter: blur(22px);
-}
-.ct-retail-fluid {
-  background-image:
-    radial-gradient(40% 46% at 30% 36%, rgba(48, 66, 88, .12) 0, transparent 62%),
-    radial-gradient(44% 48% at 72% 20%, rgba(30, 44, 60, .10) 0, transparent 64%),
-    radial-gradient(52% 46% at 66% 82%, rgba(40, 36, 52, .09) 0, transparent 62%),
-    radial-gradient(36% 42% at 16% 74%, rgba(52, 58, 70, .07) 0, transparent 58%);
-  filter: blur(46px) saturate(.9);
-  animation: ct-fluid-drift 46s ease-in-out infinite alternate;
-  will-change: transform;
-}
-@keyframes ct-fluid-drift {
-  0%   { transform: translate3d(-3%, -2%, 0) scale(1); }
-  50%  { transform: translate3d(2.5%, 3%, 0) scale(1.07); }
-  100% { transform: translate3d(-2%, 2.4%, 0) scale(1.03); }
-}
-.ct-retail-vignette {
-  background: radial-gradient(120% 95% at 50% 45%, transparent 40%, rgba(3, 3, 4, .44) 82%, rgba(2, 2, 3, .8) 100%);
 }
 .ct-retail-section > .wrap {
   position: relative;
@@ -868,7 +843,7 @@ const CONTACT_CSS = `
   .ct-input, .ct-area, .ct-chip, .ct-link, .ct-check, .ct-btn,
   .ct-faq-q, .ct-faq-plus, .ct-row-label { transition: none; }
   .ct-chip:active, .ct-btn:active, .ct-faq-btn[aria-expanded='true'] .ct-faq-plus { transform: none; }
-  .ct-mesh::before, .ct-zoom-bg, .ct-retail-fluid { animation: none; }
+  .ct-mesh::before, .ct-zoom-bg { animation: none; }
 }
 `;
 
@@ -1436,13 +1411,9 @@ function RetailContact({
       onPointerMove={onPointerMove}
       onPointerLeave={onPointerLeave}
     >
-      {/* Environnement studio sombre avec texture Shopify POS */}
-      <div className="ct-retail-bg" aria-hidden="true">
-        <div className="ct-retail-merch" />
-        <div className="ct-retail-key" />
-        <div className="ct-retail-halo" />
-        <div className="ct-retail-fluid" />
-        <div className="ct-retail-vignette" />
+      {/* Nouveau fond : Aurora (halos violets/indigo pulsants + étoiles) */}
+      <div className="ct-retail-aurora" aria-hidden="true">
+        <AuroraBackground className="!w-full !h-full" />
       </div>
 
       <div className="wrap">
@@ -1548,7 +1519,7 @@ function RetailContact({
               <div className="ct-coord-card">
                 <span className="ct-coord-label">{info.addressLabel}</span>
                 <span className="ct-coord-value">
-                  {info.addressValue}{' '}
+                  <span data-contact-key="contact.info.addressValue">{info.addressValue}</span>{' '}
                   <a
                     href={mapsUrl(info.addressValue)}
                     target="_blank"
@@ -1565,13 +1536,21 @@ function RetailContact({
               <div className="ct-coord-card">
                 <span className="ct-coord-label">{info.phonesLabel}</span>
                 <span className="ct-coord-value">
-                  <a href={`tel:${digits(info.phone1)}`} className="ct-link">
+                  <a
+                    href={`tel:${digits(info.phone1)}`}
+                    className="ct-link"
+                    data-contact-key="contact.info.phone1"
+                  >
                     {info.phone1}
                   </a>
                   {info.phone2 && (
                     <>
                       {' · '}
-                      <a href={`tel:${digits(info.phone2)}`} className="ct-link">
+                      <a
+                        href={`tel:${digits(info.phone2)}`}
+                        className="ct-link"
+                        data-contact-key="contact.info.phone2"
+                      >
                         {info.phone2}
                       </a>
                     </>
@@ -1583,7 +1562,11 @@ function RetailContact({
               <div className="ct-coord-card">
                 <span className="ct-coord-label">{info.emailLabel}</span>
                 <span className="ct-coord-value">
-                  <a href={`mailto:${info.emailValue}`} className="ct-link">
+                  <a
+                    href={`mailto:${info.emailValue}`}
+                    className="ct-link"
+                    data-contact-key="contact.info.emailValue"
+                  >
                     {info.emailValue}
                   </a>
                 </span>
@@ -1653,7 +1636,9 @@ function FaqList({ faq }: { faq: PageContentConfig['faq'] }) {
                 >
                   {item.category}
                 </span>
-                <span className="ct-faq-q">{item.question}</span>
+                <span className="ct-faq-q" data-contact-key={`contact.faq.${item.id}.question`}>
+                  {item.question}
+                </span>
               </span>
               <span className="ct-faq-plus" aria-hidden="true">
                 +
@@ -1662,6 +1647,7 @@ function FaqList({ faq }: { faq: PageContentConfig['faq'] }) {
             {expanded && (
               <div
                 id={`ct-faq-panel-${item.id}`}
+                data-contact-key={`contact.faq.${item.id}.answer`}
                 style={{ padding: '0 0 28px', maxWidth: 760, color: DARK_BODY, fontSize: 15.5, lineHeight: 1.65 }}
               >
                 {item.answer}
@@ -1678,6 +1664,11 @@ function FaqList({ faq }: { faq: PageContentConfig['faq'] }) {
 
 export function ContactSections({ lang }: { lang: Language }) {
   const [content, setContent] = useState<PageContentConfig>(DEFAULT_PAGE_CONTENT);
+  // Coordonnées canoniques. Le contenu de page ne porte QUE la mise en forme
+  // (libellés, titres) : les valeurs affichées viennent d'ici, et d'ici
+  // seulement. C'est ce qui empêche l'adresse ou le téléphone de diverger
+  // entre le module Contact et l'éditeur de page.
+  const [contactInfo, setContactInfo] = useState<ContactInfo | null>(null);
   const pinRef = useRef<HTMLDivElement>(null);
   const reduceMotion = useReducedMotion();
   const { scrollYProgress } = useScroll({ target: pinRef, offset: ['start start', 'end start'] });
@@ -1686,30 +1677,61 @@ export function ContactSections({ lang }: { lang: Language }) {
 
   useEffect(() => {
     let alive = true;
-    fetch('/api/site-web/contact/page-content')
-      .then((res) => (res.ok ? res.json() : null))
-      .then((body) => {
-        const incoming = body?.data as PageContentConfig | undefined;
-        if (!alive || !body?.success || !incoming) return;
-        setContent((prev) => ({
-          ...prev,
-          ...incoming,
-          visibility: { ...prev.visibility, ...incoming.visibility },
-          hero: { ...prev.hero, ...incoming.hero },
-          info: { ...prev.info, ...incoming.info },
-          form: { ...prev.form, ...incoming.form },
-          faq: { ...prev.faq, ...incoming.faq },
-        }));
-      })
-      .catch(() => {
-        /* Le contenu par défaut reste affiché : la page ne dépend pas du réseau. */
-      });
+    const loadContent = () => {
+      fetch('/api/site-web/contact/page-content')
+        .then((res) => (res.ok ? res.json() : null))
+        .then((body) => {
+          const incoming = body?.data as PageContentConfig | undefined;
+          if (!alive || !body?.success || !incoming) return;
+          setContent((prev) => ({
+            ...prev,
+            ...incoming,
+            visibility: { ...prev.visibility, ...incoming.visibility },
+            hero: { ...prev.hero, ...incoming.hero },
+            info: { ...prev.info, ...incoming.info },
+            form: { ...prev.form, ...incoming.form },
+            faq: { ...prev.faq, ...incoming.faq },
+          }));
+        })
+        .catch(() => {
+          /* Le contenu par défaut reste affiché : la page ne dépend pas du réseau. */
+        });
+
+      fetch('/api/site-web/contact/info')
+        .then((res) => (res.ok ? res.json() : null))
+        .then((body) => {
+          const info = body?.data as ContactInfo | undefined;
+          if (!alive || !body?.success || !info) return;
+          setContactInfo(info);
+        })
+        .catch(() => {
+          /* Le contenu de page reste le repli : aucune coordonnée ne disparaît. */
+        });
+    };
+    loadContent();
+    // Après une sauvegarde de l'éditeur visuel (Contact), on relit Firestore
+    // pour afficher la nouvelle valeur : FR et EN partagent la même source.
+    const onContentSaved = () => loadContent();
+    window.addEventListener(CONTACT_REFRESH_EVENT, onContentSaved);
     return () => {
       alive = false;
+      window.removeEventListener(CONTACT_REFRESH_EVENT, onContentSaved);
     };
   }, []);
 
-  const { hero, info, form, faq, visibility } = content;
+  const { hero, info: contentInfo, form, faq, visibility } = content;
+
+  // Les VALEURS viennent de `contactInfo` (source unique) ; `contentInfo` ne
+  // fournit que les libellés et sert de repli si `contactInfo` est injoignable.
+  const info: PageContentConfig['info'] = {
+    ...contentInfo,
+    addressValue: contactInfo?.address || contentInfo.addressValue,
+    phone1: contactInfo?.phone1 || contentInfo.phone1,
+    phone2: contactInfo?.phone2 || contentInfo.phone2,
+    emailValue: contactInfo?.primaryEmail || contentInfo.emailValue,
+    whatsappNumber: contactInfo?.whatsappNumber || contentInfo.whatsappNumber,
+    hoursValue: contactInfo?.workingHours || contentInfo.hoursValue,
+  };
   const scrollToForm = () =>
     document.getElementById('contact-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
@@ -1747,11 +1769,13 @@ export function ContactSections({ lang }: { lang: Language }) {
               )}
               {visibility.heroTitle && (
                 <h1 className="display" style={{ margin: 0, color: DARK_TEXT, maxWidth: 1020 }}>
-                  {hero.titleLine1}
+                  <span data-contact-key="contact.hero.titleLine1">{hero.titleLine1}</span>
                   {hero.titleHighlight && (
                     <>
                       <br />
-                      <span style={{ color: ACCENT }}>{hero.titleHighlight}</span>
+                      <span style={{ color: ACCENT }} data-contact-key="contact.hero.titleHighlight">
+                        {hero.titleHighlight}
+                      </span>
                     </>
                   )}
                 </h1>
@@ -1762,7 +1786,7 @@ export function ContactSections({ lang }: { lang: Language }) {
                   data-reveal="true"
                   style={{ margin: '22px 0 0', maxWidth: 660, color: DARK_BODY, fontSize: 17, lineHeight: 1.62 }}
                 >
-                  {hero.subtitle}
+                  <span data-contact-key="contact.hero.subtitle">{hero.subtitle}</span>
                 </p>
               )}
 
@@ -1806,7 +1830,7 @@ export function ContactSections({ lang }: { lang: Language }) {
               {visibility.heroCtaButton && (
                 <div style={{ marginTop: 26 }}>
                   <ActionButton onClick={scrollToForm}>
-                    {hero.ctaButtonText}
+                    <span data-contact-key="contact.hero.ctaButtonText">{hero.ctaButtonText}</span>
                     <span aria-hidden="true">↓</span>
                   </ActionButton>
                 </div>

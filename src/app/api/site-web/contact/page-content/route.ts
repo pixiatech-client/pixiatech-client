@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getPageContent, setPageContent, getContactInfo, setContactInfo } from '@/lib/site-web/firestore';
+import { getPageContent, setPageContent } from '@/lib/site-web/firestore';
 import { requireAdmin } from '@/lib/site-web/auth';
 import type { PageContentConfig } from '@/lib/site-web/types';
 
@@ -20,19 +20,17 @@ export async function PUT(request: NextRequest) {
     if (!updated || !updated.visibility || !updated.hero) {
       return NextResponse.json({ success: false, message: 'Configuration de page invalide.' }, { status: 400 });
     }
-    await setPageContent(updated);
 
-    // Synchronize basic contactInfo fields
-    if (updated.info) {
-      const sync: Record<string, string> = {};
-      if (updated.info.phone1) sync.phone1 = updated.info.phone1;
-      if (updated.info.phone2) sync.phone2 = updated.info.phone2;
-      if (updated.info.emailValue) sync.primaryEmail = updated.info.emailValue;
-      if (updated.info.addressValue) sync.address = updated.info.addressValue;
-      if (updated.info.whatsappNumber) sync.whatsappNumber = updated.info.whatsappNumber;
-      if (updated.info.hoursValue) sync.workingHours = updated.info.hoursValue;
-      if (Object.keys(sync).length > 0) await setContactInfo(sync);
-    }
+    // SOURCE UNIQUE : ce document ne porte que la MISE EN FORME de la page
+    // (titres, libellés, visibilité). Les VALEURS de contact (adresse,
+    // téléphones, e-mail, WhatsApp, horaires) appartiennent à
+    // `siteWeb/contactInfo`, le seul document qui les définit.
+    //
+    // Ce PUT ne recopie donc plus les valeurs vers `contactInfo` : la
+    // synchronisation inverse écrasait la source canonique avec un contenu de
+    // page partiel, et une seule des deux copies se mettait à jour selon le
+    // module utilisé. `ContactSections` lit désormais `contactInfo`.
+    await setPageContent(updated);
 
     const data = await getPageContent();
     return NextResponse.json({

@@ -1,11 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect } from 'react';
 import '../pixiatech.css';
 import { PixiaHeader } from './PixiaHeader';
 import { PixiaFooter } from './PixiaFooter';
 import { ContactSections } from './sections/ContactSections';
 import type { Language } from '../pixiatech-translations';
+import { useI18n } from '@/lib/i18n';
+import { useCms } from '@/lib/site-web/cms-context';
 
 /**
  * Page Contact du site web.
@@ -17,12 +19,21 @@ import type { Language } from '../pixiatech-translations';
  * propriétaire) ne sert plus que de source de contenu côté admin.
  */
 export function PixiaContactPage() {
-  const [lang, setLang] = useState<Language>('FR');
-  const toggleLang = () => setLang((l) => (l === 'FR' ? 'EN' : 'FR'));
+  // Meme source de langue que le header (contexte i18n global, persiste) :
+  // la page ne peut plus repartir sur FR au refresh ni diverger du header.
+  const { locale } = useI18n();
+  const lang: Language = locale === 'en' ? 'EN' : 'FR';
+  const { setCurrentPageId } = useCms();
+
+  // Sans cela la page courante restait celle du site precedant, et les styles
+  // CMS de sa section `header` etaient reappliques sur cette page.
+  useEffect(() => {
+    setCurrentPageId('contact');
+  }, [setCurrentPageId]);
 
   return (
     <div className="xer-site" style={{ background: 'var(--black, #080808)' }}>
-      <PixiaHeader lang={lang} onToggleLang={toggleLang} />
+      <PixiaHeader />
       <main>
         <ContactSections lang={lang} />
       </main>

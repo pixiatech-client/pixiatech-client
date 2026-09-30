@@ -132,6 +132,17 @@ export interface PageContentConfig {
     submitButtonText: string;
     trustReassuranceText: string;
   };
+  /**
+   * Mise en forme de la colonne « Coordonnées » uniquement.
+   *
+   * SOURCE UNIQUE : `addressValue`, `phone1`, `phone2`, `emailValue`,
+   * `whatsappNumber` et `hoursValue` ne sont plus lus ici. Ces VALEURS sont
+   * définies par `ContactInfo` (`siteWeb/contactInfo`), seul document qui les
+   * possède ; `ContactSections` lit `contactInfo` et ne se rabat sur ces champs
+   * que si l'API est injoignable. Les champs restent dans le type parce que les
+   * documents déjà enregistrés en contiennent : ne pas les écrire, ne pas les
+   * lire comme source.
+   */
   info: {
     hqBadge: string;
     hqLocation: string;
@@ -143,16 +154,22 @@ export interface PageContentConfig {
     stat2Value: string;
     coordsTitle: string;
     addressLabel: string;
+    /** Déprécié : lire `ContactInfo.address`. Conservé pour les documents existants. */
     addressValue: string;
     phonesLabel: string;
+    /** Déprécié : lire `ContactInfo.phone1`. Conservé pour les documents existants. */
     phone1: string;
+    /** Déprécié : lire `ContactInfo.phone2`. Conservé pour les documents existants. */
     phone2: string;
     emailLabel: string;
+    /** Déprécié : lire `ContactInfo.primaryEmail`. Conservé pour les documents existants. */
     emailValue: string;
     whatsappLabel: string;
     whatsappSubtext: string;
+    /** Déprécié : lire `ContactInfo.whatsappNumber`. Conservé pour les documents existants. */
     whatsappNumber: string;
     hoursLabel: string;
+    /** Déprécié : lire `ContactInfo.workingHours`. Conservé pour les documents existants. */
     hoursValue: string;
     mapTitle: string;
     mapBadge: string;

@@ -48,6 +48,7 @@ import type { Settings as AppSettings, UserProfile, UserRole } from '@/lib/types
 import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/lib/i18n';
 import { getAvatarUrl } from '@/lib/avatar';
+import { getSiteAccessPath, openSiteAccess } from '@/lib/site-access';
 import { collection, orderBy, query, doc, onSnapshot } from 'firebase/firestore';
 import { Sidebar, type SidebarState, type SidebarTheme, type SettingsSection } from './dashboard-new/Sidebar';
 import { UserRole as UserRoleEnum } from './dashboard-new/dashboard-new-types';
@@ -610,7 +611,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => window.open('/', '_blank')}
+                onClick={() => openSiteAccess('admin')}
                 title={t('admin.siteAccess')}
                 className={cn(
                   "group h-11 w-11 rounded-xl shadow-sm transition-all duration-200 hidden md:flex",
@@ -700,7 +701,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                         {t('admin.about.title')}
                       </button>
                       <button
-                        onClick={() => { window.open('/', '_blank'); setMobileActionsOpen(false); }}
+                        onClick={() => { openSiteAccess('admin'); setMobileActionsOpen(false); }}
                         className="flex items-center gap-3 w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                       >
                         <Globe className="w-4 h-4 text-emerald-500" />
@@ -873,7 +874,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                 </Link>
 
                 <a
-                  href="/"
+                  href={getSiteAccessPath('admin')}
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => setIsProfileOpen(false)}
@@ -1047,9 +1048,29 @@ export function AdminLayoutContent({ children }: { children: React.ReactNode }) 
   const firestore = useFirestore();
   const auth = useAuth();
 
+  // POINT 3 — la requête des rôles ne doit jamais rester figée à `null`.
+  // Elle dépendait d'un `isUserLoading` qui bascule à `false` via un timer de
+  // 5 s : si l'auth Firebase hadn't pas encore réhydraté à ce moment-là, la
+  // requête restait nulle, le menu latéral se vidait et rien ne la ressuscitait
+  // au retour de PixiaTech Web. On se base donc sur l'auth réel, et on
+  // reconstruit la requête dès que l'utilisateur revient.
+  const [authEpoch, setAuthEpoch] = useState(0);
+  useEffect(() => {
+    if (!auth) return;
+    const revalidate = () => setAuthEpoch((n) => n + 1);
+    document.addEventListener('visibilitychange', revalidate);
+    window.addEventListener('pageshow', revalidate);
+    window.addEventListener('focus', revalidate);
+    return () => {
+      document.removeEventListener('visibilitychange', revalidate);
+      window.removeEventListener('pageshow', revalidate);
+      window.removeEventListener('focus', revalidate);
+    };
+  }, [auth]);
+
   const rolesQuery = useMemoFirebase(
-    () => (firestore && auth.currentUser && !isUserLoading) ? query(collection(firestore, 'roles'), orderBy('name')) : null,
-    [firestore, auth.currentUser, isUserLoading]
+    () => (firestore && auth.currentUser) ? query(collection(firestore, 'roles'), orderBy('name')) : null,
+    [firestore, auth.currentUser, authEpoch]
   );
   const { data: roles } = useCollection<UserRole>(rolesQuery, { suppressPermissionError: true });
 
