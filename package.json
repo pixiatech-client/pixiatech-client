@@ -14,6 +14,9 @@
     "setup:hooks": "node scripts/install-git-hooks.mjs",
     "test:version": "node --experimental-strip-types scripts/test-versioning.ts",
     "test:pdf-parser": "node --experimental-strip-types scripts/test-product-pdf-parser.ts",
+    "test:master-template": "node --experimental-strip-types --import ./scripts/ts-resolve-hooks.mjs scripts/test-master-template.ts",
+    "test:analytics-session": "node --experimental-strip-types scripts/test-analytics-api-session.ts",
+    "check:client-boundary": "node scripts/check-client-server-boundary.mjs",
     "prebuild": "npm run build:info && npm run build:widget"
   },
   "dependencies": {
