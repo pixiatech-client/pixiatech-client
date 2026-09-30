@@ -4,7 +4,7 @@
       "id": "home",
       "name": "home",
       "slug": "/home",
-      "updatedAt": "2026-09-27T21:30:55.381Z",
+      "updatedAt": "2026-09-29T20:32:22.722Z",
       "sections": {
         "pixia-web": {
           "text_1790257213042": "sdsdsdsdÉDITEUR DIRECT : CLIQUEZ SUR UN TEXTE OU UNE IMAGE",
@@ -200,7 +200,7 @@
           "text_1790512488250": "L'INGÉNIERIEQSQSQSS",
           "_elements": {
             "div:2/section:1/div:6/div:1/h1:1/span:1": {
-              "text": "L'INGÉNIERIE1",
+              "text": "L'INGÉNIERIE ",
               "offsetX": 0,
               "offsetY": 36
             },
@@ -239,8 +239,8 @@
               "color": "#c3f910"
             }
           },
-          "minHeight": 946,
-          "paddingBottom": 129
+          "minHeight": 503,
+          "paddingBottom": 0
         },
         "markets": {
           "_elements": {
@@ -248,15 +248,23 @@
               "fontSize": "68px",
               "textAlign": "center"
             }
-          }
+          },
+          "_i18n": {
+            "market_rental_image": {
+              "fr": {
+                "value": "/uploads/cms/Gemini_Generated_Image_u142r4u142r4u142.png.png",
+                "status": "source",
+                "updatedAt": "2026-09-29T18:59:55.996Z",
+                "sourceText": "/uploads/cms/Gemini_Generated_Image_u142r4u142r4u142.png.png"
+              }
+            }
+          },
+          "market_rental_image": "/uploads/cms/Gemini_Generated_Image_u142r4u142r4u142.png.png"
         },
         "header": {
           "_elements": {
             "nav:1/div:1/a:1": {
               "href": "#marketsv"
-            },
-            "nav:1/div:2/div:1/button:2": {
-              "color": "#c3f910"
             }
           }
         },
@@ -265,7 +273,23 @@
             "div:2/section:1/div:1/h2:1/span:3": {
               "text": "une partie intégrante a de l'espace.aaaaaa"
             }
-          }
+          },
+          "paddingTop": 0,
+          "_i18n": {
+            "overlayColor": {
+              "fr": {
+                "value": "#d50b0b",
+                "status": "source",
+                "updatedAt": "2026-09-29T20:32:04.149Z",
+                "sourceText": "#d50b0b"
+              }
+            }
+          },
+          "overlayColor": "#d50b0b",
+          "overlayOpacity": 85,
+          "minHeight": 512,
+          "marginBottom": 184,
+          "paddingBottom": 0
         },
         "pitch": {
           "paddingTop": 16,
@@ -284,6 +308,13 @@
         "projects": {
           "minHeight": 1039,
           "paddingBottom": 227
+        },
+        "showreel": {
+          "_elements": {
+            "div:2/div:1/div:1/div:5/div:2/span:1": {
+              "text": "AFFICHEZsqdsqdsd"
+            }
+          }
         }
       }
     },
@@ -386,7 +417,7 @@
       "id": "contact",
       "name": "Contact & Paramètres Généraux",
       "slug": "#contact",
-      "updatedAt": "2026-09-23T12:00:00.000Z",
+      "updatedAt": "2026-09-29T18:53:26.539Z",
       "settings": {
         "companyName": "PIXIATECH",
         "tagline": "Systèmes LED Architecturaux de Pointe",
@@ -397,6 +428,26 @@
         "accentColor": "#C3F910",
         "backendName": "Pixel Tech Web",
         "backendApiUrl": "/api/pixel-tech-web"
+      },
+      "sections": {
+        "header": {
+          "_elements": {
+            "body:1/div:5/main:1/div:1/div:2/main:1/section:1/div:2/header:1/div:1/h2:1": {
+              "offsetX": 0,
+              "offsetY": 0,
+              "backgroundColor": "#000000"
+            },
+            "body:1/div:5/main:1/div:1/div:3/main:1/section:1/div:2/header:1": {
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "textDecoration": "none",
+              "fontSize": "40px"
+            },
+            "body:1/div:5/main:1/div:1/div:3/main:1/section:1/div:2/header:1/div:1/h2:1": {
+              "fontSize": "62px"
+            }
+          }
+        }
       }
     },
     "mentions_legales": {
@@ -465,7 +516,37 @@
         "title": "01 · PIXIATECH",
         "description": ""
       }
+    },
+    "product__pxt-wrap": {
+      "id": "product__pxt-wrap",
+      "name": "product__pxt-wrap",
+      "slug": "/product__pxt-wrap",
+      "updatedAt": "2026-09-29T18:57:50.388Z",
+      "sections": {
+        "header": {
+          "_elements": {
+            "nav:1/a:1": {
+              "text": "PIXITECH"
+            }
+          }
+        }
+      }
+    },
+    "product__template-maitre": {
+      "id": "product__template-maitre",
+      "name": "product__template-maitre",
+      "slug": "/product__template-maitre",
+      "updatedAt": "2026-09-29T19:16:09.546Z",
+      "sections": {
+        "next": {
+          "_elements": {
+            "div:2/section:1/div:1/div:2/h2:1": {
+              "text": "Donnons vie à\nvotre affichage. Ça c'est bien je peux je vais prendre ça ça ça marche parfaitement c'est intuitif c'est correct on va prendre cette logique là et la mélanger avec cette ce style là attends voir je vais je vais faire un truc"
+            }
+          }
+        }
+      }
     }
   },
-  "updatedAt": "2026-09-27T21:30:55.381Z"
+  "updatedAt": "2026-09-29T20:32:22.722Z"
 }

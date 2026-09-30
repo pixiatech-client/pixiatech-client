@@ -283,7 +283,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
       { id: 'users', label: t('admin.users'), icon: Users, color: 'text-emerald-500', roles: [UserRole.ADMINISTRATEUR] },
       { id: 'estimations', label: t('admin.estimations'), icon: FileText, color: 'text-orange-500', roles: [UserRole.ADMINISTRATEUR, UserRole.FOURNISSEUR, UserRole.COMMERCIAL] },
       { id: 'factures', label: t('admin.factures.title'), icon: Receipt, color: 'text-teal-500', roles: [UserRole.ADMINISTRATEUR, UserRole.COMMERCIAL] },
-      { id: 'pages', label: 'Pages', icon: Globe, color: 'text-emerald-500', roles: [UserRole.ADMINISTRATEUR] },
       { id: 'produit', label: t('admin.products'), icon: Box, color: 'text-red-500', roles: [UserRole.ADMINISTRATEUR] },
       { id: 'boutique', label: t('admin.navOrders'), icon: ClipboardList, color: 'text-sky-500', roles: [UserRole.ADMINISTRATEUR] },
       { id: 'membres', label: t('admin.memberSpace'), icon: Users, color: 'text-violet-500', roles: [UserRole.ADMINISTRATEUR] },

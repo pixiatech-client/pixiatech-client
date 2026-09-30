@@ -57,10 +57,43 @@ check('useSectionStyle ne retourne plus bgImage (orphelin)', !/bgImage\s*;/.test
 check('useSectionStyle expose bien hasOverlay + overlayColor',
   /return \{ section: sectionStyle, title: titleStyle, hasOverlay, overlayColor \};/.test(wrapper2));
 
-// ── HomePage : capacités par section + repli pleins ───────────────────────
-check('HomePage déclare les caps pour les 4 sections restreintes',
-  ['hero', 'markets', 'showreel', 'experience'].every((k) => new RegExp(`${k}:`).test(home.split('HOME_SECTION_STYLE_CAPS')[1] || '')));
-check('HomePage passe styleCapabilities au wrapper', /styleCapabilities=\{HOME_SECTION_STYLE_CAPS\[key\] \?\? FULL_STYLE_KEYS\}/.test(home));
+// ── HomePage : capacités par section, déclarées ET vérifiées au renderer ────
+const homeCaps = home.split('HOME_SECTION_STYLE_CAPS')[1] || '';
+
+// Chaque section de l'accueil est déclarée : une section absente retomberait
+// sur le repli, donc ne doit plus dépendre d'un oubli de cette table.
+check('HomePage déclare les caps pour les 13 sections de l\'accueil',
+  ['hero', 'manifesto', 'showreel', 'markets', 'kinetic', 'products', 'technology',
+   'pitch', 'projects', 'process', 'experience', 'insights', 'contact']
+    .every((k) => new RegExp(`^\\s{2}${k}:`, 'm').test(homeCaps)));
+
+// Les 3 sections sans `useSectionStyle` n'exposent que l'espacement : c'est la
+// seule chose qu'EditableWrapper leur applique.
+check('HomePage limite projects/process/insights à SPACING_KEYS',
+  ['projects', 'process', 'insights'].every((k) =>
+    new RegExp(`^\\s{2}${k}: SPACING_KEYS`, 'm').test(homeCaps)));
+
+// `experience` rend le voile (`hasOverlay`/`overlayColor` dans StaticSections) :
+// le panneau doit donc exposer overlayOpacity/overlayColor, sinon le contrôle
+// existe mais reste inaccessible.
+check('HomePage expose le voile sur experience (section qui le rend)',
+  /^\s{2}experience: FULL_STYLE_KEYS,/m.test(homeCaps));
+
+// Sections dont le renderer n'étale ni `cms.title` ni le voile.
+check('HomePage déclare les caps restreints (hero/markets/showreel)',
+  /^\s{2}hero: BGMAP_STYLE_KEYS,/m.test(homeCaps)
+  && /^\s{2}markets: BGMAP_TITLELESS_KEYS,/m.test(homeCaps)
+  && /^\s{2}showreel: SHOWREEL_STYLE_KEYS,/m.test(homeCaps));
+
+check('HomePage passe styleCapabilities au wrapper',
+  /styleCapabilities=\{HOME_SECTION_STYLE_CAPS\[key\] \?\? SPACING_KEYS\}/.test(home));
+
+// Repli STRICT : une section non déclarée ne doit jamais recevoir toutes les
+// propriétés. FULL_STYLE_KEYS en repli réexposait marges / couleurs / voile
+// pour toute section absente de la table, exactement les orphelines que ce
+// fichier existe pour empêcher.
+check('HomePage ne retombe JAMAIS sur FULL_STYLE_KEYS',
+  !/styleCapabilities=\{HOME_SECTION_STYLE_CAPS\[key\] \?\? FULL_STYLE_KEYS\}/.test(home));
 check('HomePage ne passe jamais styleCapabilities={undefined} en clair', !/styleCapabilities=\{undefined\}/.test(home));
 
 console.log(failures === 0 ? 'ORPHAN-STYLE-LOCK-PASS' : `ORPHAN-STYLE-LOCK-FAIL (${failures})`);
