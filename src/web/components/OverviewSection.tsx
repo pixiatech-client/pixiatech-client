@@ -51,6 +51,11 @@ export const OverviewSection: React.FC<OverviewSectionProps> = ({
   const showPhoto = Boolean(photoUrl);
   const showSplit = showVideo || showPhoto;
 
+  // SECTION 01 = la vidéo du template + UNE photo, celle de l'aperçu. Elle
+  // arrive dans `data.photo` par le rattachement du template maître
+  // (`attachSectionMedia`), qui place `media.photos[0]` ici. La 2e photo
+  // n'a pas sa place dans cette section : le template la rattache à la
+  // section 02, via `design.visuals`.
   return (
     <section id="overview" className="section theme-light">
       <div className="wrap">

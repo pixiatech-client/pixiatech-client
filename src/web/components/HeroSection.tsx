@@ -18,12 +18,25 @@ interface HeroSectionProps {
   image?: string;
   /** Données produit (template dynamique). Priorité : CMS ?? data. */
   data?: ProductHero;
+  /**
+   * Le produit affiche ses photos dans la première section d'aperçu, juste sous
+   * le grand titre. Le hero ne doit donc pas rejouer la même image à cet
+   * endroit : elle y serait dupliquée. `WebPage` conserve le comportement
+   * historique (false par défaut, la photo s'affiche dans le hero).
+   */
+  productPhotosInOverview?: boolean;
   /** Série du produit (masthead PDF) : dernier fil d'Ariane. */
   series?: string;
   /**
    * Sections effectivement rendues plus bas sur la page. La sous-navigation
    * ne propose que des ancres existantes : un lien vers une section masquée
    * parce qu'elle est vide mènerait nulle part.
+   *
+   * NOTRE AUTRE ÉTAPE : la FICHE PRODUIT (`ProductPageTemplate`) ne fournit
+   * plus cette prop. Sa navigation interne est passée dans le header principal
+   * (`PixiaHeader` + `productSections`), pour qu'il n'y ait qu'une seule
+   * navigation interne sur la fiche. Cette prop ne sert plus qu'à la page
+   * générique `WebPage`, qui garde son rendu d'origine.
    */
   sections?: { id: string; label: string }[];
 }
@@ -36,6 +49,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   data,
   series,
   sections,
+  productPhotosInOverview = false,
 }) => {
   const { pages, currentPageId } = useCms();
   const cmsHero = (pages[currentPageId]?.sections?.hero as Record<string, unknown>) || {};
@@ -56,12 +70,19 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     activeLang,
     text(data?.primaryCta) ?? (lang === 'FR' ? 'Demander un devis →' : 'Request Quote →')
   );
-  const heroImage = (cmsHero.image as string) || (cmsHero.heroImage as string) || image;
+  // Quand le produit porte ses photos dans la première section d'aperçu, le
+  // hero s'abstient : le titre reste suivi du sous-titre / tags / CTA, et les
+  // deux images apparaissent exactement une fois, dans la bonne zone.
+  const heroImage = productPhotosInOverview
+    ? undefined
+    : (cmsHero.image as string) || (cmsHero.heroImage as string) || image;
   const secondaryCta = text(data?.secondaryCta);
 
   const tags = data?.tags?.length ? data.tags : [];
   const specs = (data?.specs ?? []).filter((s) => text(s.value) && text(s.label));
 
+  // Non utilisé par la fiche produit (voir `sections`) : la seule page qui le
+  // passe encore est la page générique, qui conserve son sous-menu.
   const subnavItems = sections ?? [];
 
   const handleSubnavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {

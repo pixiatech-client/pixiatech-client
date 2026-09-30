@@ -19,6 +19,7 @@ import {
   ExternalLink,
   RefreshCw,
   Image as ImageIcon,
+  Star as StarIcon,
   FileUp,
   FileCheck,
   X,
@@ -28,9 +29,15 @@ import {
 import { toast } from 'sonner';
 import { AnimatePresence, motion } from 'framer-motion';
 import { parseProductPdf } from '@/lib/products/product-pdf-parser';
-import { uploadProductPhoto, uploadProductHoverImage } from '@/lib/products/products-service';
+import { buildProductFromMasterTemplate } from '@/lib/products/product-from-template';
+import {
+  getProductBySlug,
+  uploadProductPhoto,
+  uploadProductHoverImage,
+  deleteProductMedia,
+} from '@/lib/products/products-service';
 import { slugify, groupDisplayName, productCategoryIds, MAX_PRODUCT_NAME_LENGTH } from '@/lib/products/types';
-import type { Product, ProductCategory, ProductCategoryGroup } from '@/lib/products/types';
+import type { Product, ProductCategory, ProductCategoryGroup, ProductMediaItem } from '@/lib/products/types';
 
 interface SiteWebProduitsModuleProps {
   initial?: Product[];
@@ -838,6 +845,117 @@ function ProductForm({
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  /**
+   * Bibliothèque média — POINTS 7 à 10.
+   *
+   * La galerie est l'état local de référence : chaque image se remplace, se
+   * supprime et se promeut INDÉPENDAMMENT des autres, et le résultat est
+   * persisté immédiatement dans Firestore. On ne lit donc jamais
+   * `existing.media.photos` pour l'affichage : `view.product` est figé à
+   * l'ouverture de l'éditeur et ne refléterait pas les modifications.
+   */
+  const [mediaPhotos, setMediaPhotos] = useState<ProductMediaItem[]>(
+    existing?.media?.photos ?? []
+  );
+  const [busyPhotoIndex, setBusyPhotoIndex] = useState<number | null>(null);
+
+  /** Persiste la galerie et la répercute immédiatement à l'écran. */
+  const persistPhotos = async (next: ProductMediaItem[], message: string) => {
+    setMediaPhotos(next);
+    if (!existing) return;
+    await saveProduct(existing.slug, { media: { photos: next } });
+    toast.success(message);
+  };
+
+  /**
+   * Efface un fichier devenu inutile (remplacement, suppression).
+   *
+   * TOUJOURS appelé APRÈS l'écriture Firestore. L'ordre inverse est un piège :
+   * si l'écriture échoue, l'entrée continue de pointer vers un fichier effacé
+   * et l'image est cassée sur le site, sans issue. Dans cet ordre, le pire cas
+   * est un fichier orphelin — invisible, sans conséquence pour le visiteur.
+   */
+  const discardFile = async (path: string | undefined, label: string) => {
+    if (!path) return;
+    try {
+      await deleteProductMedia(path);
+    } catch (err) {
+      console.warn(`[ProductForm] ${label} non supprimé :`, err);
+      toast.error("Fichier obsolète non effacé du stockage (l'image reste valable).");
+    }
+  };
+
+  /**
+   * Suppression DÉFINITIVE : l'entrée disparaît de Firestore ET l'objet
+   * Storage est supprimé. Sans cela les fichiers accumulaient des orphelins
+   * invisibles (l'URL continuait de fonctionner, l'image ne disparaissait pas).
+   * L'entrée part d'abord, le fichier ensuite : on ne laisse jamais Firestore
+   * pointer dans le vide, et un effacement refusé ne ressuscite pas l'image.
+   */
+  const removePhotoAt = async (index: number) => {
+    if (!existing) return;
+    const target = mediaPhotos[index];
+    if (!target) return;
+    setBusyPhotoIndex(index);
+    try {
+      await persistPhotos(
+        mediaPhotos.filter((_, i) => i !== index),
+        'Image supprimée.'
+      );
+      await discardFile(target.path, "Fichier de l'image supprimée");
+    } catch (err) {
+      toast.error((err as Error).message || 'Échec de la suppression.');
+    } finally {
+      setBusyPhotoIndex(null);
+    }
+  };
+
+  /** Remplacement ciblé : seule l'image visée change, l'ancien fichier est effacé. */
+  const replacePhotoAt = async (index: number, file: File) => {
+    if (!existing) return;
+    const previous = mediaPhotos[index];
+    setBusyPhotoIndex(index);
+    setUploading(true);
+    try {
+      const upload = await uploadProductPhoto(existing.slug, file);
+      const next = [...mediaPhotos];
+      next[index] = {
+        ...previous,
+        name: upload.name,
+        url: upload.url,
+        path: upload.path,
+        size: upload.size,
+        type: 'image',
+      };
+      // On referencia la nouvelle image AVANT d'effacer l'ancienne : une
+      // écriture Firestore en échec laisse alors l'ancienne image intacte.
+      await persistPhotos(next, 'Image mise à jour.');
+      if (previous?.path && previous.path !== upload.path) {
+        await discardFile(previous.path, 'Ancienne image');
+      }
+      setPhotoPreview(upload.url);
+    } catch (err) {
+      toast.error((err as Error).message || 'Échec du téléversement de la photo.');
+    } finally {
+      setUploading(false);
+      setBusyPhotoIndex(null);
+    }
+  };
+
+  /** La photo principale est la 1re de la galerie (cf. `productPhoto`). */
+  const promotePhotoAt = async (index: number) => {
+    if (index === 0) return;
+    const next = [...mediaPhotos];
+    const [moved] = next.splice(index, 1);
+    next.unshift(moved);
+    try {
+      await persistPhotos(next, 'Photo principale mise à jour.');
+      setPhotoPreview(moved?.url);
+    } catch (err) {
+      toast.error((err as Error).message || 'Échec du changement de photo principale.');
+    }
+  };
+
   // ── Catégories (taxonomie CMS) ────────────────────────────────────────────
   const [categories, setCategoriesState] = useState<ProductCategory[]>([]);
   const [groups, setGroups] = useState<ProductCategoryGroup[]>([]);
@@ -974,6 +1092,8 @@ function ProductForm({
 
   const photoInputRef = useRef<HTMLInputElement>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
+  /** Une entrée file cachée par vignette : « Remplacer » cible l'image exacte. */
+  const photoInputRefs = useRef<Record<number, HTMLInputElement | null>>({});
 
   const cleanName = name.replace(/\s+/g, ' ').trim();
   const slug = slugify(cleanName);
@@ -1015,7 +1135,12 @@ function ProductForm({
     setUploading(true);
     try {
       const upload = await uploadProductPhoto(existing.slug, file);
-      const photos = [
+      const previousMain = mediaPhotos[0];
+      // La zone « Photo principale » REMPLACE l'image de tête, elle n'ajoute
+      // pas une photo supplémentaire. D'où le `slice(1)` : conserver
+      // `...mediaPhotos` en entier laissait l'ancienne entrée en doublon dans
+      // Firestore, pointant vers un fichier déjà effacé du stockage.
+      const photos: ProductMediaItem[] = [
         {
           name: upload.name,
           url: upload.url,
@@ -1023,12 +1148,16 @@ function ProductForm({
           size: upload.size,
           type: 'image' as const,
         },
-        ...(existing.media?.photos ?? []).filter((m) => m.name !== file.name),
+        ...mediaPhotos.slice(previousMain ? 1 : 0),
       ];
-      await saveProduct(existing.slug, { media: { photos } });
+      // Écriture Firestore d'abord, effacement du fichier ensuite : si
+      // l'enregistrement échoue, l'ancienne photo reste la référence valide.
+      await persistPhotos(photos, 'Photo mise à jour.');
+      if (previousMain?.path && previousMain.path !== upload.path) {
+        await discardFile(previousMain.path, 'Ancienne photo principale');
+      }
       setPhotoPreview(upload.url);
       setPhotoFile(null);
-      toast.success('Photo mise à jour.');
     } catch (err) {
       toast.error((err as Error).message || 'Échec du téléversement de la photo.');
     } finally {
@@ -1040,8 +1169,20 @@ function ProductForm({
     if (!existing) return;
     setHoverUploading(true);
     try {
-      const { url } = await uploadProductHoverImage(existing.slug, file);
-      await saveProduct(existing.slug, { hero: { ...existing.hero, hoverImage: url } });
+      const { url, path } = await uploadProductHoverImage(existing.slug, file);
+      const previousPath = existing.hero?.hoverImagePath;
+      await saveProduct(existing.slug, {
+        hero: { ...existing.hero, hoverImage: url, hoverImagePath: path },
+      });
+      // L'image précédente devient inutile : on efface le fichier pour ne pas
+      // laisser d'orphelin dans le stockage à chaque remplacement.
+      if (previousPath && previousPath !== path) {
+        try {
+          await deleteProductMedia(previousPath);
+        } catch (err) {
+          console.warn('[ProductForm] Ancien fichier survol non supprimé :', err);
+        }
+      }
       setHoverPreview(url);
       setHoverFile(null);
       toast.success('Image au survol mise à jour.');
@@ -1056,8 +1197,17 @@ function ProductForm({
     if (!existing) return;
     setHoverUploading(true);
     try {
-      const { hoverImage: _removed, ...heroRest } = existing.hero ?? {};
+      // Suppression DÉFINITIVE : référence Firestore + fichier Storage.
+      const stalePath = existing.hero?.hoverImagePath;
+      const { hoverImage: _removed, hoverImagePath: _removedPath, ...heroRest } = existing.hero ?? {};
       await saveProduct(existing.slug, { hero: heroRest });
+      if (stalePath) {
+        try {
+          await deleteProductMedia(stalePath);
+        } catch (err) {
+          console.warn('[ProductForm] Fichier survol déjà absent :', err);
+        }
+      }
       setHoverPreview(undefined);
       setHoverFile(null);
       toast.success('Image au survol supprimée.');
@@ -1080,11 +1230,24 @@ function ProductForm({
         return;
       }
       setPdfName(file.name);
+
+      // POINT 16/18/20 — le produit n'est PAS construit sur un objet vide :
+      // le TEMPLATE MAÎTRE est la base, et le PDF n'écrase que les champs
+      // qu'il contient réellement. Sans cela, une section absente du PDF
+      // disparaissait de la page et le produit se réduisait à son nom.
+      //
+      // Réanalyse d'un produit EXISTANT : la base reste ce produit, jamais le
+      // template maître — sinon ses valeurs propres seraient écrasées par
+      // celles d'un autre produit, ce que la mission interdit explicitement.
+      const built = existing
+        ? await buildProductFromMasterTemplate(parsed, async () => existing)
+        : await buildProductFromMasterTemplate(parsed, getProductBySlug);
+
       if (existing) {
-        setPdfReanalysis(parsed);
+        setPdfReanalysis(built);
       } else {
-        setPdfAnalysis(parsed);
-        if (!cleanName && parsed.name) setName(parsed.name);
+        setPdfAnalysis(built);
+        if (!cleanName && built.name) setName(built.name);
       }
     } catch {
       toast.error('Échec de l’analyse du PDF.');
@@ -1180,6 +1343,13 @@ function ProductForm({
         categoryIds,
       };
       if (pdfReanalysis) Object.assign(body, pdfReanalysis);
+      // La galerie est l'état local de référence. La réanalyse a été construite
+      // sur le produit tel qu'il était À L'OUVERTURE de l'éditeur : sans cette
+      // ligne, enregistrer une réanalyse annulait silencieusement les photos
+      // ajoutées, remplacées ou promues depuis.
+      if (pdfReanalysis && existing) {
+        body.media = { ...pdfReanalysis.media, photos: mediaPhotos };
+      }
       const next = await saveProduct(existing.slug, body);
       onSaved(next.status === 'published' ? `Produit « ${next.name} » publié.` : `Produit « ${next.name} » enregistré.`);
     } catch (err) {
@@ -1504,6 +1674,113 @@ function ProductForm({
                     />
                   </div>
                 </div>
+              </section>
+
+              {/* ── Bibliothèque média (POINTS 7-10) ──────────────────────────
+                  Chaque image est éditable, supprimable et promovable
+                  indépendamment. La 1re vignette est la photo principale. */}
+              <section>
+                <div className="flex items-center justify-between gap-3 mb-1.5">
+                  <h2 className="text-sm font-bold text-neutral-900 dark:text-white">Bibliothèque média</h2>
+                  <span className="text-[10px] font-mono font-bold bg-neutral-100 dark:bg-white/5 text-neutral-600 dark:text-neutral-400 px-2 py-0.5 rounded-full border border-neutral-200 dark:border-white/10 uppercase tracking-wider">
+                    {mediaPhotos.length} image{mediaPhotos.length > 1 ? 's' : ''}
+                  </span>
+                </div>
+                <p className="text-[11px] text-neutral-400 dark:text-neutral-500 mb-3 leading-relaxed">
+                  La première image sert de photo principale. Remplacez, supprimez ou
+                  repositionnez chaque image sans toucher aux autres.
+                </p>
+                {mediaPhotos.length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-neutral-200 dark:border-white/10 px-4 py-6 text-center text-xs text-neutral-400 dark:text-neutral-500">
+                    Aucune image. Utilisez « Photo principale » pour en ajouter une.
+                  </div>
+                ) : (
+                  <ul className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {mediaPhotos.map((photo, index) => (
+                      <li
+                        key={photo.path || photo.url || index}
+                        className="group relative rounded-xl border border-neutral-200 dark:border-white/10 bg-white dark:bg-white/[0.03] overflow-hidden"
+                      >
+                        <div className="aspect-square w-full bg-neutral-50 dark:bg-black/20 flex items-center justify-center">
+                          {photo.url ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={photo.url}
+                              alt={photo.name || `Image ${index + 1}`}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <ImageIcon className="w-6 h-6 text-neutral-300" />
+                          )}
+                        </div>
+                        {index === 0 && (
+                          <span className="absolute top-1.5 left-1.5 text-[9px] font-mono font-bold bg-neutral-900 text-white px-1.5 py-0.5 rounded uppercase tracking-wider">
+                            Principale
+                          </span>
+                        )}
+                        {busyPhotoIndex === index && (
+                          <div className="absolute inset-0 bg-white/70 dark:bg-black/60 flex items-center justify-center">
+                            <Loader2 className="w-5 h-5 animate-spin text-neutral-500 dark:text-white" />
+                          </div>
+                        )}
+                        <div className="p-1.5 flex items-center gap-1 border-t border-neutral-200 dark:border-white/10">
+                          {index !== 0 && (
+                            <button
+                              type="button"
+                              title="Définir comme photo principale"
+                              aria-label={`Définir l'image ${index + 1} comme photo principale`}
+                              disabled={busyPhotoIndex === index}
+                              onClick={() => void promotePhotoAt(index)}
+                              className="flex-1 h-7 inline-flex items-center justify-center gap-1 rounded-md text-[10px] font-bold text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-white/10 disabled:opacity-50"
+                            >
+                              <StarIcon className="w-3 h-3" />
+                              Principale
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            title="Remplacer cette image"
+                            aria-label={`Remplacer l'image ${index + 1}`}
+                            disabled={busyPhotoIndex === index}
+                            onClick={() => photoInputRefs.current[index]?.click()}
+                            className="flex-1 h-7 inline-flex items-center justify-center gap-1 rounded-md text-[10px] font-bold text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-white/10 disabled:opacity-50"
+                          >
+                            <ImageIcon className="w-3 h-3" />
+                            Remplacer
+                          </button>
+                          <button
+                            type="button"
+                            title="Supprimer définitivement"
+                            aria-label={`Supprimer définitivement l'image ${index + 1}`}
+                            disabled={busyPhotoIndex === index}
+                            onClick={() => void removePhotoAt(index)}
+                            className="w-7 h-7 inline-flex items-center justify-center rounded-md text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 disabled:opacity-50"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {/* Une entrée cachée par image : le bouton « Remplacer » de la
+                    vignette i vise la photo i, jamais « la première ». */}
+                {mediaPhotos.map((photo, index) => (
+                  <input
+                    key={`up-${photo.path || photo.url || index}`}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    ref={(el) => {
+                      photoInputRefs.current[index] = el;
+                    }}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      e.target.value = '';
+                      if (file) void replacePhotoAt(index, file);
+                    }}
+                  />
+                ))}
               </section>
 
               {/* ── Image au survol (hero.hoverImage) ── */}

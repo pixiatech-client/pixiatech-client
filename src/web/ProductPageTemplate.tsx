@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { PixiaHeader } from './pixiatech/PixiaHeader';
 import { HeroSection } from './components/HeroSection';
 import { OverviewSection } from './components/OverviewSection';
@@ -18,6 +18,7 @@ import { SpecModel } from './types';
 import { useCms } from '@/lib/site-web/cms-context';
 import { Language } from './pixiatech-translations';
 import { setLang as trackerSetLang } from '@/lib/analytics/tracker';
+import { useI18n } from '@/lib/i18n';
 import { ProductsProvider, useProducts } from '@/lib/products/products-context';
 import {
   DEFAULT_COMPANY_NAME,
@@ -30,6 +31,7 @@ import {
   text,
 } from '@/lib/products/display';
 import type { Product } from '@/lib/products/types';
+import { attachSectionMedia } from '@/lib/products/master-template';
 
 import { EditableWrapper } from './cms/EditableWrapper';
 
@@ -57,8 +59,10 @@ function ProductView({ slug, fallbackProduct, isPreview = false }: ProductPageTe
   const [brandName] = useState<string>(DEFAULT_COMPANY_NAME);
   const [isConsultationOpen, setIsConsultationOpen] = useState<boolean>(false);
   const [activeDatasheetModel, setActiveDatasheetModel] = useState<SpecModel | null>(null);
-  const [lang, setLang] = useState<Language>('FR');
-  const { setCurrentPageId, isEditing, currentLang, setCurrentLang } = useCms();
+  const { setCurrentPageId, isEditing, setCurrentLang } = useCms();
+  // Meme source de langue que le header (contexte i18n global, persiste).
+  const { locale } = useI18n();
+  const effectiveLang: Language = locale === 'en' ? 'EN' : 'FR';
   const { getBySlug } = useProducts();
 
   // Page id synthétique : chaque fiche produit a sa propre page CMS persistée.
@@ -73,19 +77,36 @@ function ProductView({ slug, fallbackProduct, isPreview = false }: ProductPageTe
   const companyName = text(product.company) ?? brandName;
   const productTitle = text(product.name) ?? text(product.hero?.title);
 
-  // Synchronisation de langue : le toggle du header pilote aussi l'éditeur CMS.
-  const effectiveLang: Language = isEditing
-    ? (currentLang.toUpperCase() === 'EN' ? 'EN' : 'FR')
-    : lang;
+  /**
+   * Rattachement des médias aux sections — décidé par le TEMPLATE MAÎTRE
+   * (`attachSectionMedia`), pas ici.
+   *
+   *   photos[0] -> 01 / APERÇU        photos[1] -> 02 / CONCEPTION
+   *
+   * Avant, la 2e photo n'avait aucun propriétaire : elle était passée en
+   * `images` à l'aperçu, ce qui l'affichait en 01 alors que l'emplacement réel
+   * de la section 02 (`design.visuals`) restait vide. Chaque section reçoit
+   * désormais SON média, et `ProductPageTemplate` n'a plus qu'à lire.
+   */
+  const sectionsProduct = useMemo(() => attachSectionMedia(product), [product]);
+
+  // L'editeur direct n'a pas de selecteur de langue propre : il se cale sur la
+  // locale du site, exactement comme le header.
+  useEffect(() => {
+    setCurrentLang(locale);
+    trackerSetLang(locale);
+  }, [locale, setCurrentLang]);
 
   // Ancres de la sous-navigation : une ancre n'existe que si sa section est
   // rendue. Construites après les tests de présence pour rester synchronisées.
   const anchors = [
-    hasOverview(product?.overview) && {
+    // Une ancre n'existe que si sa section est rendue : même condition que le
+    // rendu, pour qu'aucun lien ne mène vers une zone absente.
+    hasOverview(sectionsProduct?.overview) && {
       id: 'overview',
       label: effectiveLang === 'FR' ? 'APERÇU' : 'OVERVIEW',
     },
-    hasDesign(product?.design) && {
+    hasDesign(sectionsProduct?.design) && {
       id: 'design',
       label: effectiveLang === 'FR' ? 'CONCEPTION' : 'DESIGN',
     },
@@ -103,26 +124,22 @@ function ProductView({ slug, fallbackProduct, isPreview = false }: ProductPageTe
     },
   ].filter((a): a is { id: string; label: string } => Boolean(a));
 
-  const toggleLang = () => {
-    const next: Language = lang === 'EN' ? 'FR' : 'EN';
-    setLang(next);
-    setCurrentLang(next.toLowerCase());
-    trackerSetLang(next.toLowerCase());
-  };
-
   return (
     <div className="min-h-screen bg-[#080808] text-[#f5f4f0] antialiased selection:bg-white/20 selection:text-white">
       {/* Prévisualisation administrateur : rendue uniquement si le serveur a
           validé la session admin et que le produit n'est pas publié. */}
       {isPreview && <ProductPreviewBar slug={slug} />}
 
-      {/* Sticky Blur Header matching xeron.co */}
+      {/* Sticky Blur Header matching xeron.co.
+          La navigation interne de la fiche vit ICI, dans le header principal
+          (Accueil | Produits | [sections] | Ressources | Contact). Elle ne
+          passe que sur une fiche produit : `PixiaHeader` l'ignore ailleurs, et
+          le header des autres pages est bit pour bit inchangé. */}
       <PixiaHeader
         companyName={companyName}
         onOpenConsultation={() => setIsConsultationOpen(true)}
-        lang={effectiveLang}
-        onToggleLang={toggleLang}
         forceSolidDark={false}
+        productSections={anchors}
       />
 
       {/* Main Product Sections matching xeron.co/en/products/wp —
@@ -133,26 +150,31 @@ function ProductView({ slug, fallbackProduct, isPreview = false }: ProductPageTe
           <HeroSection
             title={productTitle ?? slug}
             data={product?.hero}
-            image={product?.media?.photos?.find((ph) => ph.url)?.url ?? product?.hero?.image}
+            productPhotosInOverview
             onOpenQuote={() => setIsConsultationOpen(true)}
             lang={effectiveLang}
             series={text(product.series)}
-            sections={anchors}
           />
         </EditableWrapper>
 
-        {/* Section 01: Overview (Light Theme) */}
-        {hasOverview(product?.overview) && (
+        {/* Section 01: Overview (Light Theme).
+            Contenu : la vidéo du template et UNE photo, celle de l'aperçu.
+            La 2e photo n'a rien à y faire : elle appartient à la section 02. */}
+        {hasOverview(sectionsProduct?.overview) && (
           <EditableWrapper sectionKey="overview" sectionLabel={effectiveLang === 'FR' ? 'Aperçu & Statistiques' : 'Overview & Stats'}>
-            <OverviewSection data={product?.overview} lang={effectiveLang} />
+            <OverviewSection
+              data={sectionsProduct?.overview}
+              lang={effectiveLang}
+            />
           </EditableWrapper>
         )}
 
-        {/* Section 02: Design & Architectural Dimensions (Dark Theme) */}
-        {hasDesign(product?.design) && (
+        {/* Section 02: Design & Architectural Dimensions (Dark Theme).
+            Reçoit son visuel via `design.visuals` (rattachement du template). */}
+        {hasDesign(sectionsProduct?.design) && (
           <EditableWrapper sectionKey="design" sectionLabel={effectiveLang === 'FR' ? 'Conception & Dimensions' : 'Design & Dimensions'}>
             <DesignSection
-              data={product?.design}
+              data={sectionsProduct?.design}
               lang={effectiveLang}
               hasSpecsTable={hasSpecs(product?.specs)}
             />
@@ -200,7 +222,7 @@ function ProductView({ slug, fallbackProduct, isPreview = false }: ProductPageTe
       {/* Site Footer matching xeron.co */}
       <PixiaFooter
         companyName={companyName}
-        lang={lang}
+        lang={effectiveLang}
         onOpenConsultation={() => setIsConsultationOpen(true)}
       />
 
@@ -209,7 +231,7 @@ function ProductView({ slug, fallbackProduct, isPreview = false }: ProductPageTe
         isOpen={isConsultationOpen}
         onClose={() => setIsConsultationOpen(false)}
         companyName={companyName}
-        lang={lang}
+        lang={effectiveLang}
       />
 
       {/* Datasheet Printable Modal — alimenté par le produit courant */}
@@ -218,11 +240,11 @@ function ProductView({ slug, fallbackProduct, isPreview = false }: ProductPageTe
         product={product}
         onClose={() => setActiveDatasheetModel(null)}
         companyName={companyName}
-        lang={lang}
+        lang={effectiveLang}
       />
 
       {/* Floating Back to Top Button */}
-      <BackToTopButton lang={lang} />
+      <BackToTopButton lang={effectiveLang} />
     </div>
   );
 }

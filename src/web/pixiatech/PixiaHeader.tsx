@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useRegisterCmsSection } from '@/web/cms/useRegisterCmsSection';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { CATALOG_PRODUCTS, MEGA_COLUMNS, type CatalogProduct } from './pixiatech-catalog';
 import { Language } from '../pixiatech-translations';
+import { useI18n } from '@/lib/i18n';
 import { SearchModal } from './SearchModal';
 import { Shield } from 'lucide-react';
 import { ProductsProvider, useProducts } from '@/lib/products/products-context';
@@ -14,9 +15,16 @@ import { trackProductClick } from '@/lib/analytics/tracker';
 interface PixiaHeaderProps {
   companyName?: string;
   onOpenConsultation?: () => void;
-  lang?: Language;
-  onToggleLang?: () => void;
   forceSolidDark?: boolean;
+  /**
+   * Navigation interne de la fiche produit (ancres de sections).
+   *
+   * Rendue UNIQUEMENT sur une fiche produit (`/web/product/*`) : c'est ce qui
+   * rend le comportement contextuel. Toutes les autres pages ne passent pas
+   * cette prop, et leur header reste donc identique — même ordre de liens,
+   * mêmes libellés, mêmes breakpoints.
+   */
+  productSections?: { id: string; label: string }[];
 }
 
 export const PixiaHeader: React.FC<PixiaHeaderProps> = (props) => (
@@ -124,12 +132,52 @@ function buildMenuModel(
 const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
   companyName = 'PIXIATECH',
   onOpenConsultation,
-  lang = 'EN',
-  onToggleLang,
   forceSolidDark = false,
+  productSections,
 }) => {
   const router = useRouter();
+  const pathname = usePathname() ?? '/';
   const { products, menu } = useProducts();
+
+  // ── Source de vérité unique ────────────────────────────────────────────
+  // La locale vit dans I18nProvider (déjà monté au layout racine) : elle est
+  // persistée en localStorage + cookie, donc elle survit au refresh et à la
+  // navigation. Le header ne détient aucun état de langue : il ne fait que
+  // dériver l'affichage de cette locale. Impossible d'avoir FR et EN actifs
+  // en même temps, il n'existe qu'une seule valeur.
+  const { locale, setLocale } = useI18n();
+  const activeLang: Language = locale === 'en' ? 'EN' : 'FR';
+  const pickLang = (target: Language) => {
+    const next = target === 'EN' ? 'en' : 'fr';
+    if (locale === next) return;
+    setLocale(next);
+  };
+
+  // ── Onglet actif dérivé de la route ─────────────────────────────────────
+  // La route courante est l'unique source de vérité du menu. Les quatre liens
+  // de section (Marché / Projet / Technologie / À propos) n'existent que sur
+  // l'accueil : ailleurs ils ne sont pas rendus, donc ils ne peuvent pas être
+  // « actifs ». La surbrillance de section, elle, dérive du scroll sur
+  // l'accueil uniquement (voir plus bas `activeSection`).
+  const isHome = pathname === '/web' || pathname === '/web/' || pathname === '/';
+  const routeKey: 'home' | 'products' | 'insights' | 'contact' | 'none' = isHome
+    ? 'home'
+    : pathname.startsWith('/web/products') || pathname.startsWith('/web/product/')
+      ? 'products'
+      : pathname.startsWith('/web/insights')
+        ? 'insights'
+        : pathname.startsWith('/web/contact')
+          ? 'contact'
+          : 'none';
+  const [activeSection, setActiveSection] = useState<string | null>(null);
+
+  // ── Navigation interne de la fiche produit ──────────────────────────────
+  // Contexte = route de fiche produit. Elle est rendue entre PRODUITS et
+  // RESSOURCES : Accueil | Produits | [sections] | Ressources | Contact.
+  // Hors fiche produit, `productNav` est vide et le header est inchangé.
+  const isProductDetail = pathname.startsWith('/web/product/');
+  const productNav = isProductDetail ? (productSections ?? []) : [];
+
   const [scrolled, setScrolled] = useState(false);
   const [megaOpen, setMegaOpen] = useState(false);
   const [hoveredItemId, setHoveredItemId] = useState<string>('wp');
@@ -174,6 +222,51 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  // ── Section active de l'accueil (uniquement) ───────────────────────────
+  // Mécanisme distinct de la page active, qui vient de la route. On mesure
+  // lequel des quatre ancres est le plus proche du haut de la fenêtre ; hors
+  // accueil le listener est retiré, donc aucune section ne peut être active.
+  useEffect(() => {
+    if (!isHome) {
+      setActiveSection(null);
+      return;
+    }
+    // L'ordre du DOM n'est PAS l'ordre du menu : sur l'accueil le manifeste
+    // (#manifesto) est rendu bien avant #markets. On ne peut donc pas
+    // "prendre le dernier qui matche" - il faut le plus proche du haut, c'est
+    // a-dire le `top` le plus grand qui reste sous la ligne de flottaison.
+    const IDS = ['#markets', '#projects', '#technology', '#manifesto'];
+    let anim = 0;
+    const measure = () => {
+      anim = 0;
+      let found: string | null = null;
+      let bestTop = -Infinity;
+      for (const id of IDS) {
+        const el = document.querySelector(id);
+        if (!el) continue;
+        const top = el.getBoundingClientRect().top;
+        if (top <= 120 && top > bestTop) {
+          bestTop = top;
+          found = id;
+        }
+      }
+      setActiveSection(found);
+    };
+    const handleScroll = () => {
+      if (!anim) anim = requestAnimationFrame(measure);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    // Un redimensionnement change la position des ancres : sans cela l'onglet
+    // resterait fige sur la section mesuree a l'ancienne largeur.
+    window.addEventListener('resize', handleScroll);
+    handleScroll();
+    return () => {
+      cancelAnimationFrame(anim);
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleScroll);
+    };
+  }, [isHome]);
+
   const productBySlug = useMemo(() => new Map(products.map((p) => [p.slug, p])), [products]);
 
   const model = useMemo(() => buildMenuModel(menu, products), [menu, products]);
@@ -198,7 +291,7 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
   useEffect(() => setPreviewImgFailed(false), [previewImgRaw]);
   const previewImg = previewImgRaw && !previewImgFailed ? previewImgRaw : null;
   const previewPitch = preview?.legacy?.pitch ?? '';
-  const previewDesc = lang === 'FR' ? preview?.descFr ?? '' : preview?.descEn ?? '';
+  const previewDesc = activeLang === 'FR' ? preview?.descFr ?? '' : preview?.descEn ?? '';
 
   const navigateTo = (target: { clickable: boolean; productSlug: string | null }) => {
     if (!target.clickable || !target.productSlug) return;
@@ -282,15 +375,31 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
             border-bottom-color: #C3F910 !important;
           }
           .pxt-nav-link.active {
-            color: #ffffff !important;
+            color: #C3F910 !important;
             border-bottom-color: #C3F910 !important;
           }
           .mega-card-item:hover .mega-title {
             color: #C3F910 !important;
           }
-          @media (max-width: 900px) {
+          /* Le conteneur .nav-desktop-links ne se comprime plus (flex: 0 0 auto) :
+             quand la fenetre devient trop etroite pour le contenu, la largeur
+             manquante se regle ici, par ordre de sacrifice, et plus par
+             compression. C'etait la cause du bug : les libelles etant en
+             white-space: nowrap, la boite se retrecissait et le texte
+             debordait SOUS le cluster FR/EN, rendant CONTACT incliquable.
+
+             Seuils MESURES sur le rendu reel (le libelle FR le plus large, donc
+             le cas le plus defavorable ; le jeu EN est ~47px plus etroit) :
+               - header complet, CTA compris  : ~1560px
+               - header sans le CTA           : ~1230px
+             Le CTA "Demarrer un projet" s'efface donc en premier -- il reste
+             disponible dans le menu burger. */
+          .nav-desktop-cta { display: none !important; }
+          @media (min-width: 1560px) {
+            .nav-desktop-cta { display: inline-flex !important; }
+          }
+          @media (max-width: 1240px) {
             .nav-desktop-links { display: none !important; }
-            .nav-desktop-cta { display: none !important; }
             .nav-burger-btn { display: inline-flex !important; }
           }
         `}</style>
@@ -301,8 +410,8 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            gap: 'clamp(12px, 2vw, 36px)',
-            padding: '0 clamp(16px, 2.8vw, 60px)',
+            gap: 'clamp(12px, 1.4vw, 28px)',
+            padding: '0 clamp(16px, 2.1vw, 52px)',
             height: scrolled ? 64 : 88,
             background: isDarkBar ? 'rgba(8,8,8,.84)' : 'transparent',
             backdropFilter: isDarkBar ? 'blur(22px) saturate(1.3)' : 'none',
@@ -328,9 +437,15 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 'clamp(12px, 1.8vw, 34px)',
-              minWidth: 0,
-              flex: '0 1 auto',
+              gap: 'clamp(12px, 1.3vw, 30px)',
+              // `flex: 0 0 auto` : le conteneur ne se comprime JAMAIS sous sa
+              // largeur intrinsèque. Les libelles sont en white-space: nowrap,
+              // donc avant ce correctif un `0 1 auto` laissait deborder le
+              // texte HORS de la boite : il passait sous le cluster FR/EN, qui
+              // rendait CONTACT incliquable. La largeur qui manque se regle
+              // maintenant sur les breakpoints CSS ci-dessus, pas en
+              // compressant les liens.
+              flex: '0 0 auto',
             }}
           >
             {/* Home */}
@@ -343,64 +458,93 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                 router.push('/web');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
-              className="pxt-nav-link"
+              className={`pxt-nav-link ${routeKey === 'home' && !activeSection ? 'active' : ''}`}
             >
-              {lang === 'FR' ? 'ACCUEIL' : 'HOME'}
+              {activeLang === 'FR' ? 'ACCUEIL' : 'HOME'}
             </a>
 
             {/* Products trigger: hover opens Mega Menu */}
             <span
               onMouseEnter={() => setMegaOpen(true)}
               onClick={() => setMegaOpen((prev) => !prev)}
-              className={`pxt-nav-link ${megaOpen ? 'active' : ''}`}
+              // `megaOpen` n'est PAS un etat d'onglet : ouvrir le menu au survol
+              // sur /web/contact ne doit pas allumer PRODUITS. Seul le chemin
+              // decide de l'onglet actif.
+              className={`pxt-nav-link ${routeKey === 'products' ? 'active' : ''}`}
             >
-              {lang === 'FR' ? 'PRODUITS' : 'PRODUCTS'} ▾
+              {activeLang === 'FR' ? 'PRODUITS' : 'PRODUCTS'} ▾
             </span>
 
-            {/* In-page anchors with smooth scroll */}
-            <a
-              href="#markets"
-              onClick={(e) => {
-                e.preventDefault();
-                handleNavAnchor('#markets');
-              }}
-              className="pxt-nav-link"
-            >
-              {lang === 'FR' ? 'MARCHÉS' : 'MARKETS'}
-            </a>
+            {/* Navigation interne de la FICHE produit — ancre de section de la
+                page courante. Rendue seulement sur /web/product/*, et seulement
+                pour les sections réellement présentes sur cette fiche. */}
+            {productNav.map((s) => (
+              <a
+                key={s.id}
+                href={`#${s.id}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleNavAnchor(`#${s.id}`);
+                }}
+                className="pxt-nav-link"
+              >
+                {s.label}
+              </a>
+            ))}
 
-            <a
-              href="#projects"
-              onClick={(e) => {
-                e.preventDefault();
-                handleNavAnchor('#projects');
-              }}
-              className="pxt-nav-link"
-            >
-              {lang === 'FR' ? 'PROJETS' : 'PROJECTS'}
-            </a>
+            {/*
+              In-page anchors with smooth scroll.
+              Rendus sur l'accueil seulement : ce sont des sections de la page
+              d'accueil, pas des routes. Sur /web/contact, /web/insights ou
+              /web/products, elles disparaissent du menu.
+            */}
+            {isHome && (
+              <>
+                <a
+                  href="#markets"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleNavAnchor('#markets');
+                  }}
+                  className={`pxt-nav-link ${activeSection === '#markets' ? 'active' : ''}`}
+                >
+                  {activeLang === 'FR' ? 'MARCHÉS' : 'MARKETS'}
+                </a>
 
-            <a
-              href="#technology"
-              onClick={(e) => {
-                e.preventDefault();
-                handleNavAnchor('#technology');
-              }}
-              className="pxt-nav-link"
-            >
-              {lang === 'FR' ? 'TECHNOLOGIE' : 'TECHNOLOGY'}
-            </a>
+                <a
+                  href="#projects"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleNavAnchor('#projects');
+                  }}
+                  className={`pxt-nav-link ${activeSection === '#projects' ? 'active' : ''}`}
+                >
+                  {activeLang === 'FR' ? 'PROJETS' : 'PROJECTS'}
+                </a>
 
-            <a
-              href="#manifesto"
-              onClick={(e) => {
-                e.preventDefault();
-                handleNavAnchor('#manifesto');
-              }}
-              className="pxt-nav-link"
-            >
-              {lang === 'FR' ? 'À PROPOS' : 'ABOUT'}
-            </a>
+                <a
+                  href="#technology"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleNavAnchor('#technology');
+                  }}
+                  className={`pxt-nav-link ${activeSection === '#technology' ? 'active' : ''}`}
+                >
+                  {activeLang === 'FR' ? 'TECHNOLOGIE' : 'TECHNOLOGY'}
+                </a>
+
+                <a
+                  href="#manifesto"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleNavAnchor('#manifesto');
+                  }}
+                  className={`pxt-nav-link ${activeSection === '#manifesto' ? 'active' : ''}`}
+                >
+                  {activeLang === 'FR' ? 'À PROPOS' : 'ABOUT'}
+                </a>
+              </>
+            )}
 
             <a
               href="/web/insights"
@@ -411,9 +555,9 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                 router.push('/web/insights');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
-              className="pxt-nav-link"
+              className={`pxt-nav-link ${routeKey === 'insights' ? 'active' : ''}`}
             >
-              {lang === 'FR' ? 'RESSOURCES' : 'RESOURCES'}
+              {activeLang === 'FR' ? 'RESSOURCES' : 'RESOURCES'}
             </a>
 
             <a
@@ -425,7 +569,7 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                 router.push('/web/contact');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
-              className="pxt-nav-link"
+              className={`pxt-nav-link ${routeKey === 'contact' ? 'active' : ''}`}
             >
               CONTACT
             </a>
@@ -470,8 +614,13 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
               <Shield size={18} strokeWidth={2} />
             </button>
 
-            {/* Language Selector: FR / EN */}
+            {/* Language Selector: FR / EN
+                `data-cms-ignore` : la couleur de ce sélecteur est pilotée par la
+                locale (une seule source de vérité). L'éditeur visuel ne doit
+                jamais la réécrire — sinon un style mémorisé force l'une des deux
+                couleurs au chargement, au refresh, en contournant React. */}
             <div
+              data-cms-ignore
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -484,31 +633,27 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
             >
               <button
                 type="button"
-                onClick={() => {
-                  if (lang !== 'FR') onToggleLang?.();
-                }}
+                onClick={() => pickLang('FR')}
                 style={{
                   background: 'transparent',
                   border: 0,
                   padding: '4px 2px',
                   cursor: 'pointer',
-                  color: lang === 'FR' ? '#F5F4F0' : '#7A7A76',
+                  color: activeLang === 'FR' ? '#C3F910' : '#F5F4F0',
                 }}
               >
                 FR
               </button>
-              <span style={{ color: '#3F3F3F' }}>/</span>
+              <span style={{ color: '#7A7A76' }}>/</span>
               <button
                 type="button"
-                onClick={() => {
-                  if (lang !== 'EN') onToggleLang?.();
-                }}
+                onClick={() => pickLang('EN')}
                 style={{
                   background: 'transparent',
                   border: 0,
                   padding: '4px 2px',
                   cursor: 'pointer',
-                  color: lang === 'EN' ? '#F5F4F0' : '#7A7A76',
+                  color: activeLang === 'EN' ? '#C3F910' : '#F5F4F0',
                 }}
               >
                 EN
@@ -526,8 +671,8 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
             {/* Search Button (⌘K) */}
             <button
               type="button"
-              aria-label={lang === 'FR' ? 'Recherche' : 'Search'}
-              title={lang === 'FR' ? 'Recherche (⌘K)' : 'Search (⌘K)'}
+              aria-label={activeLang === 'FR' ? 'Recherche' : 'Search'}
+              title={activeLang === 'FR' ? 'Recherche (⌘K)' : 'Search (⌘K)'}
               onClick={() => {
                 setMegaOpen(false);
                 setSearchOpen(true);
@@ -560,12 +705,12 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                padding: '10px 20px',
+                padding: '10px clamp(14px, 1.3vw, 20px)',
                 border: '1px solid rgba(245,244,240,.35)',
                 background: 'transparent',
                 color: '#F5F4F0',
                 fontSize: 12,
-                letterSpacing: '.12em',
+                letterSpacing: 'clamp(.07em, .1vw, .12em)',
                 fontWeight: 600,
                 textTransform: 'uppercase',
                 cursor: 'pointer',
@@ -580,7 +725,7 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                 e.currentTarget.style.color = '#F5F4F0';
               }}
             >
-              {lang === 'FR' ? 'Démarrer un projet' : 'Start a Project'}
+              {activeLang === 'FR' ? 'Démarrer un projet' : 'Start a Project'}
             </button>
 
             {/* Mobile Hamburger Toggle Button */}
@@ -665,7 +810,7 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                       textTransform: 'uppercase',
                     }}
                   >
-                    {lang === 'FR' ? col.titleFr : col.titleEn}
+                    {activeLang === 'FR' ? col.titleFr : col.titleEn}
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 14, minWidth: 0 }}>
@@ -705,7 +850,7 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                               letterSpacing: '.1em',
                             }}
                           >
-                            {m.tag || (m.clickable ? '' : lang === 'FR' ? 'INDISPONIBLE' : 'UNAVAILABLE')}
+                            {m.tag || (m.clickable ? '' : activeLang === 'FR' ? 'INDISPONIBLE' : 'UNAVAILABLE')}
                           </span>
                         </div>
                       );
@@ -802,7 +947,7 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                       fontFamily: 'var(--font-mono)',
                     }}
                   >
-                    {lang === 'FR' ? 'SÉRIE SÉLECTIONNÉE' : 'FEATURED SERIES'}
+                    {activeLang === 'FR' ? 'SÉRIE SÉLECTIONNÉE' : 'FEATURED SERIES'}
                   </div>
 
                   <div style={{ fontSize: 20, fontWeight: 800, color: '#F5F4F0', marginBottom: 6 }}>
@@ -844,10 +989,10 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                     }}
                   >
                     {preview?.clickable
-                      ? lang === 'FR'
+                      ? activeLang === 'FR'
                         ? `Explorer la série ${preview.label} →`
                         : `Explore ${preview.label} Series →`
-                      : lang === 'FR'
+                      : activeLang === 'FR'
                         ? 'Série indisponible pour le moment'
                         : 'Series currently unavailable'}
                   </button>
@@ -877,7 +1022,7 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                       e.currentTarget.style.borderBottomColor = 'transparent';
                     }}
                   >
-                    {lang === 'FR' ? 'TOUS LES PRODUITS →' : 'ALL PRODUCTS →'}
+                    {activeLang === 'FR' ? 'TOUS LES PRODUITS →' : 'ALL PRODUCTS →'}
                   </a>
                 </div>
               </div>
@@ -925,7 +1070,7 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                 <circle cx="11" cy="11" r="7" />
                 <line x1="21" y1="21" x2="16.5" y2="16.5" />
               </svg>
-              {lang === 'FR' ? 'Recherche de produits ou specs (⌘K)' : 'Search products & specs (⌘K)'}
+              {activeLang === 'FR' ? 'Recherche de produits ou specs (⌘K)' : 'Search products & specs (⌘K)'}
             </button>
 
             {mobileSubMenu === 'main' ? (
@@ -944,13 +1089,13 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                     letterSpacing: '.14em',
                     textTransform: 'uppercase',
                     fontWeight: 600,
-                    color: '#EDEBE6',
+                    color: routeKey === 'home' && !activeSection ? '#C3F910' : '#EDEBE6',
                     padding: '14px 0',
                     borderBottom: '1px solid #1F1F1F',
                     textDecoration: 'none',
                   }}
                 >
-                  {lang === 'FR' ? 'ACCUEIL' : 'HOME'}
+                  {activeLang === 'FR' ? 'ACCUEIL' : 'HOME'}
                 </a>
 
                 {/* Trigger into Products Submenu */}
@@ -970,94 +1115,127 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                     letterSpacing: '.14em',
                     textTransform: 'uppercase',
                     fontWeight: 700,
-                    color: '#C3F910',
+                    // Comme sur desktop : l'onglet actif suit la route, pas
+                    // l'ouverture du sous-menu.
+                    color: routeKey === 'products' ? '#C3F910' : '#EDEBE6',
                     cursor: 'pointer',
                     textAlign: 'left',
                   }}
                 >
-                  <span>{lang === 'FR' ? 'PRODUITS & SÉRIES' : 'PRODUCTS & SERIES'}</span>
+                  <span>{activeLang === 'FR' ? 'PRODUITS & SÉRIES' : 'PRODUCTS & SERIES'}</span>
                   <span style={{ fontSize: 18 }}>›</span>
                 </button>
 
-                <a
-                  href="#markets"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleNavAnchor('#markets');
-                  }}
-                  style={{
-                    fontSize: 15,
-                    letterSpacing: '.14em',
-                    textTransform: 'uppercase',
-                    fontWeight: 600,
-                    color: '#EDEBE6',
-                    padding: '14px 0',
-                    borderBottom: '1px solid #1F1F1F',
-                    textDecoration: 'none',
-                  }}
-                >
-                  {lang === 'FR' ? 'MARCHÉS' : 'MARKETS'}
-                </a>
+                {/* Navigation interne de la fiche, en version mobile (le
+                    conteneur desktop est masqué sous 1240px). Mêmes ancres,
+                    même ordre : une seule navigation, deux présentations. */}
+                {productNav.map((s) => (
+                  <a
+                    key={s.id}
+                    href={`#${s.id}`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleNavAnchor(`#${s.id}`);
+                    }}
+                    style={{
+                      fontSize: 15,
+                      letterSpacing: '.14em',
+                      textTransform: 'uppercase',
+                      fontWeight: 600,
+                      color: '#EDEBE6',
+                      padding: '14px 0',
+                      borderBottom: '1px solid #1F1F1F',
+                      textDecoration: 'none',
+                    }}
+                  >
+                    {s.label}
+                  </a>
+                ))}
 
-                <a
-                  href="#projects"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleNavAnchor('#projects');
-                  }}
-                  style={{
-                    fontSize: 15,
-                    letterSpacing: '.14em',
-                    textTransform: 'uppercase',
-                    fontWeight: 600,
-                    color: '#EDEBE6',
-                    padding: '14px 0',
-                    borderBottom: '1px solid #1F1F1F',
-                    textDecoration: 'none',
-                  }}
-                >
-                  {lang === 'FR' ? 'PROJETS' : 'PROJECTS'}
-                </a>
+                {/* Sections de l'accueil : rendues sur l'accueil seulement. */}
+                {isHome && (
+                  <>
+                    <a
+                      href="#markets"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleNavAnchor('#markets');
+                      }}
+                      style={{
+                        fontSize: 15,
+                        letterSpacing: '.14em',
+                        textTransform: 'uppercase',
+                        fontWeight: 600,
+                        color: activeSection === '#markets' ? '#C3F910' : '#EDEBE6',
+                        padding: '14px 0',
+                        borderBottom: '1px solid #1F1F1F',
+                        textDecoration: 'none',
+                      }}
+                    >
+                      {activeLang === 'FR' ? 'MARCHÉS' : 'MARKETS'}
+                    </a>
 
-                <a
-                  href="#technology"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleNavAnchor('#technology');
-                  }}
-                  style={{
-                    fontSize: 15,
-                    letterSpacing: '.14em',
-                    textTransform: 'uppercase',
-                    fontWeight: 600,
-                    color: '#EDEBE6',
-                    padding: '14px 0',
-                    borderBottom: '1px solid #1F1F1F',
-                    textDecoration: 'none',
-                  }}
-                >
-                  {lang === 'FR' ? 'TECHNOLOGIE' : 'TECHNOLOGY'}
-                </a>
+                    <a
+                      href="#projects"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleNavAnchor('#projects');
+                      }}
+                      style={{
+                        fontSize: 15,
+                        letterSpacing: '.14em',
+                        textTransform: 'uppercase',
+                        fontWeight: 600,
+                        color: activeSection === '#projects' ? '#C3F910' : '#EDEBE6',
+                        padding: '14px 0',
+                        borderBottom: '1px solid #1F1F1F',
+                        textDecoration: 'none',
+                      }}
+                    >
+                      {activeLang === 'FR' ? 'PROJETS' : 'PROJECTS'}
+                    </a>
 
-                <a
-                  href="#manifesto"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleNavAnchor('#manifesto');
-                  }}
-                  style={{
-                    fontSize: 15,
-                    letterSpacing: '.14em',
-                    textTransform: 'uppercase',
-                    fontWeight: 600,
-                    color: '#EDEBE6',
-                    padding: '14px 0',
-                    borderBottom: '1px solid #1F1F1F',
-                    textDecoration: 'none',
-                  }}
-                >
-                  {lang === 'FR' ? 'À PROPOS' : 'ABOUT'}
-                </a>
+                    <a
+                      href="#technology"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleNavAnchor('#technology');
+                      }}
+                      style={{
+                        fontSize: 15,
+                        letterSpacing: '.14em',
+                        textTransform: 'uppercase',
+                        fontWeight: 600,
+                        color: activeSection === '#technology' ? '#C3F910' : '#EDEBE6',
+                        padding: '14px 0',
+                        borderBottom: '1px solid #1F1F1F',
+                        textDecoration: 'none',
+                      }}
+                    >
+                      {activeLang === 'FR' ? 'TECHNOLOGIE' : 'TECHNOLOGY'}
+                    </a>
+
+                    <a
+                      href="#manifesto"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleNavAnchor('#manifesto');
+                      }}
+                      style={{
+                        fontSize: 15,
+                        letterSpacing: '.14em',
+                        textTransform: 'uppercase',
+                        fontWeight: 600,
+                        color: activeSection === '#manifesto' ? '#C3F910' : '#EDEBE6',
+                        padding: '14px 0',
+                        borderBottom: '1px solid #1F1F1F',
+                        textDecoration: 'none',
+                      }}
+                    >
+                      {activeLang === 'FR' ? 'À PROPOS' : 'ABOUT'}
+                    </a>
+                  </>
+                )}
 
                 <a
                   href="/web/insights"
@@ -1072,13 +1250,13 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                     letterSpacing: '.14em',
                     textTransform: 'uppercase',
                     fontWeight: 600,
-                    color: '#EDEBE6',
+                    color: routeKey === 'insights' ? '#C3F910' : '#EDEBE6',
                     padding: '14px 0',
                     borderBottom: '1px solid #1F1F1F',
                     textDecoration: 'none',
                   }}
                 >
-                  {lang === 'FR' ? 'RESSOURCES' : 'RESOURCES'}
+                  {activeLang === 'FR' ? 'RESSOURCES' : 'RESOURCES'}
                 </a>
 
                 <a
@@ -1094,7 +1272,7 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                     letterSpacing: '.14em',
                     textTransform: 'uppercase',
                     fontWeight: 600,
-                    color: '#EDEBE6',
+                    color: routeKey === 'contact' ? '#C3F910' : '#EDEBE6',
                     padding: '14px 0',
                     borderBottom: '1px solid #1F1F1F',
                     textDecoration: 'none',
@@ -1121,7 +1299,7 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                     cursor: 'pointer',
                   }}
                 >
-                  {lang === 'FR' ? 'Démarrer un projet' : 'Start a Project'}
+                  {activeLang === 'FR' ? 'Démarrer un projet' : 'Start a Project'}
                 </button>
 
                 {/* All products quick list */}
@@ -1134,7 +1312,7 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                     fontFamily: 'var(--font-mono)',
                   }}
                 >
-                  {lang === 'FR' ? 'SÉRIES PHARE' : 'FEATURED SERIES'}
+                  {activeLang === 'FR' ? 'SÉRIES PHARE' : 'FEATURED SERIES'}
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 12px' }}>
                   {model.flat
@@ -1167,7 +1345,7 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                       padding: '6px 0',
                     }}
                   >
-                    {lang === 'FR'
+                    {activeLang === 'FR'
                       ? 'Aucune série disponible pour le moment.'
                       : 'No series available at the moment.'}
                   </p>
@@ -1197,7 +1375,7 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                     marginBottom: 16,
                   }}
                 >
-                  ← {lang === 'FR' ? 'RETOUR AU MENU PRINCIPAL' : 'BACK TO MAIN MENU'}
+                  ← {activeLang === 'FR' ? 'RETOUR AU MENU PRINCIPAL' : 'BACK TO MAIN MENU'}
                 </button>
 
                 {model.columns.map((col) => (
@@ -1211,7 +1389,7 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                         fontFamily: 'var(--font-mono)',
                       }}
                     >
-                      {lang === 'FR' ? col.titleFr : col.titleEn}
+                      {activeLang === 'FR' ? col.titleFr : col.titleEn}
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -1272,7 +1450,7 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                                 textOverflow: 'ellipsis',
                               }}
                             >
-                              {lang === 'FR' ? m.descFr : m.descEn}
+                              {activeLang === 'FR' ? m.descFr : m.descEn}
                             </div>
                           </div>
                         </div>
@@ -1290,7 +1468,7 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
       <SearchModal
         open={searchOpen}
         onClose={() => setSearchOpen(false)}
-        lang={lang}
+        lang={activeLang}
         products={searchProducts}
         onSelectProduct={(slug) => {
           navigateBySlug(slug);

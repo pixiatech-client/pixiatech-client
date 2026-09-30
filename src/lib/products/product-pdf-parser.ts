@@ -197,16 +197,118 @@ export function normLabel(raw: string): string {
 const DASH_ONLY = /^[\u2010-\u2015\u2212]+$/;
 
 /**
+ * INVENTAIRE EXACT des slots du gabarit officiel
+ * (`docs/product-system/fiche-technique-modele.pdf`).
+ *
+ * Le gabarit dessine tous ses placeholders entre crochets, et ils le restent
+ * après saisie si la personne édite le texte À L'INTÉRIEUR du crochet. Un
+ * test « contient un crochet ⇒ placeholder » rejetait donc aussi la vraie
+ * donnée (`[ PXT-FINE-500 ]`), tandis qu'une détection par mots-clés laissait
+ * passer du gabarit non rempli (`[ Marche 1 ]`, `[ Titre feature ]`).
+ *
+ * On tranche donc sur l'IDENTITÉ du texte, pas sur sa ponctuation : un slot
+ * est vide s'il est l'un de ces libellés, quel que soit le nombre de
+ * crochets qu'il traîne. La liste est fermée et vérifiable — toute entrée
+ * ajoutée ici doit exister dans le PDF officiel.
+ */
+const GABARIT_PLACEHOLDERS: string[] = [
+  'Accroche design du produit',
+  'Accroche editoriale du produit',
+  'Accroche features',
+  'Accroche finale / CTA',
+  'Accroche section projets',
+  'Description',
+  'Description en 1 a 2 phrases',
+  'description en 1 phrase',
+  'Description photo',
+  'Description produit — 3 a 4 lignes',
+  'Description video',
+  'EMPLACEMENT MEDIA',
+  'L×l mm',
+  'Label stat 1',
+  'Label stat 2',
+  'Label stat 3',
+  'Libelle bouton',
+  'LOGO / NOM ENTREPRISE',
+  'Marche 1',
+  'Marche 2',
+  'Marche 3',
+  'Marche 4',
+  'mm',
+  'Modele',
+  // Le gabarit écrit le nom de variante sur deux lignes : `[ Modele` puis `1 ]`.
+  'Modele 1',
+  'Modele 2',
+  'Modele 3',
+  'Modele 4',
+  'Modele 5',
+  'Modele 6',
+  'Modele 7',
+  'Modele 8',
+  'Modele 9',
+  'nom | url',
+  'Nom config',
+  'NOM DU PRODUIT',
+  'Nom du projet / client',
+  'Nom technologie',
+  'Pays · Annee',
+  'Serie / categorie du produit',
+  'Sous-titre produit',
+  'Titre feature',
+  'Titre photo',
+  'Titre section',
+  'Titre video',
+  'Titre visuel 1',
+  'Titre visuel 2',
+  'valeur',
+];
+
+/**
+ * Clés normalisées des placeholders, en deux formes : « Modele 1 » et
+ * « Modele1 » (le gabarit écrit le nom de variante sur deux lignes, le
+ * recollage des items de la matrice ne remet pas d'espace) doivent
+ * tous deux être reconnus comme le même placeholder.
+ */
+const GABARIT_PLACEHOLDER_KEYS = new Set(GABARIT_PLACEHOLDERS.map(normLabel));
+const GABARIT_PLACEHOLDER_KEYS_COMPACT = new Set(
+  GABARIT_PLACEHOLDERS.map((raw) => normLabel(raw).replace(/\s+/g, ''))
+);
+
+/** Un texte normalisé correspond-il à un placeholder du gabarit officiel ? */
+function isGabaritPlaceholder(normalized: string): boolean {
+  return (
+    GABARIT_PLACEHOLDER_KEYS.has(normalized) ||
+    GABARIT_PLACEHOLDER_KEYS_COMPACT.has(normalized.replace(/\s+/g, ''))
+  );
+}
+
+/**
+ * Retire le chrome du gabarit (`[…]` aux extrémités) d'une valeur retenue.
+ * Le gabarit dessine ses slots entre crochets : un nom réellement saisi
+ * s'affiche donc `[ PXT-FINE-500 ]` et les crochets ne font pas partie de la
+ * donnée affichée.
+ */
+function stripSlotChrome(value: string): string {
+  return cleanValue(value.replace(/^[[\s]+/, '').replace(/[\s\]]+$/, ''));
+}
+
+/**
  * Un slot du gabarit est-il REMPLI ?
- * `false` pour : vide, tiret seul (`—`), placeholder `[ … ]` (y compris
- * `[ Modele` tronqué), `…`, et tout texte contenant un chevron de gabarit.
+ * `false` pour : vide, tiret seul (`—`), placeholder du gabarit (y compris
+ * saisi partiellement), et tout texte contenant un chevron de gabarit.
+ *
+ * Une valeur réelle entre crochets (`[ PXT-FINE-500 ]`) reste de la donnée :
+ * le crochet fait partie de la mise en page, pas du contenu.
  */
 export function isFilledSlot(raw: string | undefined | null): boolean {
   if (raw === undefined || raw === null) return false;
   const t = cleanValue(raw);
   if (!t) return false;
   if (DASH_ONLY.test(t)) return false;
-  if (t.includes('[') || t.includes(']')) return false;
+  if (t.includes('<') || t.includes('>')) return false;
+  // Les crochets sont du chrome : on juge le contenu réel, sans eux.
+  const inner = t.replace(/[[\]]/g, ' ');
+  if (isGabaritPlaceholder(normLabel(inner))) return false;
   return true;
 }
 
@@ -420,7 +522,14 @@ function clusterByCenter(items: PdfTextItem[]): { cx: number; text: string }[] {
       cells.push({ cx: item.cx, text: item.str, items: [item] });
     }
   }
-  return cells.map((c) => ({ cx: c.cx, text: joinItems(c.items) }));
+  // Ordre de lecture d'une cellule : colonne (x) croissante, puis ligne du
+  // haut vers le bas. Le gabarit écrit le nom de variante sur la ligne haute
+  // (`[ Modele`) et son crochet fermant sur la ligne basse (`1 ]`) : sans ce
+  // tri, le `]` arrivait en premier et le nom sortait « ][ PXT-FINE-500 ».
+  return cells.map((c) => {
+    const ordered = [...c.items].sort((a, b) => a.x - b.x || b.y - a.y);
+    return { cx: c.cx, text: joinItems(ordered) };
+  });
 }
 
 /**
@@ -584,16 +693,26 @@ function parseMasthead(lines: PdfLine[]): Partial<ParsedFiche> {
       if (isFilledSlot(company) && out.company === undefined) out.company = company;
       continue;
     }
-    // Lignes à un seul emplacement (série / nom / sous-titre) : le gabarit les
-    // distingue par leur abscisse ET leur corps de police.
-    if (line.items.length === 1) {      const item = line.items[0];
-      const text = cleanValue(item.str);
-      if (!isFilledSlot(text)) continue;
-      const match = slots.find((s) => {
-        if (out[s.key] !== undefined) return false;
-        return Math.abs(item.x - s.x) <= 3 && Math.abs(item.size - s.size) <= 1.5;
-      });
-      if (match) out[match.key] = text;
+    // Série / nom / sous-titre : le gabarit les distingue par leur abscisse ET
+    // leur corps de police. On accepte les lignes à plusieurs items quand ceux-ci
+    // sont des runs contigus du même texte (pdfjs découpe une boîte en runs de
+    // police) : mêmes corps et items alignés bout à bout, sinon ce sont des
+    // colonnes distinctes (marchés, badges).
+    const match = slots.find((s) => {
+      if (out[s.key] !== undefined) return false;
+      if (line.items.length === 0) return false;
+      if (Math.abs(line.items[0].x - s.x) > 3) return false;
+      if (!line.items.every((i) => Math.abs(i.size - s.size) <= 1.5)) return false;
+      for (let k = 1; k < line.items.length; k++) {
+        const prev = line.items[k - 1];
+        const cur = line.items[k];
+        if (cur.x - (prev.x + prev.w) > ITEM_GAP) return false;
+      }
+      return true;
+    });
+    if (match) {
+      const text = cleanValue(joinItems(line.items));
+      if (isFilledSlot(text)) out[match.key] = text;
       continue;
     }
   }
@@ -636,6 +755,29 @@ function listNumber(line: PdfLine): string | undefined {
 /** Items de contenu d'une ligne de liste, une fois le numéro retiré. */
 function listContent(line: PdfLine, minX: number): PdfTextItem[] {
   return line.items.filter((i) => i.x >= minX && !isNarrowNumber(i));
+}
+
+/**
+ * Sépare le TITRE et la DESCRIPTION d'une ligne de liste.
+ *
+ * Deux graphies coexistent dans le gabarit officiel : la ligne technologie
+ * sépare par un TIRET cadratin au sein d'un même item (`Nom — description`),
+ * tandis que la ligne feature place les deux dans des COLONNES distinctes. On
+ * tente donc les colonnes d'abord, puis le tiret — quelle que soit la façon
+ * dont la personne a.rempli son PDF, les deux ne sont jamais fusionnés.
+ */
+function splitTitleDescription(items: PdfTextItem[]): { title: string; description?: string } {
+  const cols = lineColumns(items);
+  if (cols.length >= 2) {
+    const title = stripSlotChrome(cols[0].str);
+    const description = stripSlotChrome(cols.slice(1).map((c) => c.str).join(' '));
+    return { title, ...(isFilledSlot(description) ? { description } : {}) };
+  }
+  const joined = stripSlotChrome(joinItems(items));
+  const [head, ...tail] = joined.split(/\s+[\u2013\u2014\u2212-]\s+/);
+  const title = stripSlotChrome(head);
+  const description = stripSlotChrome(tail.join(' '));
+  return { title, ...(tail.length && isFilledSlot(description) ? { description } : {}) };
 }
 
 /** 01 · APERÇU PRODUIT */
@@ -690,20 +832,21 @@ function parseOverview(lines: PdfLine[]): ParsedFiche['overview'] {
     }
   }
 
-  // Technologies : une ligne de liste par technologie (« Nom — description »).
+  // Technologies : une ligne de liste par technologie. Le gabarit écrit le NOM
+  // et la DESCRIPTION soit en deux colonnes, soit séparés par un tiret cadratin
+  // selon la ligne : `splitTitleDescription` tranche les deux graphies.
   const technologies: ProductSubItemDraft[] = [];
   for (const line of lines) {
     const num = listNumber(line);
     if (!num) continue;
     const rest = listContent(line, HOOK_MIN_X);
     if (rest.length === 0) continue;
-    const joined = cleanValue(joinItems(rest));
-    if (!isFilledSlot(joined) || isStaticText(joined)) continue;
-    const [title, ...tail] = joined.split(/\s+[\u2013\u2014\u2212-]\s+/);
+    const { title, description } = splitTitleDescription(rest);
+    if (!isFilledSlot(title) || isStaticText(title)) continue;
     technologies.push({
       num,
-      title: cleanValue(title),
-      ...(tail.length ? { description: cleanValue(tail.join(' - ')) } : {}),
+      title,
+      ...(description && isFilledSlot(description) ? { description } : {}),
     });
   }
   if (technologies.length) out.technologies = technologies;
@@ -711,13 +854,26 @@ function parseOverview(lines: PdfLine[]): ParsedFiche['overview'] {
   return Object.keys(out).length ? out : undefined;
 }
 
+/**
+ * Un texte est-il un NOM DE FICHIER (`PHOTO-01.JPG`, `video.mp4`) ?
+ *
+ * Le gabarit réserve une zone à l'emplacement du média et une zone au TITRE
+ * décrivant ce média. Un nom de fichier tapé dans la zone d'emplacement
+ * n'est pas un titre : le contrat de `ParsedMediaSlot` impose « Jamais un
+ * fichier », sinon on publie `VIDEO.MP4` comme libellé de média.
+ */
+function looksLikeFilename(raw: string): boolean {
+  return /\.(jpe?g|png|gif|webp|svg|mp4|mov|avi|m4v|webm|pdf|psd|ai|indd|zip)\b/i.test(raw);
+}
+
 function mediaSlot(title?: PdfTextItem, description?: PdfTextItem): ParsedMediaSlot | undefined {
   const t = title ? cleanValue(title.str) : '';
   // Un média est identifié par son TITRE : une description orpheline (sans
   // titre) n'est pas un visuel, c'est du texte qui déborde d'un autre bloc.
   if (!isFilledSlot(t)) return undefined;
+  if (looksLikeFilename(t)) return undefined;
   const d = description ? cleanValue(description.str) : '';
-  return { title: t, ...(isFilledSlot(d) ? { description: d } : {}) };
+  return { title: t, ...(isFilledSlot(d) && !looksLikeFilename(d) ? { description: d } : {}) };
 }
 
 /** 02 · CONCEPTION & FORMAT */
@@ -823,14 +979,12 @@ function parseFeatures(lines: PdfLine[]): ParsedFiche['features'] {
     if (!numItem) continue;
     const rest = stripNumbers(line.items);
     if (rest.length === 0) continue;
-    const cols = lineColumns(rest);
-    const title = cleanValue(cols[0].str);
+    const { title, description } = splitTitleDescription(rest);
     if (!isFilledSlot(title)) continue;
-    const description = cleanValue(cols.slice(1).map((c) => c.str).join(' '));
     items.push({
       num: cleanValue(numItem.str),
       title,
-      ...(isFilledSlot(description) ? { description } : {}),
+      ...(description && isFilledSlot(description) ? { description } : {}),
     });
   }
   if (items.length) out.items = items;
@@ -983,7 +1137,7 @@ function parseSpecMatrix(lines: PdfLine[]): {
   const variants: { cx: number; name: string }[] = [];
   let skippedColumns = 0;
   for (const cell of headerCells) {
-    const name = cleanValue(cell.text);
+    const name = stripSlotChrome(cell.text);
     if (isFilledSlot(name)) variants.push({ cx: cell.cx, name });
     else skippedColumns++;
   }
@@ -1043,25 +1197,43 @@ function parseSpecMatrix(lines: PdfLine[]): {
     } else {
       usedKeys.set(key, 1);
     }
-    currentGroup.rows.push({ key, label });
 
     // Valeurs : cellules regroupées par centre, puis affectées par proximité.
     const valueCells = clusterByCenter(line.items.filter((i) => i.cx >= LABEL_ZONE_MAX_X));
+    const filled: { target: number; value: string }[] = [];
     for (const cell of valueCells) {
-      const value = cleanValue(cell.text);
-      if (!isFilledSlot(value)) continue; // cellule vide → rien (aucune invention)
+      const value = stripSlotChrome(cleanValue(cell.text));
+      if (!isFilledSlot(value)) continue; // cellule vide ⇒ rien (aucune invention)
       const target = nearestColumn(centers, cell.cx, halfPitch);
       if (target === -1) {
         warnings.push(`Valeur « ${value} » ignorée : hors colonne de variante (ligne « ${label} »).`);
         continue;
       }
-      models[target].specs[key] = value;
+      filled.push({ target, value });
     }
+
+    // Une ligne du gabarit laissée vide ne produit AUCUNE ligne de specs.
+    // Sans cette règle, un PDF vierge publiait un tableau de 20 libellés
+    // (« Pixel pitch », « Poids cabinet »…) sans la moindre valeur : de
+    // l'apparence de donnée, sans aucune donnée.
+    if (filled.length === 0) continue;
+    currentGroup.rows.push({ key, label: stripSlotChrome(label) });
+    for (const { target, value } of filled) models[target].specs[key] = value;
   }
 
   const pruned = groups.filter((g) => g.rows.length > 0);
   if (variants.length === 1) {
     warnings.push('Matrice à une seule variante : une seule colonne générée.');
+  }
+
+  // Une variante peut légitimement n'avoir filled aucune valeur (cellule laissée
+  // vide sur une ligne du gabarit) : on ne la retire pas, sinon les colonnes se
+  // décalent d'un cran et chaque valeur atterrit sur la mauvaise variante. On
+  // abandonne la matrice entière seulement si AUCUNE colonne n'a de valeur —
+  // c'est le cas d'un gabarit vierge.
+  if (models.every((m) => Object.keys(m.specs).length === 0)) {
+    warnings.push('Matrice des caractéristiques sans aucune valeur renseignée.');
+    return { groups: [], models: [], warnings };
   }
   return { groups: pruned, models, warnings };
 }
@@ -1073,10 +1245,14 @@ function parseFieldwork(lines: PdfLine[]): ParsedFiche['fieldwork'] {
   if (hook) out.hook = hook;
 
   // Projets : ligne des noms (2+ colonnes, corps 9.2) puis ligne « Pays · Année ».
+  // La zone d'emplacement du média (ligne de fichiers) précède la ligne de
+  // noms dans le gabarit : on l'ignore explicitement, sinon le nom de projet
+  // deviendrait « PROJET-1.JPG » et le pays prendrait le nom du chantier.
   for (let i = 0; i < lines.length; i++) {
     const names = lineColumns(lines[i].items);
     if (names.length < 2) continue;
     if (!names.every((c) => c.x > MARGIN_X + 10 && c.size >= 8.8)) continue;
+    if (names.some((c) => looksLikeFilename(c.str))) continue;
     const places = lines[i + 1] ? lineColumns(lines[i + 1].items) : [];
     if (places.length !== names.length) continue;
     const projects: { name: string; country?: string; year?: string }[] = [];
@@ -1149,7 +1325,11 @@ function parseCta(lines: PdfLine[]): Pick<ParsedFiche, 'cta' | 'seriesNavigation
 function parseSeriesNavigation(text: string): NonNullable<ParsedFiche['seriesNavigation']> {
   const result: NonNullable<ParsedFiche['seriesNavigation']> = {};
   let open: 'previous' | 'next' | null = null;
-  for (const part of text.split(/\s*\|\s*/)) {
+  // Le chrome du gabarit (`[ nom | url ]`) est retiré AVANT le découpage : sans
+  // cela, le placeholder lui-même devenait une navigation (« Precedent = [ nom
+  // | url ] ») alors que rien n'est renseigné.
+  const cleaned = text.replace(/\[[^\]]*\]/g, ' ');
+  for (const part of cleaned.split(/\s*\|\s*/)) {
     const match = part.match(/(Pr[ée]c[ée]dent|Suivant)\s*=\s*(.*)$/i);
     if (match) {
       const target = /^Pr[ée]c[ée]dent/i.test(match[1]) ? 'previous' : 'next';

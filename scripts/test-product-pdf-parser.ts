@@ -1,4 +1,4 @@
-﻿// Tests du parser de fiche technique produit (gabarit officiel).
+// Tests du parser de fiche technique produit (gabarit officiel).
 // Exécution : node --experimental-strip-types scripts/test-product-pdf-parser.ts
 //
 // Les fixtures reprennent la GÉOMÉTRIE EXACTE du gabarit
@@ -772,6 +772,99 @@ assertEqual(isFilledSlot('—'), false, 'isFilledSlot : tiret = slot vide');
 assertEqual(isFilledSlot('[ Modele'), false, 'isFilledSlot : placeholder = slot vide');
 assertEqual(isFilledSlot('PENDING'), true, 'isFilledSlot : PENDING = valeur valide');
 assertEqual(isFilledSlot('1.25 mm'), true, 'isFilledSlot : valeur avec unité');
+
+// ===========================================================================
+// 9 bis. RÉGRESSIONS — le gabarit dessine ses slots ENTRE CROCHETS
+//
+// Un PDF rempli par une personne réelle garde les crochets du gabarit quand
+// elle édite le texte à l'intérieur («[ PXT-FINE-500 ]»). Rejeter toute
+// valeur contenant un crochet — l'ancien comportement — perdait alors la
+// totalité des caractéristiques techniques. Réciproquement, assouplir le contrôle ne
+// doit JAMAIS laisser passer un placeholder du gabarit non renseigné.
+// ===========================================================================
+
+section('Gabarit entre crochets : donnée réelle vs placeholder');
+assertEqual(isFilledSlot('[ PXT-FINE-500 ]'), true, 'valeur réelle saisie dans le crochet');
+assertEqual(isFilledSlot('[ 500x500 mm ]'), true, 'cote réelle saisie dans le crochet');
+assertEqual(isFilledSlot('[ Marche 1 ]'), false, 'placeholder de marché toujours rejeté');
+assertEqual(isFilledSlot('[ Titre feature ]'), false, 'placeholder de feature toujours rejeté');
+assertEqual(isFilledSlot('[ Description produit — 3 à 4 lignes ]'), false, 'placeholder de description rejeté');
+assertEqual(isFilledSlot('[ Valeur ]'), false, 'placeholder de valeur rejeté');
+assertEqual(isFilledSlot('Modele1'), false, 'placeholder de variante recollé sans espace rejeté');
+assertEqual(isFilledSlot('[ Modele 1 ]'), false, 'placeholder de variante avec espace rejeté');
+assertEqual(isFilledSlot('[ Nom du projet / client ]'), false, 'placeholder de projet rejeté');
+
+section('Regression : variantes saisies entre crochets');
+{
+  // Le gabarit ecrit le nom de variante sur DEUX lignes : `[ Modele` puis
+  // `1 ]`. Une fois rempli, les crochets subsistent - c'est exactement ce que
+  // produit un PDF saisi par une personne, et c'est ce qui faisait perdre
+  // toute la matrice des caracteristiques techniques.
+  const parsed = parseProductFichePages([
+    page(page1({ name: 'PXT FINE' })),
+    page(page2()),
+    page(
+      page3({
+        variantNames: ['[ PXT-1 ]', '[ PXT-2 ]', 'PXT-3', '[ PXT-4 ]'],
+        centers: CENTERS4,
+        rows: [
+          { y: 707.5, group: 'GENERAL' },
+          { y: 693, label: 'Usage (in/out)', cells: ['Indoor', 'Indoor', 'Indoor', 'Indoor'] },
+        ],
+      })
+    ),
+    page(page4()),
+  ]);
+  const names = parsed.specs?.models.map((m) => m.name) ?? [];
+  assertEqual(
+    names,
+    ['PXT-1', 'PXT-2', 'PXT-3', 'PXT-4'],
+    'crochets du gabarit retires des noms de variante, ordre preserve'
+  );
+  assertEqual(
+    parsed.specs?.models[0].specs.env,
+    'Indoor',
+    'valeur de la matrice affectee a la bonne variante'
+  );
+}
+
+section('Régression : un nom de fichier n\'est jamais un titre');
+{
+  // Un fichier tapé dans la zone « EMPLACEMENT MEDIA » ne doit pas devenir
+  // le titre du média, ni le nom d'un projet terrain.
+  const parsed = parseProductFichePages([
+    page(page1({ name: 'PXT FINE', hook: 'Un Mur LED', techs: [['ColdLED', 'Technologie LED']] })),
+    page(page2()),
+    page(page3({ variantNames: ['PXT-1'], centers: [140.6], rows: [] })),
+    page(page4()),
+  ]);
+  const videoTitle = parsed.overview?.video?.title;
+  assertTrue(
+    videoTitle === undefined || !/\.(jpe?g|png|mp4)$/i.test(videoTitle),
+    `aucun nom de fichier comme titre de média (obtenu : ${videoTitle})`
+  );
+  for (const project of parsed.fieldwork?.projects ?? []) {
+    assertTrue(
+      !/\.(jpe?g|png|mp4)$/i.test(project.name),
+      `aucun nom de fichier comme nom de projet (obtenu : ${project.name})`
+    );
+  }
+}
+
+section('Régression : le placeholder de navigation n\'est pas une navigation');
+{
+  const parsed = parseProductFichePages([
+    page(page1({ name: 'PXT FINE' })),
+    page(page2()),
+    page(page3({ variantNames: ['PXT-1'], centers: [140.6], rows: [] })),
+    page(page4()),
+  ]);
+  assertEqual(
+    parsed.seriesNavigation,
+    undefined,
+    '[ nom | url ] du gabarit ne devient pas une navigation série'
+  );
+}
 
 // ===========================================================================
 // 10. PDF RÉEL — le gabarit vierge ne doit produire AUCUNE donnée

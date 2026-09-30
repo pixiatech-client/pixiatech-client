@@ -207,6 +207,8 @@ export interface ProductHero {
   image?: string;
   /** Image affichée au survol de la carte dans la page "Tous les produits". Aucun autre rôle. */
   hoverImage?: string;
+  /** Chemin Storage de `hoverImage` : permet de supprimer le fichier à la défonce. */
+  hoverImagePath?: string;
   bgColor?: string;
 }
 
@@ -316,6 +318,9 @@ export interface ProductMediaItem {
   name?: string;
   url?: string;
   type?: 'image' | 'video' | 'pdf';
+  /** Chemin Storage : indispensable pour la suppression DÉFINITIVE du fichier. */
+  path?: string;
+  size?: number;
 }
 
 export interface ProductFile {

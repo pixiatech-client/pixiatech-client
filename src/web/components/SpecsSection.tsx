@@ -297,7 +297,10 @@ export const SpecsSection: React.FC<SpecsSectionProps> = ({ onSelectDatasheet, l
 
             {/* Spec Groups */}
             {groups.map((grp, grpIdx) => (
-              <div key={grp.label || grpIdx}>
+              // La position est partie de la clé : deux groupes de même libellé
+              // (matrice saisie à la main) donnaient la même clé React, et
+              // React duplique ou omet alors des enfants.
+              <div key={`${grp.label || 'grp'}::${grpIdx}`}>
                 {/* En-tête de groupe — absent quand les lignes n'ont pas de
                     libellé de groupe (matrice saisie sans structure). */}
                 {grp.label && (

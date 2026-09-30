@@ -28,20 +28,32 @@ export const FieldworkSection: React.FC<FieldworkSectionProps> = ({
   const heading = text(data?.title) ?? (cmsFieldwork.title as string);
   const allProjectsLink = lang === 'FR' ? 'TOUS LES PROJETS →' : 'ALL PROJECTS →';
 
-  // Un projet sans image est ignoré : une carte vide avec une légende mais sans
-  // photo n'apporte rien et occupancy la grille.
+  // Un projet totalement vide est ignoré : ni titre, ni légende, ni image
+  // n'apporte rien et occupe la grille. En revanche une carte SANS image mais
+  // AVEC légende (projet de substitution « PENDING[…] ») reste affichée : elle
+  // rend un cadre vide, et la masquer changerait le rendu attendu du template.
+  //
+  // La clé React ne peut PAS reposer sur l'image ou la seule légende : le
+  // template livre des projets de substitution tous identiques (« PENDING[…]
+  // — PENDING[…] »), donc deux cartes partagent la même clé. React ne sait plus
+  // laquelle mettre à jour et duplique ou omet des enfants. La position est
+  // donc partie de la clé : elle est unique par construction, et la liste étant
+  // statique elle ne bouge pas entre deux rendus.
   const projects = (data?.projects ?? [])
     .filter((proj) => text(proj.title) || text(proj.caption) || text(proj.image))
-    .map((proj) => {
+    .map((proj, idx) => {
       const parts: string[] = [];
       if (text(proj.title)) parts.push(proj.title);
       if (text(proj.location)) parts.push(proj.location);
       if (text(proj.pitch)) parts.push(proj.pitch);
       if (text(proj.year)) parts.push(proj.year);
+      const img = text(proj.image) ?? '';
+      const caption = text(proj.caption) ?? parts.join(' — ').toUpperCase();
       return {
-        img: text(proj.image) ?? '',
+        key: `${img || caption || 'proj'}::${idx}`,
+        img,
         alt: parts.join(' — '),
-        caption: text(proj.caption) ?? parts.join(' — ').toUpperCase(),
+        caption,
       };
     });
 
@@ -92,8 +104,8 @@ export const FieldworkSection: React.FC<FieldworkSectionProps> = ({
             gap: '24px',
           }}
         >
-          {projects.map((proj, idx) => (
-            <div key={proj.img || proj.caption || `proj-${idx}`}>
+          {projects.map((proj) => (
+            <div key={proj.key}>
               <div
                 style={{
                   position: 'relative',

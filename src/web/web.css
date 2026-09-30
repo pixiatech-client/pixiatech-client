@@ -210,3 +210,10 @@ header a, header button {
   background: var(--black, #080808);
   color: #fff;
 }
+
+/* -- Fiche produit : photos de section ---------------------------------------
+   Les photos ne sont plus composees ici. Chaque section possede SON emplacement
+   (01/APERCU -> `overview.photo`, 02/CONCEPTION -> `design.visuals`) et le
+   rattachement est decide par le template maitre (`attachSectionMedia`). La
+   grille de deux photos d'apercu cote a cote a ete supprimee avec ce montage. */
+

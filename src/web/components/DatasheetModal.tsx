@@ -116,7 +116,10 @@ export const DatasheetModal: React.FC<DatasheetModalProps> = ({
         {/* Technical Specification Matrix */}
         <div className="space-y-6">
           {groups.map((group, groupIdx) => (
-            <div key={group.label || groupIdx} className="border border-[#1f1f1f] bg-[#0e0e0d]">
+            // La position est partie de la clé : deux groupes de même libellé
+            // donnaient la même clé React, et React duplique ou omet alors des
+            // enfants.
+            <div key={`${group.label || 'grp'}::${groupIdx}`} className="border border-[#1f1f1f] bg-[#0e0e0d]">
               {group.label && (
                 <div className="bg-[#141413] px-4 py-2 border-b border-[#1f1f1f] text-[10.5px] tracking-[0.2em] font-bold text-[#C3F910] uppercase font-mono">
                   {translateGroupLabel(group.label)}
