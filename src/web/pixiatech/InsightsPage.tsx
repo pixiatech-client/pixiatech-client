@@ -8,6 +8,7 @@ import { RevealRoot } from './RevealRoot';
 import { INSIGHT_CHIPS, PIXIA_INSIGHTS } from '../pixiatech-data';
 import type { Insight } from '../pixiatech-data';
 import type { Language } from '../pixiatech-translations';
+import { useI18n } from '@/lib/i18n';
 
 const CHIP_LABEL_FR: Record<string, string> = {
   All: 'Tous',
@@ -52,17 +53,18 @@ function categoryLabel(category: string, lang: Language): string {
 }
 
 export function PixiaInsightsPage() {
-  const [lang, setLang] = useState<Language>('FR');
+  // Meme source de langue que le header (contexte i18n global, persiste).
+  const { locale } = useI18n();
+  const lang: Language = locale === 'en' ? 'EN' : 'FR';
   const [chip, setChip] = useState('All');
   const featured = PIXIA_INSIGHTS.find((a) => a.featured) ?? PIXIA_INSIGHTS[0];
   const grid = useMemo(() => PIXIA_INSIGHTS.filter((a) => !a.featured), []);
 
   const visible = chip === 'All' ? grid : grid.filter((a) => a.chip === chip);
-  const toggleLang = () => setLang((l) => (l === 'FR' ? 'EN' : 'FR'));
 
   return (
     <RevealRoot className="xer-site" style={{ background: 'var(--paper)' }}>
-      <PixiaHeader lang={lang} onToggleLang={toggleLang} />
+      <PixiaHeader />
       <main>
         <section className="section-hero theme-light" style={{ color: 'var(--ink)' }}>
           <div className="wrap">

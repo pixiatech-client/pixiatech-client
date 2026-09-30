@@ -6,6 +6,7 @@ import { PixiaHeader } from './PixiaHeader';
 import { PixiaFooter } from './PixiaFooter';
 import { RevealRoot } from './RevealRoot';
 import { Language } from '../pixiatech-translations';
+import { useI18n } from '@/lib/i18n';
 import { ConsultationModal } from './ConsultationModal';
 import { BackToTopButton } from './BackToTopButton';
 
@@ -33,6 +34,7 @@ import {
   BGMAP_TITLELESS_KEYS,
   FULL_STYLE_KEYS,
   SHOWREEL_STYLE_KEYS,
+  SPACING_KEYS,
 } from '../cms/SectionStylePanel';
 import { SectionDragDropProvider } from '../cms/SectionDragDropManager';
 import { useCms } from '@/lib/site-web/cms-context';
@@ -43,12 +45,32 @@ const HOME_PAGE_ID = 'home';
  * Propriétés de style réellement rendues par chaque section (audit des
  * consommateurs, étape 4) : le panneau de style ne propose que ce que le
  * renderer applique, jamais de propriété orpheline.
+ *
+ * Règle de lecture, appliquée section par section :
+ *   - `cms.section` étalé sur la racine  → padding* / marges / minHeight /
+ *     bgColor / textColor / bgImage
+ *   - `cms.title` étalé sur le titre     → + titleFontSize
+ *   - `hasOverlay` / `overlayColor` rendus → + overlayOpacity / overlayColor
+ * Les trois conditions sont vérifiées dans le renderer, pas déduites du nom.
  */
 const HOME_SECTION_STYLE_CAPS: Record<string, readonly StyleKey[]> = {
-  hero: BGMAP_STYLE_KEYS, // Hero : cms.section complet, pas de voile rendu
-  experience: BGMAP_STYLE_KEYS, // Experience (StaticSections) : pas de voile
+  hero: BGMAP_STYLE_KEYS, // cms.section + cms.title, aucun voile rendu
+  manifesto: FULL_STYLE_KEYS, // les trois
+  kinetic: FULL_STYLE_KEYS, // les trois
+  products: FULL_STYLE_KEYS, // les trois
+  technology: FULL_STYLE_KEYS, // les trois
+  pitch: FULL_STYLE_KEYS, // les trois
+  contact: FULL_STYLE_KEYS, // NextSection : les trois
+  // Experience (StaticSections) rend le voile : le panneau doit l'exposer.
+  experience: FULL_STYLE_KEYS,
   markets: BGMAP_TITLELESS_KEYS, // pas de cms.title, pas de voile
   showreel: SHOWREEL_STYLE_KEYS, // fond + voile + padding ; pas de marges/typo/texte
+  // Sections sans `useSectionStyle` : `EditableWrapper` n'applique que
+  // l'espacement (padding* + minHeight). Rien d'autre n'est rendu ici, donc
+  // aucune autre propriété ne doit être proposée.
+  projects: SPACING_KEYS,
+  process: SPACING_KEYS,
+  insights: SPACING_KEYS,
 };
 
 export const DEFAULT_HOME_SECTION_ORDER = [
@@ -135,26 +157,25 @@ const HOME_SECTIONS: Record<
 };
 
 export function PixiaHomePage() {
-  const [lang, setLang] = useState<Language>('FR');
   const [consultOpen, setConsultOpen] = useState(false);
-  const { setCurrentPageId, currentPageData, isEditing, currentLang, setCurrentLang } = useCms();
+  const { setCurrentPageId, currentPageData, setCurrentLang } = useCms();
+  // La langue vient du contexte i18n global (localStorage + cookie), c'est-a-dire
+  // la source exacte que lit le header : les deux ne peuvent pas diverger, et la
+  // langue survit au refresh comme a la navigation.
+  const { locale } = useI18n();
+  const effectiveLang: Language = locale === 'en' ? 'EN' : 'FR';
 
   useEffect(() => {
     setCurrentPageId(HOME_PAGE_ID);
   }, [setCurrentPageId]);
 
-  const toggleLang = () => {
-    const next: Language = lang === 'FR' ? 'EN' : 'FR';
-    setLang(next);
-    setCurrentLang(next.toLowerCase());
-  };
-  const openConsultation = () => setConsultOpen(true);
+  // L'editeur direct n'a pas de selecteur de langue propre : il se cale sur la
+  // locale du site pour que les surcharges soient editees dans la langue vue.
+  useEffect(() => {
+    setCurrentLang(locale);
+  }, [locale, setCurrentLang]);
 
-  // Le toggle de langue du header définit la langue active : l'éditeur direct
-  // s'y conforme (aucun sélecteur de langue supplémentaire dans l'éditeur).
-  const effectiveLang: Language = isEditing
-    ? (currentLang.toUpperCase() === 'EN' ? 'EN' : 'FR')
-    : lang;
+  const openConsultation = () => setConsultOpen(true);
 
   // Compute ordered sections
   const configuredOrder = currentPageData?.sectionOrder;
@@ -171,9 +192,7 @@ export function PixiaHomePage() {
     <RevealRoot className="xer-site" style={{ background: '#080808' }}>
       <PixiaHeader
         companyName="PIXIATECH"
-        lang={effectiveLang}
         onOpenConsultation={openConsultation}
-        onToggleLang={toggleLang}
       />
       <main className="w-full bg-[#080808] text-[#f5f4f0]">
         <SectionDragDropProvider allSectionKeys={activeOrder}>
@@ -185,7 +204,11 @@ export function PixiaHomePage() {
                 key={key}
                 sectionKey={key}
                 sectionLabel={sec.label}
-                styleCapabilities={HOME_SECTION_STYLE_CAPS[key] ?? FULL_STYLE_KEYS}
+                // Repli sur SPACING_KEYS, et non FULL_STYLE_KEYS : une section non
+                // déclarée ici n'expose que ce qu'EditableWrapper applique
+                // réellement. Le repli permissif exposait des propriétés orphelines
+                // (marques, couleurs, voile) qu'aucun renderer ne rendait.
+                styleCapabilities={HOME_SECTION_STYLE_CAPS[key] ?? SPACING_KEYS}
               >
                 {sec.render({ lang: effectiveLang, openConsultation })}
               </EditableWrapper>
@@ -198,9 +221,9 @@ export function PixiaHomePage() {
         isOpen={consultOpen}
         onClose={() => setConsultOpen(false)}
         companyName="PIXIATECH"
-        lang={lang}
+        lang={effectiveLang}
       />
-      <BackToTopButton lang={lang} />
+      <BackToTopButton lang={effectiveLang} />
     </RevealRoot>
   );
 }

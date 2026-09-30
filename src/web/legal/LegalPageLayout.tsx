@@ -8,6 +8,7 @@ import { RevealRoot } from '@/web/pixiatech/RevealRoot';
 import { BackToTopButton } from '@/web/pixiatech/BackToTopButton';
 import { ConsultationModal } from '@/web/pixiatech/ConsultationModal';
 import { Language } from '@/web/pixiatech-translations';
+import { useI18n } from '@/lib/i18n';
 import { EditableWrapper } from '@/web/cms/EditableWrapper';
 import { useCms } from '@/lib/site-web/cms-context';
 import type { LegalPageData, LegalSection } from '@/web/data/legal-pages-content';
@@ -37,7 +38,9 @@ interface LegalPageLayoutProps {
 }
 
 export function LegalPageLayout({ pageData, pageKey, isCookiePage = false }: LegalPageLayoutProps) {
-  const [lang, setLang] = useState<Language>('FR');
+  // Meme source de langue que le header (contexte i18n global, persiste).
+  const { locale } = useI18n();
+  const lang: Language = locale === 'en' ? 'EN' : 'FR';
   const [consultOpen, setConsultOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<string>('');
   const [copied, setCopied] = useState(false);
@@ -51,7 +54,6 @@ export function LegalPageLayout({ pageData, pageKey, isCookiePage = false }: Leg
     setCurrentPageId(resolvedPageData.id);
   }, [setCurrentPageId, resolvedPageData.id]);
 
-  const toggleLang = () => setLang((l) => (l === 'FR' ? 'EN' : 'FR'));
   const openConsultation = () => setConsultOpen(true);
 
   // Merge CMS overrides if present
@@ -115,9 +117,7 @@ export function LegalPageLayout({ pageData, pageKey, isCookiePage = false }: Leg
     <RevealRoot className="xer-site" style={{ background: '#080808', color: '#f5f4f0' }}>
       <PixiaHeader
         companyName="PIXIATECH"
-        lang={lang}
         onOpenConsultation={openConsultation}
-        onToggleLang={toggleLang}
         forceSolidDark={true}
       />
 

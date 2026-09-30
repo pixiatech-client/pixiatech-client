@@ -18,6 +18,7 @@ import { EditableWrapper } from './cms/EditableWrapper';
 import { useCms } from '@/lib/site-web/cms-context';
 import { Language } from './pixiatech-translations';
 import { setLang as trackerSetLang } from '@/lib/analytics/tracker';
+import { useI18n } from '@/lib/i18n';
 import { ProductsProvider, useProducts } from '@/lib/products/products-context';
 import {
   DEFAULT_COMPANY_NAME,
@@ -54,7 +55,9 @@ function WebPageView({ seedProduct }: { seedProduct?: Product } = {}) {
   const [companyName] = useState<string>(DEFAULT_COMPANY_NAME);
   const [isConsultationOpen, setIsConsultationOpen] = useState<boolean>(false);
   const [activeDatasheetModel, setActiveDatasheetModel] = useState<SpecModel | null>(null);
-  const [lang, setLang] = useState<Language>('FR');
+  // Meme source de langue que le header (contexte i18n global, persiste).
+  const { locale } = useI18n();
+  const lang: Language = locale === 'en' ? 'EN' : 'FR';
   const { setCurrentPageId } = useCms();
   const { getBySlug } = useProducts();
 
@@ -95,11 +98,9 @@ function WebPageView({ seedProduct }: { seedProduct?: Product } = {}) {
     },
   ].filter((a): a is { id: string; label: string } => Boolean(a));
 
-  const toggleLang = () => {
-    const next = lang === 'EN' ? 'FR' : 'EN';
-    setLang(next);
-    trackerSetLang(next.toLowerCase());
-  };
+  useEffect(() => {
+    trackerSetLang(locale);
+  }, [locale]);
 
   return (
     <div className="min-h-screen bg-[#080808] text-[#f5f4f0] antialiased selection:bg-white/20 selection:text-white">
@@ -107,8 +108,6 @@ function WebPageView({ seedProduct }: { seedProduct?: Product } = {}) {
       <PixiaHeader
         companyName={brandName}
         onOpenConsultation={() => setIsConsultationOpen(true)}
-        lang={lang}
-        onToggleLang={toggleLang}
         forceSolidDark={false}
       />
 

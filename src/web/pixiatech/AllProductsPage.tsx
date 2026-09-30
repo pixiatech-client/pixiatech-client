@@ -11,13 +11,13 @@ import { ConsultationModal } from './ConsultationModal';
 import { BackToTopButton } from './BackToTopButton';
 import { Language } from '../pixiatech-translations';
 import { useCms } from '@/lib/site-web/cms-context';
+import { useI18n } from '@/lib/i18n';
 import { ProductsProvider, useProducts } from '@/lib/products/products-context';
 import type { ProductCategory, ProductCategoryGroup, ProductRecord } from '@/lib/products/types';
 import { categoryDisplayName, groupDisplayName, productCategoryIds } from '@/lib/products/types';
 import { trackProductClick, setLang as trackerSetLang } from '@/lib/analytics/tracker';
 
 interface AllProductsPageProps {
-  lang?: Language;
   onOpenConsultation?: () => void;
 }
 
@@ -118,12 +118,16 @@ export const AllProductsPage: React.FC<AllProductsPageProps> = (props) => (
 );
 
 function AllProductsView({
-  lang: initialLang = 'FR',
   onOpenConsultation,
 }: AllProductsPageProps) {
   const router = useRouter();
   const { products, categories, groups } = useProducts();
-  const [lang, setLang] = useState<Language>(initialLang);
+  // Meme source de langue que le header (contexte i18n global, persiste).
+  const { locale } = useI18n();
+  const lang: Language = locale === 'en' ? 'EN' : 'FR';
+  useEffect(() => {
+    trackerSetLang(locale);
+  }, [locale]);
   const [consultOpen, setConsultOpen] = useState(false);
   /** Filtre actif par groupe = ID de catÃ©gorie CMS (ou 'All'). */
   const [filters, setFilters] = useState<Record<string, string>>({});
@@ -135,11 +139,6 @@ function AllProductsView({
     setCurrentPageId('products');
   }, [setCurrentPageId]);
 
-  const toggleLang = () => {
-    const next = lang === 'FR' ? 'EN' : 'FR';
-    setLang(next);
-    trackerSetLang(next.toLowerCase());
-  };
   const handleOpenConsultation = () => {
     if (onOpenConsultation) {
       onOpenConsultation();
@@ -219,9 +218,7 @@ function AllProductsView({
     <RevealRoot className="xer-site" style={{ background: '#F5F4F0' }}>
       <PixiaHeader
         companyName="PIXIATECH"
-        lang={lang}
         onOpenConsultation={handleOpenConsultation}
-        onToggleLang={toggleLang}
         forceSolidDark={true}
       />
       <main style={{ background: '#F5F4F0', minHeight: '100vh', color: '#111110', paddingTop: 88 }}>
