@@ -60,6 +60,7 @@ async function postJson<T>(url: string): Promise<T> {
   const res = await fetch(url, { method: 'POST', credentials: 'include' });
   const data = (await res.json()) as T & { success?: boolean; message?: string; error?: string };
   if (!res.ok || data.success === false) {
+    if (isAuthError(res, data)) redirectToLogin();
     throw new Error(data.message || data.error || 'Erreur lors de l’opération.');
   }
   return data as T;
@@ -75,11 +76,33 @@ export function resetAnalyticsData(): Promise<{
   );
 }
 
+/**
+ * Une session absente ou expirée ne doit pas remonter en rejection non
+ * geree : `NextResponse` 401 depuis `requireAdmin` transformait l'overlay de
+ * l'onglet Analytics en "Runtime Error" alors que chaque appelant gere deja
+ * l'echec. On redirige vers la connexion, avec le meme jeton `reason` que
+ * `admin/layout.tsx` et que la page de login sait afficher.
+ */
+function isAuthError(res: Response, data: { message?: string; error?: string }): boolean {
+  if (res.status !== 401 && res.status !== 403) return false;
+  const msg = `${data?.message ?? ''} ${data?.error ?? ''}`;
+  return /Non authentifi|Non autoris/i.test(msg);
+}
+
+function redirectToLogin(): never {
+  if (typeof window !== 'undefined') {
+    window.location.href = '/admin/login?reason=session_expired';
+  }
+  // Sur le serveur, on laisse remonter : l'appelant decide.
+  throw new Error('Session expirée. Reconnectez-vous.');
+}
+
 async function fetchRemote<T>(url: string): Promise<T> {
   // Allow browser to use its own HTTP cache; server sets cache-control headers
   const res = await fetch(url, { credentials: 'include' });
   const data = (await res.json()) as T & { success?: boolean; message?: string; error?: string };
   if (!res.ok || data.success === false) {
+    if (isAuthError(res, data)) redirectToLogin();
     throw new Error(data.message || data.error || 'Erreur lors du chargement des données.');
   }
   return data as T;
@@ -114,7 +137,18 @@ async function getJson<T>(url: string): Promise<T> {
     // Stale: return old data immediately, revalidate in background
     // Store promise so concurrent callers deduplicate
     cache.set(url, { ...(cache.get(url) as CacheEntry<unknown>), promise } as CacheEntry<unknown>);
-    void promise; // fire and forget
+    // La revalidation est « fire and forget » : elle DOIT consommer son propre
+    // echec. Sans ce `catch`, un 401 de session expirée survenant apres 30 s
+    // devenait une rejection non geree et faisait tomber l'overlay Next sur
+    // « Runtime Error », alors que la page affiche encore correctement ses
+    // donnees en cache. Echec ici = on garde le cache, on retente au prochain
+    // balayage.
+    void promise.catch(() => {
+      // On retire l'entree : une promesse rejetee restee au cache serait
+      // resservie a tous les appelants suivants par la branche de dedup,
+      // qui They'd alors tous echouer sans jamais retenter le reseau.
+      if (cache.get(url)?.promise === promise) cache.delete(url);
+    });
     return hit.data;
   }
 
@@ -174,7 +208,8 @@ export async function downloadVisitorsCsv(from: number, to: number, filter: Anal
     cache: 'no-store',
   });
   if (!res.ok) {
-    const data = (await res.json().catch(() => ({}))) as { message?: string };
+    const data = (await res.json().catch(() => ({}))) as { message?: string; error?: string };
+    if (isAuthError(res, data)) redirectToLogin();
     throw new Error(data.message || 'Impossible d’exporter les visiteurs.');
   }
   const blob = await res.blob();
