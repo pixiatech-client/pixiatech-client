@@ -44,6 +44,34 @@ const anyText = (...values: (string | undefined | null)[]): boolean => values.so
 /** Un objet média compte s'il a un titre OU un fichier rattaché. */
 const hasSlot = (slot?: ProductMediaSlot): boolean => hasMedia(slot);
 
+/**
+ * LECTEUR UNIQUE DE VALEUR DE SPÉCIFICATION.
+ *
+ * Une même valeur de caractéristique circule sous deux formes dans le code :
+ *   - `string`            → forme PRODUIT (`types.ts` : `ProductSpecModel.specs`)
+ *     et forme PARSER : `"1.2 mm"` ;
+ *   - `{ v: string }`     → forme RENDU (`web/types.ts` : `SpecValue`), obtenue
+ *     par la conversion `toSpecModel` de `SpecsSection`.
+ *
+ * Toute décision « cette valeur existe-t-elle ? » passe par ici. Avant, la
+ * lecture était faite avec `typeof value === 'string'` : sur un `{ v }`, elle
+ * renvoyait une chaîne vide, donc « pas de valeur », et le filtre de lignes
+ * écartait TOUTES les caractéristiques alors que les données étaient
+ * parfaitement renseignées.
+ *
+ * `text()` reste, et reste SEUL, la définition de ce qui vaut « pas de
+ * valeur » (vide, tiret gabarit, slot `[ … ]`) : ce lecteur ne fait que
+ * normaliser la FORME, jamais la significabilité.
+ */
+export function specValue(value: unknown): string | undefined {
+  if (typeof value === 'string') return text(value);
+  if (value !== null && typeof value === 'object') {
+    const inner = (value as { v?: unknown }).v;
+    if (typeof inner === 'string') return text(inner);
+  }
+  return undefined;
+}
+
 /** Une section n'est rendue que si elle porte au moins un contenu réel. */
 export function hasOverview(o?: ProductOverview): boolean {
   if (!o) return false;
@@ -87,9 +115,11 @@ export function hasFeatures(f?: ProductFeatures): boolean {
 export function hasSpecs(s?: ProductSpecs): boolean {
   if (!s) return false;
   // Une variante sans nom et sans valeur réelle ne peut pas comparaison :
-  // elle ne justifie pas l'affichage de la matrice.
+  // elle ne justifie pas l'affichage de la matrice. Les valeurs sont lues par
+  // `specValue`, qui tolère les deux formes (`"1.2 mm"` et `{ v: '1.2 mm' }`) :
+  // sans lui, une matrice entièrement renseignée était déclarée vide.
   return (s.models ?? []).some(
-    (m) => text(m.name) || Object.values(m.specs ?? {}).some((v) => text(v))
+    (m) => text(m.name) || Object.values(m.specs ?? {}).some((v) => specValue(v))
   );
 }
 
@@ -152,20 +182,19 @@ export function texts(values?: (string | undefined | null)[]): string[] {
  * des autres restent VIDES. Remplir un tiret pour « remplisser » la ligne
  * réintroduirait exactement le-placeholder qu'on vient d'éliminer.
  *
- * `text()` est la seule définition de « pas de valeur » : le tiret ASCII y
- * est traité comme le tiret cadratin, et une cellule ne vaut que si elle
- * survit à ce test.
+ * `specValue()` lit les deux formes possibles de la valeur et délègue le
+ * « pas de valeur » à `text()`, qui en reste la seule définition (chaîne
+ * vide, tiret ASCII, tiret cadratin, slot `[ … ]`). Le paramètre est donc
+ * tolérant : lui passer des `string` bruts (`ProductSpecModel`, forme
+ * produit) ou des `{ v }` (`SpecModel`, forme renderer) donne le même
+ * résultat. C'est exactement cette frontière que le composant franchit, et
+ * l'écart de forme y faisait perdre toutes les lignes.
  */
 export function specRowHasValue(
   models: readonly { specs?: Record<string, unknown> }[] | undefined,
   key: string
 ): boolean {
-  return (models ?? []).some((m) => Boolean(text(stringOrEmpty(m.specs?.[key]))));
-}
-
-/** Lecture tolérante : une valeur non textuelle est un « pas de valeur ». */
-function stringOrEmpty(value: unknown): string {
-  return typeof value === 'string' ? value : '';
+  return (models ?? []).some((m) => Boolean(specValue(m.specs?.[key])));
 }
 
 // ---------------------------------------------------------------------------

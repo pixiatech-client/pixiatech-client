@@ -14,6 +14,7 @@
     "setup:hooks": "node scripts/install-git-hooks.mjs",
     "test:version": "node --experimental-strip-types scripts/test-versioning.ts",
     "test:pdf-parser": "node --experimental-strip-types scripts/test-product-pdf-parser.ts",
+    "test:specs-render": "tsx scripts/test-specs-render.mts",
     "test:master-template": "node --experimental-strip-types --import ./scripts/ts-resolve-hooks.mjs scripts/test-master-template.ts",
     "test:system-template": "node --experimental-strip-types --import ./scripts/ts-resolve-hooks.mjs scripts/test-system-template-lock.ts",
     "test:pdf-name-prefill": "node --experimental-strip-types --import ./scripts/ts-resolve-hooks.mjs scripts/test-pdf-name-prefill.ts",
