@@ -119,6 +119,25 @@ export interface CmsPageData {
     fieldwork?: CmsSectionFieldwork;
     [key: string]: unknown;
   };
+  /**
+   * Derniere traduction automatique effectuee sur cette page.
+   *
+   * `sourceHash` est l'empreinte des sources FR au moment de la traduction :
+   * une empreinte identique signifie qu'aucun texte FR n'a bouge depuis, donc
+   * qu'une retraduction serait inutile. Voir `src/lib/site-web/translation/`.
+   */
+  translationMeta?: CmsTranslationMeta;
+}
+
+/** Tracabilite d'une traduction automatique, ecrite par le module de traduction. */
+export interface CmsTranslationMeta {
+  sourceLanguage: string;
+  targetLanguage: string;
+  translatedAt: string;
+  provider: string;
+  model: string;
+  sourceHash: string;
+  translatedFields: number;
 }
 
 export interface CmsBackendSettings {

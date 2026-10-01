@@ -60,6 +60,53 @@ export function saveCmsPage(pageId: string, page: CmsPageData): CmsDb {
   return next;
 }
 
+/** Le document a change entre la lecture et l'ecriture : l'ecriture est refusee. */
+export class CmsWriteConflictError extends Error {
+  constructor(pageId: string) {
+    super(
+      `La page « ${pageId} » a été modifiée pendant l’opération. Aucune modification enregistrée.`
+    );
+    this.name = 'CmsWriteConflictError';
+  }
+}
+
+/**
+ * Ecriture conditionnelle d'une page.
+ *
+ * La traduction d'une page prend plusieurs secondes : entre le moment ou le
+ * contenu est lu pour l'envoyer au modele et le moment ou la reponse revient,
+ * un administrateur a pu enregistrer une modification dans l'editeur visuel.
+ * Ecrire dans cet intervalle reviendrait a ecraser son travail.
+ *
+ * On compare donc `updatedAt` : s'il a bouge, rien n'est ecrit et l'appelant
+ * est invite a recommencer.
+ */
+export function saveCmsPageIfUnchanged(
+  pageId: string,
+  page: CmsPageData,
+  expectedUpdatedAt: string
+): CmsDb {
+  const db = readCmsDb();
+  const existing = db.pages?.[pageId] || null;
+
+  if (!existing) throw new CmsWriteConflictError(pageId);
+  if (existing.updatedAt !== expectedUpdatedAt) throw new CmsWriteConflictError(pageId);
+
+  const merged: CmsPageData = {
+    ...existing,
+    ...page,
+    id: pageId,
+    updatedAt: new Date().toISOString(),
+  };
+  const next: CmsDb = {
+    ...db,
+    pages: { ...(db.pages || {}), [pageId]: merged },
+    updatedAt: new Date().toISOString(),
+  };
+  writeCmsDb(next);
+  return next;
+}
+
 export function getCmsSettings(): CmsBackendSettings {
   const db = readCmsDb();
   // Convention héritée de site/: settings vivaient aussi sous pages.contact.settings
