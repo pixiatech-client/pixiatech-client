@@ -4,6 +4,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { SpecModel, SpecValue } from '../types';
 import { Language } from '../data/translations';
 import { shopLinkForVariant } from '@/lib/products/types';
+import { specRowHasValue } from '@/lib/products/display';
 import type { ProductShopLinks, ProductSpecs, ProductSpecModel } from '@/lib/products/types';
 
 interface SpecsSectionProps {
@@ -70,21 +71,40 @@ export const SpecsSection: React.FC<SpecsSectionProps> = ({ lang = 'FR', specs, 
   // Ce fichier a été supprimé ; une matrice absente masque la section.
   const models: SpecModel[] = (specs?.models ?? []).map(toSpecModel);
 
-  // Groupes : structure du PDF (libellé + lignes). À défaut de groupes, les
-  // lignes sont dérivées de l'union des clés réellement présentes dans les
-  // modèles — aucune ligne n'est ajoutée pour une caractéristique absente.
+  // Une ligne n'est affichée que si au moins un modèle porte une valeur réelle
+  // pour elle. Le template maître définit la structure ; le PDF ne fournit que
+  // des valeurs. Une ligne dont toutes les cellules sont absentes n'est donc
+  // pas une donnée manquante à signaler, elle n'a rien à dire : l'afficher
+  // produirait un tableau de libellés suivis de tirets, qui donne l'illusion
+  // d'une caractéristique relevée alors qu'aucune valeur n'existe.
+  //
+  // `specRowHasValue` porte la règle (et « pas de valeur »), au même endroit
+  // que `text()`. Ne pas la redéfinir ici : deux définitions du tiret
+  // placeholder finissent par divergir, et l'une des deux finit par laisser
+  // passer des lignes vides.
+  const hasValueFor = (key: string) => specRowHasValue(models, key);
+
+  // Groupes : structure du master (libellé + lignes), filtrée sur la présence
+  // réelle d'une valeur. À défaut de groupes, les lignes sont dérivées de
+  // l'union des clés présentes dans les modèles.
   const groups = (() => {
     if (specs?.groups?.length) {
-      return specs.groups.map((g) => ({
-        label: g.label,
-        rows: g.rows.map((r) => ({ key: r.key, label: r.label })),
-      }));
+      return specs.groups
+        .map((g) => ({
+          label: g.label,
+          rows: g.rows
+            .filter((r) => hasValueFor(r.key))
+            .map((r) => ({ key: r.key, label: r.label })),
+        }))
+        .filter((g) => g.rows.length > 0);
     }
     const keys = new Set<string>();
     for (const model of models) {
       for (const key of Object.keys(model.specs ?? {})) keys.add(key);
     }
-    const rows = Array.from(keys).map((key) => ({ key, label: key }));
+    const rows = Array.from(keys)
+      .filter((key) => hasValueFor(key))
+      .map((key) => ({ key, label: key }));
     return rows.length > 0 ? [{ label: '', rows }] : [];
   })();
 
@@ -464,7 +484,12 @@ export const SpecsSection: React.FC<SpecsSectionProps> = ({ lang = 'FR', specs, 
                     {/* Model Value Columns */}
                     {models.map((model) => {
                       const specItem = (model.specs as Record<string, { v: string; calc: boolean }>)[row.key];
-                      const val = specItem?.v || '—';
+                      // Une cellule réellement absente reste VIDE : le tiret est
+                      // le placeholder du gabarit pour « pas de donnée », l'écrire
+                      // ici enverrait le message inverse — une valeur relevée et
+                      // trouvée vide. La ligne est affichée parce qu'AUTRE
+                      // variante la renseigne ; ce modèle précis, lui, n'en a pas.
+                      const val = specItem?.v ?? '';
                       return (
                         <div
                           key={model.name + row.key}

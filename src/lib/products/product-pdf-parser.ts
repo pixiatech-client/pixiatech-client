@@ -210,7 +210,21 @@ export function normLabel(raw: string): string {
     .replace(/\s+/g, ' ');
 }
 
-const DASH_ONLY = /^[\u2010-\u2015\u2212\u2014]+$/;
+/**
+ * Cellule vide du gabarit = un tiret, et un seul.
+ *
+ * Le gabarit officiel vide ses cellules avec un tiret TYPOGRAPHIQUE (`—`), et
+ * `DASH_ONLY` ne reconnaissait que cette famille. Or les fiches réellement
+ * saisies vident aussi leurs cellules avec le TRAIT D'UNION ASCII (`-`), que
+ * cette classe ne couvrait pas : `isFilledSlot('-')` renvoyait `true`, et une
+ * cellule vide passait pour une valeur renseignée.
+ *
+ * Le trait d'union n'est ajouté qu'ISOLÉ, c'est-à-dire seul dans la cellule. Il
+ * reste une donnée dès qu'il est porté par un nombre : « -20 degC » (signe
+ * moins) et « 100-240 V » (plage de tension) sont des valeurs réelles, et le
+ * motif les laisse intacts puisqu'ils contiennent d'autres caractères.
+ */
+const DASH_ONLY = /^[\u2010-\u2015\u2212\u2014-]+$/;
 
 /**
  * INVENTAIRE EXACT des slots du gabarit officiel
@@ -432,6 +446,13 @@ const STATIC_TEXTS = new Set(
     'Dimensions, encombrement, configurations',
     'Exactement 7 caracteristiques cles',
     'Renseigner 1 colonne par modele/variante (3 a 10 recommande)',
+    // Consigne lue dans les fiches dérivées : le gabarit officiel demande
+    // « Renseigner 1 colonne… », mais la version diffusée invite à « 1 colonne
+    // par/variante ». Même consigne, deux formulations.
+    '1 colonne par/variante - 3 variantes confirmees',
+    '1 colonne par modele/variante - 3 variantes confirmees',
+    '1 colonne par/variante',
+    '1 colonne par modele/variante',
     '2 a 3 realisations (optionnel), 1 photo par projet',
     // consignes
     "Ecrire PENDING dans une cellule si la valeur n'est pas encore confirmee par le fabricant.",
@@ -463,6 +484,78 @@ function isFooterLine(line: PdfLine): boolean {
 /** Texte statique du gabarit (hint, consigne, libellé de bloc) ? */
 function isStaticText(raw: string): boolean {
   return STATIC_TEXTS.has(normLabel(raw));
+}
+
+/**
+ * Retire les consignes STATIQUES du gabarit qui se sont collées à une donnée.
+ *
+ * `isStaticText` ne peut rattraper qu'un texte identique au gabarit. Or le
+ * clustering des en-têtes de colonnes fusionne la consigne « 1 colonne par
+ * modele/variante - 3 variantes confirmees » avec le premier nom de variante,
+ * et le nom devient « 1 colonne par/variante - 3 variantes confirmeesPXT-U1.2 ».
+ *
+ * On retire donc tout fragment de la liste fermée STATIC_TEXTS. La recherche se
+ * fait dans l'espace normalisé, où vit la liste, puis le fragment est retranché
+ * du texte D'ORIGINE via une table d'index : la casse et les accents du nom de
+ * variante sont préservés. Aucun mot d'un vrai nom de modèle ne peut être
+ * amputé par erreur, puisque seule une chaîne exacte du gabarit est retirée.
+ */
+function stripStaticFragments(raw: string): string {
+  let out = raw;
+  // ATTENTION : `STATIC_TEXTS` est stocké NORMALISÉ (majuscules, sans accents)
+  // — voir `.map(normLabel)` à sa déclaration. Une recherche par sous-chaîne
+  // doit donc porter sur deux textes normalisés, sinon elle ne peut jamais
+  // aboutir. Une fois le fragment identifié, on repère sa longueur EN LETTRES
+  // dans le texte d'origine pour n'en retirer que cette portion, en conservant
+  // la casse et les accents du nom de variante qui suit.
+  // `map` de la normalisation : à chaque caractère du texte NORMALISÉ on
+  // rattache l'index du caractère ORIGINAL qui l'a produit. Retirer un fragment
+  // dans l'espace normalisé se reporte alors exactement sur le texte d'origine,
+  // casse et accents compris, sans compter ni deviner des positions.
+  const map: number[] = [];
+  let normalized = '';
+  let pendingSep = false;
+  for (let i = 0; i < raw.length; i++) {
+    const c = raw[i];
+    const folded = c.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+    if (!/^[A-Z0-9]$/.test(folded)) {
+      // `normLabel` convertit tout séparateur en ESPACE ; une suite de
+      // séparateurs n'en donne qu'un. On n'en émet donc qu'un, et on ne l'ajoute
+      // qu'au premier caractère alphanumérique suivant.
+      pendingSep = true;
+      continue;
+    }
+    if (pendingSep && normalized.length > 0) {
+      normalized += ' ';
+      map.push(i);
+    }
+    pendingSep = false;
+    for (const f of folded) {
+      normalized += f;
+      map.push(i);
+    }
+  }
+
+  // `for…of` sur un `Set` est interdit ici : la cible de compilation est ES5,
+  // sans `downlevelIteration` (cf. tsconfig.json). On itère donc par index, comme
+  // le fait déjà le reste du fichier.
+  for (const known of Array.from(STATIC_TEXTS)) {
+    if (known.length < 4) continue; // trop court pour être une consigne
+    const at = normalized.indexOf(known);
+    if (at === -1) continue;
+    const start = map[at];
+    const endExclusive = map[at + known.length - 1] + 1;
+    return (raw.slice(0, start) + raw.slice(endExclusive))
+      .replace(/^[\s-]+/, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+  // Le gabarit laisse souvent une espace ou un tiret de séparation à la
+  // frontière entre la consigne et le nom de variante. Retiré de la consigne, ce
+  // séparateur se retrouve en tête du nom : « 1 colonne par/variante - 3
+  // variantes confirmees PXT-U1.2 » laisse « - PXT-U1.2 ».
+  out = out.replace(/^[\s-]+/, '');
+  return out.replace(/\s+/g, ' ').trim();
 }
 
 interface ParsedPage {
@@ -1170,6 +1263,118 @@ const SPEC_LABEL_KEYS: Record<string, string> = {
 };
 
 /**
+ * Alias explicites : libellés métier rencontrés dans les fiches PDF, qui ne sont
+ * pas des libellés du gabarit mais désignent BIEN UN champ canonique.
+ * Tier 2 de la résolution (après l'identifiant canonique exact).
+ * Ajouter une entrée ici est une décision explicite : « cette formulation
+ * désigne ce champ-ci ».
+ */
+const SPEC_LABEL_ALIASES: Record<string, string> = {
+  // Le gabarit écrit « Viewing angle » ; plusieurs fiches écrivent « Wide angle »
+  // ou « Angle de vision large ». Même caractéristique, même clé `angle`.
+  'WIDE ANGLE': 'angle',
+  'WIDE VIEWING ANGLE': 'angle',
+  'ANGLE DE VISION LARGE': 'angle',
+  // « Scan rate » et « Refresh rate » restent distincts : aucun alias entre eux.
+  'PIXEL DENSITY': 'density',
+  // La normalisation supprime le « / » de « px/m² » : le libellé devient
+  // « DENSITY PX M2 », un seul token, alors que le gabarit écrit « PX M 2 ».
+  'DENSITY PX M2': 'density',
+  'DENSITY PXM2': 'density',
+  'MODULE RES H V': 'moduleRes',
+  'CABINET RES H V': 'cabRes',
+  'POIDS': 'weight',
+  'POIDS CABINET KG': 'weight',
+  'INDICE DE PROTECTION': 'ip',
+  'LUMINOSITE CD M2': 'brightness',
+  'ECRAN TEMPERATURE': 'temp',
+  'TEMPERATURE DE FONCTIONNEMENT': 'temp',
+  'ENTREE SIGNAL': 'signal',
+  'SIGNAL INPUT SIGNAL': 'signal',
+  'ALIMENTATION': 'powerSource',
+  'CONSOMMATION MAX': 'maxPower',
+  'CONSOMMATION MOYENNE': 'avgPower',
+  'TRANSPARENCE': 'transparency',
+  'CERTIFICATIONS CE ROHS': 'certs',
+};
+
+/**
+ * Résolution d'un libellé PDF vers sa clé canonique de caractéristique.
+ *
+ * Le PDF est une SOURCE DE VALEURS : il ne doit jamais décider qu'un intitulé
+ * légèrement différent est un NOUVEAU champ. On retrouve donc toujours le champ
+ * canonique existant, en trois temps, du plus strict au plus tolérant :
+ *
+ *   1. clé canonique exacte (libellé du gabarit, ou son équivalent français) ;
+ *   2. alias explicite (table fermée ci-dessus) ;
+ *   3. plus long préfixe exact.
+ *
+ * Le tier 3 est ce qui répare les fiches où le gabarit et les données réelles se
+ * superposent dans la même bande de texte : l'extracteur de lignes fusionne alors
+ * l'intitulé courant avec celui de la ligne voisine et produit
+ * « Refresh rateBrightness » ou « Module dim.Module res. ». On retrouve le champ
+ * canonique en retenant le PLUS LONG préfixe présent dans le dictionnaire — donc
+ * « Module dim. » l'emporte sur « Module res. », et l'ordre d'origine est
+ * préservé.
+ *
+ * Ce n'est PAS du fuzzy matching : chaque tentative est une recherche EXACTE dans
+ * un dictionnaire fermé, et ce dictionnaire est injectif (deux clés canoniques ne
+ * partagent pas le même libellé), donc deux caractéristiques distinctes ne
+ * peuvent pas fusionner par accident. En cas d'échec, on renvoie `null` :
+ * l'appelant conserve le libellé sous une clé dynamique et émet un avertissement,
+ * exactement comme avant.
+ */
+export function resolveCanonicalSpecKey(rawLabel: string): string | null {
+  const normalized = normLabel(splitCaseJoins(rawLabel));
+  if (!normalized) return null;
+
+  // 1. exact
+  const exact = SPEC_LABEL_KEYS[normalized];
+  if (exact) return exact;
+
+  // 2. alias explicite
+  const alias = SPEC_LABEL_ALIASES[normalized];
+  if (alias) return alias;
+
+  // 3. plus long préfixe exact (détecte les fusions « libellé + champ suivant »)
+  const tokens = normalized.split(' ');
+  for (let take = tokens.length; take >= 1; take--) {
+    const candidate = tokens.slice(0, take).join(' ');
+    const hit = SPEC_LABEL_KEYS[candidate] ?? SPEC_LABEL_ALIASES[candidate];
+    if (hit) return hit;
+  }
+  // 3b. plus long suffixe exact (détecte les fusions « préfixe de section + champ »)
+  for (let skip = 0; skip < tokens.length; skip++) {
+    const candidate = tokens.slice(skip).join(' ');
+    const hit = SPEC_LABEL_KEYS[candidate] ?? SPEC_LABEL_ALIASES[candidate];
+    if (hit) return hit;
+  }
+
+  return null;
+}
+
+/**
+ * Re-sépare les mots collés par l'extraction de texte.
+ *
+ * Le gabarit et les données réelles sont superposés dans la même bande, et le
+ * moteur de texte concatène parfois les deux sans aucun séparateur, enchangeant
+ * seulement de casse au passage : « Refresh rateBrightness ». La normalisation
+ * (`normLabel`) ne voit alors qu'un seul token — « REFRESH RATEBRIGHTNESS » —
+ * et aucun découpage par espaces ne peut plus retrouver le champ.
+ *
+ * On réinsère donc un espace sur les deux frontières de casse usuelles :
+ * minuscule→majuscule (« rate|Brightness ») et acronyme→mot
+ * (« OPTIQUE|Brightness »). C'est une segmentation morphologique, pas une
+ * correspondance approximative : un libellé déjà bien écrit, sans soudure, n'y
+ * est pas modifié.
+ */
+function splitCaseJoins(raw: string): string {
+  return raw
+    .replace(/([a-zà-öø-ÿ])([A-ZÀ-ÖØ-Þ])/g, '$1 $2')
+    .replace(/([A-ZÀ-ÖØ-Þ])([A-ZÀ-ÖØ-Þ][a-zà-öø-ÿ])/g, '$1 $2');
+}
+
+/**
  * Les en-têtes de groupe sont parfois préfixés par le module dans les
  * saisies dérivées (`LED / PHYSIQUE`), et le gabarit officiel les écrit
  * `PHYSIQUE`. On compare donc sur le dernier segment du texte BRUT, mais on
@@ -1180,12 +1385,32 @@ function groupTail(label: string): string {
   return normLabel(parts[parts.length - 1]);
 }
 
+/**
+ * L'item de cette ligne qui est un TITRE DE GROUPE, s'il y en a un.
+ *
+ * On travaille au niveau de l'item et non de la ligne : le gabarit et les
+ * données réelles sont superposés, et le bandeau de section se retrouve souvent
+ * à moins de 3 pt — la tolérance de regroupement — du libellé de la ligne
+ * précédente. Les deux fusionnent alors en UNE ligne de deux items, que la
+ * détection « un seul item » rejetait : le titre était perdu, et les données
+ * qui suivent restaient rattachées au groupe précédent. C'est ainsi que
+ * « Brightness » atterrissait en PHYSIQUE et « IP rating » en ELECTRIQUE.
+ */
+function groupHeaderItem(line: PdfLine): PdfTextItem | null {
+  for (const item of line.items) {
+    if (item.x < MARGIN_X - 2 || item.x > GROUP_ZONE_MAX_X) continue;
+    if (!isUpperLabel(item.str)) continue;
+    // Corps 10 dans le gabarit officiel. Les fiches dérivées tirent le bandeau
+    // en corps 8 : on l'accepte alors UNIQUEMENT s'il nomme un groupe connu,
+    // pour ne pas promouvoir en titre un texte technique quelconque en 8.
+    const knownGroup = SPEC_GROUP_IDS.some((g) => g.match === groupTail(item.str));
+    if (item.size >= 8.8 || knownGroup) return item;
+  }
+  return null;
+}
+
 function isGroupHeaderLine(line: PdfLine): boolean {
-  if (line.items.length !== 1) return false;
-  const item = line.items[0];
-  if (item.x < MARGIN_X - 2 || item.x > GROUP_ZONE_MAX_X) return false;
-  if (item.size < 8.8) return false; // les libellés de lignes sont en corps 6.8
-  return isUpperLabel(line.text);
+  return line.items.length === 1 && groupHeaderItem(line) !== null;
 }
 
 /**
@@ -1283,7 +1508,7 @@ function parseSingleSpecTable(
     const headerCells = clusterByCenter(headerItems);
     let skippedColumns = 0;
     for (const cell of headerCells) {
-      const name = stripSlotChrome(cell.text);
+      const name = stripStaticFragments(stripSlotChrome(cell.text));
       if (isFilledSlot(name)) variants.push({ cx: cell.cx, name });
       else skippedColumns++;
     }
@@ -1335,8 +1560,32 @@ function parseSingleSpecTable(
   const usedKeys = new Map<string, number>();
 
   for (const line of lines.slice(cursor)) {
-    if (isGroupHeaderLine(line)) {
-      const label = cleanValue(line.text);
+    // Le bandeau de groupe peut partager sa ligne avec le libellé d'une ligne
+    // voisine. On le retire alors de la ligne AVANT d'en extraire le libellé,
+    // sinon celui-ci se retrouve collé au titre (« OPTIQUEBrightness ») et la
+    // caractéristique est attribuée au mauvais groupe.
+    //
+    // ORDRE D'APPLICATION — à ne pas inverser. Le bandeau ouvre le groupe
+    // AVANT que le reste de la ligne soit traité, même quand le reste est
+    // imprimé plus haut (Y plus grand) que le bandeau. C'est contre-intuitif,
+    // et la géométrie de la fiche Ultra le confirme : les trois fusions
+    // observées sont
+    //     OPTIQUE   y=559.6 (corps 10, calque SAISIE) + Brightness y=560.3
+    //     OPTIQUE   y=573.9 (corps  8, calque GABARIT) + Poids cabinet y=576.8
+    //     ELECTRIQUE y=503.9 (corps 8, calque GABARIT) + Viewing angle y=502.8
+    // et le gabarit dessine ses bandeaux ~1 pt AU-DESSUS de la dernière ligne
+    // du groupe précédent. Un tri par Y enverrait donc `Brightness` — le seul
+    // de ces trois cas qui porte une VALEUR RÉELLE — dans le groupe précédent,
+    // ce qui casserait précisément la valeur qu'il faut absolument garder.
+    //
+    // Les deux autres fusions ne portent que des tirets du gabarit : leur
+    // ligne est rejetée par `isFilledSlot` et ne crée donc rien. Et quand bien
+    // même un groupe serait mal choisi ici, `buildProductFromMasterTemplate`
+    // replace chaque ligne dans le groupe que le MASTER lui a défini, par clé :
+    // le master reste l'autorité, le parseur n'a pas à la deviner.
+    const headerItem = groupHeaderItem(line);
+    if (headerItem) {
+      const label = cleanValue(headerItem.str);
       const known = SPEC_GROUP_IDS.find((g) => g.match === groupTail(label));
       if (!known) {
         warnings.push(`Groupe de specs non standard conservé tel quel : « ${label} ».`);
@@ -1344,10 +1593,11 @@ function parseSingleSpecTable(
       const id = known?.id ?? `group-${groups.length + 1}`;
       currentGroup = groups.find((g) => g.id === id) ?? { id, label, rows: [] };
       if (!groups.includes(currentGroup)) groups.push(currentGroup);
-      continue;
+      if (line.items.length === 1) continue;
     }
 
-    const label = cleanValue(joinItems(line.items.filter((i) => i.x < LABEL_ZONE_MAX_X)));
+    const rest = headerItem ? line.items.filter((i) => i !== headerItem) : line.items;
+    const label = cleanValue(joinItems(rest.filter((i) => i.x < LABEL_ZONE_MAX_X)));
     if (!isFilledSlot(label) || isStaticText(label)) continue;
     if (!currentGroup) {
       currentGroup = { id: 'general', label: 'GENERAL', rows: [] };
@@ -1355,10 +1605,12 @@ function parseSingleSpecTable(
       groups.push(currentGroup);
     }
 
-    // Clé canonique si le libellé est connu, clé dynamique sinon (donnée
-    // conservée + avertissement) : jamais de libellé écrasé par un autre.
+    // Le PDF est une source de VALEURS : un libellé ne crée jamais un champ.
+    // On résout donc vers la clé canonique (exact, alias, ou plus long préfixe
+    // exact — ce dernier répare les lignes superposées du gabarit). Seul un
+    // intitulé réellement inconnu tombe sur une clé dynamique, avec avertissement.
     const normalized = normLabel(label);
-    const known = SPEC_LABEL_KEYS[normalized];
+    const known = resolveCanonicalSpecKey(label);
     if (!known) {
       warnings.push(`Libellé technique non standard conservé tel quel : « ${label} ».`);
     }
@@ -1375,7 +1627,7 @@ function parseSingleSpecTable(
     }
 
     // Valeurs : cellules regroupées par centre, puis affectées par proximité.
-    const valueCells = clusterByCenter(line.items.filter((i) => i.cx >= LABEL_ZONE_MAX_X));
+    const valueCells = clusterByCenter(rest.filter((i) => i.cx >= LABEL_ZONE_MAX_X));
     const filled: { target: number; value: string }[] = [];
     for (const cell of valueCells) {
       const value = stripSlotChrome(cleanValue(cell.text));

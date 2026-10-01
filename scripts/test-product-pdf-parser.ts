@@ -16,6 +16,7 @@ import {
   normLabel,
   parseProductFichePages,
   parseProductPdf,
+  resolveCanonicalSpecKey,
   type PdfTextItem,
 } from '../src/lib/products/product-pdf-parser.ts';
 import {
@@ -27,6 +28,7 @@ import {
   hasNext,
   hasOverview,
   hasSpecs,
+  specRowHasValue,
   text,
   texts,
 } from '../src/lib/products/display.ts';
@@ -889,6 +891,84 @@ assertEqual(isFilledSlot('Modele1'), false, 'placeholder de variante recollé sa
 assertEqual(isFilledSlot('[ Modele 1 ]'), false, 'placeholder de variante avec espace rejeté');
 assertEqual(isFilledSlot('[ Nom du projet / client ]'), false, 'placeholder de projet rejeté');
 
+// ===========================================================================
+// 9 ter. RÉGRESSIONS — le gabarit et les données réelles sont SUPERPOSÉS
+//
+// Le PDF de production n'est pas un gabarit vierge : il porte une couche de
+// gabarit (bandeaux de section en corps 8, placeholders en tiret) et une couche
+// de saisie posée PAR-DESSUS. Deux items voisins se retrouvent alors à moins de
+// 3 pt — la tolérance de regroupement en ligne — et sont lus comme une seule
+// ligne : « Refresh rateBrightness », « Module dim.Module res. », ou un nom de
+// variante_AVEC la consigne du gabarit devant (« 1 colonne par/variante -
+// 3 variantes confirmeesPXT-U1.2 »).
+//
+// Conséquence observée avant correction : autant de clés dynamiques
+// (`optiquebrightness`, `moduledimmoduleres`…), `ip` et `maxPower` rattachés au
+// mauvais groupe, et le premier nom de variante illisible. Le PDF ne doit
+// JAMAIS créer un champ : il fournit des valeurs, le template maître fournit la
+// structure. `resolveCanonicalSpecKey` garantit qu'un libellé soudé retrouve
+// TOUJOURS le champ canonique existant.
+// ===========================================================================
+
+section('Superposition gabarit/données : libellé soudé -> champ canonique');
+// Exact, sans soudure : le chemin nominal.
+assertEqual(resolveCanonicalSpecKey('Pixel pitch'), 'pitch', 'libellé exact -> clé canonique');
+assertEqual(resolveCanonicalSpecKey('IP rating'), 'ip', 'IP rating -> ip');
+assertEqual(resolveCanonicalSpecKey('Density (px/m²)'), 'density', 'libellé officiel avec unité');
+// Soudés par la superposition — le plus long préfixe/suffixe l'emporte.
+assertEqual(
+  resolveCanonicalSpecKey('Refresh rateBrightness'),
+  'refresh',
+  'suffixe soudé -> refresh (pas brightness)'
+);
+assertEqual(
+  resolveCanonicalSpecKey('Scan rateRefresh rate'),
+  'scan',
+  'suffixe soudé -> scan (pas refresh)'
+);
+assertEqual(
+  resolveCanonicalSpecKey('Viewing angleScan rate'),
+  'angle',
+  'suffixe soudé -> angle'
+);
+assertEqual(
+  resolveCanonicalSpecKey('Module dim.Module res.'),
+  'moduleDim',
+  'préfixe soudé -> moduleDim (le plus long gagne)'
+);
+assertEqual(resolveCanonicalSpecKey('Cabinet dim.Module dim.'), 'cabDim', 'préfixe soudé -> cabDim');
+assertEqual(resolveCanonicalSpecKey('Poids cabinetCabinet dim.'), 'weight', 'préfixe soudé -> weight');
+// Soudure SANS séparateur, résolue par la segmentation de casse.
+assertEqual(resolveCanonicalSpecKey('OPTIQUEBrightness'), 'brightness', 'acronyme soudé -> brightness');
+assertEqual(
+  resolveCanonicalSpecKey('Density (px/m2)Pixel pitch'),
+  'density',
+  'unité soudée -> density'
+);
+// Alias métier explicites.
+assertEqual(resolveCanonicalSpecKey('Wide angle'), 'angle', 'alias « Wide angle » -> angle');
+assertEqual(resolveCanonicalSpecKey('INDICE IP'), 'ip', 'alias français -> ip');
+// Un intitulé réellement inconnu reste inconnu : AUCUNE clé inventée.
+assertEqual(resolveCanonicalSpecKey('Rapport de contraste'), null, 'inconnu -> null, pas de clé inventée');
+// Un mot-valise est un mot qui ne se découpe pas : il ne correspond à rien, et
+// ne doit surtout pas être amputé pour « retrouver » un champ.
+assertEqual(
+  resolveCanonicalSpecKey('TempératuredePont'),
+  null,
+  'mot-valise inconnu -> null'
+);
+
+section('Superposition gabarit/données : le tiret ASCII est un placeholder');
+// Le gabarit vide ses cellules avec un tiret ASCII « - », que DASH_ONLY
+// (qui ne couvre que les tirets typographiques) ne rejettait pas : une valeur
+// comme « 300 x 168.8 mm- » passait pour renseignée. Attention : un tiret en
+// BORD suivi d'un chiffre est un signe moins légitime (« -20 degC »), pas un
+// placeholder.
+assertEqual(isFilledSlot('-'), false, 'trait d’union isolé = placeholder');
+assertEqual(isFilledSlot('—'), false, 'tiret cadratin = placeholder');
+assertEqual(isFilledSlot('-20 degC a +50 degC'), true, 'signe moins légitime conservé');
+assertEqual(isFilledSlot('100-240 V'), true, 'plage de tension = donnée');
+
 section('Regression : variantes saisies entre crochets');
 {
   // Le gabarit ecrit le nom de variante sur DEUX lignes : `[ Modele` puis
@@ -1205,6 +1285,45 @@ assertEqual(dimensionOnly('—'), undefined, 'cote absente → pas d’annotatio
 assertEqual(dimensionForArt('29.5 mm'), '29.5', 'profondeur en art');
 assertEqual(dimensionForArt('1.2–3.1 mm'), '1.2–3.1', 'plage de pitch en art');
 assertEqual(dimensionForArt(undefined), undefined, 'cote absente → schéma sans cote');
+
+// ===========================================================================
+// 9 quater. VISIBILITÉ D'UNE LIGNE — le template définit la structure, le PDF
+// les valeurs. Une ligne dont AUCUNE variante ne porte de valeur n'a rien à
+// dire : l'afficher donnait un tableau de libellés suivis de tirets, soit
+// l'illusion d'une caractéristique relevée alors qu'aucune valeur n'existe.
+// C'est aussi ce que produit `cabRes` sur les fiches où le relevé de
+// résolution de armoire n'a pas été fait : la ligne doit disparaître, pas
+// mentir.
+// ===========================================================================
+
+section('Visibilité des lignes : au moins une valeur réelle, sinon rien');
+{
+  const variants = [
+    { name: 'PXT-U1.2', specs: { pitch: '1.2 mm', brightness: '1 000 nits' } },
+    { name: 'PXT-U1.5', specs: { pitch: '1.5 mm' } },
+  ];
+  assertEqual(specRowHasValue(variants, 'pitch'), true, 'ligne renseignée partout → visible');
+  assertEqual(specRowHasValue(variants, 'brightness'), true, 'ligne renseignée par UNE variante → visible');
+  assertEqual(specRowHasValue(variants, 'cabRes'), false, 'aucune variante → ligne masquée');
+  assertEqual(specRowHasValue(variants, 'ip'), false, 'clé absente → ligne masquée');
+  // Un tiret seul, quel que soit son glyphe, n'est pas une valeur : c'est le
+  // placeholder du gabarit. Sans ce filtre, une ligne « relevée puis vide »
+  // resterait affichée.
+  assertEqual(specRowHasValue([{ specs: { weight: '—' } }], 'weight'), false, 'tiret cadratin → ligne masquée');
+  assertEqual(specRowHasValue([{ specs: { weight: '-' } }], 'weight'), false, 'tiret ASCII → ligne masquée');
+  assertEqual(specRowHasValue([{ specs: { weight: '   ' } }], 'weight'), false, 'espaces seules → ligne masquée');
+  assertEqual(
+    specRowHasValue([{ specs: { weight: '-' } }, { specs: { weight: '28 kg' } }], 'weight'),
+    true,
+    'une seule variante renseignée suffit → ligne visible'
+  );
+  // PENDING est une donnée, pas une absence.
+  assertEqual(specRowHasValue([{ specs: { scan: 'PENDING' } }], 'scan'), true, 'PENDING → ligne visible');
+  // Garde-fous de signature.
+  assertEqual(specRowHasValue(undefined, 'pitch'), false, 'aucun modèle → ligne masquée');
+  assertEqual(specRowHasValue([], 'pitch'), false, 'liste vide → ligne masquée');
+  assertEqual(specRowHasValue([{ specs: { pitch: 42 as never } }], 'pitch'), false, 'valeur non textuelle → masquée');
+}
 
 console.log(`\n${assertions - failures}/${assertions} assertions passées.`);
 if (failures > 0) {

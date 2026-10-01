@@ -58,7 +58,9 @@ export function resolveTranslationProvider(id?: string): TranslationProvider {
 
 /** Identifiants disponibles, pour l'affichage et le diagnostic. */
 export function listTranslationProviders(): { id: string; model: string; configured: boolean }[] {
-  return [...providers.values()].map((p) => ({
+  // `Array.from` et non `[...]` : la cible est ES5 sans `downlevelIteration`,
+  // où le spread sur un `MapIterator` n'est pas typé.
+  return Array.from(providers.values()).map((p) => ({
     id: p.id,
     model: p.model,
     configured: p.isConfigured(),

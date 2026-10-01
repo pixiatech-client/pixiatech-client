@@ -138,6 +138,36 @@ export function texts(values?: (string | undefined | null)[]): string[] {
   return (values ?? []).map((v) => text(v)).filter((v): v is string => Boolean(v));
 }
 
+/**
+ * Une ligne de caractéristiques a-t-elle quelque chose à dire ?
+ *
+ * Le template maître définit la structure ; le PDF ne fournit que des valeurs.
+ * Une ligne dont AUCUNE variante ne porte de valeur réelle n'est donc pas une
+ * donnée manquante à signaler : elle n'a rien à dire. L'afficher produirait un
+ * tableau de libellés suivis de tirets, qui donne l'illusion d'une
+ * caractéristique relevée alors qu'aucune valeur n'existe — et alourdit la fiche
+ * de lignes vides sur les produits incomplets.
+ *
+ * Une seule variante renseignée suffit : la ligne est affichée, et les cellules
+ * des autres restent VIDES. Remplir un tiret pour « remplisser » la ligne
+ * réintroduirait exactement le-placeholder qu'on vient d'éliminer.
+ *
+ * `text()` est la seule définition de « pas de valeur » : le tiret ASCII y
+ * est traité comme le tiret cadratin, et une cellule ne vaut que si elle
+ * survit à ce test.
+ */
+export function specRowHasValue(
+  models: readonly { specs?: Record<string, unknown> }[] | undefined,
+  key: string
+): boolean {
+  return (models ?? []).some((m) => Boolean(text(stringOrEmpty(m.specs?.[key]))));
+}
+
+/** Lecture tolérante : une valeur non textuelle est un « pas de valeur ». */
+function stringOrEmpty(value: unknown): string {
+  return typeof value === 'string' ? value : '';
+}
+
 // ---------------------------------------------------------------------------
 // Formatage des cotes pour les illustrations
 // ---------------------------------------------------------------------------

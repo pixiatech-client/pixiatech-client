@@ -137,56 +137,67 @@ export function isRealValue(val: unknown): boolean {
   return true;
 }
 
-/** 5 catégories canoniques standard du master template */
+/**
+ * Squelette STRUCTUREL de secours : les 5 groupes, 21 lignes, dans l'ordre et
+ * avec les libellés EXACTS du produit maître « template-maitre » en Firestore.
+ *
+ * Il ne sert que si le maître est illisible, et DOIT donc être identique à ce
+ * que Firestore contient. Il portait 20 lignes et des libellés divergents
+ * (« Module res. », « Max power »…) : au premier écart, la même fiche rebuilt
+ * hors ligne perdait une caractéristique (`cabRes` n'existait qu'en Firestore)
+ * et les intitulés changeaient d'un build à l'autre. Une régression, donc, pas
+ * une commodité de libellé.
+ */
 const CANONICAL_SPEC_GROUPS: ProductSpecGroup[] = [
   {
     id: 'general',
     label: 'GENERAL',
     rows: [
-      { key: 'env', label: 'Usage (in/out)' },
-      { key: 'arrangement', label: 'LED arrangement' },
+      { key: 'env', label: 'IN / OUT' },
+      { key: 'arrangement', label: 'LED ARRANGEMENT' },
     ],
   },
   {
     id: 'physical',
     label: 'PHYSIQUE',
     rows: [
-      { key: 'pitch', label: 'Pixel pitch' },
-      { key: 'density', label: 'Density (px/m²)' },
-      { key: 'moduleRes', label: 'Module res.' },
-      { key: 'moduleDim', label: 'Module dim.' },
-      { key: 'cabDim', label: 'Cabinet dim.' },
-      { key: 'weight', label: 'Poids cabinet' },
+      { key: 'pitch', label: 'PIXEL PITCH' },
+      { key: 'density', label: 'PHYSICAL DENSITY' },
+      { key: 'moduleRes', label: 'MODULE RESOLUTION (H/V)' },
+      { key: 'moduleDim', label: 'MODULE DIMENSIONS' },
+      { key: 'cabRes', label: 'CABINET RESOLUTION (H/V)' },
+      { key: 'cabDim', label: 'CABINET DIMENSIONS' },
+      { key: 'weight', label: 'CABINET WEIGHT' },
     ],
   },
   {
     id: 'optical',
     label: 'OPTIQUE',
     rows: [
-      { key: 'brightness', label: 'Brightness' },
-      { key: 'refresh', label: 'Refresh rate' },
-      { key: 'scan', label: 'Scan rate' },
-      { key: 'angle', label: 'Viewing angle' },
+      { key: 'brightness', label: 'BRIGHTNESS' },
+      { key: 'refresh', label: 'REFRESH RATE' },
+      { key: 'scan', label: 'SCAN RATE' },
+      { key: 'angle', label: 'VIEWING ANGLE (H/V)' },
     ],
   },
   {
     id: 'electrical',
     label: 'ELECTRIQUE',
     rows: [
-      { key: 'maxPower', label: 'Max power' },
-      { key: 'avgPower', label: 'Avg power' },
-      { key: 'powerSource', label: 'Power source' },
-      { key: 'signal', label: 'Signal input' },
+      { key: 'maxPower', label: 'MAX POWER (W / PANEL)' },
+      { key: 'avgPower', label: 'AVG POWER (W / PANEL)' },
+      { key: 'powerSource', label: 'OPERATING POWER SOURCE' },
+      { key: 'signal', label: 'SIGNAL INPUT' },
     ],
   },
   {
     id: 'environmental',
     label: 'ENVIRONNEMENT',
     rows: [
-      { key: 'ip', label: 'IP rating' },
-      { key: 'temp', label: 'Temperature' },
-      { key: 'transparency', label: 'Transparency' },
-      { key: 'certs', label: 'Certifications' },
+      { key: 'ip', label: 'IP RATING' },
+      { key: 'temp', label: 'OPERATING TEMPERATURE' },
+      { key: 'transparency', label: 'TRANSPARENCY' },
+      { key: 'certs', label: 'CERTIFICATIONS' },
     ],
   },
 ];
@@ -438,34 +449,41 @@ export async function buildProductFromMasterTemplate(
     }));
   }
 
-  // Si le PDF fournit des groupes ou lignes supplémentaires, on les fusionne sans perte
-  if (overlay.specs?.groups && overlay.specs.groups.length > 0) {
-    const norm = (t: string) =>
-      t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim();
-    for (const ovGrp of overlay.specs.groups) {
-      const existingGrp = finalGroups.find(
-        (g) => g.id === ovGrp.id || norm(g.label) === norm(ovGrp.label)
-      );
-      if (existingGrp) {
-        for (const ovRow of ovGrp.rows) {
-          const rowExists = existingGrp.rows.some(
-            (r) => r.key === ovRow.key || norm(r.label) === norm(ovRow.label)
-          );
-          if (!rowExists) {
-            existingGrp.rows.push({ key: ovRow.key, label: ovRow.label });
-          }
-        }
-      } else {
-        finalGroups.push({
-          id: ovGrp.id,
-          label: ovGrp.label,
-          rows: ovGrp.rows.map((r) => ({ key: r.key, label: r.label })),
-        });
-      }
-    }
-  }
+  // `finalGroups` est désormais la structure FINALE, et elle ne vient que du
+  // master : les catégories, les lignes, leur ordre et leurs libellés. Le PDF
+  // n'y apporte plus rien. Il ne reste qu'à y ranger les VALEURS, et une valeur
+  // dont la clé n'existe pas au master est ignorée — pas transformée en ligne.
+  //
+  // Conséquence recherchée : une caractéristique reste dans le groupe que le
+  // master lui a défini, même quand le PDF l'a classée ailleurs. C'est ce qui
+  // ramène `ip` dans ENVIRONMENTAL et `maxPower` dans ELECTRICAL, au lieu de les
+  // laisser là où la géométrie du PDF les avait fait tomber.
 
   // Modèles / colonnes variantes
+  //
+  // Les valeurs sont filtrées sur les SEULES clés de `finalGroups` : une clé
+  // que le master ne définit pas est supprimée, pas seulement ignorée au
+  // rendu. Sans ce filtre, un produit en Firestore conservait dans chaque
+  // `model.specs` des champs dynamiques que rien n'affichait — des données
+  // orphelines qui entraient dans les exports et qui rejoueraient le bug dès
+  // qu'un parcours des groupes les oublierait.
+  const masterKeys = new Set<string>();
+  for (const g of finalGroups) for (const r of g.rows) masterKeys.add(r.key);
+
+  const toModel = (m: ProductSpecModel): ProductSpecModel => {
+    const specs: Record<string, string> = {};
+    for (const [k, v] of Object.entries(m.specs ?? {})) {
+      if (!masterKeys.has(k)) continue;
+      const cleaned = cleanPlaceholderText(v);
+      if (cleaned) specs[k] = cleaned;
+    }
+    return {
+      name: cleanPlaceholderText(m.name),
+      ...(m.tag ? { tag: m.tag } : {}),
+      specs,
+    };
+  };
+
   let finalModels: ProductSpecModel[] = [];
   const overlayModels = (overlay.specs?.models ?? []).filter(
     (m) => isRealValue(m.name) && !isPlaceholder(m.name)
@@ -473,34 +491,10 @@ export async function buildProductFromMasterTemplate(
 
   if (overlayModels.length > 0) {
     // Les variantes du PDF deviennent les colonnes produit
-    finalModels = overlayModels.map((m) => {
-      const specs: Record<string, string> = {};
-      for (const [k, v] of Object.entries(m.specs ?? {})) {
-        const cleaned = cleanPlaceholderText(v);
-        if (cleaned) specs[k] = cleaned;
-      }
-      return {
-        name: cleanPlaceholderText(m.name),
-        ...(m.tag ? { tag: m.tag } : {}),
-        specs,
-      };
-    });
+    finalModels = overlayModels.map(toModel);
   } else if (master.specs?.models && master.specs.models.length > 0) {
     // Sinon modèles du master filtrés de tout placeholder [Modele X]
-    finalModels = master.specs.models
-      .filter((m) => !isPlaceholder(m.name))
-      .map((m) => {
-        const specs: Record<string, string> = {};
-        for (const [k, v] of Object.entries(m.specs ?? {})) {
-          const cleaned = cleanPlaceholderText(v);
-          if (cleaned) specs[k] = cleaned;
-        }
-        return {
-          name: cleanPlaceholderText(m.name),
-          ...(m.tag ? { tag: m.tag } : {}),
-          specs,
-        };
-      });
+    finalModels = master.specs.models.filter((m) => !isPlaceholder(m.name)).map(toModel);
   }
 
   // --- 05 Références / Projets ---

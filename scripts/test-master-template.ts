@@ -342,6 +342,116 @@ async function main() {
     cloneWithPhotos.media?.photos?.every((p) => typeof p.path === 'string' && p.path.length > 0),
     JSON.stringify(cloneWithPhotos.media?.photos?.map((p) => p.path))
   );
+
+  // ── 13. AUTORITE ABSOLUE DU MASTER SUR LA MATRICE TECHNIQUE ────────────
+  // Le produit genere est le master, avec des valeurs. Trois fautes
+  // recurrentes sont verrouillees ici :
+  //   1. le PDF ajoutait une LIGNE et un GROUPE absents du master, donc la
+  //      structure du produit dependait du document importe ;
+  //   2. le PDF rangeait une valeur dans le mauvais groupe : `ip` atterrissait
+  //      en ELECTRICAL au lieu d'ENVIRONNEMENTAL ;
+  //   3. le PDF creait une CLE DYNAMIQUE, conservee dans `model.specs`,
+  //      invisible au rendu — donc invisible pour tout le monde, jusqu'aux
+  //      exports, qui la rejoueraient.
+  console.log('\n--- 13. Le PDF n a aucun droit sur la structure ---');
+  const realMaster: Product = {
+    ...createMasterTemplateSkeleton(),
+    name: 'Produit LED',
+    slug: MASTER_TEMPLATE_SLUG,
+    specs: {
+      groups: [
+        { id: 'physical', label: 'PHYSIQUE', rows: [{ key: 'pitch', label: 'PIXEL PITCH' }, { key: 'cabDim', label: 'CABINET DIMENSIONS' }] },
+        { id: 'optical', label: 'OPTIQUE', rows: [{ key: 'brightness', label: 'BRIGHTNESS' }] },
+        { id: 'environmental', label: 'ENVIRONNEMENT', rows: [{ key: 'ip', label: 'IP RATING' }] },
+      ],
+      models: [],
+    },
+  };
+
+  // Overlay volontairement hostile : groupe fantome, ligne fantome, `ip` range
+  // dans ELECTRICAL par le PDF, et deux cles dynamiques.
+  const hostile = await buildProductFromMasterTemplate(
+    {
+      name: 'PXT ULTRA',
+      specs: {
+        groups: [
+          { id: 'electrical', label: 'ELECTRIQUE', rows: [{ key: 'ip', label: 'IP' }] },
+          { id: 'ghost', label: 'GHOST', rows: [{ key: 'fantome', label: 'Fantome' }] },
+        ],
+        models: [
+          {
+            name: 'PXT-U1.2',
+            specs: { pitch: '1.2 mm', ip: 'IP30', fantome: 'doit disparaitre', 'moduleDim.moduleRes': 'souillure' },
+          },
+        ],
+      },
+    } as Partial<Product>,
+    async () => realMaster
+  );
+
+  check(
+    'structure : les groupes du PDF sont ignores',
+    JSON.stringify(hostile.specs?.groups.map((g) => g.id)) === JSON.stringify(['physical', 'optical', 'environmental']),
+    JSON.stringify(hostile.specs?.groups.map((g) => g.id))
+  );
+  check(
+    'structure : les lignes du PDF sont ignorees, ordre du master conserve',
+    JSON.stringify(hostile.specs?.groups.flatMap((g) => g.rows.map((r) => r.key))) ===
+      JSON.stringify(['pitch', 'cabDim', 'brightness', 'ip'])
+  );
+  check(
+    'structure : les libelles viennent du master, jamais du PDF',
+    JSON.stringify(hostile.specs?.groups.flatMap((g) => g.rows.map((r) => r.label))) ===
+      JSON.stringify(['PIXEL PITCH', 'CABINET DIMENSIONS', 'BRIGHTNESS', 'IP RATING'])
+  );
+  check(
+    'placement : ip reste dans ENVIRONMENTAL malgre le classement du PDF',
+    hostile.specs?.groups.find((g) => g.rows.some((r) => r.key === 'ip'))?.id === 'environmental'
+  );
+  check(
+    'stockage : seules les cles du master restent dans le modele',
+    JSON.stringify(Object.keys(hostile.specs?.models?.[0]?.specs ?? {}).sort()) === JSON.stringify(['ip', 'pitch']),
+    JSON.stringify(Object.keys(hostile.specs?.models?.[0]?.specs ?? {}))
+  );
+  check(
+    'valeurs : la valeur du PDF est bien conservee sous sa cle canonique',
+    hostile.specs?.models?.[0]?.specs?.pitch === '1.2 mm',
+    String(hostile.specs?.models?.[0]?.specs?.pitch)
+  );
+
+  // ── 14. Le repli hors ligne vaut pour le master ────────────────────────
+  // Si Firestore est illisible, la structure vient du squelette de secours.
+  // Celui-ci portait 20 lignes et des libelles divergents, et `cabRes`
+  // n'existait QUE cote Firestore : la meme fiche perdait une caracteristique
+  // selon qu'elle etait construite en ligne ou hors ligne. Le repli est
+  // l'instantane du master, il doit donc evolutionner avec lui.
+  console.log('\n--- 14. Le repli hors ligne reproduit le master ---');
+  const offline = await buildProductFromMasterTemplate(
+    { specs: { models: [{ name: 'PXT-U1.2', specs: { pitch: '1.2 mm' } }] } } as Partial<Product>,
+    async () => null
+  );
+  const offlineKeys = offline.specs?.groups.flatMap((g) => g.rows.map((r) => r.key)) ?? [];
+  const offlineLabels = offline.specs?.groups.flatMap((g) => g.rows.map((r) => r.label ?? '')) ?? [];
+  check('repli : 5 groupes', offline.specs?.groups.length === 5, String(offline.specs?.groups.length));
+  check('repli : 21 lignes, comme le master Firestore', offlineKeys.length === 21, String(offlineKeys.length));
+  check('repli : aucune cle dupliquee', new Set(offlineKeys).size === 21, String(new Set(offlineKeys).size));
+  check('repli : cabRes present (absent du repli avant correction)', offlineKeys.includes('cabRes'));
+  check(
+    'repli : cabRes a sa place, entre moduleDim et cabDim',
+    // Le groupe `general` precede : les 2 premieres cles ne sont pas physiques.
+    JSON.stringify(offlineKeys.slice(2, 9)) ===
+      JSON.stringify(['pitch', 'density', 'moduleRes', 'moduleDim', 'cabRes', 'cabDim', 'weight'])
+  );
+  check(
+    'repli : libelles du master en capitales',
+    offlineLabels.every((l) => l === l.toUpperCase()),
+    offlineLabels.filter((l) => l !== l.toUpperCase()).join(', ')
+  );
+  check(
+    'repli : aucune cle dynamique stockee non plus',
+    JSON.stringify(Object.keys(offline.specs?.models?.[0]?.specs ?? {})) === JSON.stringify(['pitch']),
+    JSON.stringify(Object.keys(offline.specs?.models?.[0]?.specs ?? {}))
+  );
 }
 
 main()

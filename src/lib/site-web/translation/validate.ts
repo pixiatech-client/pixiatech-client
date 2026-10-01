@@ -95,7 +95,9 @@ export function validateTranslationResponse(
     byId.set(id, text);
   }
 
-  const missing = [...expectedIds].filter((id) => !seen.has(id));
+  // `Array.from` et non `[...]` : la cible est ES5 sans `downlevelIteration`,
+  // où le spread sur un `Set` n'est pas typé.
+  const missing = Array.from(expectedIds).filter((id) => !seen.has(id));
   if (missing.length > 0) {
     throw new TranslationError(
       `Réponse incomplète : ${missing.length} champ(s) absent(s) (${missing.slice(0, 3).join(', ')}…).`
