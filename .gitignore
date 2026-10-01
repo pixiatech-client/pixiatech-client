@@ -89,3 +89,11 @@ dump-*.js
 /.opencode-tmp/
 /.playwright-cli/
 /qa-home.yaml
+
+# sondes de débogage visuel (one-offs jetables : captures, assets downloaded)
+/scripts/probe-*.mjs
+/scripts/probe-*.js
+/scripts/probe-*.png
+/scripts/probe-*.jpg
+/scripts/probe-assets/
+/scripts/ref-*.png
