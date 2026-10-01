@@ -405,7 +405,7 @@ export const EstimationDrawer: React.FC<EstimationDrawerProps> = ({
                                </div>
                                <div>
                                   <p className="text-xs font-bold text-white">{t('estimation.drawer.sepaTransfer')} #TRX-9482{i}</p>
-                                 <p className="text-[9px] text-zinc-500  mt-0.5">20/04/2026 â€¢ 14:32</p>
+                                 <p className="text-[9px] text-zinc-500  mt-0.5">20/04/2026 • 14:32</p>
                                </div>
                              </div>
                              <div className="text-right">

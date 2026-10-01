@@ -931,6 +931,45 @@ const mapsUrl = (address: string) =>
 
 const digits = (value: string) => value.replace(/[^0-9]/g, '');
 
+/**
+ * Coordonnées publiques issues du back-office (`siteWeb/contactInfo`).
+ *
+ * Elles ne vivent pas dans `PageContentConfig.info` : ce document ne porte que
+ * la mise en forme (libellés, titres). Le back-office « Coordonnées publiques »
+ * est donc la source de vérité de ces valeurs.
+ */
+type ContactPublicInfo = {
+  companyName: string;
+  tagline: string;
+  supportEmail: string;
+  responseTimeCommitment: string;
+  googleMapsUrl: string;
+  fullAddress: string;
+};
+
+/**
+ * Recompose l'adresse postale à partir des champs séparés du back-office
+ * (rue, code postal, ville, pays). Le code postal et la ville ne sont réinjectés
+ * que s'ils ne figurent pas déjà dans le champ « adresse » : un admin qui saisit
+ * une adresse complète ne voit donc jamais son code postal affiché deux fois.
+ */
+const composeAddress = (
+  address: string,
+  postalCode?: string,
+  city?: string,
+  country?: string
+): string => {
+  const street = (address ?? '').trim();
+  const locality = [postalCode, city].map((v) => (v ?? '').trim()).filter(Boolean).join(' ');
+  const nation = (country ?? '').trim();
+  const parts: string[] = [];
+  if (street) parts.push(street);
+  if (locality && !street.includes(locality)) parts.push(locality);
+  const haystack = `${street} ${locality}`.toLowerCase();
+  if (nation && !haystack.includes(nation.toLowerCase())) parts.push(nation);
+  return parts.join(', ');
+};
+
 /* ──────────────────────────────  Primitives  ────────────────────────────── */
 
 /* Horloge live pour la barre de status OS */
@@ -1330,11 +1369,13 @@ function ContactFormCard({
    sauf si l'utilisateur reduit les animations. */
 function RetailContact({
   info,
+  publicInfo,
   form,
   visibility,
   lang,
 }: {
   info: PageContentConfig['info'];
+  publicInfo: ContactPublicInfo;
   form: PageContentConfig['form'];
   visibility: PageContentConfig['visibility'];
   lang: Language;
@@ -1396,6 +1437,11 @@ function RetailContact({
   const whatsappHref = `https://wa.me/${digits(info.whatsappNumber)}?text=${encodeURIComponent(
     "Bonjour PIXIATECH, je souhaite échanger sur un projet d'affichage / écran LED.",
   )}`;
+  // Valeurs du back-office, avec repli sur le contenu de page si l'API
+  // `contact/info` est momentanément injoignable.
+  const displayAddress = publicInfo.fullAddress || info.addressValue;
+  const directionsHref = publicInfo.googleMapsUrl || mapsUrl(displayAddress);
+  const responseBadge = publicInfo.responseTimeCommitment || '';
 
   return (
     <section
@@ -1494,7 +1540,7 @@ function RetailContact({
                       </span>
                     </div>
                     <span className="ct-tablet-badge">
-                      {lang === 'FR' ? 'Réponse sous 2h' : 'Reply within 2h'}
+                      {responseBadge || (lang === 'FR' ? 'Réponse sous 2h' : 'Reply within 2h')}
                     </span>
                   </div>
                   {/* Formulaire scrollable à l'intérieur de la tablette */}
@@ -1514,20 +1560,27 @@ function RetailContact({
 
         {/* Console de coordonnées réelles sous la tablette */}
         {visibility.contactInfoCard && (
-          <div className="ct-coords-console">
+<div className="ct-coords-console">
+            {visibility.infoCompanyRow && publicInfo.companyName && (
+              <div className="ct-coord-card">
+                <span className="ct-coord-label">{lang === 'FR' ? 'Entreprise' : 'Company'}</span>
+                <span className="ct-coord-value">{publicInfo.companyName}</span>
+                {publicInfo.tagline && <span className="ct-coord-sub">{publicInfo.tagline}</span>}
+              </div>
+            )}
             {visibility.infoAddressRow && (
               <div className="ct-coord-card">
                 <span className="ct-coord-label">{info.addressLabel}</span>
                 <span className="ct-coord-value">
-                  <span data-contact-key="contact.info.addressValue">{info.addressValue}</span>{' '}
+                  <span data-contact-key="contact.info.addressValue">{displayAddress}</span>{' '}
                   <a
-                    href={mapsUrl(info.addressValue)}
+                    href={directionsHref}
                     target="_blank"
                     rel="noreferrer"
                     className="ct-link"
                     style={{ whiteSpace: 'nowrap' }}
                   >
-                    {lang === 'FR' ? 'Itinéraire ↗' : 'Directions ↗'}
+                    {lang === 'FR' ? 'Itinéraire →' : 'Directions →'}
                   </a>
                 </span>
               </div>
@@ -1568,6 +1621,16 @@ function RetailContact({
                     data-contact-key="contact.info.emailValue"
                   >
                     {info.emailValue}
+                  </a>
+                </span>
+              </div>
+            )}
+            {visibility.infoSupportEmailRow && publicInfo.supportEmail && (
+              <div className="ct-coord-card">
+                <span className="ct-coord-label">{lang === 'FR' ? 'Assistance' : 'Support'}</span>
+                <span className="ct-coord-value">
+                  <a href={`mailto:${publicInfo.supportEmail}`} className="ct-link">
+                    {publicInfo.supportEmail}
                   </a>
                 </span>
               </div>
@@ -1732,6 +1795,22 @@ export function ContactSections({ lang }: { lang: Language }) {
     whatsappNumber: contactInfo?.whatsappNumber || contentInfo.whatsappNumber,
     hoursValue: contactInfo?.workingHours || contentInfo.hoursValue,
   };
+
+  // Coordonnées publiées par le back-office « Coordonnées publiques ». Elles sont
+  // lues ici, jamais recopiées dans le contenu de page : une seule source.
+  const publicInfo: ContactPublicInfo = {
+    companyName: contactInfo?.companyName ?? '',
+    tagline: contactInfo?.tagline ?? '',
+    supportEmail: contactInfo?.supportEmail ?? '',
+    responseTimeCommitment: contactInfo?.responseTimeCommitment ?? '',
+    googleMapsUrl: contactInfo?.googleMapsUrl ?? '',
+    fullAddress: composeAddress(
+      info.addressValue,
+      contactInfo?.postalCode,
+      contactInfo?.city,
+      contactInfo?.country
+    ),
+  };
   const scrollToForm = () =>
     document.getElementById('contact-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
@@ -1844,7 +1923,7 @@ export function ContactSections({ lang }: { lang: Language }) {
           POS » des Shopify Editions Spring 2026. Le formulaire vit à
           l'écran de la tablette (sa couleur claire est conservée), les
           coordonnées flottent à gauche, et la souris incline l'ensemble. */}
-      <RetailContact info={info} form={form} visibility={visibility} lang={lang} />
+      <RetailContact info={info} publicInfo={publicInfo} form={form} visibility={visibility} lang={lang} />
 
       {/* ── FAQ ────────────────────────────────────────────────
           Retour au noir pour refermer l'alternance. */}

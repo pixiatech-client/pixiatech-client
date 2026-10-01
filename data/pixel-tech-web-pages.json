@@ -536,7 +536,7 @@
       "id": "product__template-maitre",
       "name": "product__template-maitre",
       "slug": "/product__template-maitre",
-      "updatedAt": "2026-09-29T19:16:09.546Z",
+      "updatedAt": "2026-09-30T18:26:32.257Z",
       "sections": {
         "next": {
           "_elements": {
@@ -544,9 +544,15 @@
               "text": "Donnons vie à\nvotre affichage. Ça c'est bien je peux je vais prendre ça ça ça marche parfaitement c'est intuitif c'est correct on va prendre cette logique là et la mélanger avec cette ce style là attends voir je vais je vais faire un truc"
             }
           }
+        },
+        "specs": {
+          "visible": true,
+          "layout": {
+            "visible": true
+          }
         }
       }
     }
   },
-  "updatedAt": "2026-09-29T20:32:22.722Z"
+  "updatedAt": "2026-09-30T18:26:32.257Z"
 }

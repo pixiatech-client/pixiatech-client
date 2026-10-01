@@ -25,12 +25,11 @@ import {
   hasDesign,
   hasFeatures,
   hasFieldwork,
-  hasNext,
   hasOverview,
   hasSpecs,
   text,
 } from '@/lib/products/display';
-import type { Product } from '@/lib/products/types';
+import type { Product, ProductNext } from '@/lib/products/types';
 import { attachSectionMedia } from '@/lib/products/master-template';
 
 import { EditableWrapper } from './cms/EditableWrapper';
@@ -63,7 +62,7 @@ function ProductView({ slug, fallbackProduct, isPreview = false }: ProductPageTe
   // Meme source de langue que le header (contexte i18n global, persiste).
   const { locale } = useI18n();
   const effectiveLang: Language = locale === 'en' ? 'EN' : 'FR';
-  const { getBySlug } = useProducts();
+  const { getBySlug, products } = useProducts();
 
   // Page id synthétique : chaque fiche produit a sa propre page CMS persistée.
   useEffect(() => {
@@ -76,6 +75,59 @@ function ProductView({ slug, fallbackProduct, isPreview = false }: ProductPageTe
   const product: Product = getBySlug(slug) ?? fallbackProduct;
   const companyName = text(product.company) ?? brandName;
   const productTitle = text(product.name) ?? text(product.hero?.title);
+
+  /** Produits publiés, ordonnés : c'est la source unique de la navigation. */
+  const publishedProducts = useMemo(
+    () =>
+      products
+        .filter((p) => p.status === 'published')
+        .sort((a, b) => {
+          const oa = typeof a.order === 'number' ? a.order : Number.MAX_SAFE_INTEGER;
+          const ob = typeof b.order === 'number' ? b.order : Number.MAX_SAFE_INTEGER;
+          if (oa !== ob) return oa - ob;
+          return (a.name || '').localeCompare(b.name || '', 'fr');
+        }),
+    [products]
+  );
+
+  /**
+   * Navigation circulaire entre produits publiés.
+   * - 0 ou 1 produit publié → null (section masquée).
+   * - 2+ produits → prev/next avec bouclage circulaire.
+   * La navigation déclarée dans le PDF (product.next.prev / product.next.next)
+   * n'alimente plus les liens produit : elle ne décrit pas des produits réels
+   * de la base, et elle réapparaissait quand aucun autre produit n'était publié.
+   */
+  const circularNav = useMemo((): ProductNext | null => {
+    if (publishedProducts.length < 2) return null;
+
+    const idx = publishedProducts.findIndex((p) => p.slug === slug);
+    if (idx === -1) return null;
+
+    const N = publishedProducts.length;
+    const prevP = publishedProducts[(idx - 1 + N) % N];
+    const nextP = publishedProducts[(idx + 1) % N];
+
+    const taglineOf = (p: typeof prevP) =>
+      p.description?.shortFr || p.hero?.subtitle || '';
+
+    return {
+      ...(product.next?.headline ? { headline: product.next.headline } : {}),
+      ...(product.next?.headlineHighlight ? { headlineHighlight: product.next.headlineHighlight } : {}),
+      ...(product.next?.cta ? { cta: product.next.cta } : {}),
+      prev: {
+        name: prevP.name,
+        url: `/web/product/${prevP.slug}`,
+        tagline: taglineOf(prevP),
+      },
+      next: {
+        name: nextP.name,
+        url: `/web/product/${nextP.slug}`,
+        tagline: taglineOf(nextP),
+      },
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [publishedProducts, slug, product.next]);
 
   /**
    * Rattachement des médias aux sections — décidé par le TEMPLATE MAÎTRE
@@ -191,11 +243,12 @@ function ProductView({ slug, fallbackProduct, isPreview = false }: ProductPageTe
         {/* Section 04: Complete Specifications Matrix (Dark Theme) */}
         {hasSpecs(product?.specs) && (
           <EditableWrapper sectionKey="specs" sectionLabel={effectiveLang === 'FR' ? 'Spécifications Techniques' : 'Technical Specs'}>
-            <SpecsSection
-              specs={product?.specs}
-              onSelectDatasheet={(model) => setActiveDatasheetModel(model)}
-              lang={effectiveLang}
-            />
+<SpecsSection
+                  specs={product?.specs}
+                  shopLinks={product?.shopLinks}
+                  onSelectDatasheet={(model) => setActiveDatasheetModel(model)}
+                  lang={effectiveLang}
+                />
           </EditableWrapper>
         )}
 
@@ -206,11 +259,16 @@ function ProductView({ slug, fallbackProduct, isPreview = false }: ProductPageTe
           </EditableWrapper>
         )}
 
-        {/* Section 06: Next Series & CTA Banner (Dark Theme) */}
-        {hasNext(product?.next) && (
-          <EditableWrapper sectionKey="next" sectionLabel={effectiveLang === 'FR' ? 'Séries Suivantes & Devis' : 'Next Series & Quote'}>
+        {/* Section 06: Navigation circulaire produit + CTA Banner (Dark Theme)
+            La section n'apparaît que si au moins DEUX produits sont publiés et
+            que celui-ci en fait partie : avec un seul produit (ou un produit
+            hors base publiée), les deux blocs sont masqués. Les liens pointent
+            toujours vers des produits réels de la base, jamais vers la
+            navigation déclarée dans le PDF. */}
+        {circularNav && (
+          <EditableWrapper sectionKey="next" sectionLabel={effectiveLang === 'FR' ? 'Produits & Devis' : 'Products & Quote'}>
             <NextSection
-              data={product?.next}
+              data={circularNav}
               productTitle={productTitle}
               onOpenConsultation={() => setIsConsultationOpen(true)}
               lang={effectiveLang}

@@ -1781,7 +1781,8 @@ function ProductForm({
         // donc le nom du gabarit — la page Démo — qui atterrissait dans le
         // champ, puis dans le slug du brouillon créé. Un produit ne doit
         // jamais hériter de l'identité du template qui sert à le générer.
-        if (!cleanName && parsed.name) setName(parsed.name);
+        const candidateName = parsed.name || (built.name && !built.name.includes('template maître') ? built.name : undefined);
+        if (!cleanName && candidateName) setName(candidateName);
       }
     } catch {
       toast.error('Échec de l’analyse du PDF.');

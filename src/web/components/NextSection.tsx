@@ -117,11 +117,11 @@ export const NextSection: React.FC<NextSectionProps> = ({
                 {card.key === 'prev' ? (
                   <>
                     <span>&larr;</span>{' '}
-                    {lang === 'FR' ? 'SÉRIE PRÉCÉDENTE' : 'PREVIOUS SERIES'}
+                    {lang === 'FR' ? 'PRODUIT PRÉCÉDENT' : 'PREVIOUS PRODUCT'}
                   </>
                 ) : (
                   <>
-                    {lang === 'FR' ? 'SÉRIE SUIVANTE' : 'NEXT SERIES'} <span>&rarr;</span>
+                    {lang === 'FR' ? 'PRODUIT SUIVANT' : 'NEXT PRODUCT'} <span>&rarr;</span>
                   </>
                 )}
               </div>

@@ -1,15 +1,22 @@
 // ============================================================================
 // CONSTRUCTION D'UN PRODUIT : TEMPLATE MAÎTRE + PDF
 //
-// Chaîne attendue par la mission (POINT 16 → 20) :
+// Pipeline de génération / fusion / normalisation du PRODUIT GÉNÉRÉ.
 //
-//   1. on part du TEMPLATE MAÎTRE (structure + valeurs par défaut) ;
-//   2. le PDF n'écrase QUE les champs qu'il contient réellement ;
-//   3. le produit créé conserve donc la page complète du template.
-//
-// C'est la correction du défaut historique : la surcouche PDF était appliquée à
-// un objet vide, si bien qu'une section absente du PDF disparaissait de la page
-// et que le produit pouvait se réduire à son nom.
+// RÈGLE ABSOLUE :
+//   - Le master template est la BASE IMMUTABLE (verrouillé).
+//   - Le PDF est la source des DONNÉES RÉELLES du produit.
+//   - Le produit généré est la dérivation propre :
+//       1. conserve la structure et les sections du master ;
+//       2. remplace les données lorsque le PDF fournit une valeur réelle ;
+//       3. conserve la vraie valeur du master lorsque le PDF ne fournit rien ;
+//       4. ne JAMAIS laisser apparaître les placeholders du master dans le
+//          produit final (ex: [Marché 1], [valeur], [Modele 1], [L×l mm]...) ;
+//       5. ne JAMAIS créer de doublons ou concaténer ancienne + nouvelle valeur
+//          (ex: pas de "1000 nits [valeur]", pas de "300 × 168,8 mm [L×l mm]") ;
+//       6. "PENDING" est une valeur de donnée autorisée (PENDING ≠ placeholder) ;
+//       7. n'invente jamais de données absentes et n'importe pas d'images du
+//          PDF comme médias produit par défaut.
 // ============================================================================
 
 import {
@@ -17,18 +24,18 @@ import {
   createMasterTemplateSkeleton,
   mergeProductOntoTemplate,
 } from './master-template';
-import type { Product } from './types';
+import type {
+  Product,
+  ProductFeature,
+  ProductFieldworkProject,
+  ProductSpecGroup,
+  ProductSpecModel,
+  ProductStat,
+  ProductSubItem,
+} from './types';
 
 /**
  * Récupère le produit maître « template-maitre ».
- *
- * `resolveBase` est injecté pour deux raisons : le client Admin charge depuis
- * Firestore via le SDK client, le serveur via l'admin SDK. Aucun des deux n'est
- * requis pour tester la règle de fusion.
- *
- * Si le template maître est introuvable ou illisible, on retourne le squelette
- * STRUCTUREL : la page conserve toutes ses sections, mais elles restent vides.
- * On n'invente jamais une caractéristique technique (POINT 22).
  */
 export async function loadMasterTemplate(
   resolveBase: (slug: string) => Promise<Product | null>
@@ -43,7 +50,178 @@ export async function loadMasterTemplate(
 }
 
 /**
- * Construit le produit final : base = template maître, surcouche = PDF.
+ * Détecte si une valeur textuelle est un placeholder structurel du master template.
+ * "PENDING" n'est PAS un placeholder, c'est une donnée autorisée.
+ */
+export function isPlaceholder(val: unknown): boolean {
+  if (typeof val !== 'string') return false;
+  const s = val.trim();
+  if (!s) return false;
+  if (/^pending$/i.test(s)) return false;
+
+  // Crochets structurels de gabarit
+  if (/^\[.*\]$/.test(s)) return true;
+
+  const norm = s
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, ' ')
+    .trim();
+
+  const compact = norm.replace(/\s+/g, '');
+  if (/^VALEUR(VALEUR)?$/.test(compact)) return true;
+  if (/^MARCHE\d+$/.test(compact)) return true;
+  if (/^MODELE\d+$/.test(compact)) return true;
+  if (/^LABELSTAT\d+$/.test(compact)) return true;
+  if (/^TITRE(FEATURE|PHOTO|VIDEO|VISUEL\d+|SECTION)?$/.test(compact)) return true;
+  if (/^ACCROCHE/.test(compact)) return true;
+  if (/^DESCRIPTION/.test(compact)) return true;
+  if (/^NOM(PROJET|CLIENT|CONFIG|TECHNOLOGIE|ENTREPRISE|PRODUIT)?$/.test(compact)) return true;
+  if (/^EMPLACEMENTMEDIA$/.test(compact)) return true;
+  if (/^(LX?LMM|MM)$/.test(compact)) return true;
+  if (/^PAYSANNEE$/.test(compact)) return true;
+
+  return false;
+}
+
+/**
+ * Nettoie une chaîne de tout placeholder résiduel, crochet ou concaténation :
+ * - "1000 nits [valeur]" -> "1000 nits"
+ * - "300 × 168,8 mm [L×l mm]" -> "300 × 168,8 mm"
+ * - "2 [valeur]" -> "2"
+ * - "valeur [valeur]" -> ""
+ * - "[ PXT-S1.2 ]" -> "PXT-S1.2"
+ * - "PENDING" -> "PENDING"
+ */
+export function cleanPlaceholderText(val: string | undefined | null): string {
+  if (val === undefined || val === null) return '';
+  let s = String(val).trim();
+  if (!s) return '';
+  if (/^pending$/i.test(s)) return 'PENDING';
+
+  // Si tout le texte est entre crochets simples
+  if (/^\[[^[\]]+\]$/.test(s)) {
+    const inner = s.slice(1, -1).trim();
+    if (isPlaceholder(inner)) return '';
+    return inner;
+  }
+
+  // Supprime tout bloc [ ... ] contenant un placeholder
+  s = s.replace(/\[[^[\]]*\]/g, (match) => {
+    const inner = match.slice(1, -1).trim();
+    if (isPlaceholder(inner) || isPlaceholder(match)) return '';
+    return inner;
+  });
+
+  s = s.replace(/\s+/g, ' ').trim();
+  if (isPlaceholder(s)) return '';
+
+  if (s.startsWith('[') && s.endsWith(']')) {
+    const unwrapped = s.slice(1, -1).trim();
+    if (!isPlaceholder(unwrapped)) s = unwrapped;
+  }
+
+  return s;
+}
+
+/** Une valeur textuelle est-elle réelle (non vide et non placeholder) ? */
+export function isRealValue(val: unknown): boolean {
+  if (val === undefined || val === null) return false;
+  if (typeof val === 'string') {
+    const cleaned = cleanPlaceholderText(val);
+    return cleaned.length > 0;
+  }
+  if (Array.isArray(val)) return val.length > 0;
+  if (typeof val === 'object') return Object.keys(val as object).length > 0;
+  return true;
+}
+
+/** 5 catégories canoniques standard du master template */
+const CANONICAL_SPEC_GROUPS: ProductSpecGroup[] = [
+  {
+    id: 'general',
+    label: 'GENERAL',
+    rows: [
+      { key: 'env', label: 'Usage (in/out)' },
+      { key: 'arrangement', label: 'LED arrangement' },
+    ],
+  },
+  {
+    id: 'physical',
+    label: 'PHYSIQUE',
+    rows: [
+      { key: 'pitch', label: 'Pixel pitch' },
+      { key: 'density', label: 'Density (px/m²)' },
+      { key: 'moduleRes', label: 'Module res.' },
+      { key: 'moduleDim', label: 'Module dim.' },
+      { key: 'cabDim', label: 'Cabinet dim.' },
+      { key: 'weight', label: 'Poids cabinet' },
+    ],
+  },
+  {
+    id: 'optical',
+    label: 'OPTIQUE',
+    rows: [
+      { key: 'brightness', label: 'Brightness' },
+      { key: 'refresh', label: 'Refresh rate' },
+      { key: 'scan', label: 'Scan rate' },
+      { key: 'angle', label: 'Viewing angle' },
+    ],
+  },
+  {
+    id: 'electrical',
+    label: 'ELECTRIQUE',
+    rows: [
+      { key: 'maxPower', label: 'Max power' },
+      { key: 'avgPower', label: 'Avg power' },
+      { key: 'powerSource', label: 'Power source' },
+      { key: 'signal', label: 'Signal input' },
+    ],
+  },
+  {
+    id: 'environmental',
+    label: 'ENVIRONNEMENT',
+    rows: [
+      { key: 'ip', label: 'IP rating' },
+      { key: 'temp', label: 'Temperature' },
+      { key: 'transparency', label: 'Transparency' },
+      { key: 'certs', label: 'Certifications' },
+    ],
+  },
+];
+
+/**
+ * Nettoie récursivement un objet de tous les placeholders résiduels
+ * tout en conservant scrupuleusement la valeur "PENDING".
+ */
+export function sanitizeProductRecursively(obj: unknown): unknown {
+  if (obj === null || obj === undefined) return obj;
+  if (typeof obj === 'string') {
+    return cleanPlaceholderText(obj);
+  }
+  if (Array.isArray(obj)) {
+    return obj
+      .map(sanitizeProductRecursively)
+      .filter((item) => {
+        if (typeof item === 'string') return item.length > 0;
+        if (item === null || item === undefined) return false;
+        return true;
+      });
+  }
+  if (typeof obj === 'object') {
+    const res: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(obj)) {
+      res[k] = sanitizeProductRecursively(v);
+    }
+    return res;
+  }
+  return obj;
+}
+
+/**
+ * Construit le produit final en appliquant les règles de fusion strictes :
+ * base = template maître, surcouche = PDF.
  * La base n'est jamais modifiée.
  */
 export async function buildProductFromMasterTemplate(
@@ -51,5 +229,394 @@ export async function buildProductFromMasterTemplate(
   resolveBase: (slug: string) => Promise<Product | null>
 ): Promise<Product> {
   const master = await loadMasterTemplate(resolveBase);
-  return mergeProductOntoTemplate(master, overlay);
+
+  // 1. Fusion structurelle initiale via la fonction de base
+  const baseMerged = mergeProductOntoTemplate(master, overlay);
+
+  // 2. Normalisation stricte section par section
+
+  // --- Masthead & Identité ---
+  const masterName =
+    master.slug === MASTER_TEMPLATE_SLUG || master.name?.includes('template maître')
+      ? ''
+      : cleanPlaceholderText(master.name);
+  const name = cleanPlaceholderText(overlay.name) || masterName || '';
+  const series = cleanPlaceholderText(overlay.series) || cleanPlaceholderText(master.series) || '';
+  const company = cleanPlaceholderText(overlay.company) || cleanPlaceholderText(master.company) || '';
+
+  // --- Hero ---
+  const heroTitle = cleanPlaceholderText(overlay.hero?.title) || cleanPlaceholderText(master.hero?.title) || name;
+  const heroSubtitle = cleanPlaceholderText(overlay.hero?.subtitle) || cleanPlaceholderText(master.hero?.subtitle) || '';
+  const heroPrimaryCta = cleanPlaceholderText(overlay.hero?.primaryCta) || cleanPlaceholderText(master.hero?.primaryCta) || '';
+  const heroSecondaryCta = cleanPlaceholderText(overlay.hero?.secondaryCta) || cleanPlaceholderText(master.hero?.secondaryCta) || '';
+  const breadcrumbCategoryFr =
+    cleanPlaceholderText(overlay.hero?.breadcrumbCategoryFr) ||
+    cleanPlaceholderText(master.hero?.breadcrumbCategoryFr) ||
+    series;
+  const breadcrumbCategoryEn =
+    cleanPlaceholderText(overlay.hero?.breadcrumbCategoryEn) ||
+    cleanPlaceholderText(master.hero?.breadcrumbCategoryEn) ||
+    series;
+
+  // Marchés (hero.tags) : le PDF remplace le master. Aucun [Marché 1..4] ne survit.
+  let tags: string[] = [];
+  if (overlay.hero?.tags && overlay.hero.tags.length > 0) {
+    tags = overlay.hero.tags.map(cleanPlaceholderText).filter(Boolean);
+  } else if (master.hero?.tags && master.hero.tags.length > 0) {
+    tags = master.hero.tags.map(cleanPlaceholderText).filter(Boolean);
+  }
+
+  // 4 Badges du masthead (hero.specs) : le PDF remplace le master. Aucun [valeur] ne survit.
+  let specsBadges: { label: string; value: string }[] = [];
+  if (overlay.hero?.specs && overlay.hero.specs.length > 0) {
+    specsBadges = overlay.hero.specs
+      .map((s) => ({
+        label: cleanPlaceholderText(s.label).toUpperCase(),
+        value: cleanPlaceholderText(s.value),
+      }))
+      .filter((s) => s.label && s.value);
+  } else if (master.hero?.specs && master.hero.specs.length > 0) {
+    specsBadges = master.hero.specs
+      .map((s) => ({
+        label: cleanPlaceholderText(s.label).toUpperCase(),
+        value: cleanPlaceholderText(s.value),
+      }))
+      .filter((s) => s.label && s.value);
+  }
+
+  // --- 01 Aperçu ---
+  const overviewTitle =
+    cleanPlaceholderText(overlay.overview?.title) ||
+    cleanPlaceholderText(master.overview?.title) ||
+    '';
+  const overviewDescription =
+    cleanPlaceholderText(overlay.overview?.description) ||
+    cleanPlaceholderText(master.overview?.description) ||
+    '';
+
+  // 3 Statistiques : le PDF remplace le master. Aucun [valeur] ni [Label stat X].
+  let stats: ProductStat[] = [];
+  if (overlay.overview?.stats && overlay.overview.stats.length > 0) {
+    stats = overlay.overview.stats
+      .map((s) => ({
+        value: cleanPlaceholderText(s.value),
+        label: cleanPlaceholderText(s.label),
+        ...(s.labelFr ? { labelFr: cleanPlaceholderText(s.labelFr) } : {}),
+        ...(s.labelEn ? { labelEn: cleanPlaceholderText(s.labelEn) } : {}),
+      }))
+      .filter((s) => s.value && s.label);
+  } else if (master.overview?.stats && master.overview.stats.length > 0) {
+    stats = master.overview.stats
+      .map((s) => ({
+        value: cleanPlaceholderText(s.value),
+        label: cleanPlaceholderText(s.label),
+        ...(s.labelFr ? { labelFr: cleanPlaceholderText(s.labelFr) } : {}),
+        ...(s.labelEn ? { labelEn: cleanPlaceholderText(s.labelEn) } : {}),
+      }))
+      .filter((s) => s.value && s.label);
+  }
+
+  // Technologies : le PDF remplace les placeholders du master.
+  let technologies: ProductSubItem[] = [];
+  if (overlay.overview?.technologies && overlay.overview.technologies.length > 0) {
+    technologies = overlay.overview.technologies
+      .map((t) => ({
+        ...(t.num ? { num: cleanPlaceholderText(t.num) } : {}),
+        title: cleanPlaceholderText(t.title),
+        ...(t.description ? { description: cleanPlaceholderText(t.description) } : {}),
+      }))
+      .filter((t) => t.title);
+  } else if (master.overview?.technologies && master.overview.technologies.length > 0) {
+    technologies = master.overview.technologies
+      .map((t) => ({
+        ...(t.num ? { num: cleanPlaceholderText(t.num) } : {}),
+        title: cleanPlaceholderText(t.title),
+        ...(t.description ? { description: cleanPlaceholderText(t.description) } : {}),
+      }))
+      .filter((t) => t.title && !isPlaceholder(t.title));
+  }
+
+  // --- 02 Conception & Format ---
+  const designTitle =
+    cleanPlaceholderText(overlay.design?.title) ||
+    cleanPlaceholderText(master.design?.title) ||
+    '';
+  const moduleDim =
+    cleanPlaceholderText(overlay.design?.moduleDim) ||
+    cleanPlaceholderText(master.design?.moduleDim) ||
+    '';
+  const cabinetDim =
+    cleanPlaceholderText(overlay.design?.cabinetDim) ||
+    cleanPlaceholderText(master.design?.cabinetDim) ||
+    '';
+  const depth =
+    cleanPlaceholderText(overlay.design?.depth) ||
+    cleanPlaceholderText(master.design?.depth) ||
+    '';
+
+  // Dimensions specsList
+  const specsList = [
+    ...(moduleDim ? [{ label: 'MODULE', value: moduleDim }] : []),
+    ...(cabinetDim ? [{ label: 'CABINET', value: cabinetDim }] : []),
+    ...(depth ? [{ label: 'PROFONDEUR', value: depth }] : []),
+  ];
+
+  // Configurations d'installation
+  let configs: ProductSubItem[] = [];
+  if (overlay.design?.configs && overlay.design.configs.length > 0) {
+    configs = overlay.design.configs
+      .map((c) => ({
+        ...(c.num ? { num: cleanPlaceholderText(c.num) } : {}),
+        title: cleanPlaceholderText(c.title),
+        ...(c.description ? { description: cleanPlaceholderText(c.description) } : {}),
+      }))
+      .filter((c) => c.title);
+  } else if (master.design?.configs && master.design.configs.length > 0) {
+    configs = master.design.configs
+      .map((c) => ({
+        ...(c.num ? { num: cleanPlaceholderText(c.num) } : {}),
+        title: cleanPlaceholderText(c.title),
+        ...(c.description ? { description: cleanPlaceholderText(c.description) } : {}),
+      }))
+      .filter((c) => c.title && !isPlaceholder(c.title));
+  }
+
+  // --- 03 Points Forts Techniques ---
+  // Le master impose exactement 7 caractéristiques.
+  const featuresTitle =
+    cleanPlaceholderText(overlay.features?.title) ||
+    cleanPlaceholderText(master.features?.title) ||
+    '';
+  let featureItems: ProductFeature[] = [];
+  const overlayFeatures = (overlay.features?.items ?? []).filter((f) => isRealValue(f.title));
+
+  if (overlayFeatures.length > 0) {
+    // Le PDF fournit les données textuelles ; le master conserve les images du
+    // slider (le PDF ne transporte jamais d'images — règle absolue).
+    const masterItems = master.features?.items ?? [];
+    featureItems = overlayFeatures.map((f, idx) => {
+      const masterItem = masterItems[idx];
+      return {
+        num: f.num ? cleanPlaceholderText(f.num) : String(idx + 1).padStart(2, '0'),
+        title: cleanPlaceholderText(f.title),
+        ...(f.description ? { description: cleanPlaceholderText(f.description) } : {}),
+        // Image du master pour cet index : conservée si le PDF n'en fournit pas
+        ...(f.image ? { image: f.image } : masterItem?.image ? { image: masterItem.image } : {}),
+        ...(f.contain !== undefined ? { contain: f.contain } : masterItem?.contain ? { contain: masterItem.contain } : {}),
+      };
+    });
+  } else if (master.features?.items && master.features.items.length > 0) {
+    featureItems = master.features.items
+      .filter((f) => !isPlaceholder(f.title))
+      .map((f, idx) => ({
+        num: f.num ? cleanPlaceholderText(f.num) : String(idx + 1).padStart(2, '0'),
+        title: cleanPlaceholderText(f.title),
+        ...(f.description ? { description: cleanPlaceholderText(f.description) } : {}),
+        // Image du master conservée telle quelle : le slider doit rester fonctionnel
+        ...(f.image ? { image: f.image } : {}),
+        ...(f.contain ? { contain: f.contain } : {}),
+      }));
+  }
+
+  // --- 04 Caractéristiques Techniques (Tableau) ---
+  // Structure des catégories préservée (GENERAL, PHYSIQUE, OPTIQUE, ELECTRIQUE, ENVIRONNEMENT)
+  // et colonnes variantes du PDF (ex: PXT-S1.2, PXT-S1.5). Aucun [Modele 1..3].
+  let finalGroups: ProductSpecGroup[] = [];
+  if (master.specs?.groups && master.specs.groups.length > 0) {
+    // Si le master a déjà des groupes, on préserve leur structure et leur ordre
+    finalGroups = master.specs.groups.map((g) => ({
+      id: g.id,
+      label: g.label,
+      rows: g.rows.map((r) => ({ key: r.key, label: r.label })),
+    }));
+  } else {
+    // Sinon on garantit les 5 catégories canoniques
+    finalGroups = CANONICAL_SPEC_GROUPS.map((g) => ({
+      id: g.id,
+      label: g.label,
+      rows: g.rows.map((r) => ({ key: r.key, label: r.label })),
+    }));
+  }
+
+  // Si le PDF fournit des groupes ou lignes supplémentaires, on les fusionne sans perte
+  if (overlay.specs?.groups && overlay.specs.groups.length > 0) {
+    const norm = (t: string) =>
+      t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim();
+    for (const ovGrp of overlay.specs.groups) {
+      const existingGrp = finalGroups.find(
+        (g) => g.id === ovGrp.id || norm(g.label) === norm(ovGrp.label)
+      );
+      if (existingGrp) {
+        for (const ovRow of ovGrp.rows) {
+          const rowExists = existingGrp.rows.some(
+            (r) => r.key === ovRow.key || norm(r.label) === norm(ovRow.label)
+          );
+          if (!rowExists) {
+            existingGrp.rows.push({ key: ovRow.key, label: ovRow.label });
+          }
+        }
+      } else {
+        finalGroups.push({
+          id: ovGrp.id,
+          label: ovGrp.label,
+          rows: ovGrp.rows.map((r) => ({ key: r.key, label: r.label })),
+        });
+      }
+    }
+  }
+
+  // Modèles / colonnes variantes
+  let finalModels: ProductSpecModel[] = [];
+  const overlayModels = (overlay.specs?.models ?? []).filter(
+    (m) => isRealValue(m.name) && !isPlaceholder(m.name)
+  );
+
+  if (overlayModels.length > 0) {
+    // Les variantes du PDF deviennent les colonnes produit
+    finalModels = overlayModels.map((m) => {
+      const specs: Record<string, string> = {};
+      for (const [k, v] of Object.entries(m.specs ?? {})) {
+        const cleaned = cleanPlaceholderText(v);
+        if (cleaned) specs[k] = cleaned;
+      }
+      return {
+        name: cleanPlaceholderText(m.name),
+        ...(m.tag ? { tag: m.tag } : {}),
+        specs,
+      };
+    });
+  } else if (master.specs?.models && master.specs.models.length > 0) {
+    // Sinon modèles du master filtrés de tout placeholder [Modele X]
+    finalModels = master.specs.models
+      .filter((m) => !isPlaceholder(m.name))
+      .map((m) => {
+        const specs: Record<string, string> = {};
+        for (const [k, v] of Object.entries(m.specs ?? {})) {
+          const cleaned = cleanPlaceholderText(v);
+          if (cleaned) specs[k] = cleaned;
+        }
+        return {
+          name: cleanPlaceholderText(m.name),
+          ...(m.tag ? { tag: m.tag } : {}),
+          specs,
+        };
+      });
+  }
+
+  // --- 05 Références / Projets ---
+  const fieldworkTitle =
+    cleanPlaceholderText(overlay.fieldwork?.title) ||
+    cleanPlaceholderText(master.fieldwork?.title) ||
+    '';
+  let projects: ProductFieldworkProject[] = [];
+  const overlayProjects = (overlay.fieldwork?.projects ?? []).filter((p) => isRealValue(p.title));
+
+  if (overlayProjects.length > 0) {
+    // Le PDF fournit noms/lieux/années ; les images restent celles du master
+    // (le PDF ne transporte jamais d'images — règle absolue, section 05).
+    const masterProjects = master.fieldwork?.projects ?? [];
+    projects = overlayProjects.map((p, idx) => {
+      const masterProj = masterProjects[idx];
+      return {
+        title: cleanPlaceholderText(p.title),
+        ...(p.location ? { location: cleanPlaceholderText(p.location) } : {}),
+        ...(p.pitch ? { pitch: cleanPlaceholderText(p.pitch) } : {}),
+        ...(p.year ? { year: cleanPlaceholderText(p.year) } : {}),
+        // Image du master pour ce slot : conservée si le PDF n'en fournit pas
+        ...(p.image ? { image: p.image } : masterProj?.image ? { image: masterProj.image } : {}),
+        ...(p.caption ? { caption: cleanPlaceholderText(p.caption) } : masterProj?.caption ? { caption: masterProj.caption } : {}),
+      };
+    });
+  } else if (master.fieldwork?.projects && master.fieldwork.projects.length > 0) {
+    projects = master.fieldwork.projects
+      .filter((p) => !isPlaceholder(p.title))
+      .map((p) => ({
+        title: cleanPlaceholderText(p.title),
+        ...(p.location ? { location: cleanPlaceholderText(p.location) } : {}),
+        ...(p.pitch ? { pitch: cleanPlaceholderText(p.pitch) } : {}),
+        ...(p.year ? { year: cleanPlaceholderText(p.year) } : {}),
+        // Images du master conservées telles quelles
+        ...(p.image ? { image: p.image } : {}),
+        ...(p.caption ? { caption: p.caption } : {}),
+      }));
+  }
+
+  // --- CTA / Next ---
+  const nextHeadline =
+    cleanPlaceholderText(overlay.next?.headline) ||
+    cleanPlaceholderText(master.next?.headline) ||
+    '';
+  const nextCta =
+    cleanPlaceholderText(overlay.next?.cta) ||
+    cleanPlaceholderText(master.next?.cta) ||
+    '';
+
+  // --- Assemblage du produit complet ---
+  const result: Product = {
+    ...baseMerged,
+    name,
+    ...(series ? { series } : {}),
+    ...(company ? { company } : {}),
+    status: overlay.status ?? master.status ?? 'draft',
+
+    hero: {
+      ...baseMerged.hero,
+      title: heroTitle,
+      ...(heroSubtitle ? { subtitle: heroSubtitle } : {}),
+      ...(heroPrimaryCta ? { primaryCta: heroPrimaryCta } : {}),
+      ...(heroSecondaryCta ? { secondaryCta: heroSecondaryCta } : {}),
+      ...(breadcrumbCategoryFr ? { breadcrumbCategoryFr } : {}),
+      ...(breadcrumbCategoryEn ? { breadcrumbCategoryEn } : {}),
+      tags,
+      specs: specsBadges,
+    },
+
+    overview: {
+      ...baseMerged.overview,
+      ...(overviewTitle ? { title: overviewTitle } : {}),
+      ...(overviewDescription ? { description: overviewDescription } : {}),
+      stats,
+      technologies,
+    },
+
+    design: {
+      ...baseMerged.design,
+      ...(designTitle ? { title: designTitle } : {}),
+      ...(moduleDim ? { moduleDim } : {}),
+      ...(cabinetDim ? { cabinetDim } : {}),
+      ...(depth ? { depth } : {}),
+      specsList,
+      configs,
+    },
+
+    features: {
+      ...baseMerged.features,
+      ...(featuresTitle ? { title: featuresTitle } : {}),
+      items: featureItems,
+    },
+
+    specs: {
+      groups: finalGroups,
+      models: finalModels,
+    },
+
+    fieldwork: {
+      ...baseMerged.fieldwork,
+      ...(fieldworkTitle ? { title: fieldworkTitle } : {}),
+      projects,
+    },
+
+    next: {
+      ...baseMerged.next,
+      ...(nextHeadline ? { headline: nextHeadline } : {}),
+      ...(nextCta ? { cta: nextCta } : {}),
+    },
+
+    // Médias : les médias réels du template maître sont conservés (POINT 16/18)
+    // Les images du PDF ne sont jamais injectées comme médias produit par défaut.
+    media: master.media ?? { photos: [], videos: [] },
+  };
+
+  // 3. Passe finale de désinfection globale
+  return sanitizeProductRecursively(result) as Product;
 }

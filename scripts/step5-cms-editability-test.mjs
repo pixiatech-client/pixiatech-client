@@ -96,7 +96,8 @@ check('VPE : flux sections conservé (updateSectionField / _elements)',
 // affichait `content.info` pendant que le module Contact editait
 // `contactInfo`, les deux divergant silencieusement.
 const infoRoute = read('src/app/api/site-web/contact/page-content/route.ts');
-const contactModule = read('src/app/admin/site-web/contact/ContactModule.tsx');
+const contactAdmin = read('src/app/admin/site-web/contact/ContactAdmin.tsx');
+const publicInfoTab = read('src/app/admin/site-web/contact/_components/PublicInfoTab.tsx');
 
 check('route page-content ne recopie PLUS les valeurs vers contactInfo',
   !infoRoute.includes('setContactInfo') && !infoRoute.includes('getContactInfo'));
@@ -122,18 +123,77 @@ check('contact-edit mappe chaque valeur vers sa cle canonique ContactInfo',
    "'contact.info.phone2': 'phone2'",
    "'contact.info.emailValue': 'primaryEmail'"].every((m) => ce.includes(m)));
 
-check('module Contact separe valeurs et presentation dans handleUpdateInfo',
-  contactModule.includes('contactValues') &&
-  contactModule.includes('primaryEmail') &&
-  contactModule.includes('workingHours'));
+// -- BACK-OFFICE CONTACT : 3 ONGLETS, PAS D'EDITEUR DE PAGE ---------------------
+// L'ancien module (ContactModule + AdminToolbar + SmtpSettingsModal + les
+// composants d'edition directe) a ete retire au profit de trois onglets
+// d'administration. Ces verrous empechent le retour de l'editeur visuel et
+// garantissent que le back-office est bien la source de verite du front.
 
-check('module Contact ecrit contactInfo AVANT page-content et n annonce pas d echec a tort',
-  contactModule.includes('/api/site-web/contact/info') &&
-  contactModule.includes('return;'));
+const exists = (p) => fs.existsSync(p);
+const REMOVED = [
+  'src/app/admin/site-web/contact/ContactModule.tsx',
+  'src/app/admin/site-web/contact/_components/AdminToolbar.tsx',
+  'src/app/admin/site-web/contact/_components/SmtpSettingsModal.tsx',
+  'src/app/admin/site-web/contact/_components/ContactHero.tsx',
+  'src/app/admin/site-web/contact/_components/ContactInfoCard.tsx',
+  'src/app/admin/site-web/contact/_components/ContactForm.tsx',
+  'src/app/admin/site-web/contact/_components/FaqSection.tsx',
+  'src/app/admin/site-web/contact/_components/Footer.tsx',
+  'src/app/admin/site-web/contact/_components/Header.tsx',
+  'src/app/admin/site-web/contact/_components/EditableText.tsx',
+  'src/app/admin/site-web/contact/_components/CardSwitch.tsx',
+  'src/app/admin/site-web/contact/_components/IconRenderer.tsx',
+  'src/app/admin/site-web/contact/_components/IconPickerModal.tsx',
+  'src/app/api/site-web/contact/page-content/reset/route.ts',
+];
+const stillThere = REMOVED.filter(exists);
+check('editeur de page Contact et route de reset supprimes', stillThere.length === 0, stillThere.join(', '));
 
-check('module Contact affiche les valeurs canoniques dans la carte infos',
-  contactModule.includes('addressValue: contactInfo?.address') &&
-  contactModule.includes('hoursValue: contactInfo?.workingHours'));
+check('le back-office Contact ne pilote plus page-content',
+  !contactAdmin.includes('page-content') && !publicInfoTab.includes('page-content'));
+
+check('le back-office Contact expose exactement 3 onglets',
+  ["'SMTP & envoi'", "'Boîte de réception'", "'Coordonnées publiques'"]
+    .every((label) => contactAdmin.includes(label)));
+
+check('onglet Coordonnees publiques ecrit dans contactInfo via PUT /contact/info',
+  publicInfoTab.includes("'/api/site-web/contact/info'") &&
+  publicInfoTab.includes("method: 'PUT'"));
+
+check('aucun secret SMTP en dur dans l onglet SMTP',
+  !exists('src/app/admin/site-web/contact/_components/SmtpSettingsModal.tsx') &&
+  !/pass:\s*['"][^'"]{4,}/.test(read('src/app/admin/site-web/contact/_components/SmtpTab.tsx')));
+
+// -- BOITE DE RECEPTION : LES 4 STATUTS SONT REELS -----------------------------
+const inboxTab = read('src/app/admin/site-web/contact/_components/InboxTab.tsx');
+const messageRoute = read('src/app/api/site-web/contact/messages/[id]/route.ts');
+check('les 4 statuts demandes sont exposes dans la boite de reception',
+  inboxTab.includes('Tous (') && inboxTab.includes('Non lus (') &&
+  inboxTab.includes('Lus (') && inboxTab.includes('Traités ('));
+check('boite de reception utilise le PATCH/DELETE deja expose par la route',
+  inboxTab.includes('method: \'PATCH\'') && inboxTab.includes("method: 'DELETE'") &&
+  messageRoute.includes('patchMessageStatus') && messageRoute.includes('deleteMessage'));
+check('aucune valeur de statut inventee par le back-office',
+  ["'unread'", "'read'", "'replied'", "'archived'"].every((s) => inboxTab.includes(s)));
+
+// -- CHAINE BACK-OFFICE -> FRONT, CHACUN DEBOUT -------------------------------
+// Toute coordonnee exposee dans l onglet admin doit etre lue par la page
+// publique, sinon le back-office promettrait une valeur invisible.
+for (const [field, expr] of [
+  ['companyName', 'contactInfo?.companyName'],
+  ['tagline', 'contactInfo?.tagline'],
+  ['supportEmail', 'contactInfo?.supportEmail'],
+  ['responseTimeCommitment', 'contactInfo?.responseTimeCommitment'],
+  ['googleMapsUrl', 'contactInfo?.googleMapsUrl'],
+  ['postalCode', 'contactInfo?.postalCode'],
+  ['city', 'contactInfo?.city'],
+  ['country', 'contactInfo?.country'],
+]) {
+  check(`ContactSections affiche ${field} depuis contactInfo`,
+    publicInfoTab.includes(`key: '${field}'`) && cs.includes(expr));
+}
+check('ContactSections compose adresse + code postal + ville + pays',
+  cs.includes('composeAddress(') && cs.includes('fullAddress: composeAddress'));
 
 
 console.log(failures === 0 ? 'CMS-EDITABILITY-LOCK-PASS' : `CMS-EDITABILITY-LOCK-FAIL (${failures})`);

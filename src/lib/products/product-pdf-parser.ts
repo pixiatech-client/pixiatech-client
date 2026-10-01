@@ -112,7 +112,23 @@ export function groupItemsIntoLines(items: PdfTextItem[]): PdfLine[] {
   buckets.sort((a, b) => b.y - a.y);
   return buckets.map((bucket) => {
     const sorted = [...bucket.items].sort((a, b) => a.x - b.x);
-    return { y: bucket.y, items: sorted, text: joinItems(sorted) };
+    // Déduplication des items superposés identiques (ex: calque gabarit + calque saisi chevauchants)
+    const deduped: PdfTextItem[] = [];
+    for (const it of sorted) {
+      const prev = deduped[deduped.length - 1];
+      if (
+        prev &&
+        normLabel(prev.str) === normLabel(it.str) &&
+        (Math.abs(prev.x - it.x) < 25 || (prev.x < LABEL_ZONE_MAX_X && it.x < LABEL_ZONE_MAX_X))
+      ) {
+        if (it.size > prev.size) {
+          deduped[deduped.length - 1] = it;
+        }
+        continue;
+      }
+      deduped.push(it);
+    }
+    return { y: bucket.y, items: deduped, text: joinItems(deduped) };
   });
 }
 
@@ -194,7 +210,7 @@ export function normLabel(raw: string): string {
     .replace(/\s+/g, ' ');
 }
 
-const DASH_ONLY = /^[\u2010-\u2015\u2212]+$/;
+const DASH_ONLY = /^[\u2010-\u2015\u2212\u2014]+$/;
 
 /**
  * INVENTAIRE EXACT des slots du gabarit officiel
@@ -276,20 +292,82 @@ const GABARIT_PLACEHOLDER_KEYS_COMPACT = new Set(
 
 /** Un texte normalisé correspond-il à un placeholder du gabarit officiel ? */
 function isGabaritPlaceholder(normalized: string): boolean {
-  return (
+  if (
     GABARIT_PLACEHOLDER_KEYS.has(normalized) ||
     GABARIT_PLACEHOLDER_KEYS_COMPACT.has(normalized.replace(/\s+/g, ''))
-  );
+  ) {
+    return true;
+  }
+  const compact = normalized.replace(/\s+/g, '');
+  if (/^MARCHE\d+$/.test(compact)) return true;
+  if (/^MODELE\d+$/.test(compact)) return true;
+  if (/^LABELSTAT\d+$/.test(compact)) return true;
+  if (/^VALEUR(VALEUR)?$/.test(compact)) return true;
+  if (/^TITRE(FEATURE|PHOTO|VIDEO|VISUEL\d+|SECTION)?$/.test(compact)) return true;
+  if (/^ACCROCHE/.test(compact)) return true;
+  if (/^DESCRIPTION/.test(compact)) return true;
+  if (/^EMPLACEMENTMEDIA$/.test(compact)) return true;
+  if (/^(LX?LMM|MM)$/.test(compact)) return true;
+  return false;
 }
 
 /**
- * Retire le chrome du gabarit (`[…]` aux extrémités) d'une valeur retenue.
- * Le gabarit dessine ses slots entre crochets : un nom réellement saisi
- * s'affiche donc `[ PXT-FINE-500 ]` et les crochets ne font pas partie de la
- * donnée affichée.
+ * Nettoie le texte d'un slot du gabarit :
+ * - élimine les placeholders concaténés (ex: "1000 nits [valeur]" -> "1000 nits", "300 × 168,8 mm [L×l mm]" -> "300 × 168,8 mm") ;
+ * - rejette les placeholders résiduels (ex: "valeur [valeur]" -> "", "[Marché 1]" -> "") ;
+ * - préserve "PENDING" et les unités ;
+ * - retire les crochets si le contenu est une valeur réelle (ex: "[ PXT-S1.2 ]" -> "PXT-S1.2").
+ */
+export function cleanGabaritString(raw: string | undefined | null): string {
+  if (raw === undefined || raw === null) return '';
+  let t = cleanValue(raw);
+  if (!t) return '';
+  if (DASH_ONLY.test(t)) return t;
+  if (/^pending$/i.test(t)) return 'PENDING';
+
+  // 1. Si toute la chaîne est entre crochets simples `[ ... ]`
+  if (/^\[[^[\]]+\]$/.test(t)) {
+    const inner = cleanValue(t.slice(1, -1));
+    if (isGabaritPlaceholder(normLabel(inner))) {
+      return '';
+    }
+    return inner;
+  }
+
+  // 2. Supprime les placeholders entre crochets inclus dans la chaîne (ex: "1000 nits [ valeur ]", "300 × 168,8 mm [ L×l mm ]")
+  const stripped = t.replace(/\[([^[\]]+)\]/g, (match, inner) => {
+    if (isGabaritPlaceholder(normLabel(inner))) {
+      return '';
+    }
+    return match;
+  });
+  t = cleanValue(stripped);
+
+  // 3. Après retrait des crochets, vérifier si le reste n'est lui-même qu'un placeholder (ex: "valeur" ou "valeur valeur")
+  if (isGabaritPlaceholder(normLabel(t))) {
+    return '';
+  }
+
+  // 4. Si la chaîne contient des résidus de découpage du placeholder « Modele N »
+  if (/\bModele\b/i.test(t)) {
+    const candidate = cleanValue(
+      t.replace(/\[?\s*Modele\s*/gi, '').replace(/\s+\d+\s*\]?$/, '').replace(/^[[\s]+/, '').replace(/[\s\]]+$/, '')
+    );
+    if (!candidate || isGabaritPlaceholder(normLabel(candidate)) || /^\d+$/.test(candidate)) {
+      return '';
+    }
+    return candidate;
+  }
+
+  return cleanValue(t.replace(/^[[\s]+/, '').replace(/[\s\]]+$/, ''));
+}
+
+/**
+ * Retire le chrome du gabarit (`[…]` aux extrémités) d'une valeur retenue et
+ * purge tout placeholder résiduel.
  */
 function stripSlotChrome(value: string): string {
-  return cleanValue(value.replace(/^[[\s]+/, '').replace(/[\s\]]+$/, ''));
+  return cleanGabaritString(value);
 }
 
 /**
@@ -297,8 +375,8 @@ function stripSlotChrome(value: string): string {
  * `false` pour : vide, tiret seul (`—`), placeholder du gabarit (y compris
  * saisi partiellement), et tout texte contenant un chevron de gabarit.
  *
- * Une valeur réelle entre crochets (`[ PXT-FINE-500 ]`) reste de la donnée :
- * le crochet fait partie de la mise en page, pas du contenu.
+ * Une valeur réelle entre crochets (`[ PXT-FINE-500 ]`) reste de la donnée.
+ * "PENDING" est une valeur autorisée.
  */
 export function isFilledSlot(raw: string | undefined | null): boolean {
   if (raw === undefined || raw === null) return false;
@@ -306,9 +384,12 @@ export function isFilledSlot(raw: string | undefined | null): boolean {
   if (!t) return false;
   if (DASH_ONLY.test(t)) return false;
   if (t.includes('<') || t.includes('>')) return false;
-  // Les crochets sont du chrome : on juge le contenu réel, sans eux.
-  const inner = t.replace(/[[\]]/g, ' ');
-  if (isGabaritPlaceholder(normLabel(inner))) return false;
+  if (/^pending$/i.test(t)) return true;
+
+  const cleaned = cleanGabaritString(raw);
+  if (!cleaned) return false;
+  if (DASH_ONLY.test(cleaned)) return false;
+  if (isGabaritPlaceholder(normLabel(cleaned))) return false;
   return true;
 }
 
@@ -526,8 +607,18 @@ function clusterByCenter(items: PdfTextItem[]): { cx: number; text: string }[] {
   // haut vers le bas. Le gabarit écrit le nom de variante sur la ligne haute
   // (`[ Modele`) et son crochet fermant sur la ligne basse (`1 ]`) : sans ce
   // tri, le `]` arrivait en premier et le nom sortait « ][ PXT-FINE-500 ».
+  //
+  // Le gabarit imprime un tiret cadratin `—` (U+2014) dans les cellules vides
+  // de la matrice comparative. Si un tel tiret partage une grappe avec une
+  // valeur réelle (centres à < 20 pt d'écart), il est retiré : sa présence
+  // ne signifie jamais « contenu » mais « emplacement réservé, pas encore
+  // rempli ». Sans ce filtre, la valeur sortait « —Indoor » ou « COB— ».
   return cells.map((c) => {
-    const ordered = [...c.items].sort((a, b) => a.x - b.x || b.y - a.y);
+    let ordered = [...c.items].sort((a, b) => a.x - b.x || b.y - a.y);
+    const hasRealContent = ordered.some((i) => !DASH_ONLY.test(i.str.trim()));
+    if (hasRealContent) {
+      ordered = ordered.filter((i) => !DASH_ONLY.test(i.str.trim()));
+    }
     return { cx: c.cx, text: joinItems(ordered) };
   });
 }
@@ -662,8 +753,8 @@ function pairValueOverLabel(
         bestLabel = label;
       }
     }
-    const v = cleanValue(value.str);
-    const l = bestLabel ? cleanValue(bestLabel.str) : '';
+    const v = cleanGabaritString(value.str);
+    const l = bestLabel ? cleanGabaritString(bestLabel.str) : '';
     if (isFilledSlot(v) && isFilledSlot(l)) pairs.push({ label: l.toUpperCase(), value: v });
   }
   return { pairs, endIndex: startIndex + 1 };
@@ -689,30 +780,50 @@ function parseMasthead(lines: PdfLine[]): Partial<ParsedFiche> {
   for (const line of lines) {
     // Ligne entreprise : 2 items, le premier est le logo (x≈46.5).
     if (line.items.length >= 2 && line.items[0].x < MARGIN_X) {
-      const company = cleanValue(line.items[0].str);
+      const company = cleanGabaritString(line.items[0].str);
       if (isFilledSlot(company) && out.company === undefined) out.company = company;
       continue;
     }
-    // Série / nom / sous-titre : le gabarit les distingue par leur abscisse ET
-    // leur corps de police. On accepte les lignes à plusieurs items quand ceux-ci
-    // sont des runs contigus du même texte (pdfjs découpe une boîte en runs de
-    // police) : mêmes corps et items alignés bout à bout, sinon ce sont des
-    // colonnes distinctes (marchés, badges).
+
+    const rawText = joinItems(line.items);
+    const cleaned = cleanGabaritString(rawText);
+
+    // 1. Détection par placeholder du gabarit (ex: "PXT SEAMLESS[ NOM DU PRODUIT ]")
+    const norm = rawText.toUpperCase();
+    if (norm.includes('NOM DU PRODUIT') && out.productName === undefined) {
+      if (isFilledSlot(cleaned)) out.productName = cleaned;
+      continue;
+    }
+    if (norm.includes('SERIE / CATEGORIE') && out.series === undefined) {
+      if (isFilledSlot(cleaned)) out.series = cleaned;
+      continue;
+    }
+    if (norm.includes('SOUS-TITRE PRODUIT') && out.subtitle === undefined) {
+      if (isFilledSlot(cleaned)) out.subtitle = cleaned;
+      continue;
+    }
+
+    // 2. Détection géométrique (abscisse, ordonnée, taille) si le placeholder a été remplacé
     const match = slots.find((s) => {
       if (out[s.key] !== undefined) return false;
       if (line.items.length === 0) return false;
-      if (Math.abs(line.items[0].x - s.x) > 3) return false;
-      if (!line.items.every((i) => Math.abs(i.size - s.size) <= 1.5)) return false;
-      for (let k = 1; k < line.items.length; k++) {
-        const prev = line.items[k - 1];
-        const cur = line.items[k];
-        if (cur.x - (prev.x + prev.w) > ITEM_GAP) return false;
+      if (Math.abs(line.items[0].x - s.x) > 6 && Math.abs(line.items[0].x - MARGIN_X) > 15) return false;
+
+      const maxSize = Math.max(...line.items.map((i) => i.size));
+      if (s.key === 'productName') {
+        return maxSize >= 15 || (line.y >= 710 && line.y <= 738);
       }
-      return true;
+      if (s.key === 'series') {
+        return line.y >= 740 && line.y <= 770 && maxSize <= 13;
+      }
+      if (s.key === 'subtitle') {
+        return line.y >= 690 && line.y <= 715 && maxSize <= 14;
+      }
+      return false;
     });
+
     if (match) {
-      const text = cleanValue(joinItems(line.items));
-      if (isFilledSlot(text)) out[match.key] = text;
+      if (isFilledSlot(cleaned)) out[match.key] = cleaned;
       continue;
     }
   }
@@ -740,7 +851,7 @@ function parseMasthead(lines: PdfLine[]): Partial<ParsedFiche> {
     const cols = lineColumns(line.items);
     if (cols.length !== 4) continue;
     if (!cols.every((i) => i.size >= 6.9 && i.size <= 8.1)) continue;
-    const markets = cols.map((i) => cleanValue(i.str)).filter(isFilledSlot);
+    const markets = cols.map((i) => cleanGabaritString(i.str)).filter(isFilledSlot);
     if (markets.length && out.markets === undefined) out.markets = markets;
   }
   return out;
@@ -905,8 +1016,9 @@ function parseDesign(lines: PdfLine[]): ParsedFiche['design'] {
       });
       if (best === -1) continue;
       taken.add(best);
-      const value = cleanValue(values[best].str);
-      if (isFilledSlot(value)) dimensions.push({ label: cleanValue(label.str), value });
+      const value = cleanGabaritString(values[best].str);
+      const lText = cleanGabaritString(label.str);
+      if (isFilledSlot(value)) dimensions.push({ label: lText || cleanValue(label.str), value });
     }
     if (dimensions.length) {
       out.dimensions = dimensions;
@@ -1096,10 +1208,43 @@ function isSpecLabelLine(line: PdfLine): boolean {
   return line.items.length === 1 && normLabel(line.text) === 'SPEC';
 }
 
-function parseSpecMatrix(lines: PdfLine[]): {
+/** Items d'une ligne appartenant réellement à la zone colonnes. */
+function headerZoneItems(line: PdfLine): PdfTextItem[] {
+  return line.items.filter((i) => i.x >= SPEC_COL_MIN_X);
+}
+
+/**
+ * Une ligne appartient à l'en-tête si chacun de ses items est soit dans la zone
+ * colonnes, soit le libellé statique « SPEC » posé à gauche.
+ *
+ * Dans le gabarit officiel, « SPEC » (x=70.3) partage la ligne basse des noms de
+ * variante (y=729) avec les seconds fragments `[ Modele` / `1 ]`. Filtrer cette
+ * ligne sur le seul critère « tous les items en zone colonnes » la faisait
+ * rejeter : une référence qui déborde, comme « PXT-P1.25 » coupée en
+ * « [ PXT-P1 » / « .25 ] », perdait son « .25 » et devenait « PXT-P1 ».
+ */
+function isHeaderLine(line: PdfLine): boolean {
+  if (headerZoneItems(line).length === 0) return false;
+  return line.items.every((i) => i.x >= SPEC_COL_MIN_X || normLabel(i.str) === 'SPEC');
+}
+
+/**
+ * Analyse un bloc de la matrice 04.
+ *
+ * `inheritedVariants` porte les colonnes déjà découvertes par le tableau
+ * précédent : une continuation qui ne répète pas l'en-tête de variante (rupture
+ * de page, nouveau bandeau de section) reste alors lisible au lieu d'être
+ * ignorée. Sans en-tête, ce sont les centres des cellules des lignes de données
+ * qui placent chaque valeur sous la bonne colonne.
+ */
+function parseSingleSpecTable(
+  lines: PdfLine[],
+  inheritedVariants?: { cx: number; name: string }[]
+): {
   groups: NonNullable<ParsedFiche['specs']>['groups'];
   models: { name: string; specs: Record<string, string> }[];
   warnings: string[];
+  variants: { cx: number; name: string }[];
 } {
   const warnings: string[] = [];
   const groups: NonNullable<ParsedFiche['specs']>['groups'] = [];
@@ -1111,44 +1256,75 @@ function parseSpecMatrix(lines: PdfLine[]): {
   //    conclure à tort à une matrice sans en-tête.
   //    On collecte ensuite les lignes consécutives dont TOUS les items sont
   //    dans la zone colonnes. Le libellé statique `SPEC` (x=70.3) est ignoré,
-  //    mais le décrochement d'en-tête (`[ Modele` puis `1 ]`) est conservé.
+  //    mais le décrochement d'en-tête (`[ Modele` puis `1 ]`) est conservé —
+  //    y compris quand `SPEC` partage la ligne basse des fragments.
   let start = 0;
   while (start < lines.length && !isHeaderZoneLine(lines[start]) && !isSpecLabelLine(lines[start])) {
     start++;
   }
-  const headerLines: PdfLine[] = [];
+  const headerItems: PdfTextItem[] = [];
   let cursor = start;
   for (; cursor < lines.length; cursor++) {
     const line = lines[cursor];
     if (isHeaderZoneLine(line)) {
-      headerLines.push(line);
+      headerItems.push(...line.items);
       continue;
     }
     if (isSpecLabelLine(line)) continue;
+    if (isHeaderLine(line)) {
+      headerItems.push(...headerZoneItems(line));
+      continue;
+    }
     break;
   }
-  if (headerLines.length === 0) {
-    warnings.push('Aucun en-tête de colonne détecté dans la matrice des caractéristiques.');
-    return { groups, models, warnings };
+  // 2. Colonnes : regroupement des items d'en-tête par centre.
+  const variants: { cx: number; name: string }[] = [];
+  if (headerItems.length > 0) {
+    const headerCells = clusterByCenter(headerItems);
+    let skippedColumns = 0;
+    for (const cell of headerCells) {
+      const name = stripSlotChrome(cell.text);
+      if (isFilledSlot(name)) variants.push({ cx: cell.cx, name });
+      else skippedColumns++;
+    }
+    if (skippedColumns > 0) {
+      warnings.push(
+        `${skippedColumns} colonne(s) d'en-tête sans nom de modèle ignorée(s) : un nom de variante est obligatoire.`
+      );
+    }
   }
 
-  // 2. Colonnes : regroupement des items d'en-tête par centre.
-  const headerCells = clusterByCenter(headerLines.flatMap((l) => l.items));
-  const variants: { cx: number; name: string }[] = [];
-  let skippedColumns = 0;
-  for (const cell of headerCells) {
-    const name = stripSlotChrome(cell.text);
-    if (isFilledSlot(name)) variants.push({ cx: cell.cx, name });
-    else skippedColumns++;
-  }
-  if (skippedColumns > 0) {
-    warnings.push(
-      `${skippedColumns} colonne(s) d'en-tête sans nom de modèle ignorée(s) : un nom de variante est obligatoire.`
-    );
-  }
+  // Bloc de suite SANS en-tête de variante (rupture de page, bandeau de section
+  // répété) : on réemploie les colonnes déjà découvertes par le tableau précédent.
+  // Sans ce repli, toutes les lignes de ce bloc étaient ignorées et les valeurs
+  // de la page suivante disparaissaient de la fiche.
   if (variants.length === 0) {
-    warnings.push("Aucun nom de variante exploitable : la matrice ne contient que des placeholders du gabarit.");
-    return { groups, models, warnings };
+    if (inheritedVariants?.length) {
+      // Repli sur les colonnes du tableau précédent. `splitSpecTables` isole
+      // aussi des blocs réduits au bandeau de section (« 04 | Tableau 2 »), que
+      // `isGroupHeaderLine` reconnaît à tort comme un en-tête de groupe : on
+      // exige donc au moins deux lignes de caractéristiques, soit une vraie
+      // continuation de tableau.
+      const rowIndexes = lines.flatMap((l, i) => {
+        const label = cleanValue(joinItems(l.items.filter((it) => it.x < LABEL_ZONE_MAX_X)));
+        return isFilledSlot(label) ? [i] : [];
+      });
+      if (rowIndexes.length < 2) return { groups, models, warnings, variants: [] };
+      const firstGroup = lines.findIndex((l) => isGroupHeaderLine(l));
+      variants.push(...inheritedVariants.map((v) => ({ ...v })));
+      cursor = firstGroup === -1 ? rowIndexes[0] : firstGroup;
+      warnings.push(
+        'Tableau de suite sans en-tête de variante : colonnes reprises du tableau précédent.'
+      );
+    } else if (headerItems.length === 0) {
+      warnings.push('Aucun en-tête de colonne détecté dans la matrice des caractéristiques.');
+      return { groups, models, warnings, variants: [] };
+    } else {
+      warnings.push(
+        "Aucun nom de variante exploitable : la matrice ne contient que des placeholders du gabarit."
+      );
+      return { groups, models, warnings, variants: [] };
+    }
   }
   for (const v of variants) models.push({ name: v.name, specs: {} });
   const centers = variants.map((v) => v.cx);
@@ -1233,9 +1409,160 @@ function parseSpecMatrix(lines: PdfLine[]): {
   // c'est le cas d'un gabarit vierge.
   if (models.every((m) => Object.keys(m.specs).length === 0)) {
     warnings.push('Matrice des caractéristiques sans aucune valeur renseignée.');
-    return { groups: [], models: [], warnings };
+    return { groups: [], models: [], warnings, variants: [] };
   }
-  return { groups: pruned, models, warnings };
+  return { groups: pruned, models, warnings, variants };
+}
+
+/** Détecte un marqueur textuel marquant un nouveau tableau ou une suite. */
+function isTableMarkerLine(line: PdfLine): boolean {
+  const norm = normLabel(line.text);
+  if (/(?:^|\b)(TABLEAU|TABLE)\s*\d+/i.test(norm)) return true;
+  if (norm.includes('CARACTERISTIQUES TECHNIQUES') || norm.includes('SPECIFICATIONS')) return true;
+  if (/^04(\b|$)/.test(norm)) return true;
+  return false;
+}
+
+/**
+ * Découpe les lignes de la section 04 en sous-tableaux indépendants.
+ * Un nouveau tableau commence dès qu'un nouvel en-tête de colonnes
+ * ou un marqueur de tableau apparaît APRÈS qu'on est entré dans la zone
+ * de données d'un tableau précédent.
+ */
+function splitSpecTables(lines: PdfLine[]): PdfLine[][] {
+  if (lines.length === 0) return [];
+  const tables: PdfLine[][] = [];
+  let currentTable: PdfLine[] = [];
+  let inDataZone = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const isHeader = isHeaderZoneLine(line) || isSpecLabelLine(line) || isHeaderLine(line);
+    const isMarker = isTableMarkerLine(line);
+
+    if (inDataZone && (isHeader || isMarker)) {
+      if (currentTable.length > 0) {
+        tables.push(currentTable);
+        currentTable = [];
+        inDataZone = false;
+      }
+    }
+
+    currentTable.push(line);
+
+    if (!inDataZone) {
+      const hasLabelOrGroup =
+        isGroupHeaderLine(line) ||
+        (line.items.some((item) => item.x < LABEL_ZONE_MAX_X) && !isSpecLabelLine(line));
+      if (hasLabelOrGroup && !isHeader) {
+        inDataZone = true;
+      }
+    }
+  }
+
+  if (currentTable.length > 0) {
+    tables.push(currentTable);
+  }
+
+  return tables;
+}
+
+/**
+ * Analyse la section 04 des spécifications en traitant un ou plusieurs tableaux
+ * (variants 1..4, variants 5..8, etc.) sans limite arbitraire de colonnes,
+ * et en fusionnant intelligemment les en-têtes répétés (GENERAL, PHYSIQUE...).
+ */
+function parseSpecMatrix(lines: PdfLine[]): {
+  groups: NonNullable<ParsedFiche['specs']>['groups'];
+  models: { name: string; specs: Record<string, string> }[];
+  warnings: string[];
+} {
+  const tableBlocks = splitSpecTables(lines);
+  if (tableBlocks.length === 0) {
+    return {
+      groups: [],
+      models: [],
+      warnings: ['Aucun en-tête de colonne détecté dans la matrice des caractéristiques.'],
+    };
+  }
+
+  const allWarnings: string[] = [];
+  const combinedGroups: NonNullable<ParsedFiche['specs']>['groups'] = [];
+  const combinedModels: { name: string; specs: Record<string, string> }[] = [];
+  // Colonnes du dernier tableau exploitable : servies aux blocs de suite qui ne
+  // répètent pas l'en-tête de variante.
+  let lastVariants: { cx: number; name: string }[] | undefined;
+
+  for (const block of tableBlocks) {
+    const tableRes = parseSingleSpecTable(block, lastVariants);
+    allWarnings.push(...tableRes.warnings);
+    if (tableRes.variants.length > 0) lastVariants = tableRes.variants;
+
+    if (tableRes.models.length === 0) continue;
+
+    // Fusionner les modèles (variantes)
+    for (const model of tableRes.models) {
+      const existing = combinedModels.find((m) => m.name.toLowerCase() === model.name.toLowerCase());
+      if (existing) {
+        // Même variante qui continue sur un tableau suivant (ex: suite des
+        // caractéristiques). Une cellule déjà renseignée n'est JAMAIS écrasée :
+        // Object.assign faisait disparaître silencieusement une valeur réelle si
+        // le tableau suivant réimprimait la ligne avec une cellule vide ou
+        // redondante.
+        for (const [key, value] of Object.entries(model.specs)) {
+          if (existing.specs[key] === undefined || existing.specs[key] === '') {
+            existing.specs[key] = value;
+          } else if (existing.specs[key] !== value) {
+            allWarnings.push(
+              `Valeur en conflit pour « ${model.name} » : « ${key} » conserve « ${existing.specs[key]} » et ignore « ${value} ».`
+            );
+          }
+        }
+      } else {
+        // Nouvelle variante (ex: Tableau 2 avec variantes 5 à 8)
+        combinedModels.push({
+          name: model.name,
+          specs: { ...model.specs },
+        });
+      }
+    }
+
+    // Fusionner les groupes et leurs lignes (ex: GENERAL, PHYSIQUE répétés dans chaque tableau)
+    for (const group of tableRes.groups) {
+      const existingGroup = combinedGroups.find(
+        (g) => g.id === group.id || normLabel(g.label) === normLabel(group.label)
+      );
+      if (existingGroup) {
+        // Le groupe existe déjà : fusionner les lignes sans doublon
+        for (const row of group.rows) {
+          const rowExists = existingGroup.rows.some(
+            (r) => r.key === row.key || normLabel(r.label) === normLabel(row.label)
+          );
+          if (!rowExists) {
+            existingGroup.rows.push({ ...row });
+          }
+        }
+      } else {
+        // Nouveau groupe
+        combinedGroups.push({
+          id: group.id,
+          label: group.label,
+          rows: group.rows.map((r) => ({ ...r })),
+        });
+      }
+    }
+  }
+
+  // Filtrer les groupes qui n'ont aucune ligne
+  const pruned = combinedGroups.filter((g) => g.rows.length > 0);
+
+  // Si aucun modèle n'a de valeur renseignée
+  if (combinedModels.length === 0 || combinedModels.every((m) => Object.keys(m.specs).length === 0)) {
+    allWarnings.push('Matrice des caractéristiques sans aucune valeur renseignée.');
+    return { groups: [], models: [], warnings: allWarnings };
+  }
+
+  return { groups: pruned, models: combinedModels, warnings: allWarnings };
 }
 
 /** 05 · RÉFÉRENCES TERRAIN */

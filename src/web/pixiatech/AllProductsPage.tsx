@@ -13,7 +13,7 @@ import { Language } from '../pixiatech-translations';
 import { useCms } from '@/lib/site-web/cms-context';
 import { useI18n } from '@/lib/i18n';
 import { ProductsProvider, useProducts } from '@/lib/products/products-context';
-import type { ProductCategory, ProductCategoryGroup, ProductRecord } from '@/lib/products/types';
+import type { ProductCategoryGroup, ProductRecord } from '@/lib/products/types';
 import { categoryDisplayName, groupDisplayName, productCategoryIds } from '@/lib/products/types';
 import { trackProductClick, setLang as trackerSetLang } from '@/lib/analytics/tracker';
 
@@ -22,15 +22,10 @@ interface AllProductsPageProps {
 }
 
 function envBadge(env: string, lang: Language): string {
-  if (lang !== 'FR' || env === 'IN / OUT') {
-    return env === 'IN / OUT' && lang === 'FR' ? 'INT / EXT' : env;
-  }
-  return env === 'INDOOR' ? 'INTÃ‰RIEUR' : 'EXTÃ‰RIEUR';
+  if (env === 'IN / OUT') return lang === 'FR' ? 'INT / EXT' : 'IN / OUT';
+  if (lang !== 'FR') return env;
+  return env === 'INDOOR' ? 'INTÉRIEUR' : 'EXTÉRIEUR';
 }
-
-// Les filtres ENVIRONMENT / APPLICATION sont construits dynamiquement depuis
-// la collection Firestore `product_categories` (taxonomie CMS). Chaque produit
-// reel porte lui-meme ses IDs de categories (productCategoryIds).
 
 interface CatalogCard {
   key: string;
@@ -41,7 +36,7 @@ interface CatalogCard {
   imgBack: string | null;
   env: string;
   apps: string[];
-  /** IDs de catÃ©gories (taxonomie CMS) â€” utilisÃ©s pour le filtrage. */
+  /** IDs de catégories (taxonomie CMS) — utilisés pour le filtrage. */
   categoryIds: string[];
   sub: string;
   pitch: string;
@@ -53,6 +48,12 @@ function mainImageOf(p: ProductRecord | null): string | null {
   return p?.media?.photos?.find((ph) => ph.url)?.url ?? p?.hero?.image ?? null;
 }
 
+/**
+ * Libellé d'environnement. Un produit dont l'environnement n'est pas
+ * renseigné ne renvoie RIEN : afficher « INTÉRIEUR » par défaut inventait une
+ * donnée absente de la fiche, au même titre qu'un produit extérieur étiqueté
+ * intérieur.
+ */
 function envLabel(e?: ProductRecord['environment']): string {
   switch (e) {
     case 'outdoor':
@@ -62,7 +63,7 @@ function envLabel(e?: ProductRecord['environment']): string {
     case 'showcase':
       return 'INDOOR';
     default:
-      return 'INDOOR';
+      return '';
   }
 }
 
@@ -72,13 +73,13 @@ function subOf(p: ProductRecord, lang: Language): string {
     : p.description?.shortEn ?? p.hero?.subtitle ?? '';
 }
 
-// RÃ©solution sÃ©mantique (jamais par position) : champ canonique explicite
-// d'abord, puis hero.specs par label (docs crÃ©Ã©s avant les champs explicites).
-// Une caractÃ©ristique absente affiche Â« â€” Â» â€” aucun remplacement croisÃ©.
+// Résolution sémantique (jamais par position) : champ canonique explicite
+// d'abord, puis hero.specs par label (docs créés avant les champs explicites).
+// Une caractéristique absente affiche « — » — aucun remplacement croisé.
 const SPEC_KIND: Record<'pitch' | 'brightness' | 'cabinet', RegExp> = {
   pitch: /^\s*pitch\s*pixel|^\s*pixel\s*pitch/i,
   brightness: /^\s*luminos|^\s*brightness/i,
-  cabinet: /^\s*ch[Ã¢a]ssis|^\s*cabinet/i,
+  cabinet: /^\s*ch[âa]ssis|^\s*cabinet/i,
 };
 
 function specValue(p: ProductRecord, kind: 'pitch' | 'brightness' | 'cabinet'): string {
@@ -90,7 +91,7 @@ function specValue(p: ProductRecord, kind: 'pitch' | 'brightness' | 'cabinet'): 
         : p.cabinetDimensions;
   if (explicit) return explicit;
   const entry = (p.hero?.specs ?? []).find((s) => SPEC_KIND[kind].test(s.label ?? ''));
-  return entry?.value ?? 'â€”';
+  return entry?.value ?? '—';
 }
 
 function realCard(p: ProductRecord, lang: Language): CatalogCard {
@@ -121,15 +122,15 @@ function AllProductsView({
   onOpenConsultation,
 }: AllProductsPageProps) {
   const router = useRouter();
-  const { products, categories, groups } = useProducts();
-  // Meme source de langue que le header (contexte i18n global, persiste).
+  const { products, categories, groups, loading } = useProducts();
+  // Même source de langue que le header (contexte i18n global, persiste).
   const { locale } = useI18n();
   const lang: Language = locale === 'en' ? 'EN' : 'FR';
   useEffect(() => {
     trackerSetLang(locale);
   }, [locale]);
   const [consultOpen, setConsultOpen] = useState(false);
-  /** Filtre actif par groupe = ID de catÃ©gorie CMS (ou 'All'). */
+  /** Filtre actif par groupe = ID de catégorie CMS (ou 'All'). */
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [query, setQuery] = useState('');
   const [hovered, setHovered] = useState<string | null>(null);
@@ -149,41 +150,46 @@ function AllProductsView({
 
   const t = {
     eyebrow: lang === 'FR' ? 'PIXIATECH / TOUS LES PRODUITS' : 'PIXIATECH / ALL PRODUCTS',
-    h1Line1: lang === 'FR' ? 'Trouvez l\'Ã©cran' : 'Find the display',
+    h1Line1: lang === 'FR' ? 'Trouvez l\'écran' : 'Find the display',
     h1Line2: lang === 'FR' ? 'fait pour votre espace.' : 'built for your space.',
     desc: lang === 'FR'
-      ? 'Le catalogue complet PixiaTech â€” installation fixe, location, transparent, cinÃ©tique et crÃ©atif.'
-      : 'The complete PixiaTech display catalog â€” fixed installation, rental, transparent, kinetic and creative systems.',
+      ? 'Le catalogue complet PixiaTech — installation fixe, location, transparent, cinétique et créatif.'
+      : 'The complete PixiaTech display catalog — fixed installation, rental, transparent, kinetic and creative systems.',
     all: lang === 'FR' ? 'TOUS' : 'ALL',
     search: lang === 'FR' ? 'RECHERCHER' : 'SEARCH',
-    searchPlaceholder: lang === 'FR' ? 'Rechercher un produitâ€¦' : 'Search productsâ€¦',
+    searchPlaceholder: lang === 'FR' ? 'Rechercher un produit…' : 'Search products…',
     clearSearch: lang === 'FR' ? 'Effacer la recherche' : 'Clear search',
-    rearView: lang === 'FR' ? 'vue arriÃ¨re' : 'rear view',
-    series: lang === 'FR' ? 'SÃ‰RIES' : 'SERIES',
-    startProject: lang === 'FR' ? 'DÃ‰MARRER UN PROJET' : 'START A PROJECT',
+    rearView: lang === 'FR' ? 'vue arrière' : 'rear view',
+    series: lang === 'FR' ? 'SÉRIES' : 'SERIES',
+    startProject: lang === 'FR' ? 'DÉMARRER UN PROJET' : 'START A PROJECT',
     pixelPitch: lang === 'FR' ? 'PAS DE PIXEL' : 'PIXEL PITCH',
-    brightness: lang === 'FR' ? 'LUMINOSITÃ‰' : 'BRIGHTNESS',
+    brightness: lang === 'FR' ? 'LUMINOSITÉ' : 'BRIGHTNESS',
     cabinet: 'CABINET',
   };
 
-  // Le catalogue n'affiche que les produits reels publies dans Firestore. La
-  // liste de series legacy codee en dur a ete retiree : elle continuait de
-  // s'afficher en plus des produits reels et empechait de partir d'un
-  // catalogue vide. Les filtres de categories restent construits depuis la
-  // taxonomie CMS.
+  // Le catalogue n'affiche que les produits réels publiés dans Firestore.
   const merged = useMemo(
     () => products.filter((p) => p.status === 'published').map((p) => realCard(p, lang)),
     [products, lang]
   );
 
-  /** Sections de filtres : groupes actifs, dans l'ordre, avec leurs options
- *  actives triÃ©es. Un groupe sans option active est masquÃ© du front-end. */
+  /** IDs de catégories effectivement utilisées par au moins un produit publié. */
+  const usedCategoryIds = useMemo(
+    () => new Set(merged.flatMap((p) => p.categoryIds)),
+    [merged]
+  );
+
+  /**
+   * Sections de filtres : groupes actifs, dans l'ordre, avec UNIQUEMENT les
+   * options qui correspondent à au moins un produit publié.
+   * Un groupe sans option active ou sans produit correspondant est masqué.
+   */
   const sections = useMemo(() => {
     return groups
       .filter((g) => g.active)
-      .map((g) => {
+      .map((g: ProductCategoryGroup) => {
         const options = categories
-          .filter((c) => c.type === g.key && c.active)
+          .filter((c) => c.type === g.key && c.active && usedCategoryIds.has(c.id))
           .sort((a, b) => {
             const oa = typeof a.order === 'number' ? a.order : Number.MAX_SAFE_INTEGER;
             const ob = typeof b.order === 'number' ? b.order : Number.MAX_SAFE_INTEGER;
@@ -192,13 +198,13 @@ function AllProductsView({
         return { group: g, options };
       })
       .filter((s) => s.options.length > 0);
-  }, [groups, categories]);
+  }, [groups, categories, usedCategoryIds]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return merged.filter((p) => {
-      // Conjonction de groupes : chaque groupe dont une option est sÃ©lectionnÃ©e
-      // doit matcher (jamais par libellÃ© â€” uniquement par ID de catÃ©gorie).
+      // Conjonction de groupes : chaque groupe dont une option est sélectionnée
+      // doit matcher (jamais par libellé — uniquement par ID de catégorie).
       const matchSections = sections.every((s) => {
         const sel = filters[s.group.key];
         if (!sel || sel === 'All') return true;
@@ -369,8 +375,12 @@ function AllProductsView({
               </div>
             </div>
 
-            {/* Sections de filtres â€” gÃ©nÃ©rÃ©es depuis les groupes du CMS */}
-            {sections.map(({ group, options }, index) => {
+            {/* Sections de filtres — uniquement les catégories actives avec au moins 1 produit.
+                Pendant le chargement du catalogue, les options sont dérivées d'un
+                catalogue vide : les afficher reviendrait à proposer des filtres
+                qui ne correspondent à aucun produit. */}
+            {!loading &&
+              sections.map(({ group, options }, index) => {
               const activeId = filters[group.key] ?? 'All';
               const setFilter = (id: string) =>
                 setFilters((prev) => ({ ...prev, [group.key]: id }));
@@ -524,7 +534,7 @@ function AllProductsView({
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={p.imgBack}
-                          alt={`${p.name} â€” ${t.rearView}`}
+                          alt={`${p.name} — ${t.rearView}`}
                           className="slot-img slot-contain"
                           loading="lazy"
                           style={{
@@ -562,7 +572,7 @@ function AllProductsView({
                       >
                         {p.name}
                       </div>
-                      <div
+                      {p.env && <div
                         style={{
                           fontSize: 10,
                           letterSpacing: '.18em',
@@ -573,7 +583,7 @@ function AllProductsView({
                         }}
                       >
                         {envBadge(p.env, lang)}
-                      </div>
+                      </div>}
                     </div>
 
                     <div
@@ -654,7 +664,10 @@ function AllProductsView({
             })}
           </div>
 
-          {filtered.length === 0 && (
+          {/* « Aucun résultat » décrit un FILTRE, pas un catalogue en cours de chargement :
+                afficher ce message avant la fin du chargement affirmait à tort
+                qu'aucun produit n'existe. */}
+          {!loading && filtered.length === 0 && (
             <div
               style={{
                 marginTop: 48,
@@ -664,10 +677,10 @@ function AllProductsView({
               }}
             >
               <div style={{ fontSize: 11, letterSpacing: '.2em', color: '#8A8880', fontFamily: 'var(--font-mono)', fontWeight: 700, textTransform: 'uppercase', marginBottom: 10 }}>
-                {lang === 'FR' ? 'AUCUN RÃ‰SULTAT' : 'NO RESULTS'}
+                {lang === 'FR' ? 'AUCUN RÉSULTAT' : 'NO RESULTS'}
               </div>
               {lang === 'FR'
-                ? 'Aucun produit ne correspond Ã  votre recherche.'
+                ? 'Aucun produit ne correspond à votre recherche.'
                 : 'No products match your search.'}
             </div>
           )}
@@ -708,7 +721,7 @@ function AllProductsView({
                 }}
               >
                 {lang === 'FR'
-                  ? 'Nos ingÃ©nieurs trouvent la solution.'
+                  ? 'Nos ingénieurs trouvent la solution.'
                   : 'Our engineers will find the solution.'}
               </p>
             </div>

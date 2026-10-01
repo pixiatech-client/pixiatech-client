@@ -94,9 +94,11 @@ export interface PageContentConfig {
     contactInfoCard: boolean;
     infoHqHeroCard: boolean;
     infoCoordinatesCard: boolean;
+    infoCompanyRow: boolean;
     infoAddressRow: boolean;
     infoPhonesRow: boolean;
     infoEmailRow: boolean;
+    infoSupportEmailRow: boolean;
     infoWhatsappRow: boolean;
     infoWorkingHoursRow: boolean;
     infoRadarMapCard: boolean;

@@ -3,13 +3,30 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { SpecModel, SpecValue } from '../types';
 import { Language } from '../data/translations';
-import type { ProductSpecs, ProductSpecModel } from '@/lib/products/types';
+import { shopLinkForVariant } from '@/lib/products/types';
+import type { ProductShopLinks, ProductSpecs, ProductSpecModel } from '@/lib/products/types';
 
 interface SpecsSectionProps {
-  onSelectDatasheet: (model: SpecModel) => void;
+  /**
+   * Ouverture de la fiche technique PDF d'une variante.
+   *
+   * PLUS UTILISÉE par ce tableau : ce bouton est devenu « Acheter le
+   * produit » (il pointe vers la boutique, pas vers un PDF), donc la
+   * matrice n'a plus de déclencheur de fiche technique. La prop reste
+   * déclarée, optionnelle et ignorée, pour que `ProductPageTemplate`
+   * conserve son câblage tel quel : la modale reste atteignable par un
+   * autre chemin sans que la section ait à être refactorisée.
+   */
+  onSelectDatasheet?: (model: SpecModel) => void;
   lang?: Language;
   /** Matrice produit (template dynamique). */
   specs?: ProductSpecs;
+  /**
+   * Liens boutique par variante, indexés par nom de modèle. Donnée d'admin :
+   * une variante sans lien (clé absente ou URL rejetée à la normalisation)
+   * n'affiche AUCUN bouton — jamais de lien vide ni de `href="#"`.
+   */
+  shopLinks?: ProductShopLinks;
 }
 
 function toSpecModel(model: ProductSpecModel): SpecModel {
@@ -20,7 +37,30 @@ function toSpecModel(model: ProductSpecModel): SpecModel {
   return { name: model.name, tag: model.tag || 'DATASHEET', specs };
 }
 
-export const SpecsSection: React.FC<SpecsSectionProps> = ({ onSelectDatasheet, lang = 'FR', specs }) => {
+/**
+ * Neutralise un libellé dupliqué À L'AFFICHAGE UNIQUEMENT.
+ *
+ * Certains PDF dessinent deux fois le même texte au même emplacement ; le
+ * parser joint alors les deux fragments sans séparateur et le libellé arrive
+ * sous la forme « CERTIFICATIONSCERTIFICATIONS ».
+ *
+ * Ni le PDF, ni le parser, ni les données stockées ne sont modifiés : seule la
+ * chaîne présentée est normalisée. La règle est volontairement étroite — le
+ * libellé entier doit être le doublon EXACT d'un même fragment d'au moins
+ * 3 caractères — donc aucun libellé légitime (« Pixel pitch », « IP rating »,
+ * « Certifications ») n'est jamais réécrit.
+ */
+function collapseDoubledLabel(label: string): string {
+  const text = label.trim();
+  if (text.length % 2 !== 0) return text;
+  const half = text.length / 2;
+  if (half < 3) return text;
+  const first = text.slice(0, half);
+  if (first !== text.slice(half)) return text;
+  return /\p{L}/u.test(first) ? first : text;
+}
+
+export const SpecsSection: React.FC<SpecsSectionProps> = ({ lang = 'FR', specs, shopLinks }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
@@ -240,7 +280,13 @@ export const SpecsSection: React.FC<SpecsSectionProps> = ({ onSelectDatasheet, l
                 {lang === 'FR' ? 'MODÈLE' : 'MODEL'}
               </div>
 
-              {models.map((model) => (
+              {models.map((model) => {
+                // Lien boutique de CETTE variante. La règle de visibilité vit
+                // dans `shopLinkForVariant` : chaîne vide = aucun bouton, donc
+                // jamais de lien mort ni de `#` affiché au visiteur.
+                const shopUrl = shopLinkForVariant(shopLinks, model.name);
+                const shopIsExternal = shopUrl !== '' && !shopUrl.startsWith('/');
+                return (
                 <div
                   key={model.name}
                   className="spec-head"
@@ -262,37 +308,49 @@ export const SpecsSection: React.FC<SpecsSectionProps> = ({ onSelectDatasheet, l
                   >
                     {model.name}
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => onSelectDatasheet(model as SpecModel)}
-                    style={{
-                      display: 'inline-block',
-                      marginTop: '10px',
-                      border: '1px solid rgba(195, 249, 16, 0.45)',
-                      padding: '6px 12px',
-                      fontSize: '10px',
-                      letterSpacing: '.16em',
-                      color: '#C3F910',
-                      background: 'rgba(195, 249, 16, 0.04)',
-                      cursor: 'pointer',
-                      transition: 'all .2s ease',
-                      fontWeight: 600,
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = '#C3F910';
-                      e.currentTarget.style.color = '#000000';
-                      e.currentTarget.style.background = '#C3F910';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = 'rgba(195, 249, 16, 0.45)';
-                      e.currentTarget.style.color = '#C3F910';
-                      e.currentTarget.style.background = 'rgba(195, 249, 16, 0.04)';
-                    }}
-                  >
-                    {lang === 'FR' ? 'FICHE TECHNIQUE' : 'DATASHEET'}
-                  </button>
+                  {/* BOUTON ACHAT — unique bouton de la cellule.
+                      Règle de rendu : strictement `shopUrl &&`. Aucune
+                      variante ne peut faire apparaître ce bouton par son
+                      simple fait d'exister : il faut une URL valide rangée
+                      dans `product.shopLinks[model.name]`. Pas de `href=""`,
+                      pas de `#`, pas de placeholder, pas de lien par défaut.
+                      `href` reçoit l'URL ENREGISTRÉE, telle quelle : rien
+                      n'est reconstruit ici. Un lien interne garde la
+                      navigation du site ; un lien externe s'ouvre en
+                      nouvel onglet avec `rel="noopener noreferrer"`. */}
+                  {shopUrl && (
+                    <a
+                      href={shopUrl}
+                      {...(shopIsExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                      style={{
+                        display: 'inline-block',
+                        marginTop: '10px',
+                        border: '1px solid #C3F910',
+                        padding: '6px 12px',
+                        fontSize: '10px',
+                        letterSpacing: '.16em',
+                        color: '#000000',
+                        background: '#C3F910',
+                        cursor: 'pointer',
+                        transition: 'all .2s ease',
+                        fontWeight: 700,
+                        textDecoration: 'none',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = '#d4ff2e';
+                        e.currentTarget.style.borderColor = '#d4ff2e';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = '#C3F910';
+                        e.currentTarget.style.borderColor = '#C3F910';
+                      }}
+                    >
+                      {lang === 'FR' ? 'ACHETER LE PRODUIT' : 'BUY THE PRODUCT'}
+                    </a>
+                  )}
                 </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Spec Groups */}
@@ -302,13 +360,24 @@ export const SpecsSection: React.FC<SpecsSectionProps> = ({ onSelectDatasheet, l
               // React duplique ou omet alors des enfants.
               <div key={`${grp.label || 'grp'}::${grpIdx}`}>
                 {/* En-tête de groupe — absent quand les lignes n'ont pas de
-                    libellé de groupe (matrice saisie sans structure). */}
+                    libellé de groupe (matrice saisie sans structure).
+
+                    Séparation de catégorie : filet vert 1px sur toute la largeur
+                    du tableau + voile vert très léger (≤ 7 % d'opacité) qui
+                    s'estompe vers la droite. Vert en LITTÉRAL `#C3F910` — celui
+                    de `web.css` et de la fiche technique — et non `var(--accent)`,
+                    que la palette du back-office réécrit : aucune couleur
+                    inventée. Les largeurs de colonnes (240px / 280px) sont
+                    inchangées : rien ne peut déformer la matrice, quel que soit
+                    le nombre de variantes. */}
                 {grp.label && (
                 <div
                   style={{
                     display: 'flex',
-                    borderBottom: '1px solid var(--dark-line, #1f1f1f)',
-                    background: '#0A0A09',
+                    borderBottom: '1px solid rgba(195, 249, 16, 0.26)',
+                    backgroundColor: '#0A0A09',
+                    backgroundImage:
+                      'linear-gradient(90deg, rgba(195, 249, 16, 0.075) 0%, rgba(195, 249, 16, 0.03) 26%, rgba(195, 249, 16, 0) 62%)',
                     minWidth: 'max-content',
                   }}
                 >
@@ -320,17 +389,38 @@ export const SpecsSection: React.FC<SpecsSectionProps> = ({ onSelectDatasheet, l
                       left: 0,
                       zIndex: 3,
                       borderRight: '1px solid var(--dark-line, #1f1f1f)',
-                      boxShadow: 'none',
-                      background: '#0A0A09',
+                      // Filet vert vertical de 2px : rappel du motif déjà présent
+                      // sur le site (`.fstage-step`). En `inset`, donc aucun
+                      // décalage de mise en page.
+                      //
+                      // VERT EN LITTÉRAL, et non `var(--accent)`. La palette du
+                      // back-office réécrit `--accent` via un `html:root` injecté
+                      // à l'exécution (theme-utils), de spécificité supérieure :
+                      // le libellé suivait la couleur du CMS — souvent claire,
+                      // donc blanche sur fond noir — alors que les filets, eux,
+                      // restaient verts. `#C3F910` est le vert Pixiatech, celui
+                      // de `web.css` et de la fiche technique.
+                      boxShadow: 'inset 2px 0 0 #C3F910',
+                      // Fond opaque SOUS le voile vert : la colonne reste
+                      // masquante pendant le défilement horizontal.
+                      backgroundColor: '#0A0A09',
+                      backgroundImage:
+                        'linear-gradient(90deg, rgba(195, 249, 16, 0.11) 0%, rgba(195, 249, 16, 0.045) 100%)',
                       padding: '15px 14px',
                       fontSize: '10.5px',
                       letterSpacing: '.26em',
-                      color: 'var(--accent, #C3F910)',
+                      // Même vert littéral que ci-dessus : GENERAL, PHYSIQUE,
+                      // PHYSICAL, OPTIQUE, OPTICAL… partagent ce seul rendu, donc
+                      // quelle que soit la langue du libellé du PDF, le titre de
+                      // catégorie reste vert Pixiatech — jamais blanc.
+                      color: '#C3F910',
                       fontWeight: 700,
                       textTransform: 'uppercase',
+                      display: 'flex',
+                      alignItems: 'center',
                     }}
                   >
-                    {grp.label}
+                    {collapseDoubledLabel(grp.label)}
                   </div>
                   <div style={{ flex: 1, minWidth: '280px' }} />
                 </div>
@@ -368,7 +458,7 @@ export const SpecsSection: React.FC<SpecsSectionProps> = ({ onSelectDatasheet, l
                         alignItems: 'center',
                       }}
                     >
-                      {row.label}
+                      {collapseDoubledLabel(row.label)}
                     </div>
 
                     {/* Model Value Columns */}

@@ -254,6 +254,12 @@ function specRow(y: number, label: string, cells: string[], centers: number[]): 
   return items;
 }
 
+/** Fragment d'en-tête de variante, centré sur sa colonne (y=733 ou y=729). */
+function specHeaderCell(text: string, cx: number, y: number): PdfTextItem {
+  const w = Math.max(text.length * 3.4, 6.8);
+  return item(cx - w / 2, y, w, 6.8, text);
+}
+
 /** Page 3 : 04 CARACTERISTIQUES + 05 REFERENCES + CTA. */
 function page3(over: {
   variantNames: string[];
@@ -267,6 +273,22 @@ function page3(over: {
 } ): PdfTextItem[][] {
   const { variantNames, centers } = over;
   const rows = over.rows ?? [];
+  // En-tête de la matrice : le gabarit écrit le nom de variante sur DEUX lignes
+  // (y=733 puis y=729) et le libellé « SPEC » (x=70.3) PARTAGE la ligne y=729
+  // avec les seconds fragments : `[ Modele` | « SPEC » `1 ]` `2 ]` …
+  // (référence exacte : scratch/pdfaudit/reference-dump.txt, y=733 et y=729).
+  // `|` marque le retour à la ligne dans le nom saisi, comme le gabarit coupe
+  // `[ Modele` / `1 ]`. Un nom sans `|` tient sur une ligne et laisse donc
+  // « SPEC » seul, ce qui est aussi un état réel après saisie courte.
+  const splitNames = variantNames.map((n) => n.split('|'));
+  const headTop = splitNames.map((parts, i) =>
+    specHeaderCell((parts[0] ?? '').trim(), centers[i], 733)
+  );
+  const headBottom = splitNames.map((parts, i) =>
+    parts.length > 1 ? specHeaderCell(parts.slice(1).join(' ').trim(), centers[i], 729) : null
+  );
+  const bottomItems = headBottom.filter((it): it is PdfTextItem => it !== null);
+  const specLabel = item(70.3, 729, 18.5, 6.8, 'SPEC');
   const rowsOut: PdfTextItem[][] = [
     [item(82.2, 796, 145.5, 10, 'CARACTERISTIQUES TECHNIQUES')],
     [
@@ -274,9 +296,8 @@ function page3(over: {
       item(82.2, 779.5, 100.4, 14, '[ Titre section ]'),
     ],
     [item(82.2, 767.5, 258.1, 9, 'Renseigner 1 colonne par modele/variante (3 à 10 recommandé)')],
-    // Le libellé « SPEC » est sur SA propre ligne (y=729), sous les en-têtes (y=733).
-    [item(70.3, 729, 18.5, 6.8, 'SPEC')],
-    [variantNames.map((name, i) => item(centers[i] - 20.5, 733, 41, 6.8, name))].flat(),
+    headTop,
+    bottomItems.length > 0 ? [specLabel, ...bottomItems] : [specLabel],
   ];
   for (const row of rows) {
     if (row.group) {
@@ -566,6 +587,80 @@ section('04 MATRICE : association valeur ↔ variante par centre de colonne');
   );
 }
 
+section('04 MATRICE : multi-tableaux dynamiques (concaténation de 8 variantes et fusion des catégories)');
+{
+  const parsed = parseProductFichePages([
+    // Page avec Tableau 1 (variantes PXT-1 à PXT-4)
+    page(
+      page3({
+        variantNames: ['PXT-1', 'PXT-2', 'PXT-3', 'PXT-4'],
+        centers: CENTERS4,
+        rows: [
+          { y: 707.5, group: 'GENERAL' },
+          { y: 693, label: 'Usage (in/out)', cells: ['Indoor', 'Indoor', 'Indoor', 'Indoor'] },
+          { y: 661.5, group: 'PHYSIQUE' },
+          { y: 647, label: 'Pixel pitch', cells: ['1.25 mm', '1.56 mm', '1.9 mm', '2.5 mm'] },
+        ],
+      })
+    ),
+    // Page avec Tableau 2 (variantes PXT-5 à PXT-8, catégories répétées GENERAL et PHYSIQUE)
+    page([
+      [item(82.2, 796, 145.5, 10, 'CARACTERISTIQUES TECHNIQUES')],
+      [item(48.5, 779.5, 24.5, 22, '04'), item(82.2, 779.5, 100.4, 14, 'Tableau 2')],
+      [item(70.3, 729, 18.5, 6.8, 'SPEC')],
+      ['PXT-5', 'PXT-6', 'PXT-7', 'PXT-8'].map((name, i) => item(CENTERS4[i] - 20.5, 733, 41, 6.8, name)),
+      [item(48.7, 707.5, 60, 10, 'GENERAL')],
+      specRow(693, 'Usage (in/out)', ['Outdoor', 'Outdoor', 'Outdoor', 'Outdoor'], CENTERS4),
+      [item(48.7, 661.5, 60, 10, 'PHYSIQUE')],
+      specRow(647, 'Pixel pitch', ['3.0 mm', '4.0 mm', '5.0 mm', '6.0 mm'], CENTERS4),
+    ]),
+  ]);
+
+  const models = parsed.specs?.models ?? [];
+  assertEqual(models.length, 8, 'exactement 8 variantes concaténées depuis les 2 tableaux');
+  assertEqual(
+    models.map((m) => m.name),
+    ['PXT-1', 'PXT-2', 'PXT-3', 'PXT-4', 'PXT-5', 'PXT-6', 'PXT-7', 'PXT-8'],
+    'noms des 8 variantes dans l ordre'
+  );
+  assertEqual(models[0].specs.pitch, '1.25 mm', 'PXT-1 · pixel pitch');
+  assertEqual(models[4].specs.pitch, '3.0 mm', 'PXT-5 · pixel pitch du second tableau');
+  assertEqual(models[7].specs.pitch, '6.0 mm', 'PXT-8 · pixel pitch du second tableau');
+  assertEqual(models[4].specs.env, 'Outdoor', 'PXT-5 · usage du second tableau');
+
+  const groups = parsed.specs?.groups ?? [];
+  assertEqual(groups.map((g) => g.id), ['general', 'physical'], 'les groupes répétés sont unifiés sans doublon');
+  assertEqual(groups[0].rows.map((r) => r.key), ['env'], 'ligne env unique dans general');
+  assertEqual(groups[1].rows.map((r) => r.key), ['pitch'], 'ligne pitch unique dans physical');
+
+  // Suite d'un tableau sur les mêmes variantes avec d'autres caractéristiques
+  const parsedContinuation = parseProductFichePages([
+    page(
+      page3({
+        variantNames: ['PXT-A', 'PXT-B'],
+        centers: [140.6, 189.05],
+        rows: [
+          { y: 707.5, group: 'GENERAL' },
+          { y: 693, label: 'Usage (in/out)', cells: ['Indoor', 'Outdoor'] },
+        ],
+      })
+    ),
+    page([
+      [item(82.2, 796, 145.5, 10, 'CARACTERISTIQUES TECHNIQUES')],
+      [item(48.5, 779.5, 24.5, 22, '04'), item(82.2, 779.5, 100.4, 14, 'Tableau 2')],
+      [item(70.3, 729, 18.5, 6.8, 'SPEC')],
+      ['PXT-A', 'PXT-B'].map((name, i) => item([140.6, 189.05][i] - 20.5, 733, 41, 6.8, name)),
+      [item(48.7, 661.5, 60, 10, 'OPTIQUE')],
+      specRow(647, 'Luminosite', ['800 nits', '1500 nits'], [140.6, 189.05]),
+    ]),
+  ]);
+  const contModels = parsedContinuation.specs?.models ?? [];
+  assertEqual(contModels.length, 2, '2 variantes maintenues lors d une suite de tableau');
+  assertEqual(contModels[0].specs.env, 'Indoor', 'PXT-A · usage conservé');
+  assertEqual(contModels[0].specs.brightness, '800 nits', 'PXT-A · luminosité ajoutée depuis le tableau 2');
+  assertEqual(contModels[1].specs.brightness, '1500 nits', 'PXT-B · luminosité ajoutée depuis le tableau 2');
+}
+
 section('04 MATRICE : cellule multi-items (valeur + unité)');
 {
   const parsed = parseProductFichePages([
@@ -825,6 +920,105 @@ section('Regression : variantes saisies entre crochets');
     parsed.specs?.models[0].specs.env,
     'Indoor',
     'valeur de la matrice affectee a la bonne variante'
+  );
+}
+
+section('Regression : reference complete repartie sur les deux lignes du gabarit');
+{
+  // CAS REEL, geometrie du gabarit officiel. Le gabarit reserve DEUX lignes par
+  // nom de variante (y=733 puis y=729) et pose « SPEC » a GAUCHE de la ligne
+  // basse : cette ligne contient donc le libelle ET les fragments de nom.
+  // Une reference qui deborde, comme « PXT-P1.25 », se retrouve coupee
+  // « [ PXT-P1 » (y=733) / « .25 ] » (y=729).
+  // Si la ligne basse est traitee comme une ligne de libelle, la reference est
+  // tronquee et un fragment devient une variante fantome : c'est le symptome
+  // « PXT-P1.25 transforme en 1.25 ».
+  const parsed = parseProductFichePages([
+    page(page1({ name: 'PXT FINE' })),
+    page(page2()),
+    page(
+      page3({
+        variantNames: [
+          '[ PXT-P1 | .25 ]',
+          '[ PXT-P2 | .60 ]',
+          '[ PXT-P3 | .90 ]',
+          '[ PXT-P4 | .50 ]',
+        ],
+        centers: CENTERS4,
+        rows: [
+          { y: 707.5, group: 'GENERAL' },
+          { y: 693, label: 'Usage (in/out)', cells: ['Indoor', 'Indoor', 'Outdoor', 'Outdoor'] },
+          { y: 647, label: 'Pixel pitch', cells: ['1.25 mm', '1.9 mm', '2.6 mm', '3.9 mm'] },
+        ],
+      })
+    ),
+    page(page4()),
+  ]);
+  const names = parsed.specs?.models.map((m) => m.name) ?? [];
+  assertEqual(
+    names,
+    ['PXT-P1.25', 'PXT-P2.60', 'PXT-P3.90', 'PXT-P4.50'],
+    'reference recomposee sur deux lignes : complete, sans variante fantome'
+  );
+  assertEqual(
+    parsed.specs?.models.map((m) => m.specs.pitch ?? null),
+    ['1.25 mm', '1.9 mm', '2.6 mm', '3.9 mm'],
+    'valeurs affectees a la bonne variante apres recomposition des en-tetes'
+  );
+  assertEqual(
+    parsed.specs?.models.map((m) => m.specs.env ?? null),
+    ['Indoor', 'Indoor', 'Outdoor', 'Outdoor'],
+    'colonnes alignees sur les references recomposees'
+  );
+}
+
+section('Regression : suite de tableau SANS en-tete repete');
+{
+  // Cas reel : la matrice deborde sur la page suivante et y rejoue des lignes de
+  // caracteristiques sans repeter l'en-tete de variante. Ce bloc est alors
+  // rejete comme « aucun en-tete de colonne detecte » et toutes ses valeurs
+  // sont perdues : la page suivante n'apportait aucune donnee.
+  const parsed = parseProductFichePages([
+    page(page1({ name: 'PXT FINE' })),
+    page(page2()),
+    page(
+      page3({
+        variantNames: ['PXT-1', 'PXT-2', 'PXT-3', 'PXT-4'],
+        centers: CENTERS4,
+        rows: [
+          { y: 707.5, group: 'GENERAL' },
+          { y: 693, label: 'Usage (in/out)', cells: ['Indoor', 'Indoor', 'Indoor', 'Indoor'] },
+          { y: 661.5, group: 'PHYSIQUE' },
+          { y: 647, label: 'Pixel pitch', cells: ['1.25 mm', '1.56 mm', '1.9 mm', '2.5 mm'] },
+        ],
+      })
+    ),
+    // Page suivante : bandeau de section + lignes de caractéristiques, SANS la
+    // ligne d'en-tête de variante du gabarit.
+    page([
+      [item(82.2, 700, 145.5, 10, 'CARACTERISTIQUES TECHNIQUES')],
+      [item(48.7, 620, 60, 10, 'OPTIQUE')],
+      specRow(606, 'Brightness', ['800 nits', '900 nits', '1000 nits', '1200 nits'], CENTERS4),
+      specRow(592, 'Refresh rate', ['60 Hz', '60 Hz', '120 Hz', '120 Hz'], CENTERS4),
+    ]),
+    page(page4()),
+  ]);
+  const models = parsed.specs?.models ?? [];
+  assertEqual(models.length, 4, 'les 4 variantes de la premiere page sont conservees');
+  assertEqual(
+    models.map((m) => m.specs.brightness ?? null),
+    ['800 nits', '900 nits', '1000 nits', '1200 nits'],
+    'page de suite sans en-tête : valeurs affectées aux bonnes variantes'
+  );
+  assertEqual(
+    models.map((m) => m.specs.refresh ?? null),
+    ['60 Hz', '60 Hz', '120 Hz', '120 Hz'],
+    'page de suite : seconde ligne également lue'
+  );
+  assertEqual(
+    (parsed.specs?.groups ?? []).map((g) => g.id),
+    ['general', 'physical', 'optical'],
+    'le groupe de la page de suite est conservé'
   );
 }
 
