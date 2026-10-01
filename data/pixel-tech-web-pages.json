@@ -22,46 +22,6 @@
                 "updatedAt": "2026-09-26T08:38:59.277Z",
                 "sourceText": "Conçu pour chaque environnement. oui"
               }
-            },
-            "market_xr_image": {
-              "de": {
-                "value": "/uploads/cms/Hamid_MOKHTARI___.jpeg.jpg",
-                "status": "manual",
-                "updatedAt": "2026-09-26T08:39:37.976Z",
-                "sourceText": ""
-              }
-            },
-            "image": {
-              "de": {
-                "value": "/uploads/cms/Hamid_MOKHTARI___.jpeg.jpg",
-                "status": "manual",
-                "updatedAt": "2026-09-26T08:39:37.977Z",
-                "sourceText": ""
-              }
-            },
-            "heroImage": {
-              "de": {
-                "value": "/uploads/cms/Hamid_MOKHTARI___.jpeg.jpg",
-                "status": "manual",
-                "updatedAt": "2026-09-26T08:39:37.977Z",
-                "sourceText": ""
-              }
-            },
-            "primaryImage": {
-              "de": {
-                "value": "/uploads/cms/Hamid_MOKHTARI___.jpeg.jpg",
-                "status": "manual",
-                "updatedAt": "2026-09-26T08:39:37.977Z",
-                "sourceText": ""
-              }
-            },
-            "billboardImage": {
-              "de": {
-                "value": "/uploads/cms/Hamid_MOKHTARI___.jpeg.jpg",
-                "status": "manual",
-                "updatedAt": "2026-09-26T08:39:37.977Z",
-                "sourceText": ""
-              }
             }
           },
           "title": "Conçu pour chaque environnement. oui"
@@ -165,16 +125,6 @@
         "insights": {
           "minHeight": 931,
           "paddingBottom": 125,
-          "_i18n": {
-            "insight_1_image": {
-              "fr": {
-                "value": "/uploads/cms/41979b31a5e95bfbf7ba9a0bd568486a.jpg.jpg",
-                "status": "source",
-                "updatedAt": "2026-09-27T12:16:56.478Z",
-                "sourceText": "/uploads/cms/41979b31a5e95bfbf7ba9a0bd568486a.jpg.jpg"
-              }
-            }
-          },
           "insight_1_image": "/uploads/cms/41979b31a5e95bfbf7ba9a0bd568486a.jpg.jpg"
         },
         "hero": {
@@ -249,16 +199,6 @@
               "textAlign": "center"
             }
           },
-          "_i18n": {
-            "market_rental_image": {
-              "fr": {
-                "value": "/uploads/cms/Gemini_Generated_Image_u142r4u142r4u142.png.png",
-                "status": "source",
-                "updatedAt": "2026-09-29T18:59:55.996Z",
-                "sourceText": "/uploads/cms/Gemini_Generated_Image_u142r4u142r4u142.png.png"
-              }
-            }
-          },
           "market_rental_image": "/uploads/cms/Gemini_Generated_Image_u142r4u142r4u142.png.png"
         },
         "header": {
@@ -275,16 +215,6 @@
             }
           },
           "paddingTop": 0,
-          "_i18n": {
-            "overlayColor": {
-              "fr": {
-                "value": "#d50b0b",
-                "status": "source",
-                "updatedAt": "2026-09-29T20:32:04.149Z",
-                "sourceText": "#d50b0b"
-              }
-            }
-          },
           "overlayColor": "#d50b0b",
           "overlayOpacity": 85,
           "minHeight": 512,
@@ -554,5 +484,5 @@
       }
     }
   },
-  "updatedAt": "2026-09-30T18:26:32.257Z"
+  "updatedAt": "2026-10-01T09:22:31.075Z"
 }
