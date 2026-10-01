@@ -301,6 +301,133 @@ section('DOM : repli sans groupes (union des clés)');
   assertEqual([...html.matchAll(/class="spec-row"/g)].length, 1, '1 ligne déduite');
 }
 
+// ---------------------------------------------------------------------------
+section('TIRET DE GABARIT COLLÉ : données historiques, pas un défaut du pipeline');
+{
+  // Traçage PDF → parser → build → payload : le pipeline ACTUEL produit des
+  // valeurs propres. Le PDF ne contient aucun tiret collé (180 items « tiret
+  // seul », 0 collé) ; le tiret de cellule vide y est un item PDFjs SÉPARÉ.
+  // Les documents de Firestore portant `"—135 W"` ont donc été écrits par une
+  // version ANCIENNE du pipeline. Ces tests verrouillent la lecture de ces
+  // données héritées, sans réécrire Firestore.
+
+  // 1. Retrait du cadratin collé, des deux côtés, avec ou sans espace.
+  assertEqual(specValue('—135 W'), '135 W', 'cadratin en tête');
+  assertEqual(specValue('135 W—'), '135 W', 'cadratin en queue');
+  assertEqual(specValue('45 W —'), '45 W', 'cadratin en queue, espace avant');
+  assertEqual(specValue('— IP30'), 'IP30', 'cadratin en tête, espace après');
+  assertEqual(specValue('IP30 —'), 'IP30', 'cadratin en queue, variante S1.5');
+  assertEqual(specValue('— P1.2'), 'P1.2', 'cadratin + espace, en tête');
+  assertEqual(specValue('100–240 V—'), '100–240 V', 'cadratin en queue, tiret interne conservé');
+  assertEqual(specValue('HDMI / contrôleur vidéo—'), 'HDMI / contrôleur vidéo', 'cadratin fin de phrase longue');
+  assertEqual(specValue('——135 W'), '135 W', 'cadratins multiples');
+  assertEqual(specValue({ v: '—135 W' }), '135 W', 'forme { v } : cadratin en tête');
+  assertEqual(specValue({ v: '135 W—' }), '135 W', 'forme { v } : cadratin en queue');
+
+  // 2. Les valeurs LéGITIMES ne doivent JAMAIS être amputées.
+  assertEqual(specValue('-20°C à +50°C'), '-20°C à +50°C', 'tiret ASCII en tête = signe');
+  assertEqual(specValue('-20°C à +50°C—'), '-20°C à +50°C', 'signe conservé, cadratin retiré');
+  assertEqual(specValue('100–240 V'), '100–240 V', 'tiret demi-cadratin INTERNE (U+2013) conservé');
+  assertEqual(specValue('100-240 V'), '100-240 V', 'plage ASCII interne conservée');
+  assertEqual(specValue('3-in-1 SMD'), '3-in-1 SMD', 'trait d’union interne conservé');
+  assertEqual(specValue('140° / 140°'), '140° / 140°', 'degrés intacts');
+  assertEqual(specValue('COB (Chip-on-Board)'), 'COB (Chip-on-Board)', 'parenthèses conservées');
+  assertEqual(specValue('600 × 337,5 mm'), '600 × 337,5 mm', 'multiplication et virgule conservées');
+
+  // 3. Une valeur qui ne portait QUE des tirets reste « pas de valeur ».
+  assertEqual(specValue('—'), undefined, 'cadratin seul');
+  assertEqual(specValue('— —'), undefined, 'cadratins seuls, espace entre');
+  assertEqual(specValue('  —  '), undefined, 'cadratin seul, espaces autour');
+  assertEqual(specValue('-'), undefined, 'tiret ASCII seul');
+  assertEqual(specValue(''), undefined, 'chaîne vide');
+
+  // 4. Une ligne dont la seule valeur est un tiret collé reste une VRAIE valeur
+  //    (« —135 W »), donc la ligne s'affiche ; c'est « — » seule qui la masque.
+  assertEqual(specRowHasValue([{ name: 'A', specs: { maxPower: { v: '—135 W' } } }], 'maxPower'),
+    true, 'ligne « —135 W » visible');
+  assertEqual(specRowHasValue([{ name: 'A', specs: { maxPower: { v: '—' } } }], 'maxPower'),
+    false, 'ligne « — » seule masquée');
+}
+
+// ---------------------------------------------------------------------------
+section('DOM : données historiques avec tirets collés, sans aucun « — » rendu');
+{
+  // Forme EXACTE relevée dans Firestore pour pxt-seamless (2 variantes).
+  const LEGACY: ProductSpecs['models'] = [
+    {
+      name: 'PXT-S1.2',
+      specs: {
+        env: '—Indoor', arrangement: 'COB (Chip-on-Board)—', pitch: '— P1.2',
+        moduleDim: '300 × 168,8 mm—', maxPower: '—135 W', avgPower: '—45 W',
+        powerSource: '100–240 V—', signal: 'HDMI / contrôleur vidéo—',
+        ip: '— IP30', temp: '-20°C à +50°C—',
+      },
+    },
+    {
+      name: 'PXT-S1.5',
+      specs: {
+        env: 'Indoor', arrangement: 'COB (Chip-on-Board)—', pitch: 'P1.5 —',
+        moduleDim: '300 × 168,8 mm—', maxPower: '135 W—', avgPower: '45 W —',
+        powerSource: '100–240 V—', signal: 'HDMI / contrôleur vidéo—',
+        ip: 'IP30 —', temp: '-20°C à +50°C—',
+      },
+    },
+  ];
+  const html = renderToStaticMarkup(
+    React.createElement(SpecsSection as never, {
+      specs: { groups: MASTER, models: LEGACY } as ProductSpecs,
+      lang: 'FR',
+    })
+  );
+
+  // Valeurs NETTOYÉES présentes, à l'identique.
+  for (const v of ['Indoor', 'P1.2', 'P1.5', '135 W', '45 W', '100–240 V',
+    'HDMI / contrôleur vidéo', 'IP30', '-20°C à +50°C', 'COB (Chip-on-Board)',
+    '300 × 168,8 mm']) {
+    check(`valeur héritée nettoyée affichée : ${v}`, html.includes(v));
+  }
+
+  // Aucun cadratin ne subsiste dans une cellule.
+  const cellContents = [...html.matchAll(/class="spec-val"[^>]*>([\s\S]*?)<\/div>/g)].map((m) => m[1]);
+  check('aucune cellule ne contient de cadratin',
+    cellContents.every((c) => !/[\u2014\u2015]/.test(c)),
+    cellContents.filter((c) => /[\u2014\u2015]/.test(c)).join(' | '));
+
+  // Aucun cadratin collé à un nombre/unité, ni en tête ni en queue de cellule.
+  check('aucun cadratin en tête de cellule',
+    cellContents.every((c) => !/^[\s\u00a0]*[\u2014\u2015]/.test(c)));
+  check('aucun cadratin en queue de cellule',
+    cellContents.every((c) => !/[\u2014\u2015][\s\u00a0]*$/.test(c)));
+
+  // Le tiret ASCII de `-20°C à +50°C` doit SURVIVRE : le signe n'est pas un placeholder.
+  const tempCell = cellContents.find((c) => c.includes('20'));
+  check('signe négatif conservé dans la cellule', tempCell === '-20°C à +50°C', `obtenu ${JSON.stringify(tempCell)}`);
+  check('la plage 100–240 V garde son tiret interne',
+    cellContents.includes('100–240 V'), `cellules: ${cellContents.join(' | ')}`);
+
+  // Comptage : 10 clés distinctes présentes, 2 variantes.
+  assertEqual([...html.matchAll(/class="spec-row"/g)].length, 10, '10 lignes visibles');
+  assertEqual([...html.matchAll(/class="spec-head"/g)].length, 2, '2 variantes');
+  assertEqual(cellContents.length, 20, '20 cellules = 10 lignes x 2 variantes');
+}
+
+// ---------------------------------------------------------------------------
+section('DOM : une cellule « — » seule reste vide, sa ligne est masquée');
+{
+  const models: ProductSpecs['models'] = [
+    { name: 'A', specs: { pitch: '1.2 mm', density: '—', weight: '— —' } },
+  ];
+  const html = renderToStaticMarkup(
+    React.createElement(SpecsSection as never, {
+      specs: { groups: MASTER, models } as ProductSpecs,
+      lang: 'FR',
+    })
+  );
+  assertEqual([...html.matchAll(/class="spec-row"/g)].length, 1, 'seule la ligne pitch est visible');
+  check('PHYSICAL DENSITY masquée', !html.includes('PHYSICAL DENSITY'));
+  check('CABINET WEIGHT masquée', !html.includes('CABINET WEIGHT'));
+}
+
 console.log(`\n${assertions - failures}/${assertions} assertions passées.`);
 if (failures > 0) {
   console.error(`\n${failures} ECHEC(S).`);

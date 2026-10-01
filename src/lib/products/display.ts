@@ -45,6 +45,42 @@ const anyText = (...values: (string | undefined | null)[]): boolean => values.so
 const hasSlot = (slot?: ProductMediaSlot): boolean => hasMedia(slot);
 
 /**
+ * TIRET DE GABARIT COLLÉ À UNE VALEUR — Données historiques uniquement.
+ *
+ * Constat (traçage PDF → parser → build → Firestore → rendu) : le pipeline
+ * ACTUEL produit des valeurs propres. En revanche, des documents enregistrés
+ * par une version ANCIENNE du pipeline portent le tiret du gabarit collé à la
+ * valeur : `"—135 W"`, `"135 W—"`, `"— IP30"`, `"100–240 V—"`.
+ *
+ * Le PDF source, lui, n'a jamais eu de tiret collé : le tiret de cellule vide
+ * y est un item PDFjs SÉPARÉ, rejeté à la source par le parser. C'est donc bien
+ * une Donnée héritée, pas un défaut du rendu — d'où une correction ici, et
+ * SEULEMENT ici : Firestore n'est pas réécrit.
+ *
+ * Deux garde-fous délibérés :
+ *
+ *   1. Seuls le TIRET CADRATIN (—, U+2014) et la BARRE HORIZONTALE (―,
+ *      U+2015) sont retirés, aux BORDS uniquement. C'est le glyphe exact du
+ *      placeholder dans cette famille de documents ; tous les artefacts
+ *      relevés en base utilisent U+2014.
+ *   2. Le TIRET ASCII et le SIGNE MOINS (U+2212) ne sont JAMAIS retirés en
+ *      début de chaîne : `-20°C à +50°C` doit rester `-20°C à +50°C`. Un
+ *      cadratin ne peut pas être un signe, un trait d'union peut l'être.
+ *
+ * Un tiret INTERNE n'est pas touché : `100–240 V` et `3-in-1` survivent
+ * intacts. Après retrait, si la valeur ne portait QUE des tirets, c'est le
+ * `text()` de `specValue` qui la déclare « pas de valeur » — sa définition
+ * reste la seule.
+ */
+export function stripEdgeTemplateDash(value: string): string {
+  return value
+    .trim()
+    .replace(/^[\u2014\u2015]+[\s\u00a0]*/, '')
+    .replace(/[\s\u00a0]*[\u2014\u2015]+$/, '')
+    .trim();
+}
+
+/**
  * LECTEUR UNIQUE DE VALEUR DE SPÉCIFICATION.
  *
  * Une même valeur de caractéristique circule sous deux formes dans le code :
@@ -59,15 +95,20 @@ const hasSlot = (slot?: ProductMediaSlot): boolean => hasMedia(slot);
  * écartait TOUTES les caractéristiques alors que les données étaient
  * parfaitement renseignées.
  *
+ * C'est aussi le SEUL point où le tiret de gabarit collé est retiré, et il
+ * l'est AVANT `text()` : une valeur comme `"— IP30"` doit être lue comme la
+ * valeur `IP30`, pas comme un tiret, sinon la ligne disparaît au lieu
+ * d'être affichée proprement.
+ *
  * `text()` reste, et reste SEUL, la définition de ce qui vaut « pas de
  * valeur » (vide, tiret gabarit, slot `[ … ]`) : ce lecteur ne fait que
  * normaliser la FORME, jamais la significabilité.
  */
 export function specValue(value: unknown): string | undefined {
-  if (typeof value === 'string') return text(value);
+  if (typeof value === 'string') return text(stripEdgeTemplateDash(value));
   if (value !== null && typeof value === 'object') {
     const inner = (value as { v?: unknown }).v;
-    if (typeof inner === 'string') return text(inner);
+    if (typeof inner === 'string') return text(stripEdgeTemplateDash(inner));
   }
   return undefined;
 }

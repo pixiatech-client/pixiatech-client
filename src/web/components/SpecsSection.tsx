@@ -4,7 +4,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { SpecModel, SpecValue } from '../types';
 import { Language } from '../data/translations';
 import { shopLinkForVariant } from '@/lib/products/types';
-import { specRowHasValue } from '@/lib/products/display';
+import { specRowHasValue, specValue } from '@/lib/products/display';
 import type { ProductShopLinks, ProductSpecs, ProductSpecModel } from '@/lib/products/types';
 
 interface SpecsSectionProps {
@@ -489,7 +489,14 @@ export const SpecsSection: React.FC<SpecsSectionProps> = ({ lang = 'FR', specs, 
                       // ici enverrait le message inverse — une valeur relevée et
                       // trouvée vide. La ligne est affichée parce qu'AUTRE
                       // variante la renseigne ; ce modèle précis, lui, n'en a pas.
-                      const val = specItem?.v ?? '';
+                      //
+                      // La lecture passe par `specValue`, PAS par `.v` en direct :
+                      // c'est le seul point qui retire le tiret de gabarit COLLÉ
+                      // aux bords, présent dans les documents écrits par une
+                      // ancienne version du pipeline (`"135 W—"`, `"— IP30"`).
+                      // Le pipeline actuel produit des valeurs propres ; ce sont
+                      // les données historiques qui sont à normaliser.
+                      const val = specValue(specItem) ?? '';
                       return (
                         <div
                           key={model.name + row.key}

@@ -3,7 +3,7 @@ import { X, Printer } from "lucide-react";
 import { SpecModel } from "../types";
 import { Language } from "../data/translations";
 import type { Product, ProductSpecGroup } from '@/lib/products/types';
-import { text } from '@/lib/products/display';
+import { text, specValue } from '@/lib/products/display';
 
 interface DatasheetModalProps {
   model: SpecModel | null;
@@ -128,7 +128,12 @@ export const DatasheetModal: React.FC<DatasheetModalProps> = ({
               <div className="divide-y divide-[#181817]">
                 {group.rows.map((row) => {
                   const valObj = (model.specs as Record<string, { v: string }>)[row.key];
-                  const val = valObj ? valObj.v : "—";
+                  // Cellule absente = cellule VIDE, jamais « — ». Ce fallback
+                  // affirmait une valeur relevée qui n'existe pas. `specValue`
+                  // retire en plus le tiret de gabarit collé aux bords, présent
+                  // dans les documents écrits par une ancienne version du
+                  // pipeline (`"135 W—"`, `"— IP30"`).
+                  const val = specValue(valObj) ?? '';
                   return (
                     <div key={row.key} className="flex justify-between items-center px-4 py-2.5 text-xs">
                       <span className="text-[#7a7a76] tracking-wider uppercase font-mono">
