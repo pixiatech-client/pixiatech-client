@@ -23,7 +23,8 @@
     "test:shop-links": "node --experimental-strip-types scripts/test-shop-links.ts",
     "test:analytics-session": "node --experimental-strip-types scripts/test-analytics-api-session.ts",
     "check:client-boundary": "node scripts/check-client-server-boundary.mjs",
-    "prebuild": "npm run build:info && npm run build:widget"
+    "prebuild": "npm run build:info && npm run build:widget",
+    "postbuild": "node scripts/copy-standalone-assets.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
