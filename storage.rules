@@ -11,6 +11,17 @@ service firebase.storage {
       );
     }
 
+    match /site/hero/{fileName} {
+      // Images du Hero du site public : lecture publique, écriture admin uniquement.
+      // Les téléversements passent par /api/site-web/hero-image (requireAdmin) ;
+      // cette règle est une défense en profondeur côté client direct.
+      allow read: if true;
+      allow write: if request.auth != null
+        && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin'
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/jpeg|image/png|image/webp');
+    }
+
     match /{allPaths=**} {
       allow read: if true;
       allow write: if request.auth != null

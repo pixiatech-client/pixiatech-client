@@ -22,7 +22,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ lang = 'FR', onOpenCon
 
   const activeLang = isEditing ? currentLang : normalizeLang(lang);
 
-  const heroPrimaryImage = cmsHero.primaryImage || cmsHero.heroImage || '/uploads/site/hero-1.jpg';
+  const heroPrimaryImage =
+    cmsHero.slideImage1 || cmsHero.primaryImage || cmsHero.heroImage || '/uploads/site/hero-1.jpg';
 
   const slides = [
     {
@@ -32,13 +33,13 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ lang = 'FR', onOpenCon
         : 'LED installation — architectural lobby with illuminated structure',
     },
     {
-      img: '/uploads/site/hero-2.jpg',
+      img: cmsHero.slideImage2 || '/uploads/site/hero-2.jpg',
       alt: activeLang === 'fr'
         ? 'Installation LED — atrium avec écran LED immersif'
         : 'LED installation — atrium with immersive LED display',
     },
     {
-      img: '/uploads/site/hero-3.jpg',
+      img: cmsHero.slideImage3 || '/uploads/site/hero-3.jpg',
       alt: activeLang === 'fr'
         ? 'Installation LED — mur LED panoramique incurvé'
         : 'LED installation — curved panoramic LED wall',

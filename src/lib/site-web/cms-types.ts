@@ -21,6 +21,9 @@ export interface CmsSectionHero {
   secondaryCta?: string;
   heroImage?: string;
   primaryImage?: string;
+  slideImage1?: string;
+  slideImage2?: string;
+  slideImage3?: string;
   heroBgColor?: string;
   titleFontSize?: number;
   textColor?: string;

@@ -79,6 +79,7 @@ const VIEW_TO_ROUTE: Record<string, string> = {
   sitewebProduits: '/admin/site-web/produits',
   sitewebCategories: '/admin/site-web/categories',
   sitewebAnalytics: '/admin/site-web/analytics',
+  sitewebHero: '/admin/site-web/hero',
 };
 
 const ROUTE_TO_VIEW: Record<string, string> = {
@@ -112,6 +113,7 @@ const ROUTE_TO_VIEW: Record<string, string> = {
   '/admin/site-web/produits': 'sitewebProduits',
   '/admin/site-web/categories': 'sitewebCategories',
   '/admin/site-web/analytics': 'sitewebAnalytics',
+  '/admin/site-web/hero': 'sitewebHero',
 };
 
 export type SettingsSection = 'general' | 'images' | 'appearance' | 'wizard' | 'livraison' | 'main-doeuvre' | 'pdf' | 'emergency' | 'messaging' | 'software' | 'email-verification' | 'flow' | 'content';
@@ -268,6 +270,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const SITE_WEB_ITEMS = useMemo(() => [
     { id: 'sitewebAnalytics', label: t('admin.siteWeb.navAnalytics'), icon: BarChart3, color: 'text-sky-500', roles: [UserRole.ADMINISTRATEUR] },
     { id: 'sitewebMenu', label: t('admin.siteWeb.navMenu'), icon: LayoutTemplate, color: 'text-orange-500', roles: [UserRole.ADMINISTRATEUR] },
+    { id: 'sitewebHero', label: t('admin.siteWeb.navHero'), icon: ImageIcon, color: 'text-pink-500', roles: [UserRole.ADMINISTRATEUR] },
     { id: 'sitewebContact', label: t('admin.siteWeb.navContact'), icon: MessageSquare, color: 'text-emerald-500', roles: [UserRole.ADMINISTRATEUR] },
     { id: 'sitewebProduits', label: t('admin.siteWeb.navProduits'), icon: Box, color: 'text-yellow-500', roles: [UserRole.ADMINISTRATEUR] },
     { id: 'sitewebCategories', label: t('admin.siteWeb.navCategories'), icon: Tag, color: 'text-violet-500', roles: [UserRole.ADMINISTRATEUR] },
