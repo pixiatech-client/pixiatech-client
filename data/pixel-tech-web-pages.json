@@ -4,7 +4,7 @@
       "id": "home",
       "name": "home",
       "slug": "/home",
-      "updatedAt": "2026-09-29T20:32:22.722Z",
+      "updatedAt": "2026-10-09T19:17:00.556Z",
       "sections": {
         "pixia-web": {
           "text_1790257213042": "sdsdsdsdÉDITEUR DIRECT : CLIQUEZ SUR UN TEXTE OU UNE IMAGE",
@@ -25,78 +25,6 @@
             }
           },
           "title": "Conçu pour chaque environnement. oui"
-        },
-        "top": {
-          "_i18n": {
-            "text_1790360060306": {
-              "fr": {
-                "value": "L'INGÉNIERIE OUI",
-                "status": "source",
-                "updatedAt": "2026-09-25T18:14:20.306Z",
-                "sourceText": "L'INGÉNIERIE OUI"
-              }
-            },
-            "text_1790360077007": {
-              "en": {
-                "value": "ENGINEERED YES",
-                "status": "manual",
-                "updatedAt": "2026-09-25T18:14:37.007Z",
-                "sourceText": ""
-              }
-            },
-            "text_1790366517806": {
-              "fr": {
-                "value": "L'INGÉNIERIE 1",
-                "status": "source",
-                "updatedAt": "2026-09-25T20:01:57.806Z",
-                "sourceText": "L'INGÉNIERIE 1"
-              }
-            },
-            "text_1790366523128": {
-              "en": {
-                "value": "ENGINEERED 2",
-                "status": "manual",
-                "updatedAt": "2026-09-25T20:02:03.128Z",
-                "sourceText": ""
-              }
-            },
-            "text_1790366537277": {
-              "fr": {
-                "value": "L'INGÉNIERIE 1",
-                "status": "source",
-                "updatedAt": "2026-09-25T20:02:17.277Z",
-                "sourceText": "L'INGÉNIERIE 1"
-              }
-            },
-            "text_1790366544045": {
-              "en": {
-                "value": "ENGINEERED 2",
-                "status": "manual",
-                "updatedAt": "2026-09-25T20:02:24.045Z",
-                "sourceText": ""
-              }
-            },
-            "text_1790412029578": {
-              "fr": {
-                "value": "L'INGÉNIERIE OUI",
-                "status": "source",
-                "updatedAt": "2026-09-26T08:40:29.578Z",
-                "sourceText": "L'INGÉNIERIE OUI"
-              }
-            },
-            "text_1790412035579": {
-              "en": {
-                "value": "ENGINEERED YES",
-                "status": "manual",
-                "updatedAt": "2026-09-26T08:40:35.580Z",
-                "sourceText": ""
-              }
-            }
-          },
-          "text_1790360060306": "L'INGÉNIERIE OUI",
-          "text_1790366517806": "L'INGÉNIERIE 1",
-          "text_1790366537277": "L'INGÉNIERIE 1",
-          "text_1790412029578": "L'INGÉNIERIE OUI"
         },
         "process": {
           "_i18n": {
@@ -128,69 +56,13 @@
           "insight_1_image": "/uploads/cms/41979b31a5e95bfbf7ba9a0bd568486a.jpg.jpg"
         },
         "hero": {
-          "_i18n": {
-            "text_1790511441857": {
-              "fr": {
-                "value": "L'INGÉNIERIE DSFDSF",
-                "status": "source",
-                "updatedAt": "2026-09-27T12:17:21.857Z",
-                "sourceText": "L'INGÉNIERIE DSFDSF"
-              }
-            },
-            "text_1790512488250": {
-              "fr": {
-                "value": "L'INGÉNIERIEQSQSQSS",
-                "status": "source",
-                "updatedAt": "2026-09-27T12:34:48.251Z",
-                "sourceText": "L'INGÉNIERIEQSQSQSS"
-              }
-            }
-          },
-          "text_1790511441857": "L'INGÉNIERIE DSFDSF",
-          "text_1790512488250": "L'INGÉNIERIEQSQSQSS",
-          "_elements": {
-            "div:2/section:1/div:6/div:1/h1:1/span:1": {
-              "text": "L'INGÉNIERIE ",
-              "offsetX": 0,
-              "offsetY": 36
-            },
-            "div:2/section:1/div:6": {
-              "fontSize": "8px",
-              "offsetX": 0,
-              "offsetY": 248
-            },
-            "div:2/section:1/div:6/div:1/div:2/button:1": {
-              "text": "START A PROJECT →DFFDFDFDFDF",
-              "color": "#c3f910"
-            },
-            "div:2/section:1/div:6/div:1/h1:1/span:2": {
-              "text": "DU VISUEL. AH DANS LE LEADER JE JE PEUX PAS SÉLECTIONNER ET JE SAUVEG",
-              "offsetX": 0,
-              "offsetY": 72,
-              "fontSize": "54px"
-            },
-            "div:2/section:1/div:1/img:1": {
-              "src": "/uploads/cms/imgi_21_Fine-Pixel-Pitch-LED-Display.jpg.jpg",
-              "alt": "Installation LED — hall architectural avec structure illuminée"
-            },
-            "div:2/section:1/div:6/div:1/h1:1": {
-              "offsetX": 0,
-              "offsetY": -60
-            },
-            "div:2/section:1/div:6/div:1": {
-              "offsetX": 0,
-              "offsetY": 60
-            },
-            "div:2/section:1/div:6/div:2/span:2": {
-              "offsetX": 44,
-              "offsetY": 56
-            },
-            "div:2/section:1/div:6/div:1/div:1": {
-              "color": "#c3f910"
-            }
-          },
-          "minHeight": 503,
-          "paddingBottom": 0
+          "_i18n": {},
+          "minHeight": 943,
+          "paddingBottom": 83,
+          "slideImage1": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2F1_yhpml.png?alt=media",
+          "_elements": {},
+          "slideImage2": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2F2_kl1y4.png?alt=media",
+          "slideImage3": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2F3_cmt8e.png?alt=media"
         },
         "markets": {
           "_elements": {
@@ -199,7 +71,8 @@
               "textAlign": "center"
             }
           },
-          "market_rental_image": "/uploads/cms/Gemini_Generated_Image_u142r4u142r4u142.png.png"
+          "market_rental_image": "/uploads/cms/Gemini_Generated_Image_u142r4u142r4u142.png.png",
+          "market_corporate_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2F4_g01lw.png?alt=media"
         },
         "header": {
           "_elements": {
@@ -212,6 +85,9 @@
           "_elements": {
             "div:2/section:1/div:1/h2:1/span:3": {
               "text": "une partie intégrante a de l'espace.aaaaaa"
+            },
+            "div:2/section:1/div:1/h2:1/span:1": {
+              "color": "#000000"
             }
           },
           "paddingTop": 0,
@@ -347,7 +223,7 @@
       "id": "contact",
       "name": "Contact & Paramètres Généraux",
       "slug": "#contact",
-      "updatedAt": "2026-09-29T18:53:26.539Z",
+      "updatedAt": "2026-10-02T18:56:12.565Z",
       "settings": {
         "companyName": "PIXIATECH",
         "tagline": "Systèmes LED Architecturaux de Pointe",
@@ -365,7 +241,8 @@
             "body:1/div:5/main:1/div:1/div:2/main:1/section:1/div:2/header:1/div:1/h2:1": {
               "offsetX": 0,
               "offsetY": 0,
-              "backgroundColor": "#000000"
+              "backgroundColor": "#000000",
+              "text": "PIXIATECH FRANCE 11"
             },
             "body:1/div:5/main:1/div:1/div:3/main:1/section:1/div:2/header:1": {
               "fontWeight": "400",
@@ -374,7 +251,8 @@
               "fontSize": "40px"
             },
             "body:1/div:5/main:1/div:1/div:3/main:1/section:1/div:2/header:1/div:1/h2:1": {
-              "fontSize": "62px"
+              "fontSize": "62px",
+              "color": "#175869"
             }
           }
         }
@@ -484,5 +362,5 @@
       }
     }
   },
-  "updatedAt": "2026-10-01T09:22:31.075Z"
+  "updatedAt": "2026-10-09T19:17:00.623Z"
 }

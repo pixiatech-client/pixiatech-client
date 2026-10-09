@@ -14,7 +14,7 @@ export async function requireAdmin(
   }
   try {
     const { adminAuth, adminDb } = getFirebaseAdmin();
-    const decoded = await adminAuth.verifySessionCookie(sessionCookie, true);
+    const decoded = await adminAuth.verifySessionCookie(sessionCookie, false);
     const userDoc = await adminDb.collection('users').doc(decoded.uid).get();
     if (!userDoc.exists || userDoc.data()?.role !== 'admin') {
       return NextResponse.json(

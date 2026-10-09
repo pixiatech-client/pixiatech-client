@@ -163,6 +163,7 @@ export const VisualInPlaceEditor: React.FC = () => {
         el.closest('#image-edit-modal') ||
         el.closest('#backend-export-modal') ||
         el.closest('[data-cms-ui]') ||
+        el.closest('[data-cms-ignore]') ||
         el.closest('aside')
       );
     };
@@ -304,48 +305,53 @@ export const VisualInPlaceEditor: React.FC = () => {
         target.hasAttribute('data-editable') ||
         target.hasAttribute('data-text-key')
       ) {
-        if (target.isContentEditable) {
+        // Si le conteneur cliqué (ex: H1) n'a pas de data-text-key mais contient
+        // un enfant direct ou proche avec data-text-key, on délègue l'édition à cet enfant.
+        let editTarget = target;
+        if (!editTarget.hasAttribute('data-text-key') && editTarget.children.length > 0) {
+          const childKey = editTarget.querySelector('[data-text-key]') as HTMLElement | null;
+          if (childKey) editTarget = childKey;
+        }
+
+        if (editTarget.isContentEditable) {
           return;
         }
 
         e.preventDefault();
         e.stopPropagation();
 
-        target.contentEditable = 'true';
-        target.focus();
-        target.classList.remove('pixia-editable-text-hover');
+        editTarget.contentEditable = 'true';
+        editTarget.focus();
+        editTarget.classList.remove('pixia-editable-text-hover');
 
-        const originalText = target.innerText;
+        const originalText = editTarget.innerText;
 
         const onBlur = () => {
-          target.contentEditable = 'false';
-          target.removeEventListener('blur', onBlur);
-          if (!target.isConnected) return;
-          const newText = target.innerText;
-          if (newText === originalText) return;
+          editTarget.contentEditable = 'false';
+          editTarget.removeEventListener('blur', onBlur);
+          if (!editTarget.isConnected) return;
+          const newText = editTarget.innerText.trim();
+          if (newText === originalText.trim()) return;
 
-          const explicitKey = target.getAttribute('data-text-key');
+          const explicitKey = editTarget.getAttribute('data-text-key');
 
           if (explicitKey) {
             // Clé réelle : le champ existe dans la section, on l'édite
             // directement (donc traduit par le flux FR/EN existant).
             updateSectionField(sectionKey, explicitKey, newText);
+            // Nettoie tout résidu d'ancien style dans _elements pour ne pas masquer la valeur
+            updateElementStyle(sectionKey, elementKey, { text: undefined });
             void persist(`${sectionKey}.${explicitKey}`);
             return;
           }
 
-          // Pas de cle declaree : on n'invente plus `text_<timestamp>`, cle que
-          // rien ne relit (l'edition etait donc perdue au refresh), et on ne
-          // recycle plus `title`/`description`/`cta`, partages par tous les
-          // elements d'une section. Le texte part dans le sac d'elements, via la
-          // primitive atomique : la lecture part du miroir synchrone, donc un
-          // style deja pose par la barre contextuelle n'est pas ecrase.
+          // Pas de clé déclarée : le texte part dans le sac d'éléments
           const next = updateElementStyle(sectionKey, elementKey, { text: newText });
-          applyElementStyle(target, next as ElementStyle);
+          applyElementStyle(editTarget, next as ElementStyle);
           void persist(`${sectionKey}._elements.${elementKey}.text`);
         };
 
-        target.addEventListener('blur', onBlur);
+        editTarget.addEventListener('blur', onBlur);
       }
     };
 
@@ -400,6 +406,8 @@ export const VisualInPlaceEditor: React.FC = () => {
     if (explicitKey) {
       // Clé déclarée par le composant : le champ existe réellement, on l'écrit.
       updateSectionField(sectionKey, explicitKey, finalSrc);
+      // Nettoie tout ancien style dans _elements pour ne pas masquer la nouvelle URL
+      updateElementStyle(sectionKey, elementKey, { src: undefined });
     } else {
       // Pas de clé déclarée : on n'écrit plus dans `image`/`heroImage`/
       // `primaryImage`/`billboardImage`. Ces champs ne sont lus que par la

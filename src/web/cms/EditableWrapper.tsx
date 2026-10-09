@@ -155,6 +155,7 @@ export const EditableWrapper: React.FC<EditableWrapperProps> = ({
     return (
       <div
         ref={wrapperRef}
+        data-cms-section={sectionKey}
         className={`${hasMinHeight ? '[&>section]:min-h-[inherit] [&>section]:flex-1 [&>section]:w-full ' : ''}${className}`}
         style={{
           ...style,
@@ -175,6 +176,7 @@ export const EditableWrapper: React.FC<EditableWrapperProps> = ({
   return (
     <div
       ref={wrapperRef}
+      data-cms-section={sectionKey}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={() => {

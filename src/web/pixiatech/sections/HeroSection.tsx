@@ -22,17 +22,23 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ lang = 'FR', onOpenCon
 
   const activeLang = isEditing ? currentLang : normalizeLang(lang);
 
-  // Les images de slides sont lues via getCmsText pour être compatibles avec le
-  // stockage _i18n (écrit par updateSectionField via le mode édition visuel).
-  // getCmsFieldTranslation sait lire _i18n.slideImageX.fr.value ET le champ
-  // plat cmsHero.slideImageX (rétrocompatibilité).
+  // Les images de slides sont lues avec priorité sur le champ plat racine
+  // (écrit par HeroSlidersAdmin ou l'API) puis sur le stockage _i18n
+  // (écrit par updateSectionField) pour compatibilité absolue.
   const slideImage1 =
+    (cmsHero.slideImage1 as string | undefined) ||
     getCmsText(cmsHero, 'slideImage1', 'fr') ||
     (cmsHero.primaryImage as string | undefined) ||
     (cmsHero.heroImage as string | undefined) ||
     '/uploads/site/hero-1.jpg';
-  const slideImage2 = getCmsText(cmsHero, 'slideImage2', 'fr') || '/uploads/site/hero-2.jpg';
-  const slideImage3 = getCmsText(cmsHero, 'slideImage3', 'fr') || '/uploads/site/hero-3.jpg';
+  const slideImage2 =
+    (cmsHero.slideImage2 as string | undefined) ||
+    getCmsText(cmsHero, 'slideImage2', 'fr') ||
+    '/uploads/site/hero-2.jpg';
+  const slideImage3 =
+    (cmsHero.slideImage3 as string | undefined) ||
+    getCmsText(cmsHero, 'slideImage3', 'fr') ||
+    '/uploads/site/hero-3.jpg';
 
   const slides = [
     {
@@ -59,11 +65,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ lang = 'FR', onOpenCon
   ];
 
   useEffect(() => {
+    if (isEditing) return; // Ne pas faire tourner automatiquement en mode édition
     const timer = setInterval(() => {
       setActiveSlide((prev) => (prev + 1) % slides.length);
     }, 6000);
     return () => clearInterval(timer);
-  }, [slides.length]);
+  }, [slides.length, isEditing]);
 
   const t = {
     eyebrow: getCmsText(cmsHero, 'badge', activeLang, 'PIXIATECH / VISUAL TECHNOLOGY'),
@@ -94,6 +101,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ lang = 'FR', onOpenCon
   return (
     <section
       id="top"
+      data-cms-section="hero"
       className="hero"
       style={{
         ...cms.section,
@@ -126,15 +134,75 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ lang = 'FR', onOpenCon
         );
       })}
 
+      {/* Indicateur de slider actif en mode édition pour basculer facilement */}
+      {isEditing && (
+        <div
+          data-cms-ui
+          style={{
+            position: 'absolute',
+            top: 24,
+            left: 24,
+            zIndex: 60,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '8px 14px',
+            background: 'rgba(14, 14, 13, 0.94)',
+            border: '1px solid #C3F910',
+            borderRadius: 12,
+            boxShadow: '0 8px 30px rgba(0,0,0,0.85)',
+            backdropFilter: 'blur(8px)',
+          }}
+        >
+          <span style={{ fontSize: 11, fontFamily: 'monospace', fontWeight: 800, color: '#C3F910' }}>
+            SLIDER ACTIF :
+          </span>
+          {slides.map((_, i) => (
+            <button
+              key={i}
+              type="button"
+              data-cms-ignore
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setActiveSlide(i);
+              }}
+              style={{
+                padding: '4px 9px',
+                borderRadius: 6,
+                fontSize: 11,
+                fontFamily: 'monospace',
+                fontWeight: 700,
+                cursor: 'pointer',
+                background: i === activeSlide ? '#C3F910' : '#222',
+                color: i === activeSlide ? '#080808' : '#aaa',
+                border: i === activeSlide ? '1px solid #C3F910' : '1px solid #444',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              0{i + 1}
+            </button>
+          ))}
+          <span style={{ fontSize: 10, color: '#888', marginLeft: 4 }}>
+            (cliquez sur le fond pour changer la photo)
+          </span>
+        </div>
+      )}
+
       {/* Top right slide indicator dots */}
-      <div className="hero-dots-top">
+      <div className="hero-dots-top" data-cms-ui>
         {slides.map((_, i) => (
           <button
             key={i}
             type="button"
+            data-cms-ignore
             className={`hero-dot ${i === activeSlide ? 'on' : ''}`}
             aria-current={i === activeSlide ? 'true' : undefined}
-            onClick={() => setActiveSlide(i)}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setActiveSlide(i);
+            }}
           >
             0{i + 1}
           </button>
@@ -202,14 +270,19 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ lang = 'FR', onOpenCon
               {t.scroll}
             </span>
             <span className="hide-s">{t.tagline}</span>
-            <div className="hero-dots-inline">
+            <div className="hero-dots-inline" data-cms-ui>
               {slides.map((_, i) => (
                 <button
                   key={i}
                   type="button"
+                  data-cms-ignore
                   className={`hero-dot ${i === activeSlide ? 'on' : ''}`}
                   aria-current={i === activeSlide ? 'true' : undefined}
-                  onClick={() => setActiveSlide(i)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setActiveSlide(i);
+                  }}
                 >
                   0{i + 1}
                 </button>

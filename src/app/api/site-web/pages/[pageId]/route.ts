@@ -40,22 +40,19 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ success: false, message: 'Corps de requête invalide.' }, { status: 400 });
     }
     const existing = await getCmsPage(pageId);
-    const db = await saveCmsPage(pageId, {
+    const pageToSave: CmsPageData = {
       id: pageId,
       name: body.name ?? existing?.name ?? pageId,
       slug: body.slug ?? existing?.slug ?? `/${pageId}`,
       updatedAt: body.updatedAt ?? new Date().toISOString(),
-      // `sections` : on ne remplace que si le champ est fourni, sinon on
-      // conserve l'existant (une édition de meta ne doit pas vider le contenu).
       sections: body.sections ?? existing?.sections ?? {},
-      // Même règle pour `meta` : `body.meta` absent ne doit plus écraser une
-      // valeur enregistrée avec `undefined`.
-      meta: body.meta ?? existing?.meta,
-      // `sectionOrder` est une donnée persistée (réordonnancement par drag & drop).
-      // Si la requête ne le transmet pas, on conserve la valeur enregistrée —
-      // sinon l'ordre du serveur serait perdu silencieusement à chaque edit.
-      sectionOrder: body.sectionOrder ?? existing?.sectionOrder,
-    });
+    };
+    const meta = body.meta ?? existing?.meta;
+    if (meta) pageToSave.meta = meta;
+    const sectionOrder = body.sectionOrder ?? existing?.sectionOrder;
+    if (sectionOrder) pageToSave.sectionOrder = sectionOrder;
+
+    const db = await saveCmsPage(pageId, pageToSave);
     const page = db.pages?.[pageId];
     return NextResponse.json({
       success: true,

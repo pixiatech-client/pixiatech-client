@@ -219,17 +219,20 @@ export async function getCmsPage(pageId: string): Promise<CmsPageData | null> {
  */
 export async function saveCmsPage(pageId: string, page: CmsPageData): Promise<CmsDb> {
   const existing = await getCmsPage(pageId);
-  const merged: CmsPageData = {
+  const rawMerged: CmsPageData = {
     ...(existing || {}),
     ...page,
     id: pageId,
     updatedAt: new Date().toISOString(),
   };
+  // Nettoie récursivement toute valeur undefined pour Firestore
+  const merged: CmsPageData = JSON.parse(JSON.stringify(rawMerged));
 
   // Écriture Firestore (source de vérité)
   const ok = await firestoreSetPage(pageId, merged);
   if (!ok) {
     console.error(`[pages-store] ÉCHEC Firestore pour la page "${pageId}"`);
+    throw new Error(`Échec de l'écriture Firestore pour la page "${pageId}".`);
   }
 
   // Écriture JSON local (best-effort, échoue silencieusement en Cloud Run)

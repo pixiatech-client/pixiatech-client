@@ -1,8 +1,8 @@
 
 import admin from "firebase-admin";
-import { getApps, initializeApp, cert, App } from 'firebase-admin/app';
-import { getFirestore, Firestore, FieldValue, Timestamp, AggregateField } from 'firebase-admin/firestore';
-import { getAuth, Auth } from 'firebase-admin/auth';
+import { getApps, initializeApp, cert, type App } from 'firebase-admin/app';
+import { getFirestore, type Firestore, FieldValue, Timestamp, AggregateField } from 'firebase-admin/firestore';
+import { getAuth, type Auth } from 'firebase-admin/auth';
 import { firebaseConfig } from "@/firebase/config";
 
 interface FirebaseAdminServices {
@@ -16,6 +16,16 @@ interface FirebaseAdminServices {
 
 let services: FirebaseAdminServices | null = null;
 
+function getFirestoreInstance(app: App): Firestore {
+  const db = getFirestore(app);
+  try {
+    db.settings({ ignoreUndefinedProperties: true });
+  } catch {
+    // déjà configuré
+  }
+  return db;
+}
+
 function initializeAdminApp(): FirebaseAdminServices {
   console.log('[Admin SDK] Initializing Admin App...');
   if (getApps().length > 0) {
@@ -25,7 +35,7 @@ function initializeAdminApp(): FirebaseAdminServices {
         return {
             app: defaultApp,
             adminAuth: getAuth(defaultApp),
-            adminDb: getFirestore(defaultApp),
+            adminDb: getFirestoreInstance(defaultApp),
             FieldValue: FieldValue,
             Timestamp: Timestamp,
             AggregateField: AggregateField,
@@ -53,7 +63,7 @@ function initializeAdminApp(): FirebaseAdminServices {
       return {
           app,
           adminAuth: getAuth(app),
-          adminDb: getFirestore(app),
+          adminDb: getFirestoreInstance(app),
           FieldValue: FieldValue,
           Timestamp: Timestamp,
           AggregateField: AggregateField,
@@ -78,7 +88,7 @@ function initializeAdminApp(): FirebaseAdminServices {
     return {
       app,
       adminAuth: getAuth(app),
-      adminDb: getFirestore(app),
+      adminDb: getFirestoreInstance(app),
       FieldValue: FieldValue,
       Timestamp: Timestamp,
       AggregateField: AggregateField,

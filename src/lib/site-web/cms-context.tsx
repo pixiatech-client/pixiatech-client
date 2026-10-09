@@ -231,7 +231,24 @@ export const CmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         };
         const currentSection = (active.sections?.[sectionKey] as Record<string, unknown> | undefined) || {};
         let updatedSection: Record<string, unknown>;
-        if (typeof value === 'string') {
+
+        const isMediaField =
+          fieldKey.toLowerCase().includes('image') ||
+          fieldKey.toLowerCase().includes('src') ||
+          fieldKey.toLowerCase().includes('photo') ||
+          fieldKey.toLowerCase().includes('video') ||
+          fieldKey.toLowerCase().includes('bg') ||
+          (typeof value === 'string' &&
+            (value.startsWith('http://') ||
+              value.startsWith('https://') ||
+              value.startsWith('/uploads/') ||
+              value.startsWith('data:image/')));
+
+        if (isMediaField) {
+          // Les images et médias ne sont pas linguistiques : on écrit directement sur la clé racine
+          // pour que TOUTES les langues et TOUS les renderers y accèdent instantanément et de façon pérenne.
+          updatedSection = { ...currentSection, [fieldKey]: value };
+        } else if (typeof value === 'string') {
           // Écrit dans la langue active uniquement : les autres langues ne sont
           // jamais écrasées ni recopiées (indépendance FR/EN).
           updatedSection = setCmsFieldTranslation(currentSection, fieldKey, targetLang, value, {
@@ -275,17 +292,30 @@ export const CmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const sections = (active?.sections || {}) as Record<string, Record<string, unknown>>;
       const section = sections[sectionKey] || {};
       const bag = (section._elements as Record<string, Record<string, unknown>>) || {};
-      const next: Record<string, Record<string, unknown>> = {
-        ...bag,
-        [elementKey]: { ...(bag[elementKey] || {}), ...patch },
-      };
+
+      const currentElStyle = { ...(bag[elementKey] || {}) };
+      for (const [k, v] of Object.entries(patch)) {
+        if (v === undefined) {
+          delete currentElStyle[k];
+        } else {
+          currentElStyle[k] = v;
+        }
+      }
+
+      const next: Record<string, Record<string, unknown>> = { ...bag };
+      if (Object.keys(currentElStyle).length === 0) {
+        delete next[elementKey];
+      } else {
+        next[elementKey] = currentElStyle;
+      }
+
       const updatedPage: CmsPageData = {
         ...(active || { id: currentPageId, name: currentPageId, slug: `/${currentPageId}` }),
         updatedAt: new Date().toISOString(),
         sections: { ...sections, [sectionKey]: { ...section, _elements: next } },
       };
       commitPages((prev) => ({ ...prev, [currentPageId]: updatedPage }));
-      return next[elementKey];
+      return next[elementKey] || {};
     },
     [currentPageId, commitPages]
   );
@@ -550,6 +580,7 @@ export const CmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const activePage = pageOverride ?? pagesRef.current[currentPageId];
     if (!activePage) {
       setSaveStatus('error');
+      setTimeout(() => setSaveStatus('idle'), 4000);
       return false;
     }
     setSaveStatus('saving');
@@ -569,11 +600,15 @@ export const CmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setTimeout(() => setSaveStatus('idle'), 3000);
         return true;
       }
+      const errData = await res.json().catch(() => null);
+      console.error('[CMS] Save failed status:', res.status, errData);
       setSaveStatus('error');
+      setTimeout(() => setSaveStatus('idle'), 4000);
       return false;
     } catch (err) {
       console.warn('[CMS] Save failed:', err);
       setSaveStatus('error');
+      setTimeout(() => setSaveStatus('idle'), 4000);
       return false;
     }
   };
@@ -592,11 +627,13 @@ export const CmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const res = await fetch(`/api/site-web/pages/${currentPageId}`, { cache: 'no-store' });
       if (!res.ok) {
         setSaveStatus('error');
+        setTimeout(() => setSaveStatus('idle'), 4000);
         return false;
       }
       const data = await res.json();
       if (!data?.page) {
         setSaveStatus('error');
+        setTimeout(() => setSaveStatus('idle'), 4000);
         return false;
       }
       commitPages((prev) => ({ ...prev, [currentPageId]: data.page }));
@@ -606,6 +643,7 @@ export const CmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch (err) {
       console.warn('[CMS] Restore failed:', err);
       setSaveStatus('error');
+      setTimeout(() => setSaveStatus('idle'), 4000);
       return false;
     }
   };
