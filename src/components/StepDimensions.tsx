@@ -146,9 +146,11 @@ export default function StepDimensions({
   // impossible configuration.
   React.useEffect(() => {
     if (!screenTypeAvailability) return;
-    if (screenTypeAvailability[currentScreenType]) return;
+    const isAvailable = (t: ScreenType): boolean =>
+      t === '360' ? screenTypeAvailability.is360 : screenTypeAvailability[t];
+    if (isAvailable(currentScreenType)) return;
     const order: ScreenType[] = ['flat', 'curved', '360'];
-    const firstAvailable = order.find(t => screenTypeAvailability[t]);
+    const firstAvailable = order.find(isAvailable);
     if (!firstAvailable) return;
 
     if (firstAvailable === '360') {
