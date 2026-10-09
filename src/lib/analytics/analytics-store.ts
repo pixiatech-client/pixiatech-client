@@ -1,4 +1,5 @@
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
+import { memoAsync } from '@/lib/analytics/analytics-cache';
 import {
   ANALYTICS_ACTION_TYPES,
   ANALYTICS_EVENTS_COLLECTION,
@@ -487,36 +488,41 @@ export function aggregateSessions(docs: AnalyticsSessionSummary[], filter?: Anal
   return agg;
 }
 
-/** Lit toutes les sessions d'une période (bornée). */
+/** Lit toutes les sessions d'une période (bornée). Résultat mémoïsé ~30 s par instance. */
 export async function fetchSessionsInWindow(window: AnalyticsWindow): Promise<AnalyticsSessionSummary[]> {
-  const { adminDb } = getFirebaseAdmin();
-  const snap = await adminDb
-    .collection(ANALYTICS_SESSIONS_COLLECTION)
-    .where('startedAt', '>=', window.from)
-    .where('startedAt', '<=', window.to)
-    .orderBy('startedAt', 'asc')
-    .limit(ANALYTICS_MAX_DOCS)
-    .get();
-  return snap.docs.map((d) => d.data() as AnalyticsSessionSummary);
+  const key = `sessions:${window.from}:${window.to}`;
+  return memoAsync(key, async () => {
+    const { adminDb } = getFirebaseAdmin();
+    const snap = await adminDb
+      .collection(ANALYTICS_SESSIONS_COLLECTION)
+      .where('startedAt', '>=', window.from)
+      .where('startedAt', '<=', window.to)
+      .orderBy('startedAt', 'asc')
+      .limit(ANALYTICS_MAX_DOCS)
+      .get();
+    return snap.docs.map((d) => d.data() as AnalyticsSessionSummary);
+  });
 }
 
 export function filterSessions(docs: AnalyticsSessionSummary[], filter?: AnalyticsFilter): AnalyticsSessionSummary[] {
   return docs.filter((s) => matchesFilter(s, filter));
 }
 
-/** Comptage des conversions = demandes de contact enregistrées dans la période. */
+/** Comptage des conversions = demandes de contact enregistrées dans la période. Mémoïsé ~30 s par instance. */
 export async function countConversions(window: AnalyticsWindow): Promise<number> {
   try {
-    const { adminDb } = getFirebaseAdmin();
-    const fromIso = new Date(window.from).toISOString();
-    const toIso = new Date(window.to).toISOString();
-    const snapshot = await adminDb
-      .collection('siteWebMessages')
-      .where('createdAt', '>=', fromIso)
-      .where('createdAt', '<=', toIso)
-      .select('createdAt')
-      .get();
-    return snapshot.size;
+    return await memoAsync(`conversions:${window.from}:${window.to}`, async () => {
+      const { adminDb } = getFirebaseAdmin();
+      const fromIso = new Date(window.from).toISOString();
+      const toIso = new Date(window.to).toISOString();
+      const snapshot = await adminDb
+        .collection('siteWebMessages')
+        .where('createdAt', '>=', fromIso)
+        .where('createdAt', '<=', toIso)
+        .select('createdAt')
+        .get();
+      return snapshot.size;
+    });
   } catch (err) {
     console.error('[analytics] comptage conversions:', err);
     return 0;

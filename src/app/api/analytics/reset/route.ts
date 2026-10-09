@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getFirebaseAdmin, verifyAdminSession } from '@/lib/firebase-admin';
+import { clearAnalyticsCache } from '@/lib/analytics/analytics-cache';
 
 export const dynamic = 'force-dynamic';
 
@@ -43,6 +44,9 @@ export async function POST() {
       seedMessagesSnap.docs.forEach((doc) => batch.delete(doc.ref));
       await batch.commit();
     }
+
+    // Les fenêtres mémoïsées référencent des documents supprimés : purge obligatoire.
+    clearAnalyticsCache();
 
     return NextResponse.json({
       success: true,
