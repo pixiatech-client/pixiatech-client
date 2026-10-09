@@ -39,25 +39,43 @@ export function LayoutProvider({
   initialBoutiqueB2B = false,
   initialBoutiqueEnabled = true,
   initialThemeName,
+  isWebHost = false,
 }: Readonly<{
   children: React.ReactNode;
   initialBoutiqueB2B?: boolean;
   initialBoutiqueEnabled?: boolean;
   initialThemeName?: string;
+  isWebHost?: boolean;
 }>) {
   const pathname = usePathname();
   const router = useRouter();
+  const isWebDomain =
+    isWebHost ||
+    (typeof window !== 'undefined' &&
+      (window.location.hostname === 'pixiatech.com' ||
+        window.location.hostname === 'www.pixiatech.com'));
   const isAdminPage = pathname.startsWith('/admin');
   const isEmbedPage = pathname.startsWith('/embed') || pathname.startsWith('/chat-widget');
-  const isLegalPage = pathname.startsWith('/mentions-legales') || pathname.startsWith('/politique-confidentialite') || pathname.startsWith('/gestion-cookies');
-  const isWebPage = pathname.startsWith('/web') || isLegalPage;
+  const isLegalPage =
+    pathname.startsWith('/mentions-legales') ||
+    pathname.startsWith('/politique-confidentialite') ||
+    pathname.startsWith('/gestion-cookies');
+  const isWebPage =
+    pathname.startsWith('/web') ||
+    isLegalPage ||
+    (isWebDomain &&
+      !isAdminPage &&
+      !isEmbedPage &&
+      !pathname.startsWith('/mon-compte') &&
+      !pathname.startsWith('/boutique') &&
+      !pathname.startsWith('/quote'));
   const isQuotePage = pathname.startsWith('/quote');
   const isFrontendPage = !isAdminPage && !isEmbedPage && !isWebPage;
   const isBoutiquePage = pathname.startsWith('/boutique');
-  const isHomePage = pathname === '/';
+  const isHomePage = pathname === '/' && !isWebDomain;
   const isMonComptePage = pathname.startsWith('/mon-compte');
   const isContactPage = pathname.startsWith('/contact');
-  const showBottomNav = isFrontendPage && !isHomePage && !isContactPage;
+  const showBottomNav = isFrontendPage && !isHomePage && !isContactPage && !isWebDomain;
   const isMonCompteProtected = pathname.startsWith('/mon-compte/tableau-de-bord') || pathname.startsWith('/mon-compte/commandes') || pathname.startsWith('/mon-compte/parametres') || pathname.startsWith('/mon-compte/litiges');
 
   const bottomNavTabs = isMonCompteProtected

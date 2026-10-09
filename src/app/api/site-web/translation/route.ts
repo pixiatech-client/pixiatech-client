@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
   }
 
   // 2. Lecture + extraction.
-  const page = getCmsPage(pageId);
+  const page = await getCmsPage(pageId);
   if (!page) {
     return NextResponse.json(
       { success: false, error: `Page introuvable : ${pageId}` },
@@ -145,7 +145,7 @@ export async function POST(request: NextRequest) {
 
     // 5. Ecriture, sous controle de concurrence : si la page a ete modifiee
     // pendant l'appel au modele, on refuse d'ecraser le travail de l'admin.
-    saveCmsPageIfUnchanged(pageId, withTranslationMeta(merged.page, meta), expectedUpdatedAt);
+    await saveCmsPageIfUnchanged(pageId, withTranslationMeta(merged.page, meta), expectedUpdatedAt);
 
     return NextResponse.json({
       success: true,

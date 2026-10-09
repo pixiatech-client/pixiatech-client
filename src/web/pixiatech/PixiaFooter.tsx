@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useRegisterCmsSection } from '@/web/cms/useRegisterCmsSection';
 import { Language } from '../pixiatech-translations';
 import { OrbCanvas } from '../components/OrbCanvas';
@@ -32,19 +32,23 @@ export const PixiaFooter: React.FC<PixiaFooterProps> = ({
   onOpenConsultation,
 }) => {
   const router = useRouter();
+  const pathname = usePathname() ?? '';
+  const isHistorical = pathname.startsWith('/web');
+  const webLink = (path: string) => (isHistorical ? (path === '/' ? '/web' : `/web${path}`) : path);
+
   const footerRootRef = useRef<HTMLElement>(null);
   const scrollTo = (hash: string) => {
     const el = document.querySelector(hash);
     if (el) {
       el.scrollIntoView({ behavior: 'smooth' });
     } else {
-      window.location.href = `/web${hash}`;
+      window.location.href = isHistorical ? `/web${hash}` : `/${hash}`;
     }
   };
 
   const handleStartProject = (e: React.MouseEvent) => {
     e.preventDefault();
-    router.push('/');
+    window.location.href = 'https://app.pixiatech.com/';
   };
 
   const t = {
@@ -118,20 +122,20 @@ export const PixiaFooter: React.FC<PixiaFooterProps> = ({
               {t.products}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, fontSize: 14 }}>
-              <a href="/web/product/pxt-fine" style={{ color: 'var(--dark-text-2, #c9c7c1)', transition: 'all .2s ease', textDecoration: 'none' }}>
+              <a href={webLink('/product/pxt-fine')} style={{ color: 'var(--dark-text-2, #c9c7c1)', transition: 'all .2s ease', textDecoration: 'none' }}>
                 XR Fine (WP Series)
               </a>
-              <a href="/web/products" style={{ color: 'var(--dark-text-2, #c9c7c1)', transition: 'all .2s ease', textDecoration: 'none' }}>
+              <a href={webLink('/products')} style={{ color: 'var(--dark-text-2, #c9c7c1)', transition: 'all .2s ease', textDecoration: 'none' }}>
                 XR Vision (MV Series)
               </a>
-              <a href="/web/products" style={{ color: 'var(--dark-text-2, #c9c7c1)', transition: 'all .2s ease', textDecoration: 'none' }}>
+              <a href={webLink('/products')} style={{ color: 'var(--dark-text-2, #c9c7c1)', transition: 'all .2s ease', textDecoration: 'none' }}>
                 XR Flex (AR MKII)
               </a>
-              <a href="/web/products" style={{ color: 'var(--dark-text-2, #c9c7c1)', transition: 'all .2s ease', textDecoration: 'none' }}>
+              <a href={webLink('/products')} style={{ color: 'var(--dark-text-2, #c9c7c1)', transition: 'all .2s ease', textDecoration: 'none' }}>
                 XR Studio (VP Series)
               </a>
               <a
-                href="/web/products"
+                href={webLink('/products')}
                 style={{
                   color: '#C3F910',
                   fontWeight: 700,
@@ -165,7 +169,7 @@ export const PixiaFooter: React.FC<PixiaFooterProps> = ({
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, fontSize: 14 }}>
               <a
-                href="/web#manifesto"
+                href={webLink('/#manifesto')}
                 onClick={(e) => {
                   e.preventDefault();
                   scrollTo('#manifesto');
@@ -175,7 +179,7 @@ export const PixiaFooter: React.FC<PixiaFooterProps> = ({
                 {t.about}
               </a>
               <a
-                href="/web#projects"
+                href={webLink('/#projects')}
                 onClick={(e) => {
                   e.preventDefault();
                   scrollTo('#projects');
@@ -185,7 +189,7 @@ export const PixiaFooter: React.FC<PixiaFooterProps> = ({
                 {t.projects}
               </a>
               <a
-                href="/web#technology"
+                href={webLink('/#technology')}
                 onClick={(e) => {
                   e.preventDefault();
                   scrollTo('#technology');
@@ -195,7 +199,7 @@ export const PixiaFooter: React.FC<PixiaFooterProps> = ({
                 {t.technology}
               </a>
               <a
-                href="/web#experience"
+                href={webLink('/#experience')}
                 onClick={(e) => {
                   e.preventDefault();
                   scrollTo('#experience');
@@ -223,13 +227,13 @@ export const PixiaFooter: React.FC<PixiaFooterProps> = ({
               {t.support}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, fontSize: 14 }}>
-              <a href="/web/contact" style={{ color: 'var(--dark-text-2, #c9c7c1)', transition: 'all .2s ease', textDecoration: 'none' }}>
+              <a href={webLink('/contact')} style={{ color: 'var(--dark-text-2, #c9c7c1)', transition: 'all .2s ease', textDecoration: 'none' }}>
                 {t.contact}
               </a>
-              <a href="/web/contact" style={{ color: 'var(--dark-text-2, #c9c7c1)', transition: 'all .2s ease', textDecoration: 'none' }}>
+              <a href={webLink('/contact')} style={{ color: 'var(--dark-text-2, #c9c7c1)', transition: 'all .2s ease', textDecoration: 'none' }}>
                 {t.techSupport}
               </a>
-              <a href="/web/insights" style={{ color: 'var(--dark-text-2, #c9c7c1)', transition: 'all .2s ease', textDecoration: 'none' }}>
+              <a href={webLink('/insights')} style={{ color: 'var(--dark-text-2, #c9c7c1)', transition: 'all .2s ease', textDecoration: 'none' }}>
                 {t.resources}
               </a>
               <button

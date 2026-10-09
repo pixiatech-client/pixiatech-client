@@ -162,11 +162,14 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
   const isHome = pathname === '/web' || pathname === '/web/' || pathname === '/';
   const routeKey: 'home' | 'products' | 'insights' | 'contact' | 'none' = isHome
     ? 'home'
-    : pathname.startsWith('/web/products') || pathname.startsWith('/web/product/')
+    : pathname.startsWith('/web/products') ||
+      pathname.startsWith('/web/product/') ||
+      pathname.startsWith('/products') ||
+      pathname.startsWith('/product/')
       ? 'products'
-      : pathname.startsWith('/web/insights')
+      : pathname.startsWith('/web/insights') || pathname.startsWith('/insights')
         ? 'insights'
-        : pathname.startsWith('/web/contact')
+        : pathname.startsWith('/web/contact') || pathname.startsWith('/contact')
           ? 'contact'
           : 'none';
   const [activeSection, setActiveSection] = useState<string | null>(null);
@@ -175,8 +178,18 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
   // Contexte = route de fiche produit. Elle est rendue entre PRODUITS et
   // RESSOURCES : Accueil | Produits | [sections] | Ressources | Contact.
   // Hors fiche produit, `productNav` est vide et le header est inchangé.
-  const isProductDetail = pathname.startsWith('/web/product/');
+  const isProductDetail =
+    pathname.startsWith('/web/product/') || pathname.startsWith('/product/');
   const productNav = isProductDetail ? (productSections ?? []) : [];
+
+  const webLink = (path: string) => {
+    // Si l'URL courante commence par /web (historique sur app.pixiatech.com), on préserve /web.
+    // Sinon sur pixiatech.com, on produit l'URL propre sans /web.
+    if (pathname.startsWith('/web')) {
+      return path === '/' ? '/web' : `/web${path}`;
+    }
+    return path;
+  };
 
   const [scrolled, setScrolled] = useState(false);
   const [megaOpen, setMegaOpen] = useState(false);
@@ -299,7 +312,7 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
     setMobileMenuOpen(false);
     setSearchOpen(false);
     trackProductClick(target.productSlug);
-    router.push(`/web/product/${target.productSlug}`);
+    router.push(webLink(`/product/${target.productSlug}`));
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -450,12 +463,12 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
           >
             {/* Home */}
             <a
-              href="/web"
+              href={webLink('/')}
               onClick={(e) => {
                 e.preventDefault();
                 setMegaOpen(false);
                 setMobileMenuOpen(false);
-                router.push('/web');
+                router.push(webLink('/'));
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
               className={`pxt-nav-link ${routeKey === 'home' && !activeSection ? 'active' : ''}`}
@@ -547,12 +560,12 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
             )}
 
             <a
-              href="/web/insights"
+              href={webLink('/insights')}
               onClick={(e) => {
                 e.preventDefault();
                 setMegaOpen(false);
                 setMobileMenuOpen(false);
-                router.push('/web/insights');
+                router.push(webLink('/insights'));
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
               className={`pxt-nav-link ${routeKey === 'insights' ? 'active' : ''}`}
@@ -561,12 +574,12 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
             </a>
 
             <a
-              href="/web/contact"
+              href={webLink('/contact')}
               onClick={(e) => {
                 e.preventDefault();
                 setMegaOpen(false);
                 setMobileMenuOpen(false);
-                router.push('/web/contact');
+                router.push(webLink('/contact'));
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
               className={`pxt-nav-link ${routeKey === 'contact' ? 'active' : ''}`}
@@ -999,7 +1012,7 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
 
                   {/* ALL PRODUCTS → */}
                   <a
-                    href="/web/products"
+                    href={webLink('/products')}
                     onClick={() => setMegaOpen(false)}
                     style={{
                       display: 'inline-flex',
@@ -1077,11 +1090,11 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
               /* Level 1: Main Menu */
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                 <a
-                  href="/web"
+                  href={webLink('/')}
                   onClick={(e) => {
                     e.preventDefault();
                     setMobileMenuOpen(false);
-                    router.push('/web');
+                    router.push(webLink('/'));
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                   }}
                   style={{
@@ -1238,11 +1251,11 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                 )}
 
                 <a
-                  href="/web/insights"
+                  href={webLink('/insights')}
                   onClick={(e) => {
                     e.preventDefault();
                     setMobileMenuOpen(false);
-                    router.push('/web/insights');
+                    router.push(webLink('/insights'));
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                   }}
                   style={{
@@ -1260,11 +1273,11 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                 </a>
 
                 <a
-                  href="/web/contact"
+                  href={webLink('/contact')}
                   onClick={(e) => {
                     e.preventDefault();
                     setMobileMenuOpen(false);
-                    router.push('/web/contact');
+                    router.push(webLink('/contact'));
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                   }}
                   style={{

@@ -3,8 +3,8 @@ import { requireAdmin } from '@/lib/site-web/auth';
 import { getCmsPage, saveCmsPage, deleteCmsPage } from '@/lib/site-web/pages-store';
 import type { CmsPageData } from '@/lib/site-web/cms-types';
 
-// Désactive le cache Next.js : cette route lit un fichier JSON sur disque
-// qui peut changer à tout moment (modifications via l'éditeur).
+// Désactive le cache Next.js : cette route lit des données Firestore
+// qui peuvent changer à tout moment (modifications via l'éditeur).
 export const dynamic = 'force-dynamic';
 
 interface RouteContext {
@@ -14,7 +14,7 @@ interface RouteContext {
 export async function GET(_request: NextRequest, context: RouteContext) {
   try {
     const { pageId } = await context.params;
-    const page = getCmsPage(pageId);
+    const page = await getCmsPage(pageId);
     if (!page) {
       return NextResponse.json(
         { success: false, message: `Page '${pageId}' introuvable dans le CMS.` },
@@ -39,14 +39,14 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     if (!body || typeof body !== 'object') {
       return NextResponse.json({ success: false, message: 'Corps de requête invalide.' }, { status: 400 });
     }
-    const existing = getCmsPage(pageId);
-    const db = saveCmsPage(pageId, {
+    const existing = await getCmsPage(pageId);
+    const db = await saveCmsPage(pageId, {
       id: pageId,
       name: body.name ?? existing?.name ?? pageId,
       slug: body.slug ?? existing?.slug ?? `/${pageId}`,
       updatedAt: body.updatedAt ?? new Date().toISOString(),
       // `sections` : on ne remplace que si le champ est fourni, sinon on
-      // conserve l'existant (une edition de meta ne doit pas vider le contenu).
+      // conserve l'existant (une édition de meta ne doit pas vider le contenu).
       sections: body.sections ?? existing?.sections ?? {},
       // Même règle pour `meta` : `body.meta` absent ne doit plus écraser une
       // valeur enregistrée avec `undefined`.
@@ -72,7 +72,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
   if (auth instanceof NextResponse) return auth;
   try {
     const { pageId } = await context.params;
-    deleteCmsPage(pageId);
+    await deleteCmsPage(pageId);
     return NextResponse.json({ success: true, message: `Page '${pageId}' supprimée du CMS.` });
   } catch (err: unknown) {
     return NextResponse.json({ success: false, error: (err as Error).message }, { status: 500 });

@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
   const auth = await requireAdmin(request);
   if (auth instanceof NextResponse) return auth;
   try {
-    const db = resetCmsPages();
+    const db = await resetCmsPages();
     return NextResponse.json({
       success: true,
       message: 'Base de données CMS réinitialisée aux valeurs par défaut.',

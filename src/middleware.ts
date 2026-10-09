@@ -91,11 +91,23 @@ export async function middleware(request: NextRequest) {
     .map((host) => host.trim().toLowerCase())
     .filter(Boolean);
   // Chemins réservés à l'application : jamais réécrits vers /web, même sur un hôte Web.
-  const APP_ONLY_PREFIXES = ['/admin', '/mon-compte', '/boutique', '/quote', '/api', '/_next', '/embed', '/chat-widget', '/test-admin', '/test-db', '/contact'];
+  const APP_ONLY_PREFIXES = ['/admin', '/mon-compte', '/boutique', '/quote', '/api', '/_next', '/embed', '/chat-widget', '/test-admin', '/test-db'];
 
   const rawHost = request.headers.get('x-forwarded-host') ?? request.headers.get('host') ?? request.nextUrl.host;
   const hostname = rawHost.split(':')[0].toLowerCase().trim();
   const isWebHost = WEB_HOSTS.includes(hostname);
+
+  // Sur le domaine vitrine (pixiatech.com), si une URL contient explicitement /web,
+  // on la normalise vers l'URL propre sans /web visible.
+  if (isWebHost) {
+    if (pathname === '/web' || pathname === '/web/') {
+      return NextResponse.redirect(new URL('/' + request.nextUrl.search, requestUrl));
+    }
+    if (pathname.startsWith('/web/')) {
+      const cleanPath = pathname.replace(/^\/web/, '');
+      return NextResponse.redirect(new URL(cleanPath + request.nextUrl.search, requestUrl));
+    }
+  }
 
   // Public pages: cache on CDN
   const publicPages = ['/', '/embed', '/chat-widget', '/quote/success', '/quote/verify', '/contact'];
@@ -109,7 +121,13 @@ export async function middleware(request: NextRequest) {
     if (!isAppOnly && !isStaticAsset) {
       const webPath = pathname === '/' ? '/web' : `/web${pathname}`;
       const targetUrl = new URL(webPath + request.nextUrl.search, requestUrl);
-      const response = NextResponse.rewrite(targetUrl);
+      const requestHeaders = new Headers(request.headers);
+      requestHeaders.set('x-is-web-host', '1');
+      const response = NextResponse.rewrite(targetUrl, {
+        request: {
+          headers: requestHeaders,
+        },
+      });
       response.headers.set('Cache-Control', 'public, max-age=60, s-maxage=120');
       return applySecurityHeaders(response, isHttps, isEmbeddable);
     }

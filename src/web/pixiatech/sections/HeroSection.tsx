@@ -22,27 +22,39 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ lang = 'FR', onOpenCon
 
   const activeLang = isEditing ? currentLang : normalizeLang(lang);
 
-  const heroPrimaryImage =
-    cmsHero.slideImage1 || cmsHero.primaryImage || cmsHero.heroImage || '/uploads/site/hero-1.jpg';
+  // Les images de slides sont lues via getCmsText pour être compatibles avec le
+  // stockage _i18n (écrit par updateSectionField via le mode édition visuel).
+  // getCmsFieldTranslation sait lire _i18n.slideImageX.fr.value ET le champ
+  // plat cmsHero.slideImageX (rétrocompatibilité).
+  const slideImage1 =
+    getCmsText(cmsHero, 'slideImage1', 'fr') ||
+    (cmsHero.primaryImage as string | undefined) ||
+    (cmsHero.heroImage as string | undefined) ||
+    '/uploads/site/hero-1.jpg';
+  const slideImage2 = getCmsText(cmsHero, 'slideImage2', 'fr') || '/uploads/site/hero-2.jpg';
+  const slideImage3 = getCmsText(cmsHero, 'slideImage3', 'fr') || '/uploads/site/hero-3.jpg';
 
   const slides = [
     {
-      img: heroPrimaryImage,
+      img: slideImage1,
       alt: activeLang === 'fr'
         ? 'Installation LED — hall architectural avec structure illuminée'
         : 'LED installation — architectural lobby with illuminated structure',
+      imageKey: 'slideImage1',
     },
     {
-      img: cmsHero.slideImage2 || '/uploads/site/hero-2.jpg',
+      img: slideImage2,
       alt: activeLang === 'fr'
         ? 'Installation LED — atrium avec écran LED immersif'
         : 'LED installation — atrium with immersive LED display',
+      imageKey: 'slideImage2',
     },
     {
-      img: cmsHero.slideImage3 || '/uploads/site/hero-3.jpg',
+      img: slideImage3,
       alt: activeLang === 'fr'
         ? 'Installation LED — mur LED panoramique incurvé'
         : 'LED installation — curved panoramic LED wall',
+      imageKey: 'slideImage3',
     },
   ];
 
@@ -108,6 +120,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ lang = 'FR', onOpenCon
               src={s.img}
               alt={s.alt}
               className="slot-img"
+              data-image-key={s.imageKey}
             />
           </div>
         );
@@ -143,7 +156,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ lang = 'FR', onOpenCon
       <div className="hero-wrap">
         <div className="hero-in">
           {/* Eyebrow */}
-          <div className="hero-eyebrow">
+          <div className="hero-eyebrow" data-text-key="badge">
             {t.eyebrow}
           </div>
 
@@ -156,18 +169,18 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ lang = 'FR', onOpenCon
               ...cms.title,
             }}
           >
-            <span style={{ display: 'block' }}>{t.h1Line1}</span>
-            <span style={{ display: 'block' }}>{t.h1Line2}</span>
+            <span style={{ display: 'block' }} data-text-key="title">{t.h1Line1}</span>
+            <span style={{ display: 'block' }} data-text-key="tagline">{t.h1Line2}</span>
           </h1>
 
           {/* Subtitle */}
-          <p className="pretty hero-sub" style={{ opacity: 1, transition: 'opacity .5s ease' }}>
+          <p className="pretty hero-sub" style={{ opacity: 1, transition: 'opacity .5s ease' }} data-text-key="description">
             {t.sub}
           </p>
 
           {/* Action Buttons */}
           <div className="hero-ctas">
-            <a href="#markets" className="hero-cta1">
+            <a href="#markets" className="hero-cta1" data-text-key="primaryCta">
               {t.cta1}
             </a>
             <button
@@ -175,6 +188,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ lang = 'FR', onOpenCon
               onClick={onOpenConsultation}
               className="hero-cta2"
               style={{ cursor: 'pointer', fontFamily: 'inherit' }}
+              data-text-key="secondaryCta"
             >
               {t.cta2}
             </button>

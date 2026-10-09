@@ -2,7 +2,7 @@
 import type { Metadata } from 'next';
 import { Inter, Orbitron } from 'next/font/google';
 import Script from 'next/script';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import './globals.css';
 import { LayoutProvider } from '@/components/layout-provider';
 import { I18nProvider } from '@/lib/i18n';
@@ -46,8 +46,14 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const cookieStore = await cookies();
+  const [cookieStore, headersList] = await Promise.all([cookies(), headers()]);
   const locale = cookieStore.get('admin-locale')?.value === 'en' ? 'en' : 'fr';
+  const rawHost = headersList.get('x-forwarded-host') ?? headersList.get('host') ?? '';
+  const hostname = rawHost.split(':')[0].toLowerCase().trim();
+  const isWebHost =
+    headersList.get('x-is-web-host') === '1' ||
+    hostname === 'pixiatech.com' ||
+    hostname === 'www.pixiatech.com';
 
   const [settings, activeThemeResult] = await Promise.all([getSettings(), getActiveGlobalTheme()]);
   const globalTheme = resolveTheme(activeThemeResult.themeId);
@@ -76,6 +82,7 @@ export default async function RootLayout({
             initialBoutiqueB2B={boutiqueB2B}
             initialBoutiqueEnabled={boutiqueEnabled}
             initialThemeName={globalTheme.name}
+            isWebHost={isWebHost}
           >
             {children}
           </LayoutProvider>
