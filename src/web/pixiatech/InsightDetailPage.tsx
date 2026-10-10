@@ -170,9 +170,13 @@ export function PixiaInsightDetailPage({ article }: InsightDetailPageProps) {
     return all[idx + 1];
   }, [article.slug]);
 
+  const content =
+    lang === 'FR' ? article.contentFr ?? article.content : article.content;
+  const faqs = lang === 'FR' ? article.faqsFr ?? article.faqs : article.faqs;
+
   const { intro, sections } = useMemo(
-    () => parseMarkdownContent(article.content),
-    [article.content]
+    () => parseMarkdownContent(content),
+    [content]
   );
 
   // Filter FAQ from TOC – we'll render it inline without TOC entry clutter
@@ -544,9 +548,9 @@ export function PixiaInsightDetailPage({ article }: InsightDetailPageProps) {
                   </h2>
 
                   {/* FAQ – interactive accordions */}
-                  {isFaq && article.faqs && article.faqs.length > 0 ? (
+                  {isFaq && faqs && faqs.length > 0 ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                      {article.faqs.map((faq, fi) => (
+                      {faqs.map((faq, fi) => (
                         <details
                           key={fi}
                           style={{

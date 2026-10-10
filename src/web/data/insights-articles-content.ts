@@ -1,3 +1,5 @@
+import { INSIGHTS_ARTICLES_FR } from './insights-articles-content-fr';
+
 export interface InsightFaqItem {
   question: string;
   answer: string;
@@ -24,7 +26,9 @@ export interface InsightArticle {
   featured?: boolean;
   publishedTimeIso?: string;
   content: string;
+  contentFr?: string;
   faqs: InsightFaqItem[];
+  faqsFr?: InsightFaqItem[];
   toc: InsightTocItem[];
 }
 
@@ -1884,10 +1888,21 @@ export const INSIGHTS_ARTICLES: InsightArticle[] = [
   }
 ];
 
+function withFrenchContent(article: InsightArticle): InsightArticle {
+  const fr = INSIGHTS_ARTICLES_FR[article.slug];
+  if (!fr) return article;
+  return {
+    ...article,
+    contentFr: fr.contentFr,
+    faqsFr: fr.faqsFr,
+  };
+}
+
 export function getInsightArticle(slug: string): InsightArticle | undefined {
-  return INSIGHTS_ARTICLES.find((a) => a.slug === slug);
+  const article = INSIGHTS_ARTICLES.find((a) => a.slug === slug);
+  return article ? withFrenchContent(article) : undefined;
 }
 
 export function getAllInsightArticles(): InsightArticle[] {
-  return INSIGHTS_ARTICLES;
+  return INSIGHTS_ARTICLES.map(withFrenchContent);
 }

@@ -10,6 +10,7 @@ import { GestionCookiesPage } from '@/web/legal/GestionCookiesPage';
 import { PixiaContactPage } from '@/web/pixiatech/ContactPage';
 import { resolvePublicProduct } from '@/lib/products/resolve-public-product';
 import { connection } from 'next/server';
+import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 
@@ -19,6 +20,8 @@ export async function generateMetadata({
   params: Promise<{ slug?: string[] }>;
 }): Promise<Metadata> {
   const { slug } = await params;
+  const locale = (await cookies()).get('admin-locale')?.value;
+  const isEn = locale === 'en';
   if (slug?.[0] === 'contact') {
     return {
       title: 'Contactez-nous | PIXIATECH',
@@ -30,21 +33,28 @@ export async function generateMetadata({
     if (slug?.[1]) {
       const article = getInsightArticle(slug[1]);
       if (article) {
+        const title = isEn ? article.title : article.titleFr ?? article.title;
+        const description = isEn
+          ? article.desc ?? article.title
+          : article.descFr ?? article.titleFr ?? article.title;
         return {
-          title: `${article.title} | PIXIATECH`,
-          description: article.desc ?? article.title,
+          title: `${title} | PIXIATECH`,
+          description,
           openGraph: {
-            title: article.title,
-            description: article.desc ?? article.title,
+            title,
+            description,
             images: [article.img],
           },
         };
       }
     }
     return {
-      title: 'Insights & Ressources Techniques | PIXIATECH',
-      description:
-        "Guides, études comparatives et analyses techniques par l'équipe d'ingénierie PixiaTech.",
+      title: isEn
+        ? 'Insights & Technical Resources | PIXIATECH'
+        : 'Insights & Ressources techniques | PIXIATECH',
+      description: isEn
+        ? 'Guides, comparative studies and technical analyses by the PixiaTech engineering team.'
+        : "Guides, études comparatives et analyses techniques par l'équipe d'ingénierie PixiaTech.",
     };
   }
   return {};
