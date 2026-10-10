@@ -111,7 +111,7 @@ export function PixiaInsightsPage() {
               ))}
             </div>
 
-            <a className="art g-lead" href="/web/insights" data-reveal="true" style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 'clamp(28px,4vw,64px)', alignItems: 'end', marginBottom: 96, color: 'var(--ink)' }}>
+            <a className="art g-lead" href={`/web/insights/${featured.slug}`} data-reveal="true" style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 'clamp(28px,4vw,64px)', alignItems: 'end', marginBottom: 96, color: 'var(--ink)', textDecoration: 'none' }}>
                 <div className="art-lead-media" style={{ position: 'relative', height: 'min(64vh,620px)', overflow: 'hidden' }}>
                   <div className="art-img" style={{ position: 'absolute', inset: 0 }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -131,14 +131,14 @@ export function PixiaInsightsPage() {
                     </p>
                   )}
                   <div style={{ fontSize: 11, letterSpacing: '.16em', color: 'var(--muted)' }}>
-                    {readOf(featured.read, lang)} · {featured.date}
+                    {readOf(featured.read, lang)} · {lang === 'FR' && featured.dateFr ? featured.dateFr : featured.date}
                   </div>
                 </div>
               </a>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(300px,100%),1fr))', gap: '32px 28px' }}>
               {visible.map((a) => (
-                <a className="art" href="/web/insights" key={a.slug} data-reveal="true" style={{ color: 'var(--ink)' }}>
+                <a className="art" href={`/web/insights/${a.slug}`} key={a.slug} data-reveal="true" style={{ color: 'var(--ink)', textDecoration: 'none' }}>
                   <div style={{ marginBottom: 20 }}>
                     <div style={{ position: 'relative', height: 280, overflow: 'hidden' }}>
                       <div className="art-img" style={{ position: 'absolute', inset: 0 }}>
@@ -152,7 +152,7 @@ export function PixiaInsightsPage() {
                     {titleOf(a, lang)}
                   </div>
                   <div style={{ fontSize: 11, letterSpacing: '.16em', color: 'var(--muted)' }}>
-                    {readOf(a.read, lang)} · {a.date}
+                    {readOf(a.read, lang)} · {lang === 'FR' && a.dateFr ? a.dateFr : a.date}
                   </div>
                 </a>
               ))}

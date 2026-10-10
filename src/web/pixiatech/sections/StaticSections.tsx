@@ -849,7 +849,7 @@ export const InsightsSection: React.FC<SectionCommonProps> = ({
             return (
             <a
               className="art"
-              href="/web/insights"
+              href={`/web/insights/${a.slug}`}
               key={a.slug}
               style={{ color: '#111110', textDecoration: 'none', display: 'block' }}
             >

@@ -1,5 +1,7 @@
 import { PixiaHomePage } from '@/web/pixiatech/HomePage';
 import { PixiaInsightsPage } from '@/web/pixiatech/InsightsPage';
+import { PixiaInsightDetailPage } from '@/web/pixiatech/InsightDetailPage';
+import { getInsightArticle } from '@/web/data/insights-articles-content';
 import { WebPage } from '@/web/WebPage';
 import { AllProductsPage } from '@/web/pixiatech/AllProductsPage';
 import { MentionsLegalesPage } from '@/web/legal/MentionsLegalesPage';
@@ -8,6 +10,7 @@ import { GestionCookiesPage } from '@/web/legal/GestionCookiesPage';
 import { PixiaContactPage } from '@/web/pixiatech/ContactPage';
 import { resolvePublicProduct } from '@/lib/products/resolve-public-product';
 import { connection } from 'next/server';
+import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 
 export async function generateMetadata({
@@ -23,6 +26,27 @@ export async function generateMetadata({
         "Contactez l'équipe PIXIATECH pour vos projets d'écrans LED, devis et solutions visuelles sur-mesure.",
     };
   }
+  if (slug?.[0] === 'insights') {
+    if (slug?.[1]) {
+      const article = getInsightArticle(slug[1]);
+      if (article) {
+        return {
+          title: `${article.title} | PIXIATECH`,
+          description: article.desc ?? article.title,
+          openGraph: {
+            title: article.title,
+            description: article.desc ?? article.title,
+            images: [article.img],
+          },
+        };
+      }
+    }
+    return {
+      title: 'Insights & Ressources Techniques | PIXIATECH',
+      description:
+        "Guides, études comparatives et analyses techniques par l'équipe d'ingénierie PixiaTech.",
+    };
+  }
   return {};
 }
 
@@ -35,6 +59,13 @@ export default async function WebSlugPage({
   const first = slug?.[0];
 
   if (first === 'insights') {
+    if (slug?.[1]) {
+      const article = getInsightArticle(slug[1]);
+      if (!article) {
+        notFound();
+      }
+      return <PixiaInsightDetailPage article={article} />;
+    }
     return <PixiaInsightsPage />;
   }
 
