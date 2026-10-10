@@ -2,10 +2,10 @@
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useCallback, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import fr from './locales/fr.json';
 import en from './locales/en.json';
 import zhCN from './locales/zh-CN.json';
-import { setLocaleCookie } from './locale-actions';
 
 type Locale = 'fr' | 'en' | 'zh-CN';
 type Translations = typeof fr;
@@ -54,15 +54,24 @@ const getStoredLocale = (): Locale => {
 };
 
 export const I18nProvider = ({ children, initialLocale }: { children: ReactNode; initialLocale?: Locale }) => {
+  const router = useRouter();
   const [locale, setLocaleState] = useState<Locale>(initialLocale ?? getStoredLocale);
 
   const setLocale = useCallback((newLocale: Locale) => {
     setLocaleState(newLocale);
     if (typeof window !== 'undefined') {
       localStorage.setItem('admin-locale', newLocale);
+      // Persistance côté serveur : on écrit le cookie directement au lieu
+      // d'appeler une server action. Sur pixiatech.com, l'URL publique est
+      // réécrite en interne vers /web/..., mais un POST de server action n'est
+      // pas réécrit (voir middleware) : il retomberait sur la route catch-all
+      // racine et redirigerait vers l'accueil. router.refresh() recharge les
+      // composants serveur (titre SEO inclus) avec le nouveau cookie, sans
+      // navigation.
+      document.cookie = `admin-locale=${newLocale}; path=/; max-age=31536000; samesite=lax`;
+      router.refresh();
     }
-    setLocaleCookie(newLocale).catch(() => {});
-  }, []);
+  }, [router]);
 
   const t = useCallback((key: string, options?: Record<string, string | number>): string => {
     const keys = key.split('.');
