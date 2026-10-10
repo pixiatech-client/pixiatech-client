@@ -101,11 +101,11 @@ export async function middleware(request: NextRequest) {
   // on la normalise vers l'URL propre sans /web visible.
   if (isWebHost) {
     if (pathname === '/web' || pathname === '/web/') {
-      return NextResponse.redirect(new URL('/' + request.nextUrl.search, requestUrl));
+      return NextResponse.redirect(new URL('/' + request.nextUrl.search, baseUrl));
     }
     if (pathname.startsWith('/web/')) {
       const cleanPath = pathname.replace(/^\/web/, '');
-      return NextResponse.redirect(new URL(cleanPath + request.nextUrl.search, requestUrl));
+      return NextResponse.redirect(new URL(cleanPath + request.nextUrl.search, baseUrl));
     }
   }
 
@@ -120,7 +120,7 @@ export async function middleware(request: NextRequest) {
     const isStaticAsset = lastSegment.includes('.');
     if (!isAppOnly && !isStaticAsset) {
       const webPath = pathname === '/' ? '/web' : `/web${pathname}`;
-      const targetUrl = new URL(webPath + request.nextUrl.search, requestUrl);
+      const targetUrl = new URL(webPath + request.nextUrl.search, baseUrl);
       const requestHeaders = new Headers(request.headers);
       requestHeaders.set('x-is-web-host', '1');
       const response = NextResponse.rewrite(targetUrl, {
