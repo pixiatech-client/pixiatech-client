@@ -120,7 +120,10 @@ export async function middleware(request: NextRequest) {
     const isStaticAsset = lastSegment.includes('.');
     if (!isAppOnly && !isStaticAsset) {
       const webPath = pathname === '/' ? '/web' : `/web${pathname}`;
-      const targetUrl = new URL(webPath + request.nextUrl.search, baseUrl);
+      // Réécriture INTERNE : on garde l'origine interne de la requête (initUrl),
+      // sinon Next traite la destination comme externe, fait un fetch sortant vers
+      // https://pixiatech.com/... qui retombe sur l'edge privé App Hosting → 401.
+      const targetUrl = new URL(webPath + request.nextUrl.search, request.nextUrl.origin);
       const requestHeaders = new Headers(request.headers);
       requestHeaders.set('x-is-web-host', '1');
       const response = NextResponse.rewrite(targetUrl, {
