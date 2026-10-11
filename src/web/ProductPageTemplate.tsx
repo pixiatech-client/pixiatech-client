@@ -246,6 +246,7 @@ function ProductView({ slug, fallbackProduct, isPreview = false }: ProductPageTe
 <SpecsSection
                   specs={product?.specs}
                   shopLinks={product?.shopLinks}
+                  shopLinkTypes={product?.shopLinkTypes}
                   onSelectDatasheet={(model) => setActiveDatasheetModel(model)}
                   lang={effectiveLang}
                 />

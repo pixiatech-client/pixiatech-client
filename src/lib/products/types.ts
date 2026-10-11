@@ -308,6 +308,32 @@ export interface ProductSpecs {
  */
 export type ProductShopLinks = Record<string, string>;
 
+/**
+ * Type de transaction associé au lien boutique d'une variante. Il ne change
+ * QUE le libellé du bouton public, jamais sa visibilité (l'URL garde la main)
+ * ni sa destination.
+ *
+ * - `vente`       : vente directe        (« Acheter le produit »).
+ * - `location`    : mise en location     (« Louer ce produit »).
+ * - `surcommande` : modèle commandé, non stocké (« Commander ce produit »).
+ */
+export type ShopLinkTransactionType = 'vente' | 'location' | 'surcommande';
+
+/**
+ * Type de transaction par variante, indexé par NOM DE MODÈLE — miroir de
+ * {@link ProductShopLinks} : même clé RACINE du produit, donc préservé par la
+ * même fusion superficielle de `saveProduct` et jamais réécrit à la réanalyse
+ * de PDF.
+ *
+ * Clé absente ou valeur inconnue = type par défaut « vente » : un produit
+ * antérieur à ce champ garde strictement son comportement historique, le
+ * bouton « Acheter le produit ».
+ */
+export type ProductShopLinkTypes = Record<string, ShopLinkTransactionType>;
+
+/** Type par défaut : comportement historique, bouton « Acheter le produit ». */
+export const SHOP_LINK_DEFAULT_TRANSACTION_TYPE: ShopLinkTransactionType = 'vente';
+
 export interface ProductFieldworkProject {
   title: string;
   location?: string;
@@ -418,6 +444,11 @@ export interface Product {
    * extraite du PDF. Voir {@link ProductShopLinks} pour le choix de stockage.
    */
   shopLinks?: ProductShopLinks;
+  /**
+   * Type de transaction par variante, miroir de `shopLinks`. Voir
+   * {@link ProductShopLinkTypes} pour la règle de compatibilité.
+   */
+  shopLinkTypes?: ProductShopLinkTypes;
   fieldwork?: ProductFieldwork;
   next?: ProductNext;
   seo?: ProductSeo;
@@ -553,6 +584,63 @@ export function sanitizeShopLinks(input: Record<string, unknown> | undefined | n
     if (!key) continue;
     const url = normalizeShopUrl(value);
     if (url) out[key] = url;
+  }
+  return out;
+}
+
+/** `true` si la valeur est un type de transaction reconnu. */
+export function isValidShopLinkType(value: unknown): value is ShopLinkTransactionType {
+  return value === 'vente' || value === 'location' || value === 'surcommande';
+}
+
+/**
+ * Règle unique du type d'une variante : le type de transaction, ou le défaut.
+ *
+ * Centralise la décision pour que l'affichage, l'admin et les tests partagent
+ * exactement le même code. Une donnée absente, corrompue ou inconnue retombe
+ * sur « vente » : les anciens produits (sans `shopLinkTypes`) continuent
+ * d'afficher « Acheter le produit ».
+ */
+export function shopLinkTypeForVariant(
+  shopLinkTypes: ProductShopLinkTypes | undefined | null,
+  modelName: string
+): ShopLinkTransactionType {
+  if (!shopLinkTypes || typeof shopLinkTypes !== 'object') {
+    return SHOP_LINK_DEFAULT_TRANSACTION_TYPE;
+  }
+  const type = shopLinkTypes[modelName];
+  return isValidShopLinkType(type) ? type : SHOP_LINK_DEFAULT_TRANSACTION_TYPE;
+}
+
+/**
+ * Normalise une map lue dans les données enregistrées : seules les valeurs
+ * reconnues sont conservées, clé ou valeur corrompue écartée.
+ */
+export function normalizeShopLinkTypes(
+  input: Record<string, unknown> | undefined | null
+): ProductShopLinkTypes {
+  const out: ProductShopLinkTypes = {};
+  if (!input || typeof input !== 'object') return out;
+  for (const [modelName, value] of Object.entries(input)) {
+    const key = modelName.trim();
+    if (!key) continue;
+    if (isValidShopLinkType(value)) out[key] = value;
+  }
+  return out;
+}
+
+/**
+ * Ne conserve, pour la sauvegarde, que les types reconnus rattachés à une
+ * variante qui porte un lien valide : un type sans URL ne produit aucun bouton
+ * et n'a pas à être persisté.
+ */
+export function sanitizeShopLinkTypes(
+  input: Record<string, unknown> | undefined | null,
+  validVariantNames: ReadonlyArray<string>
+): ProductShopLinkTypes {
+  const out = normalizeShopLinkTypes(input);
+  for (const key of Object.keys(out)) {
+    if (!validVariantNames.includes(key)) delete out[key];
   }
   return out;
 }

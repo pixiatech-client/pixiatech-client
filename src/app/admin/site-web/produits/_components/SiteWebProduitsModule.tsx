@@ -37,14 +37,14 @@ import {
   uploadProductHoverImage,
   deleteProductMedia,
 } from '@/lib/products/products-service';
-import { slugify, groupDisplayName, productCategoryIds, MAX_PRODUCT_NAME_LENGTH, isValidShopUrl, normalizeShopUrl, sanitizeShopLinks } from '@/lib/products/types';
+import { slugify, groupDisplayName, productCategoryIds, MAX_PRODUCT_NAME_LENGTH, isValidShopUrl, normalizeShopUrl, sanitizeShopLinks, normalizeShopLinkTypes, sanitizeShopLinkTypes, shopLinkTypeForVariant } from '@/lib/products/types';
 import {
   SYSTEM_TEMPLATE_LABEL,
   SYSTEM_TEMPLATE_PROTECTED_MESSAGE,
   isSystemTemplate,
   partitionDeletableProducts,
 } from '@/lib/products/system-template';
-import type { Product, ProductCategory, ProductCategoryGroup, ProductMediaItem, ProductShopLinks } from '@/lib/products/types';
+import type { Product, ProductCategory, ProductCategoryGroup, ProductMediaItem, ProductShopLinkTypes, ProductShopLinks, ShopLinkTransactionType } from '@/lib/products/types';
 
 interface SiteWebProduitsModuleProps {
   initial?: Product[];
@@ -62,6 +62,23 @@ const ENVIRONMENT_LABEL: Record<string, string> = {
   outdoor: 'Extérieur',
   both: 'Intérieur / Extérieur',
   showcase: 'Vitrine',
+};
+
+/** Types de transaction proposés par le sélecteur, dans l'ordre d'affichage. */
+const SHOP_TRANSACTION_TYPES: ShopLinkTransactionType[] = ['vente', 'location', 'surcommande'];
+
+/** Libellés courts du sélecteur admin. */
+const SHOP_TRANSACTION_OPTIONS: Record<ShopLinkTransactionType, string> = {
+  vente: 'Vente',
+  location: 'Location',
+  surcommande: 'Sur commande',
+};
+
+/** Libellé du BOUTON PUBLIC selon le type choisi, tel que le visiteur le verra. */
+const SHOP_TRANSACTION_PUBLIC_LABEL: Record<ShopLinkTransactionType, string> = {
+  vente: 'Acheter le produit',
+  location: 'Louer ce produit',
+  surcommande: 'Commander ce produit',
 };
 
 const BACKOFFICE_HEADER =
@@ -1352,6 +1369,16 @@ function ProductForm({
   const [shopLinks, setShopLinks] = useState<ProductShopLinks>(existing?.shopLinks ?? {});
 
   /**
+   * Type de transaction par variante, miroir local de `shopLinks`. Même cycle
+   * de vie que la map des liens : saisie conservée brute en état, seuls les
+   * types rattachés à un lien valide sont persistés (`sanitizeShopLinkTypes`).
+   * Clé absente ou valeur corrompue = type « vente », le défaut historique.
+   */
+  const [shopLinkTypes, setShopLinkTypes] = useState<ProductShopLinkTypes>(
+    () => normalizeShopLinkTypes(existing?.shopLinkTypes)
+  );
+
+  /**
    * Bibliothèque média — POINTS 7 à 10.
    *
    * La galerie est l'état local de référence : chaque image se remplace, se
@@ -1895,6 +1922,15 @@ function ProductForm({
         // Plus aucun lien valide : on efface la map pour ne pas laisser une
         // dernière saisie invalide survivre dans le produit.
         body.shopLinks = {};
+      }
+      // Type de transaction : miroir des liens. Un type n'est persisté que pour
+      // une variante qui porte un lien valide persisté — un type sans URL ne
+      // produit aucun bouton et ne doit pas survivre.
+      const cleanShopLinkTypes = sanitizeShopLinkTypes(shopLinkTypes, Object.keys(cleanShopLinks));
+      if (Object.keys(cleanShopLinkTypes).length > 0) {
+        body.shopLinkTypes = cleanShopLinkTypes;
+      } else if (existing?.shopLinkTypes) {
+        body.shopLinkTypes = {};
       }
       const next = await saveProduct(existing.slug, body);
       onSaved(next.status === 'published' ? `Produit « ${next.name} » publié.` : `Produit « ${next.name} » enregistré.`);
@@ -2452,6 +2488,12 @@ function ProductForm({
                 - PUBLIC, sans lien   -> aucun bouton.
                 - PUBLIC, avec lien  -> bouton « Acheter le produit ».
 
+              Le sélecteur de type (Vente / Location / Sur commande) ne change
+              QUE le libellé du bouton (« Acheter / Louer / Commander ce
+              produit »), jamais la visibilité (l'URL garde la main) ni la
+              destination. Donnée absente = type « vente », le défaut
+              historique, pour les produits antérieurs à ce champ.
+
               « Masqué publiquement » ne signifie pas « inexistant dans le CMS ». */}
           {!isNew && variantNames.length > 0 && (
             <section>
@@ -2464,12 +2506,13 @@ function ProductForm({
                 </span>
               </div>
               <p className="text-[11px] text-neutral-400 mb-3">
-                Une colonne par variante, comme la matrice du site. Chaque contrôle
-                est rattaché à sa colonne et alimente le bouton
-                «&nbsp;Acheter le produit&nbsp;» de cette seule variante. Le champ
-                reste vide tant qu&apos;aucun lien n&apos;est saisi, et le bouton
-                n&apos;apparaît alors pas. Renseignez une URL pour l&apos;afficher,
-                videz-la pour le retirer.
+                Une colonne par variante, comme la matrice du site. Chaque
+                contrôle est rattaché à sa colonne et alimente le bouton de
+                cette seule variante. Le champ reste vide tant qu
+                &apos;aucun lien n&apos;est saisi, et le bouton n&apos;apparaît
+                alors pas. Renseignez une URL pour l&apos;afficher, videz-la
+                pour le retirer, et choisissez le type de transaction
+                (vente, location ou sur commande) qui en détermine le libellé.
               </p>
 
               {/* Une colonne par variante, comme la matrice publique.
@@ -2511,7 +2554,7 @@ function ProductForm({
                           {variantName}
                         </p>
                         <p className="mt-0.5 mb-2 text-[10px] font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
-                          Acheter le produit
+                          {SHOP_TRANSACTION_PUBLIC_LABEL[shopLinkTypeForVariant(shopLinkTypes, variantName)]}
                         </p>
 
                         <div className="flex items-center gap-2">
@@ -2552,6 +2595,37 @@ function ProductForm({
                             </button>
                           )}
                         </div>
+                        {/* Sélecteur de type de transaction : un seul choix par
+                            variante, étroitement lié au champ URL. Ne change que
+                            le libellé du bouton public, jamais sa visibilité.
+                            Style repris des boutons « Statut » (Brouillon /
+                            Publié) : choix actif en émeraude plein, choix vides
+                            en fond neutre. */}
+                        <div
+                          className="mt-2 flex items-center gap-2"
+                          aria-label={`Type de transaction — ${variantName}`}
+                        >
+                          {SHOP_TRANSACTION_TYPES.map((type) => {
+                            const active = shopLinkTypeForVariant(shopLinkTypes, variantName) === type;
+                            return (
+                              <button
+                                key={type}
+                                type="button"
+                                aria-pressed={active}
+                                onClick={() =>
+                                  setShopLinkTypes((prev) => ({ ...prev, [variantName]: type }))
+                                }
+                                className={`flex-1 px-1 py-1.5 rounded-xl text-[10px] font-bold whitespace-nowrap text-center transition-all cursor-pointer border ${
+                                  active
+                                    ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                                    : 'bg-white dark:bg-zinc-800 text-neutral-600 dark:text-neutral-300 border-neutral-300 dark:border-white/10 hover:bg-neutral-50 dark:hover:bg-white/5'
+                                }`}
+                              >
+                                {SHOP_TRANSACTION_OPTIONS[type]}
+                              </button>
+                            );
+                          })}
+                        </div>
                         {!blank && !valid && (
                           <p className="mt-1 text-[11px] font-semibold text-rose-500">
                             Lien ignoré : saisissez une URL complète (https://…) ou un
@@ -2578,13 +2652,18 @@ function ProductForm({
                         </span>
                         <button
                           type="button"
-                          onClick={() =>
+                          onClick={() => {
                             setShopLinks((prev) => {
                               const next = { ...prev };
                               delete next[key];
                               return next;
-                            })
-                          }
+                            });
+                            setShopLinkTypes((prev) => {
+                              const next = { ...prev };
+                              delete next[key];
+                              return next;
+                            });
+                          }}
                           className="shrink-0 px-2 py-1 rounded-lg text-[10px] font-bold border border-neutral-300 dark:border-white/10 text-neutral-600 dark:text-neutral-200 hover:text-rose-500 hover:border-rose-500/60 transition-colors cursor-pointer"
                         >
                           Supprimer

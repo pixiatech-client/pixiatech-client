@@ -3,9 +3,9 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { SpecModel, SpecValue } from '../types';
 import { Language } from '../data/translations';
-import { shopLinkForVariant } from '@/lib/products/types';
+import { shopLinkForVariant, shopLinkTypeForVariant } from '@/lib/products/types';
 import { specRowHasValue, specValue } from '@/lib/products/display';
-import type { ProductShopLinks, ProductSpecs, ProductSpecModel } from '@/lib/products/types';
+import type { ProductShopLinks, ProductShopLinkTypes, ProductSpecs, ProductSpecModel, ShopLinkTransactionType } from '@/lib/products/types';
 
 interface SpecsSectionProps {
   /**
@@ -28,7 +28,24 @@ interface SpecsSectionProps {
    * n'affiche AUCUN bouton — jamais de lien vide ni de `href="#"`.
    */
   shopLinks?: ProductShopLinks;
+  /**
+   * Type de transaction par variante, miroir de `shopLinks`. Donnée d'admin :
+   * clé absente ou valeur inconnue = type « vente » (bouton historique
+   * « Acheter le produit »), jamais d'erreur ni de libellé de repli.
+   */
+  shopLinkTypes?: ProductShopLinkTypes;
 }
+
+/**
+ * Libellés du bouton « acheter » selon le type de transaction de la variante.
+ * Le type par défaut « vente » garde le libellé historique, en capitales
+ * espacées du style actuel.
+ */
+const SHOP_LINK_BUTTON_LABELS: Record<ShopLinkTransactionType, { fr: string; en: string }> = {
+  vente: { fr: 'ACHETER LE PRODUIT', en: 'BUY THE PRODUCT' },
+  location: { fr: 'LOUER CE PRODUIT', en: 'RENT THE PRODUCT' },
+  surcommande: { fr: 'COMMANDER CE PRODUIT', en: 'ORDER THE PRODUCT' },
+};
 
 function toSpecModel(model: ProductSpecModel): SpecModel {
   const specs: Record<string, SpecValue> = {};
@@ -61,7 +78,7 @@ function collapseDoubledLabel(label: string): string {
   return /\p{L}/u.test(first) ? first : text;
 }
 
-export const SpecsSection: React.FC<SpecsSectionProps> = ({ lang = 'FR', specs, shopLinks }) => {
+export const SpecsSection: React.FC<SpecsSectionProps> = ({ lang = 'FR', specs, shopLinks, shopLinkTypes }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
@@ -305,6 +322,7 @@ export const SpecsSection: React.FC<SpecsSectionProps> = ({ lang = 'FR', specs, 
                 // dans `shopLinkForVariant` : chaîne vide = aucun bouton, donc
                 // jamais de lien mort ni de `#` affiché au visiteur.
                 const shopUrl = shopLinkForVariant(shopLinks, model.name);
+                const shopType = shopLinkTypeForVariant(shopLinkTypes, model.name);
                 const shopIsExternal = shopUrl !== '' && !shopUrl.startsWith('/');
                 return (
                 <div
@@ -365,7 +383,7 @@ export const SpecsSection: React.FC<SpecsSectionProps> = ({ lang = 'FR', specs, 
                         e.currentTarget.style.borderColor = '#C3F910';
                       }}
                     >
-                      {lang === 'FR' ? 'ACHETER LE PRODUIT' : 'BUY THE PRODUCT'}
+                      {lang === 'FR' ? SHOP_LINK_BUTTON_LABELS[shopType].fr : SHOP_LINK_BUTTON_LABELS[shopType].en}
                     </a>
                   )}
                 </div>

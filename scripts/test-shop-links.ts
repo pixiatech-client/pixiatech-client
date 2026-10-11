@@ -10,6 +10,11 @@ import {
   normalizeShopUrl,
   sanitizeShopLinks,
   shopLinkForVariant,
+  isValidShopLinkType,
+  normalizeShopLinkTypes,
+  sanitizeShopLinkTypes,
+  shopLinkTypeForVariant,
+  SHOP_LINK_DEFAULT_TRANSACTION_TYPE,
 } from '../src/lib/products/types.ts';
 
 let failures = 0;
@@ -595,6 +600,148 @@ for (const [label, source, call] of [
     /<SpecsSection[\s\S]*?\/>/.test(call),
     true,
     `CAS G | ${label} : l'appel reste un composant auto-fermé`
+  );
+}
+
+// ---------------------------------------------------------------------------
+// CAS H — TYPE DE TRANSACTION PAR VARIANTE.
+//
+// Un type (vente / location / sur commande) est rattaché à chaque lien. Il ne
+// change QUE le libellé du bouton public (« Acheter / Louer / Commander ce
+// produit »), jamais la visibilité (l'URL garde la main) ni la destination.
+// Compatibilité verrouillée : donnée absente ou corrompue => type « vente »
+// => bouton « Acheter le produit », l'exact comportement historique.
+// ---------------------------------------------------------------------------
+
+console.log('\n--- CAS H : type par défaut — produits antérieurs au champ ---');
+assertEqual(
+  shopLinkTypeForVariant(undefined, 'PXT-FINE'),
+  SHOP_LINK_DEFAULT_TRANSACTION_TYPE,
+  'shopLinkTypes absent => vente'
+);
+assertEqual(
+  shopLinkTypeForVariant(null, 'PXT-FINE'),
+  SHOP_LINK_DEFAULT_TRANSACTION_TYPE,
+  'shopLinkTypes null => vente'
+);
+assertEqual(shopLinkTypeForVariant({}, 'PXT-FINE'), SHOP_LINK_DEFAULT_TRANSACTION_TYPE, 'map vide => vente');
+assertEqual(
+  shopLinkTypeForVariant({ 'PXT-EVO': 'location' }, 'PXT-FINE'),
+  SHOP_LINK_DEFAULT_TRANSACTION_TYPE,
+  'clé inconnue => vente (indépendance entre variantes)'
+);
+
+console.log('\n--- CAS H : types stockés, valeurs reconnues et corrompues ---');
+assertEqual(
+  shopLinkTypeForVariant({ 'PXT-FINE': 'location' }, 'PXT-FINE'),
+  'location',
+  'location lue telle quelle'
+);
+assertEqual(
+  shopLinkTypeForVariant({ 'PXT-FINE': 'surcommande' }, 'PXT-FINE'),
+  'surcommande',
+  'surcommande lue telle quelle'
+);
+assertEqual(isValidShopLinkType('vente'), true, 'vente reconnu');
+assertEqual(isValidShopLinkType('bail'), false, 'type inconnu rejeté');
+for (const [value, label] of [
+  ['bail', 'mot inconnu'],
+  [42, 'nombre'],
+  [null, 'null'],
+  [{ type: 'vente' }, 'objet'],
+] as const) {
+  assertEqual(
+    shopLinkTypeForVariant(
+      { 'PXT-FINE': value } as unknown as Record<string, string>,
+      'PXT-FINE'
+    ),
+    SHOP_LINK_DEFAULT_TRANSACTION_TYPE,
+    `type invalide (${label}) => vente`
+  );
+}
+
+console.log('\n--- CAS H : normalisation (état d édition) ---');
+assertEqual(
+  normalizeShopLinkTypes({
+    'PXT-FINE': 'location',
+    'PXT-EVO': 42,
+    '': 'vente',
+    'PXT-GHOST': 'surcommande',
+  }),
+  { 'PXT-FINE': 'location', 'PXT-GHOST': 'surcommande' },
+  'seuls les types reconnus sont conservés, clé vide incluse'
+);
+assertEqual(normalizeShopLinkTypes(undefined), {}, 'undefined => map vide');
+assertEqual(normalizeShopLinkTypes(null), {}, 'null => map vide');
+
+console.log('\n--- CAS H : sauvegarde — un type n est persisté que pour un lien valide ---');
+const linkedVariants = ['PXT-FINE', 'PXT-EVO'];
+assertEqual(
+  sanitizeShopLinkTypes(
+    { 'PXT-FINE': 'location', 'PXT-EVO': 'surcommande', 'PXT-GHOST': 'vente', 'PXT-BAD': 'bail' },
+    linkedVariants
+  ),
+  { 'PXT-FINE': 'location', 'PXT-EVO': 'surcommande' },
+  'types reconnus restreints aux variantes liées'
+);
+assertEqual(sanitizeShopLinkTypes({ 'PXT-FINE': 'vente' }, []), {}, 'aucune variante liée => aucun type');
+assertEqual(sanitizeShopLinkTypes(undefined, linkedVariants), {}, 'input absent => map vide');
+
+console.log('\n--- CAS H : la donnée survit à la réanalyse et au rechargement ---');
+const typedProduct: Record<string, unknown> = {
+  shopLinks: { 'PXT-FINE': 'https://boutique.exemple.fr/fine' },
+  shopLinkTypes: { 'PXT-FINE': 'location' },
+};
+const mergedTypes = { ...typedProduct, ...{ specs: { groups: [], models: [{ name: 'PXT-FINE', specs: {} }] } } };
+assertEqual(
+  shopLinkTypeForVariant(mergedTypes.shopLinkTypes as Record<string, string> | undefined, 'PXT-FINE'),
+  'location',
+  'shopLinkTypes est une clé RACINE : une réanalyse de specs ne la touche pas'
+);
+assertEqual(
+  shopLinkTypeForVariant(
+    reload(mergedTypes).shopLinkTypes as Record<string, string> | undefined,
+    'PXT-FINE'
+  ),
+  'location',
+  'le type survit au rechargement'
+);
+assertEqual(
+  shopLinkForVariant(mergedTypes.shopLinks as Record<string, string>, 'PXT-FINE'),
+  'https://boutique.exemple.fr/fine',
+  'le type ne modifie pas le href enregistré'
+);
+
+console.log('\n--- CAS H : chaque page produit transmet shopLinkTypes ---');
+const webPageTypesCall = specsSectionCall(
+  readFileSync(new URL('../src/web/WebPage.tsx', import.meta.url), 'utf8')
+);
+const templateTypesCall = specsSectionCall(
+  readFileSync(new URL('../src/web/ProductPageTemplate.tsx', import.meta.url), 'utf8')
+);
+assertEqual(
+  /shopLinkTypes=\{product\?\.shopLinkTypes\}/.test(webPageTypesCall),
+  true,
+  'CAS H | WebPage (/web/pxt-fine) transmet bien product?.shopLinkTypes'
+);
+assertEqual(
+  /shopLinkTypes=\{product\?\.shopLinkTypes\}/.test(templateTypesCall),
+  true,
+  'CAS H | ProductPageTemplate (/web/product/[slug]) transmet toujours shopLinkTypes'
+);
+for (const [label, source, call] of [
+  ['WebPage', webPageSource, webPageTypesCall],
+  ['ProductPageTemplate', templateSource, templateTypesCall],
+] as const) {
+  assertEqual(
+    (source.match(/shopLinkTypes=\{product\?\.shopLinkTypes\}/g) ?? []).length,
+    1,
+    `CAS H | ${label} : exactement une transmission de shopLinkTypes`
+  );
+  assertEqual(
+    /<SpecsSection[\s\S]*?\/>/.test(call),
+    true,
+    `CAS H | ${label} : l'appel reste un composant auto-fermé`
   );
 }
 
