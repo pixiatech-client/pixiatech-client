@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { useCms } from '@/lib/site-web/cms-context';
+import { CMS_SOURCE_LANG, normalizeLang } from '@/lib/site-web/cms-i18n';
 import { forEachElementInSection, getRegisteredSections } from './section-registry';
 
 /**
@@ -45,6 +46,29 @@ const OFFSET_MARK = 'data-cms-el-offset';
 
 export const EMPTY_ELEMENT_STYLE: ElementStyle = {};
 
+/**
+ * Clé de texte par langue dans le sac `_elements`.
+ *
+ * Le repli `_elements[elementKey]` était mono-langue (`text`), donc une même
+ * valeur pour FR et EN — contraire à l'indépendance demandée. On stocke
+ * désormais une valeur par langue sous `text_<lang>`. Le champ historique
+ * `text` reste lu en dernier recours (rétrocompatibilité), mais plus écrit.
+ */
+export function elementTextKey(lang: string): string {
+  return `text_${normalizeLang(lang)}`;
+}
+
+/** Résout le texte applicable pour une langue (langue active → legacy, jamais croisée). */
+export function resolveElementText(style: ElementStyle | undefined, lang: string): string | undefined {
+  if (!style) return undefined;
+  const bag = style as Record<string, unknown>;
+  // Uniquement la langue demandée : une saisie FR ne doit JAMAIS s'afficher en
+  // EN (indépendance FR/EN). `text` est l'ancien champ mono-langue (rétrocompat).
+  const direct = bag[elementTextKey(lang)];
+  if (typeof direct === 'string') return direct;
+  return typeof bag.text === 'string' ? (bag.text as string) : undefined;
+}
+
 export function readElementStyle(
   sectionData: Record<string, unknown> | undefined,
   elementKey: string
@@ -54,9 +78,10 @@ export function readElementStyle(
 }
 
 /** Applique un style d'élément sur le nœud DOM correspondant. */
-export function applyElementStyle(el: HTMLElement, style: ElementStyle): void {
-  if (style.text !== undefined && el.textContent !== style.text) {
-    el.textContent = style.text;
+export function applyElementStyle(el: HTMLElement, style: ElementStyle, lang?: string): void {
+  const resolvedText = resolveElementText(style, lang || CMS_SOURCE_LANG);
+  if (resolvedText !== undefined && el.textContent !== resolvedText) {
+    el.textContent = resolvedText;
   }
   if (style.src !== undefined && el.getAttribute('src') !== style.src) {
     el.setAttribute('src', style.src);
@@ -119,7 +144,7 @@ export function useCmsElementStyles(): void {
 
         forEachElementInSection(node, (el, key) => {
           const style = bag[key];
-          if (style) applyElementStyle(el, style);
+          if (style) applyElementStyle(el, style, currentLang);
         });
       }
     }

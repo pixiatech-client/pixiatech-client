@@ -6,7 +6,9 @@ import { Image as ImageIcon, Upload, Check, X, Sparkles, Link as LinkIcon, Loade
 import { findSectionKey, getSectionNode, resolveElementKey, setSelectedElement } from './section-registry';
 
 import { FloatingElementToolbar } from './FloatingElementToolbar';
-import { applyElementStyle, type ElementStyle } from './useCmsElementStyles';
+import { applyElementStyle, elementTextKey, type ElementStyle } from './useCmsElementStyles';
+import { normalizeLang } from '@/lib/site-web/cms-i18n';
+import { closestExplicitKeyElement, isInsideCmsUi, isMediaElement, isSimpleTextElement } from './section-registry';
 import { saveContactField } from './contact-edit';
 
 type MediaKind = 'image' | 'video';
@@ -17,9 +19,6 @@ interface ImageEditState {
   currentSrc: string;
   alt: string;
 }
-
-/** Éléments dont le texte est directement éditable dans l'éditeur visuel. */
-const EDITABLE_TEXT_TAGS = ['H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'P', 'SPAN', 'LI', 'BUTTON', 'A'];
 
 const STOCK_LIBRARY_IMAGES = [
   { label: 'Hero 1 — Hall Architectural', src: '/uploads/site/hero-1.jpg' },
@@ -46,6 +45,7 @@ export const VisualInPlaceEditor: React.FC = () => {
   const {
   isEditing,
   isAdmin,
+  currentLang,
   uploadMedia,
   updateSectionField,
   updateElementStyle,
@@ -158,69 +158,96 @@ export const VisualInPlaceEditor: React.FC = () => {
     // Helper: Identifier si l'élément fait partie de l'interface d'administration
     const isCmsTarget = (el: HTMLElement | null): boolean => {
       if (!el) return true;
-      return Boolean(
-        el.closest('#admin-top-bar') ||
-        el.closest('#image-edit-modal') ||
-        el.closest('#backend-export-modal') ||
-        el.closest('[data-cms-ui]') ||
-        el.closest('[data-cms-ignore]') ||
-        el.closest('aside')
-      );
+      return isInsideCmsUi(el);
+    };
+
+    type PickedTarget = { el: HTMLElement; sectionKey: string; media: boolean };
+
+    /**
+     * Cible réellement sous le curseur, indépendamment des overlays
+     * `pointer-events:none` (textes posés sur les visuels) et de la liste
+     * blanche de balises (les `<div>/<td>…` étaient invisibles pour l'éditeur).
+     * `document.elementsFromPoint` renvoie TOUS les éléments au point — y
+     * compris ceux en `pointer-events:none` — dans l'ordre de peinture : on
+     * prend le premier porteur de texte (ou média) appartenant à une section CMS.
+     */
+    const pickAtPoint = (x: number, y: number): PickedTarget | null => {
+      const stack = (document.elementsFromPoint ? document.elementsFromPoint(x, y) : []) as Element[];
+      // Si le point est couvert par l'interface d'administration (barre d'outils
+      // flottante, modales…), on ne va pas chercher le contenu situé dessous :
+      // l'UI reste opaque et ses boutons gardent leur comportement.
+      const top = stack[0];
+      if (top instanceof HTMLElement && isCmsTarget(top)) return null;
+      for (const raw of stack) {
+        if (!(raw instanceof HTMLElement) || isCmsTarget(raw)) continue;
+        const contactKey = raw.getAttribute('data-contact-key');
+        const sectionKey = getSectionKey(raw);
+        if (!sectionKey && !contactKey) continue;
+
+        if (isMediaElement(raw)) {
+          if (sectionKey) return { el: raw, sectionKey, media: true };
+          continue;
+        }
+
+        const root = sectionKey ? getSectionNode(sectionKey) : null;
+        const keyed = closestExplicitKeyElement(raw, root);
+        if (keyed) return { el: keyed, sectionKey: sectionKey || '', media: false };
+
+        if (sectionKey && isSimpleTextElement(raw)) {
+          return { el: raw, sectionKey, media: false };
+        }
+      }
+      return null;
     };
 
     // 1. Mouse Over / Out
-    const handleMouseOver = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (!target || isCmsTarget(target)) {
-        return;
-      }
-
-      const contactKey = target.getAttribute('data-contact-key');
-      const sectionKey = getSectionKey(target);
-
-      // Un élément n'est marqué éditable que s'il appartient à une section CMS
-      // reconnue (avec une destination de sauvegarde valide) OU porte
-      // explicitement une clé Contact. Tout le reste (y compris les éléments
-      // anonymes) ne reçoit plus le survol vert ni le mode édition.
-      if (target.tagName === 'IMG' || target.tagName === 'VIDEO') {
-        if (sectionKey) {
-          target.classList.add('pixia-editable-img-hover');
-          hoveredElementRef.current = target;
-        }
-      } else if (contactKey) {
-        target.classList.add('pixia-editable-text-hover');
-        hoveredElementRef.current = target;
-      } else if (
-        sectionKey &&
-        target.children.length <= 3 &&
-        (EDITABLE_TEXT_TAGS.includes(target.tagName) ||
-          target.hasAttribute('data-editable') ||
-          target.hasAttribute('data-text-key'))
-      ) {
-        target.classList.add('pixia-editable-text-hover');
-        hoveredElementRef.current = target;
+    const clearHover = () => {
+      const prev = hoveredElementRef.current;
+      if (prev) {
+        prev.classList.remove('pixia-editable-img-hover', 'pixia-editable-text-hover');
+        hoveredElementRef.current = null;
       }
     };
 
+    const handleMouseOver = (e: MouseEvent) => {
+      clearHover();
+      const picked = pickAtPoint(e.clientX, e.clientY);
+      if (!picked) return;
+      hoveredElementRef.current = picked.el;
+      picked.el.classList.add(
+        picked.media ? 'pixia-editable-img-hover' : 'pixia-editable-text-hover'
+      );
+    };
+
     const handleMouseOut = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (!target) return;
-      target.classList.remove('pixia-editable-img-hover');
-      target.classList.remove('pixia-editable-text-hover');
+      const prev = hoveredElementRef.current;
+      const rel = e.relatedTarget as HTMLElement | null;
+      if (prev && (!rel || !prev.contains(rel))) {
+        prev.classList.remove('pixia-editable-img-hover', 'pixia-editable-text-hover');
+        hoveredElementRef.current = null;
+      }
     };
 
     // 2. Click Handler Universel avec interception de navigation
     const handleClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (!target || isCmsTarget(target)) {
+      const picked = pickAtPoint(e.clientX, e.clientY);
+      if (!picked) {
+        // Aucune cible texte/média : on conserve au minimum la sélection de section.
+        const fallback = e.target as HTMLElement;
+        if (fallback && !isCmsTarget(fallback)) {
+          const sk = getSectionKey(fallback);
+          if (sk) setSelectedBlockId(sk);
+        }
         return;
       }
 
-      const contactKey = target.getAttribute('data-contact-key');
+      const target = picked.el;
+      const sectionKey = picked.sectionKey;
 
       // Cas 0: Édition d'un champ Contact (source Firestore, via l'API
       // existante). Le texte est éditable, la sauvegarde passe par
       // `saveContactField` — aucune écriture dans le JSON du CMS.
+      const contactKey = target.getAttribute('data-contact-key');
       if (contactKey) {
         if (target.isContentEditable) {
           return;
@@ -229,7 +256,7 @@ export const VisualInPlaceEditor: React.FC = () => {
         e.stopPropagation();
         target.classList.add('pixia-el-selected');
         target.contentEditable = 'true';
-        target.focus();
+        target.focus({ preventScroll: true });
 
         const originalText = target.innerText;
 
@@ -238,8 +265,8 @@ export const VisualInPlaceEditor: React.FC = () => {
           target.removeEventListener('blur', onBlur);
           target.classList.remove('pixia-el-selected');
           if (!target.isConnected) return;
-          const newText = target.innerText;
-          if (newText === originalText) return;
+          const newText = target.innerText.replace(/[\n\r]+$/, '');
+          if (newText.trim() === originalText.trim()) return;
 
           showToast('Sauvegarde…', 'pending');
           saveContactField(contactKey, newText)
@@ -251,13 +278,9 @@ export const VisualInPlaceEditor: React.FC = () => {
         return;
       }
 
-      const sectionKey = getSectionKey(target);
-      if (!sectionKey) {
-        // Pas une section CMS reconnue : le clic n'est PAS intercepté.
-        // Liens, boutons et navigation fonctionnent normalement (aucun faux
-        // contrôle vert, aucun blocage hors édition réelle).
-        return;
-      }
+      if (!sectionKey) return;
+      // Déjà en cours d'édition : laisser passer le clic (placement du curseur).
+      if (target.isContentEditable) return;
 
       // En mode édition : intercepter TOUT clic sur un lien, bouton ou ancre
       // pour éviter la navigation intempestive et permettre la sélection / édition (Point 5).
@@ -269,7 +292,7 @@ export const VisualInPlaceEditor: React.FC = () => {
 
       const sectionRoot = getSectionNode(sectionKey);
       const elementKey = resolveElementKey(target, sectionRoot);
-      const isMediaTarget = target.tagName === 'IMG' || target.tagName === 'VIDEO';
+      const isMediaTarget = picked.media;
 
       // Sélection de la section
       setSelectedBlockId(sectionKey);
@@ -299,60 +322,74 @@ export const VisualInPlaceEditor: React.FC = () => {
         return;
       }
 
-      // Cas 2: Clic sur un texte / bouton / lien
+      // Cas 2: Clic sur un texte — feuille de texte ou élément à clé explicite.
       if (
-        EDITABLE_TEXT_TAGS.includes(target.tagName) ||
-        target.hasAttribute('data-editable') ||
-        target.hasAttribute('data-text-key')
+        !target.hasAttribute('data-text-key') &&
+        !target.hasAttribute('data-editable') &&
+        !isSimpleTextElement(target)
       ) {
-        // Si le conteneur cliqué (ex: H1) n'a pas de data-text-key mais contient
-        // un enfant direct ou proche avec data-text-key, on délègue l'édition à cet enfant.
-        let editTarget = target;
-        if (!editTarget.hasAttribute('data-text-key') && editTarget.children.length > 0) {
-          const childKey = editTarget.querySelector('[data-text-key]') as HTMLElement | null;
-          if (childKey) editTarget = childKey;
-        }
+        // Sélection seule (barre d'outils), pas d'édition.
+        return;
+      }
 
-        if (editTarget.isContentEditable) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      // Rendre le pointeur actif même si un overlay `pointer-events:none`
+      // rendait ce texte non sélectionnable (sélection souris pendant l'édition).
+      const originalPointerEvents = target.style.pointerEvents;
+      target.style.pointerEvents = 'auto';
+      target.contentEditable = 'true';
+      target.focus({ preventScroll: true });
+      target.classList.remove('pixia-editable-text-hover');
+
+      const originalText = target.innerText;
+      const editLang = normalizeLang(currentLang);
+
+      const handleEditKey = (ev: KeyboardEvent) => {
+        // Ne pas laisser les raccourcis globaux / l'action par défaut d'un
+        // bouton (Entrée) faire défiler la page pendant la saisie. La barre
+        // d'espace doit rester insérable (aucun preventDefault).
+        ev.stopPropagation();
+        if (ev.key === 'Enter' && !ev.shiftKey) ev.preventDefault();
+      };
+
+      const onBlur = () => {
+        target.contentEditable = 'false';
+        target.style.pointerEvents = originalPointerEvents;
+        target.removeEventListener('blur', onBlur);
+        target.removeEventListener('keydown', handleEditKey, true);
+        if (!target.isConnected) return;
+
+        const newText = target.innerText.replace(/[\n\r]+$/, '');
+        if (newText.trim() === originalText.trim()) return;
+
+        const structuredKey = target.getAttribute('data-text-key');
+        if (structuredKey) {
+          // Clé réelle : le champ existe dans la section, on l'édite
+          // directement (donc traduit par le flux FR/EN existant).
+          updateSectionField(sectionKey, structuredKey, newText);
+          // Nettoie tout résidu de texte du sac pour ne pas masquer la valeur.
+          updateElementStyle(sectionKey, elementKey, {
+            text: undefined,
+            [elementTextKey('fr')]: undefined,
+            [elementTextKey('en')]: undefined,
+          });
+          void persist(`${sectionKey}.${structuredKey}`);
           return;
         }
 
-        e.preventDefault();
-        e.stopPropagation();
+        // Pas de clé déclarée : le texte part dans le sac d'éléments,
+        // affecté à la langue active (FR et EN restent indépendants).
+        const next = updateElementStyle(sectionKey, elementKey, {
+          [elementTextKey(editLang)]: newText,
+        });
+        applyElementStyle(target, next as ElementStyle, editLang);
+        void persist(`${sectionKey}._elements.${elementKey}.${elementTextKey(editLang)}`);
+      };
 
-        editTarget.contentEditable = 'true';
-        editTarget.focus();
-        editTarget.classList.remove('pixia-editable-text-hover');
-
-        const originalText = editTarget.innerText;
-
-        const onBlur = () => {
-          editTarget.contentEditable = 'false';
-          editTarget.removeEventListener('blur', onBlur);
-          if (!editTarget.isConnected) return;
-          const newText = editTarget.innerText.trim();
-          if (newText === originalText.trim()) return;
-
-          const explicitKey = editTarget.getAttribute('data-text-key');
-
-          if (explicitKey) {
-            // Clé réelle : le champ existe dans la section, on l'édite
-            // directement (donc traduit par le flux FR/EN existant).
-            updateSectionField(sectionKey, explicitKey, newText);
-            // Nettoie tout résidu d'ancien style dans _elements pour ne pas masquer la valeur
-            updateElementStyle(sectionKey, elementKey, { text: undefined });
-            void persist(`${sectionKey}.${explicitKey}`);
-            return;
-          }
-
-          // Pas de clé déclarée : le texte part dans le sac d'éléments
-          const next = updateElementStyle(sectionKey, elementKey, { text: newText });
-          applyElementStyle(editTarget, next as ElementStyle);
-          void persist(`${sectionKey}._elements.${elementKey}.text`);
-        };
-
-        editTarget.addEventListener('blur', onBlur);
-      }
+      target.addEventListener('keydown', handleEditKey, true);
+      target.addEventListener('blur', onBlur);
     };
 
     // 3. Désélection : Échap ou clic sur une zone neutre.
@@ -380,7 +417,7 @@ export const VisualInPlaceEditor: React.FC = () => {
       const el = document.getElementById('pixia-visual-editor-styles');
       if (el) el.remove();
     };
-  }, [isEditing, isAdmin, uploadMedia, updateSectionField, setSelectedBlockId, persist, openImageModalForElement, showToast]);
+  }, [isEditing, isAdmin, currentLang, uploadMedia, updateSectionField, updateElementStyle, setSelectedBlockId, persist, openImageModalForElement, showToast]);
 
   // Appliquer le remplacement de l'image
   const handleApplyImage = async (srcToApply?: string) => {
@@ -418,7 +455,7 @@ export const VisualInPlaceEditor: React.FC = () => {
         src: finalSrc,
         alt: (el as HTMLImageElement).alt || undefined,
       });
-      applyElementStyle(el, next as ElementStyle);
+      applyElementStyle(el, next as ElementStyle, normalizeLang(currentLang));
     }
     setSelectedBlockId(sectionKey);
 

@@ -268,6 +268,7 @@ export const TechShowcaseSection: React.FC<TechShowcaseSectionProps> = ({ lang =
                     0{idx + 1}
                   </span>
                   <span
+                    data-text-key={`tech_${tech.id}_name`}
                     style={{
                       fontSize: 14,
                       letterSpacing: '.2em',
@@ -277,9 +278,10 @@ export const TechShowcaseSection: React.FC<TechShowcaseSectionProps> = ({ lang =
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       fontFamily: 'var(--font-mono)',
+                      pointerEvents: 'auto',
                     }}
                   >
-                    {tech.name}
+                    {getCmsText(cmsData, `tech_${tech.id}_name`, activeLang, tech.name)}
                   </span>
                 </div>
 
@@ -294,6 +296,7 @@ export const TechShowcaseSection: React.FC<TechShowcaseSectionProps> = ({ lang =
                   }}
                 >
                   <p
+                    data-text-key={`tech_${tech.id}_desc`}
                     style={{
                       margin: 0,
                       fontSize: 14.5,
@@ -303,9 +306,15 @@ export const TechShowcaseSection: React.FC<TechShowcaseSectionProps> = ({ lang =
                       opacity: isSelected ? 1 : 0,
                       transform: isSelected ? 'translateY(0)' : 'translateY(12px)',
                       transition: 'opacity .5s ease .1s, transform .5s ease .1s',
+                      pointerEvents: 'auto',
                     }}
                   >
-                    {lang === 'FR' ? tech.descFR : tech.descEN}
+                    {getCmsText(
+                      cmsData,
+                      `tech_${tech.id}_desc`,
+                      activeLang,
+                      activeLang === 'fr' ? tech.descFR : tech.descEN
+                    )}
                   </p>
                 </div>
               </div>

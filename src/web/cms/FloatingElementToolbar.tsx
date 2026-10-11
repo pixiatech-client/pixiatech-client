@@ -31,6 +31,7 @@ import {
   type SelectedElement,
 } from './section-registry';
 import { applyElementStyle, readElementStyle, type ElementStyle } from './useCmsElementStyles';
+import { normalizeLang } from '@/lib/site-web/cms-i18n';
 
 const NUDGE = 4;
 const FONT_STEP = 2;
@@ -46,7 +47,7 @@ const ALIGNS: { value: ElementStyle['textAlign']; icon: LucideIcon; label: strin
 export const FloatingElementToolbar: React.FC<{
   onOpenImageModal?: (element: HTMLElement) => void;
 }> = ({ onOpenImageModal }) => {
-  const { isEditing, isAdmin, currentPageData, updateSectionField, saveCurrentPage } = useCms();
+  const { isEditing, isAdmin, currentPageData, currentLang, updateSectionField, saveCurrentPage } = useCms();
 
   const [selected, setSelected] = useState<SelectedElement | null>(getSelectedElement());
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
@@ -151,8 +152,9 @@ export const FloatingElementToolbar: React.FC<{
       const nextStyle: ElementStyle = { ...currentBag[elementKey], ...patch };
       const nextBag = { ...currentBag, [elementKey]: nextStyle };
 
-      // Rendu immédiat dans le DOM
-      applyElementStyle(selected.el, nextStyle);
+      // Rendu immédiat dans le DOM (langue active : ne jamais écraser le texte
+      // d'une autre langue resté dans le sac `_elements`).
+      applyElementStyle(selected.el, nextStyle, normalizeLang(currentLang));
 
       updateSectionField(sectionKey, '_elements', nextBag);
 

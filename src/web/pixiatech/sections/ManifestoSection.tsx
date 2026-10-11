@@ -186,6 +186,7 @@ export const ManifestoSection: React.FC<ManifestoSectionProps> = ({ lang = 'FR' 
         <p
           data-reveal="true"
           className="pretty"
+          data-text-key="subtitle"
           style={{
             margin: 0,
             maxWidth: 560,
