@@ -611,8 +611,8 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => openSiteAccess('admin')}
-                title={t('admin.siteAccess')}
+                onClick={() => openSiteAccess(isSiteWeb ? 'web' : 'admin')}
+                title={isSiteWeb ? t('admin.siteAccess') : t('admin.accessApplication')}
                 className={cn(
                   "group h-11 w-11 rounded-xl shadow-sm transition-all duration-200 hidden md:flex",
                   "bg-white hover:bg-theme-sidebar-active-bg"
@@ -622,7 +622,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                   "h-5 w-5 transition-colors",
                   "text-gray-400 group-hover:text-emerald-500"
                 )} />
-                <span className="sr-only">{t('admin.siteAccess')}</span>
+                <span className="sr-only">{isSiteWeb ? t('admin.siteAccess') : t('admin.accessApplication')}</span>
               </Button>
 
               {/* ── 4. Boutique (Store icon) ── */}
@@ -701,11 +701,11 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                         {t('admin.about.title')}
                       </button>
                       <button
-                        onClick={() => { openSiteAccess('admin'); setMobileActionsOpen(false); }}
+                        onClick={() => { openSiteAccess(isSiteWeb ? 'web' : 'admin'); setMobileActionsOpen(false); }}
                         className="flex items-center gap-3 w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                       >
                         <Globe className="w-4 h-4 text-emerald-500" />
-                        {t('admin.siteAccess')}
+                        {isSiteWeb ? t('admin.siteAccess') : t('admin.accessApplication')}
                       </button>
                       <button
                         onClick={() => { window.open('/boutique', '_blank'); setMobileActionsOpen(false); }}
@@ -874,7 +874,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                 </Link>
 
                 <a
-                  href={getSiteAccessPath('admin')}
+                  href={getSiteAccessPath(isSiteWeb ? 'web' : 'admin')}
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => setIsProfileOpen(false)}
@@ -884,7 +884,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                     <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-500 group-hover/item:scale-110 transition-transform shadow-sm">
                       <Globe size={20} strokeWidth={2.5} />
                     </div>
-                    <span className="text-sm font-bold text-gray-700 uppercase tracking-wide">{t('admin.siteAccess')}</span>
+                    <span className="text-sm font-bold text-gray-700 uppercase tracking-wide">{isSiteWeb ? t('admin.siteAccess') : t('admin.accessApplication')}</span>
                   </div>
                   <ChevronDown className="w-4 h-4 text-gray-300 -rotate-90" />
                 </a>

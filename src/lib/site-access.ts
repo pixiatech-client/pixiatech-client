@@ -23,10 +23,14 @@ export type SiteAccessContext = 'admin' | 'web';
  * Chemin du « site » correspondant au contexte appelant.
  *
  * - `admin` : l'application PixiaTech (configurateur), pas le site vitrine.
- * - `web`   : le site Web public, via sa route interne `/web` (inchangé).
+ * - `web`   : le site Web public, à son adresse canonique
+ *             `https://pixiatech.com/`. L'ancienne route interne `/web`
+ *             affichait le site sur le domaine de l'application (mauvais
+ *             contexte) : le contexte « web » doit donc pointer vers l'hôte
+ *             public, pas vers une route de l'application.
  */
 export function getSiteAccessPath(context: SiteAccessContext): string {
-  return context === 'admin' ? '/' : '/web';
+  return context === 'admin' ? '/' : 'https://pixiatech.com/';
 }
 
 /** Ouvre le site du contexte dans un nouvel onglet, de façon sûre. */

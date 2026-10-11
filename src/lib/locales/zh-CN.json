@@ -282,6 +282,7 @@
       "toastOptionMoved": "选项已移至分组 “{group}”。"
     },
     "siteAccess": "访问网站",
+    "accessApplication": "访问应用程序",
     "floatingCalculator": "计算器",
     "about": {
       "title": "关于",
