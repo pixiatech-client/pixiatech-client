@@ -321,11 +321,14 @@ export const PitchSection: React.FC<PitchSectionProps> = ({
 
               {/* Preset Buttons Bar */}
               <div
+                className="pitch-presets"
                 style={{
                   display: 'flex',
                   justifyContent: 'space-between',
                   marginTop: 12,
                   gap: 2,
+                  overflowX: 'auto',
+                  scrollbarWidth: 'none',
                 }}
               >
                 {PRESETS.map((p) => {
@@ -582,7 +585,16 @@ export const PitchSection: React.FC<PitchSectionProps> = ({
                 </svg>
 
                 {/* Distance Value & Label */}
-                <div style={{ position: 'absolute', top: -2, left: 28, whiteSpace: 'nowrap' }}>
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: -2,
+                    ...(markerLeftPercent > 55
+                      ? { right: 24, left: 'auto', textAlign: 'right' }
+                      : { left: 28 }),
+                    whiteSpace: 'nowrap',
+                  }}
+                >
                   <span
                     style={{
                       fontSize: 19,

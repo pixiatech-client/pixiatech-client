@@ -217,8 +217,29 @@ export const KineticSection: React.FC<KineticSectionProps> = ({ lang = 'FR' }) =
       mouseY = -1e4;
     };
 
+    // Touch support: mirror the mouse interaction for mobile devices
+    const handleTouchMove = (e: TouchEvent) => {
+      // Only handle single-finger touch on the canvas
+      if (e.touches.length !== 1) return;
+      // Prevent page scroll while interacting with the canvas
+      e.preventDefault();
+      const touch = e.touches[0];
+      const rect = canvas.getBoundingClientRect();
+      mouseX = touch.clientX - rect.left;
+      mouseY = touch.clientY - rect.top;
+    };
+
+    const handleTouchEnd = () => {
+      mouseX = -1e4;
+      mouseY = -1e4;
+    };
+
     canvas.addEventListener('mousemove', handleMouseMove);
     canvas.addEventListener('mouseleave', handleMouseLeave);
+    // touchmove with passive:false so we can call preventDefault() to prevent page scroll
+    canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+    canvas.addEventListener('touchend', handleTouchEnd);
+    canvas.addEventListener('touchcancel', handleTouchEnd);
 
     return () => {
       io.disconnect();
@@ -226,6 +247,9 @@ export const KineticSection: React.FC<KineticSectionProps> = ({ lang = 'FR' }) =
       if (animFrame) cancelAnimationFrame(animFrame);
       canvas.removeEventListener('mousemove', handleMouseMove);
       canvas.removeEventListener('mouseleave', handleMouseLeave);
+      canvas.removeEventListener('touchmove', handleTouchMove);
+      canvas.removeEventListener('touchend', handleTouchEnd);
+      canvas.removeEventListener('touchcancel', handleTouchEnd);
     };
   }, []);
 
@@ -320,6 +344,8 @@ export const KineticSection: React.FC<KineticSectionProps> = ({ lang = 'FR' }) =
                 height: '100%',
                 display: 'block',
                 cursor: 'crosshair',
+                // touchAction:'none' tells the browser our JS handles all touch on this element
+                touchAction: 'none',
               }}
             />
             <div

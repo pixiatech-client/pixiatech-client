@@ -61,6 +61,16 @@ export function FeaturedSection() {
     };
     window.addEventListener('mousemove', onMove);
 
+    const onTouch = (e: TouchEvent) => {
+      if (e.touches.length > 0) {
+        const touch = e.touches[0];
+        const rect = (root ?? canvas).getBoundingClientRect();
+        mx = (touch.clientX - rect.left) / rect.width;
+        my = (touch.clientY - rect.top) / rect.height;
+      }
+    };
+    window.addEventListener('touchmove', onTouch, { passive: true });
+
     const draw = (now: number) => {
       ctx.clearRect(0, 0, w, h);
       const t = now / 1000;
@@ -144,6 +154,7 @@ export function FeaturedSection() {
       cancelAnimationFrame(raf);
       window.removeEventListener('resize', resize);
       window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('touchmove', onTouch);
     };
   }, [reduced]);
 

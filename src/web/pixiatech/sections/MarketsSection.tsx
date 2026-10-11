@@ -138,18 +138,29 @@ export const MarketsSection: React.FC<MarketsSectionProps> = ({ lang = 'FR', onO
         sticky.style.position = 'relative';
         sticky.style.height = 'auto';
         sticky.style.overflowX = 'auto';
+        sticky.style.overflowY = 'visible';
         sticky.style.scrollSnapType = 'x mandatory';
+        // Enable smooth momentum scrolling on iOS
+        (sticky.style as CSSStyleDeclaration & { webkitOverflowScrolling: string }).webkitOverflowScrolling = 'touch';
+        // Allow both horizontal swipe and vertical page scroll
+        sticky.style.touchAction = 'pan-x pan-y';
         wrapper.style.height = 'auto';
         track.style.transform = 'none';
+        // Cards: allow pan-x and pan-y so vertical page scroll remains unblocked
+        const cards = track.querySelectorAll<HTMLElement>('.mkt-card');
+        cards.forEach((c) => { c.style.touchAction = 'pan-x pan-y'; });
         maxDist = 0;
         return;
       }
 
+      // Desktop: restore defaults
+      sticky.style.touchAction = '';
       sticky.style.position = 'sticky';
       sticky.style.top = '0';
       sticky.style.height = '100vh';
       sticky.style.overflow = 'hidden';
       sticky.style.scrollSnapType = 'none';
+      (sticky.style as CSSStyleDeclaration & { webkitOverflowScrolling: string }).webkitOverflowScrolling = '';
 
       const trackScrollWidth = track.scrollWidth;
       const r = Math.max(trackScrollWidth - window.innerWidth + 80, 0);
@@ -208,6 +219,7 @@ export const MarketsSection: React.FC<MarketsSectionProps> = ({ lang = 'FR', onO
       >
         <div
           ref={stickyRef}
+          className="mkt-track-wrap"
           style={{
             position: 'sticky',
             top: 0,

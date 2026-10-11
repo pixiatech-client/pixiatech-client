@@ -107,6 +107,7 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
       >
         {/* Header row */}
         <div
+          className="products-header"
           style={{
             display: 'flex',
             justifyContent: 'space-between',

@@ -183,6 +183,7 @@ export const TechShowcaseSection: React.FC<TechShowcaseSectionProps> = ({ lang =
 
         {/* Accordion horizontale */}
         <div
+          className="tech-accordion"
           style={{
             display: 'flex',
             gap: 6,
@@ -200,6 +201,7 @@ export const TechShowcaseSection: React.FC<TechShowcaseSectionProps> = ({ lang =
             return (
               <div
                 key={tech.id}
+                className={`tech-panel${isSelected ? ' tech-panel--active' : ''}`}
                 onMouseEnter={() => setActiveIdx(idx)}
                 onClick={() => setActiveIdx(idx)}
                 style={{
