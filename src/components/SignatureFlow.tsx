@@ -1123,7 +1123,7 @@ export default function SignatureFlow({
     : null;
 
   return (
-    <div className="w-full flex flex-col bg-[#f8fafc] text-zinc-800 font-sans antialiased">
+    <div className="w-full flex-1 flex flex-col justify-between bg-[#f8fafc] text-zinc-800 font-sans antialiased">
       
       {/* Header removed - workflow has its own step system */}
 
@@ -1186,7 +1186,7 @@ export default function SignatureFlow({
       )}
 
       {/* Main app viewport wrapping specific steps */}
-      <main className="max-w-7xl mx-auto w-full px-4 sm:px-6 py-4 md:py-5 flex flex-col gap-4">
+      <main className="max-w-7xl mx-auto w-full px-4 sm:px-6 py-4 md:py-5 flex-1 flex flex-col gap-4">
 
         {/* STEP 1: RÉSUMÉ DE L'ESTIMATION (Forms and customizable details card) */}
         {currentStep === 'informations' && (
@@ -2877,10 +2877,12 @@ export default function SignatureFlow({
           ref={pdfContainerRef}
           id="signature-pdf-container"
           style={{
-            position: "absolute",
+            position: "fixed",
             left: "-99999px",
             top: 0,
             width: "820px",
+            pointerEvents: "none",
+            zIndex: -9999,
           }}
         >
           <QuotePDF
@@ -2929,10 +2931,12 @@ export default function SignatureFlow({
           ref={contractContainerRef}
           id="signature-contract-container"
           style={{
-            position: "absolute",
+            position: "fixed",
             left: "-99999px",
             top: 0,
             width: "820px",
+            pointerEvents: "none",
+            zIndex: -9999,
           }}
         >
           <ContractDocument
