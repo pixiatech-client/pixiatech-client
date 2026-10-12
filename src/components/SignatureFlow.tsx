@@ -845,28 +845,32 @@ export default function SignatureFlow({
       if (result.success) {
         setIsOtpCompleted(true);
         setOtpError(null);
-        // S1-5: Issue capability cookie was set by verifyQuoteOtp server-side.
-        // Now persist the pending PDF and contract URLs to Firestore.
-        if (pendingPdfUrl) {
-          try {
-            await updateQuotePdfUrl(quoteId, pendingPdfUrl);
-            setPendingPdfUrl(null);
-          } catch (e) {
-            console.error("Failed to persist PDF URL after OTP:", e);
-          }
-        }
-        if (pendingContractUrl) {
-          try {
-            await updateQuoteContractUrl(quoteId, pendingContractUrl);
-            setPendingContractUrl(null);
-          } catch (e) {
-            console.error("Failed to persist contract URL after OTP:", e);
-          }
-        }
-        generateAndSaveContractPdf();
+
+        // Transition ultra-fluide vers l'étape de confirmation (400ms au lieu d'attendre 15s)
         setTimeout(() => {
           setCurrentStep('confirmation');
-        }, 800);
+        }, 400);
+
+        // Tâches de fond asynchrones (sauvegarde URLs et PDF) sans bloquer l'UI
+        (async () => {
+          if (pendingPdfUrl) {
+            try {
+              await updateQuotePdfUrl(quoteId, pendingPdfUrl);
+              setPendingPdfUrl(null);
+            } catch (e) {
+              console.error("Failed to persist PDF URL after OTP:", e);
+            }
+          }
+          if (pendingContractUrl) {
+            try {
+              await updateQuoteContractUrl(quoteId, pendingContractUrl);
+              setPendingContractUrl(null);
+            } catch (e) {
+              console.error("Failed to persist contract URL after OTP:", e);
+            }
+          }
+          generateAndSaveContractPdf();
+        })();
       } else {
         const isEnglishGeneric = result.error === 'Automatic validation failed. Enter the code received by email.';
         setOtpError(isEnglishGeneric ? t('signature.otpManualEntry') : (result.error || t('signature.otpManualEntry')));
@@ -1125,7 +1129,7 @@ export default function SignatureFlow({
 
       {/* Stepper Progress Indicator */}
       {currentStep !== 'confirmation' && (
-        <div className="w-full bg-white border-b border-[#e2e8f0] py-3.5 px-4 overflow-x-auto select-none scrollbar-none relative">
+        <div className="w-full bg-[#f8fafc] border-b border-slate-200/60 py-3.5 px-4 overflow-x-auto select-none scrollbar-none relative">
           <div className="max-w-4xl mx-auto flex items-center justify-center gap-3 sm:gap-6 px-2 min-w-max">
             {steps.map((st, index) => {
               const active = st.isActive;
@@ -2538,7 +2542,7 @@ export default function SignatureFlow({
 
                 {/* Checked completed notice */}
                 {isOtpCompleted && (
-                  <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-900 font-semibold flex items-center justify-center gap-1.5 animate-bounce">
+                  <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-900 font-semibold flex items-center justify-center gap-1.5 transition-all duration-300 shadow-xs animate-in fade-in zoom-in-95">
                     <CheckCircle size={15} className="text-emerald-600" />
                     <span>{t('signature.identityValidated')}</span>
                   </div>
@@ -2951,7 +2955,7 @@ export default function SignatureFlow({
       </main>
 
       {/* Primary footer bottom credits & links */}
-      <footer className="w-full border-t border-[#e2e8f0] py-3 px-4 text-center space-y-2">
+      <footer className="w-full bg-[#f8fafc] border-t border-slate-200/60 py-4 px-4 text-center space-y-2">
         <div className="flex justify-center flex-wrap gap-x-6 gap-y-2 text-xs text-zinc-400 font-semibold uppercase tracking-wider">
           <a href="https://pixiatech.com/gestion-cookies/" target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 transition-colors">{t('signature.footerSecurity')}</a>
           <span>•</span>

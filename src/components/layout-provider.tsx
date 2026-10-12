@@ -119,14 +119,14 @@ export function LayoutProvider({
         <ThemeProvider initialThemeName={initialThemeName}>
           <ProfileProvider initialBoutiqueB2B={initialBoutiqueB2B}>
           <CartProvider>
-          <div className={cn("flex flex-col min-h-dvh", isFrontendPage ? "bg-[#F5F5F5]" : "bg-background")}>
+          <div className={cn("flex flex-col min-h-dvh", isFrontendPage ? "bg-[#F8FAFC]" : "bg-background")}>
             {isFrontendPage && !isMonComptePage && <BoutiqueHeader boutiqueEnabled={initialBoutiqueEnabled} />}
             {isFrontendPage ? (
-              <div className={`flex flex-col flex-1 ${isMonComptePage ? '' : 'pt-[72px]'} ${showBottomNav ? 'pb-20' : ''} bg-[#F5F5F5]`}>
+              <div className={`flex flex-col flex-1 ${isMonComptePage ? '' : 'pt-[72px]'} ${showBottomNav ? 'pb-20' : ''} bg-[#F8FAFC]`}>
                 <SiteBanners />
                 <main
                   className={cn(
-                    'flex-1 flex items-start justify-center w-full bg-[#F5F5F5]',
+                    'flex-1 flex items-start justify-center w-full bg-[#F8FAFC]',
                     isHomePage && 'px-4 pb-4 pt-8 md:px-6 md:pb-6 md:pt-8',
                     !isHomePage && !isQuotePage && !isBoutiquePage && !isMonComptePage && !isContactPage && 'px-4 pb-4 md:px-6 md:pb-6',
                   )}
