@@ -21,11 +21,13 @@ export interface RevealOptions {
   rootMargin?: string;
   /** Set immediately without waiting (used for reduced motion). */
   immediate?: boolean;
+  /** Dépendance externe optionnelle forçant le ré-échantillonnage des cibles (ex: mode édition CMS). */
+  trigger?: unknown;
 }
 
 export function useRevealObserver(
   root: RefObject<HTMLElement | null>,
-  { threshold = 0.12, rootMargin = '0px 0px -8% 0px', immediate = false }: RevealOptions = {},
+  { threshold = 0.12, rootMargin = '0px 0px -8% 0px', immediate = false, trigger }: RevealOptions = {},
 ) {
   useEffect(() => {
     const el = root.current;
@@ -52,7 +54,7 @@ export function useRevealObserver(
 
     targets.forEach((t) => observer.observe(t));
     return () => observer.disconnect();
-  }, [root, threshold, rootMargin, immediate]);
+  }, [root, threshold, rootMargin, immediate, trigger]);
 }
 
 export function useElementInView<T extends HTMLElement>(

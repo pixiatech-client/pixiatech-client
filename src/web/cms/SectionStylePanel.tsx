@@ -251,7 +251,13 @@ export const SectionStylePanel: React.FC<SectionStylePanelProps> = ({
   return (
     <div
       data-cms-ui
-        style={{ position: 'absolute', top: 48, left: 16, zIndex: 160, width: 268 }}
+      style={{
+        position: 'fixed',
+        top: 'calc(var(--admin-bar-h, 0px) + var(--cms-section-bar-h, 0px) + 12px)',
+        left: 16,
+        zIndex: 160,
+        width: 268,
+      }}
       className="bg-[#0e0e0d]/98 backdrop-blur-md border border-[#C3F910] rounded-lg shadow-2xl font-sans select-none"
       onClick={(e) => e.stopPropagation()}
       onPointerDown={(e) => e.stopPropagation()}

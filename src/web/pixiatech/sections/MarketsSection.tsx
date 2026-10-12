@@ -126,6 +126,9 @@ export const MarketsSection: React.FC<MarketsSectionProps> = ({ lang = 'FR', onO
   useEffect(() => {
     let animId = 0;
     let maxDist = 0;
+    let lastWidth = typeof window !== 'undefined' ? window.innerWidth : 0;
+    let lastHeight = typeof window !== 'undefined' ? window.innerHeight : 0;
+    let resizeTimer: NodeJS.Timeout | null = null;
 
     const measure = () => {
       const wrapper = wrapperRef.current;
@@ -133,46 +136,67 @@ export const MarketsSection: React.FC<MarketsSectionProps> = ({ lang = 'FR', onO
       const track = trackRef.current;
       if (!wrapper || !sticky || !track) return;
 
-      const isMobile = window.innerWidth <= 768;
-      if (isMobile) {
+      if (isEditing) {
         sticky.style.position = 'relative';
+        sticky.style.top = '';
         sticky.style.height = 'auto';
+        sticky.style.overflow = 'visible';
         sticky.style.overflowX = 'auto';
-        sticky.style.overflowY = 'visible';
-        sticky.style.scrollSnapType = 'x mandatory';
-        // Enable smooth momentum scrolling on iOS
-        (sticky.style as CSSStyleDeclaration & { webkitOverflowScrolling: string }).webkitOverflowScrolling = 'touch';
-        // Allow both horizontal swipe and vertical page scroll
-        sticky.style.touchAction = 'pan-x pan-y';
+        sticky.style.scrollSnapType = 'none';
+        sticky.style.touchAction = '';
+        (sticky.style as CSSStyleDeclaration & { webkitOverflowScrolling?: string }).webkitOverflowScrolling = '';
         wrapper.style.height = 'auto';
         track.style.transform = 'none';
-        // Cards: allow pan-x and pan-y so vertical page scroll remains unblocked
-        const cards = track.querySelectorAll<HTMLElement>('.mkt-card');
-        cards.forEach((c) => { c.style.touchAction = 'pan-x pan-y'; });
         maxDist = 0;
         return;
       }
 
-      // Desktop: restore defaults
+      const isMobile = window.innerWidth <= 768;
+
+      // Base sticky styles (mobile and PC)
       sticky.style.touchAction = '';
       sticky.style.position = 'sticky';
       sticky.style.top = '0';
-      sticky.style.height = '100vh';
       sticky.style.overflow = 'hidden';
+      sticky.style.overflowX = 'hidden';
+      sticky.style.overflowY = 'hidden';
       sticky.style.scrollSnapType = 'none';
-      (sticky.style as CSSStyleDeclaration & { webkitOverflowScrolling: string }).webkitOverflowScrolling = '';
+      (sticky.style as CSSStyleDeclaration & { webkitOverflowScrolling?: string }).webkitOverflowScrolling = '';
 
-      const trackScrollWidth = track.scrollWidth;
-      const r = Math.max(trackScrollWidth - window.innerWidth + 80, 0);
+      let r = 0;
+
+      if (isMobile) {
+        // Mobile: calculate distance to display all 8 cards with final padding
+        const cards = track.querySelectorAll<HTMLElement>('.mkt-card');
+        const lastCard = cards[cards.length - 1];
+        const paddingEnd = Math.max(16, Math.round(window.innerWidth * 0.05));
+
+        if (lastCard) {
+          const lastCardRight = lastCard.offsetLeft + lastCard.offsetWidth;
+          r = Math.max(lastCardRight + paddingEnd - window.innerWidth, 0);
+        } else {
+          r = Math.max(track.scrollWidth - window.innerWidth + paddingEnd, 0);
+        }
+
+        sticky.style.height = '100vh';
+        sticky.style.height = '100dvh';
+        wrapper.style.height = `calc(100vh + ${r}px)`;
+        wrapper.style.height = `calc(100dvh + ${r}px)`;
+      } else {
+        // Desktop: preserve EXACT original behavior
+        sticky.style.height = '100vh';
+        const trackScrollWidth = track.scrollWidth;
+        r = Math.max(trackScrollWidth - window.innerWidth + 80, 0);
+        wrapper.style.height = `calc(100vh + ${r}px)`;
+      }
+
       maxDist = r;
-
-      wrapper.style.height = `calc(100vh + ${r}px)`;
     };
 
     const handleScroll = () => {
       const wrapper = wrapperRef.current;
       const track = trackRef.current;
-      if (window.innerWidth <= 768 || maxDist <= 0 || !wrapper || !track) return;
+      if (isEditing || maxDist <= 0 || !wrapper || !track) return;
 
       if (!animId) {
         animId = requestAnimationFrame(() => {
@@ -184,6 +208,38 @@ export const MarketsSection: React.FC<MarketsSectionProps> = ({ lang = 'FR', onO
       }
     };
 
+    const handleResize = () => {
+      const newWidth = window.innerWidth;
+      const newHeight = window.innerHeight;
+
+      // On mobile, browser address bar expand/collapse triggers resize with ~50-80px height change
+      // but unchanged width. Avoid expensive layout reflows and stuttering while scrolling.
+      const widthChanged = Math.abs(newWidth - lastWidth) > 1;
+      const heightSignificant = Math.abs(newHeight - lastHeight) > 150; // orientation or device fold
+
+      if (!widthChanged && !heightSignificant) {
+        return;
+      }
+
+      lastWidth = newWidth;
+      lastHeight = newHeight;
+
+      if (resizeTimer) clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        measure();
+        handleScroll();
+      }, 50);
+    };
+
+    const handleOrientationChange = () => {
+      setTimeout(() => {
+        lastWidth = window.innerWidth;
+        lastHeight = window.innerHeight;
+        measure();
+        handleScroll();
+      }, 150);
+    };
+
     measure();
     handleScroll();
 
@@ -192,16 +248,19 @@ export const MarketsSection: React.FC<MarketsSectionProps> = ({ lang = 'FR', onO
       handleScroll();
     }, 200);
 
-    window.addEventListener('resize', measure);
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleOrientationChange);
     window.addEventListener('scroll', handleScroll, { passive: true });
 
     return () => {
       clearTimeout(timer);
+      if (resizeTimer) clearTimeout(resizeTimer);
       if (animId) cancelAnimationFrame(animId);
-      window.removeEventListener('resize', measure);
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleOrientationChange);
       window.removeEventListener('scroll', handleScroll);
     };
-  }, []);
+  }, [isEditing]);
 
   return (
     <>
@@ -273,6 +332,7 @@ export const MarketsSection: React.FC<MarketsSectionProps> = ({ lang = 'FR', onO
             ref={trackRef}
             className="mkt-track"
             style={{
+              position: 'relative',
               display: 'flex',
               gap: 24,
               padding: '0 clamp(16px, 3.5vw, 64px)',

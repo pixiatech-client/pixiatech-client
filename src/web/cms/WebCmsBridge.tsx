@@ -4,6 +4,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useCms } from '@/lib/site-web/cms-context';
 import { useI18n } from '@/lib/i18n';
 import { AdminTopBar } from './AdminTopBar';
+import { CmsSectionBar } from './CmsSectionBar';
 import { BackendExportModal } from './BackendExportModal';
 import { VisualInPlaceEditor } from './VisualInPlaceEditor';
 import { useCmsElementStyles } from './useCmsElementStyles';
@@ -62,6 +63,7 @@ export const WebCmsBridge: React.FC = () => {
       {/* Interface Admin Complète lorsqu'on est connecté */}
       <>
         <AdminTopBar onOpenBackendModal={() => setIsBackendModalOpen(true)} currentPageTitle={pageTitle} />
+        <CmsSectionBar />
         <BackendExportModal isOpen={isBackendModalOpen} onClose={() => setIsBackendModalOpen(false)} />
         {/* Éditeur Visuel Direct : Clic sur n'importe quel texte ou photo pour modifier.
             Toute l'UI de style vit désormais dans la barre contextuelle

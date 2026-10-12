@@ -19,6 +19,41 @@ export function roundMoney(amount: number): number {
   return Math.round((amount + Number.EPSILON) * 100) / 100;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// AFFICHAGE HT / TTC — SOURCE DE VÉRITÉ UNIQUE (page de résultat + PDF)
+//
+// Le moteur calcule TOUJOURS en HT. La configuration TVA
+// (settings.estimationFlow.tax / priceSnapshot.tax) indique si l'utilisateur
+// veut voir les montants HT ou TTC. `applyTaxMode` convertit un montant HT vers
+// la base d'affichage demandée :
+//   - mode 'ht' ou TVA désactivée → montant HT renvoyé inchangé ;
+//   - mode 'ttc' et TVA activée   → HT × (1 + taux/100), normalisé.
+//
+// Contrat STRICT : l'entrée est TOUJOURS un montant HT. Ne jamais appeler cette
+// fonction sur un montant déjà TTC (risque de double TVA).
+// ─────────────────────────────────────────────────────────────────────────────
+export type TaxDisplayMode = 'ht' | 'ttc';
+
+export interface TaxDisplayConfig {
+  enabled?: boolean;
+  rate?: number;
+  mode?: TaxDisplayMode;
+}
+
+export function taxDisplayMultiplier(tax?: TaxDisplayConfig | null): number {
+  if (!tax || !tax.enabled) return 1;
+  if (tax.mode !== 'ttc') return 1;
+  return 1 + (Number(tax.rate) || 0) / 100;
+}
+
+export function applyTaxMode(htAmount: number, tax?: TaxDisplayConfig | null): number {
+  return roundMoney((Number(htAmount) || 0) * taxDisplayMultiplier(tax));
+}
+
+export function isTaxDisplayInclusive(tax?: TaxDisplayConfig | null): boolean {
+  return !!tax && !!tax.enabled && tax.mode === 'ttc';
+}
+
 // Dépôt de sécurité — règle métier partagée (P1.1). Location : 50 % du total.
 export function computeDeposit(total: number, transactionType: 'sale' | 'rental'): number {
   return transactionType === 'rental' ? roundMoney(total * 0.5) : 0;

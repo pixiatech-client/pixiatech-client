@@ -134,6 +134,9 @@ export type QuoteDetails = {
   lang: 'fr' | 'en' | 'zh-CN';
   sitePhoto?: string;
   taxRate?: number;
+  // Base d'affichage TVA. Optionnelle : les devis récents portent un priceSnapshot
+  // (source de vérité). Ce champ couvre les chemins legacy SANS snapshot.
+  taxMode?: 'ht' | 'ttc';
   priceSnapshot?: PriceSnapshot;
   configuratorType?: 'guided' | 'manual' | 'lumi';
   // Screen layout propagated from wizard

@@ -369,7 +369,7 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
         onMouseLeave={() => setMegaOpen(false)}
         style={{
           position: 'fixed',
-          top: 'calc(var(--admin-bar-h, 0px) + var(--preview-bar-h, 0px))',
+          top: 'calc(var(--admin-bar-h, 0px) + var(--preview-bar-h, 0px) + var(--cms-section-bar-h, 0px))',
           left: 0,
           right: 0,
           zIndex: 200,

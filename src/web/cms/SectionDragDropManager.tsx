@@ -13,6 +13,24 @@ interface DragDropContextType {
 
 const DragDropContext = createContext<DragDropContextType | null>(null);
 
+/**
+ * Contrôleur de glisser-déposer exposé hors de l'arbre React.
+ *
+ * La barre de section (`CmsSectionBar`) est montée au-dessus du
+ * `SectionDragDropProvider` et ne peut donc pas consommer le contexte via le
+ * hook. Le provider enregistre ici sa fonction `startDrag`, ce qui laisse le
+ * glisser-déposer pleinement accessible depuis la nouvelle barre.
+ */
+type SectionDragController = {
+  startDrag: (sectionKey: string, e: React.MouseEvent) => void;
+};
+
+let activeDragController: SectionDragController | null = null;
+
+export function getSectionDragController(): SectionDragController | null {
+  return activeDragController;
+}
+
 export const SectionDragDropProvider: React.FC<{
   children: React.ReactNode;
   allSectionKeys: string[];
@@ -122,6 +140,13 @@ export const SectionDragDropProvider: React.FC<{
     },
     [allSectionKeys, currentPageData?.sectionOrder, updateSectionOrder, saveCurrentPage]
   );
+
+  useEffect(() => {
+    activeDragController = { startDrag };
+    return () => {
+      activeDragController = null;
+    };
+  }, [startDrag]);
 
   return (
     <DragDropContext.Provider

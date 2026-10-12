@@ -31,21 +31,47 @@
 type SectionEntry = {
   node: HTMLElement;
   sectionKey: string;
+  label?: string;
 };
 
 const entries: SectionEntry[] = [];
+const sectionListeners = new Set<() => void>();
 
-export function registerSection(node: HTMLElement, sectionKey: string): () => void {
-  const entry: SectionEntry = { node, sectionKey };
+function notifySections(): void {
+  sectionListeners.forEach((l) => l());
+}
+
+/** S'abonner aux montages/démontages de sections (pour l'observateur de scroll). */
+export function subscribeSections(listener: () => void): () => void {
+  sectionListeners.add(listener);
+  return () => {
+    sectionListeners.delete(listener);
+  };
+}
+
+/**
+ * Libellé éditorial déclaré par la section (`EditableWrapper`), sinon `null`.
+ */
+export function getSectionLabel(sectionKey: string): string | null {
+  for (let i = entries.length - 1; i >= 0; i--) {
+    if (entries[i].sectionKey === sectionKey) return entries[i].label ?? null;
+  }
+  return null;
+}
+
+export function registerSection(node: HTMLElement, sectionKey: string, label?: string): () => void {
+  const entry: SectionEntry = { node, sectionKey, label };
   entries.push(entry);
+  notifySections();
   return () => {
     const idx = entries.indexOf(entry);
     if (idx >= 0) entries.splice(idx, 1);
+    notifySections();
   };
 }
 
 /** Liste des sections CMS actuellement montées. */
-export function getRegisteredSections(): { node: HTMLElement; sectionKey: string }[] {
+export function getRegisteredSections(): { node: HTMLElement; sectionKey: string; label?: string }[] {
   return entries.filter((e) => e.node.isConnected);
 }
 

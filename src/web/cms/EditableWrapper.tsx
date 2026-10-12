@@ -2,12 +2,13 @@
 
 import React, { useState, useRef, useLayoutEffect, useEffect } from 'react';
 import { useCms } from '@/lib/site-web/cms-context';
-import { Eye, EyeOff, Settings, GripVertical } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import { SectionResizeHandle } from './SectionResizeHandle';
 import { SectionStylePanel } from './SectionStylePanel';
 import type { StyleKey } from './SectionStylePanel';
 import { useSectionDragDrop } from './SectionDragDropManager';
 import { registerSection } from './section-registry';
+import { stylePanelStore, useStoreValue } from './editor-ui-store';
 
 interface EditableWrapperProps {
   sectionKey: string;
@@ -49,7 +50,7 @@ export const EditableWrapper: React.FC<EditableWrapperProps> = ({
   }, [sectionKey, toggleSectionVisibility, saveCurrentPage]);
 
   const [isHovered, setIsHovered] = useState(false);
-  const [isStyleOpen, setIsStyleOpen] = useState(false);
+  const openStylePanel = useStoreValue(stylePanelStore);
   const [liveMinHeight, setLiveMinHeight] = useState<number | null>(null);
   const [livePaddingBottom, setLivePaddingBottom] = useState<number | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -65,8 +66,8 @@ export const EditableWrapper: React.FC<EditableWrapperProps> = ({
   useEffect(() => {
     const node = wrapperRef.current;
     if (!node) return;
-    return registerSection(node, sectionKey);
-  }, [sectionKey]);
+    return registerSection(node, sectionKey, sectionLabel);
+  }, [sectionKey, sectionLabel]);
 
   // Enregistrement du nœud pour le calcul de la destination de dépôt.
   useEffect(() => {
@@ -201,94 +202,18 @@ export const EditableWrapper: React.FC<EditableWrapperProps> = ({
         outlineOffset: '-2px',
       }}
     >
-      {/* Section Action Bar (Top Center/Right) */}
-      {(isHovered || isSelected || !isVisible) && (
-        <div
-          data-cms-ui
-          style={{ position: 'absolute', top: 8, left: 16, zIndex: 150, pointerEvents: 'auto' }}
-          className="flex items-center gap-1 bg-[#0e0e0d]/95 backdrop-blur-md border border-[#C3F910] rounded-md p-1 shadow-2xl animate-in fade-in duration-100 select-none"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* Section Label / Select */}
-          <div
-            className="px-2 py-1 text-[#C3F910] hover:text-white font-mono text-[11px] font-bold cursor-pointer transition-colors"
-            onClick={() => {
-              setSelectedBlockId(sectionKey);
-            }}
-          >
-            {sectionLabel.toUpperCase()}
-          </div>
-
-          {/* Visibility Eye Button 👁 */}
-          <button
-            type="button"
-            onClick={toggleVisibility}
-            className={`p-1.5 rounded transition-colors cursor-pointer flex items-center gap-1 ${
-              isVisible
-                ? 'text-[#C3F910] hover:bg-[#C3F910]/20'
-                : 'text-[#ff4444] bg-[#ff4444]/20 hover:bg-[#ff4444]/30'
-            }`}
-            title={isVisible ? 'Masquer cette section sur le site public' : 'Afficher cette section'}
-          >
-            {isVisible ? (
-              <>
-                <span className="w-1.5 h-1.5 rounded-full bg-[#C3F910]" />
-                <Eye className="w-3.5 h-3.5" />
-              </>
-            ) : (
-              <>
-                <span className="w-1.5 h-1.5 rounded-full bg-[#ff4444]" />
-                <EyeOff className="w-3.5 h-3.5" />
-              </>
-            )}
-          </button>
-
-          {/* Réordonner la section — système existant SectionDragDropManager */}
-          {dragDrop && (
-            <button
-              type="button"
-              onClick={(e) => {
-                if (dragDrop.activeDragKey === sectionKey) return;
-                dragDrop.startDrag(sectionKey, e);
-              }}
-              className={`p-1.5 rounded transition-colors cursor-grab active:cursor-grabbing ${
-                dragDrop.activeDragKey === sectionKey
-                  ? 'text-[#C3F910] bg-[#C3F910]/20'
-                  : 'text-[#9A9A94] hover:text-[#C3F910] hover:bg-[#1a1a17]'
-              }`}
-              title="Déplacer cette section : maintenez et glissez vers le haut ou le bas de la page"
-            >
-              <GripVertical className="w-3.5 h-3.5" />
-            </button>
-          )}
-
-          {/* Settings / Style Tab Button ⚙ */}
-          <button
-            type="button"
-            onClick={() => {
-              setSelectedBlockId(sectionKey);
-              setIsStyleOpen((v) => !v);
-            }}
-            className={`p-1.5 rounded transition-colors cursor-pointer ${
-              isStyleOpen ? 'text-[#C3F910] bg-[#C3F910]/20' : 'text-[#9A9A94] hover:text-[#C3F910] hover:bg-[#1a1a17]'
-            }`}
-            title="Ouvrir les réglages de style et espacement"
-          >
-            <Settings className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      )}
-
-
+      {/* La barre d'actions de section (nom, visibilité, glisser-déposer,
+          réglages) est désormais centralisée dans la barre fixe unique
+          `CmsSectionBar`, sous la barre d'administration. */}
 
       {/* Panneau de style contextuel — reprend les contrôles de l'ancien drawer
           dans l'éditeur direct, sur le même système (useSectionStyle +
           updateSectionField + saveCurrentPage). */}
-      {isVisible && isSelected && isStyleOpen && (
+      {isVisible && openStylePanel === sectionKey && (
         <SectionStylePanel
           sectionKey={sectionKey}
           sectionLabel={sectionLabel}
-          onClose={() => setIsStyleOpen(false)}
+          onClose={() => stylePanelStore.set(null)}
           capabilities={styleCapabilities}
         />
       )}

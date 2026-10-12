@@ -231,13 +231,12 @@ header a, header button {
   .mkt-track-wrap::-webkit-scrollbar {
     display: none;                 /* Chromium / Safari */
   }
-  /* Alignement snap des cartes */
+  /* Dimensions adaptées des cartes sur mobile */
   .mkt-card {
-    scroll-snap-align: start;
     /* Réduire la hauteur pour tenir dans le viewport mobile */
     height: clamp(320px, 70vw, 420px) !important;
     min-height: 0 !important;
-    /* Largeur adaptée au mobile : 88% de la largeur viewport */
+    /* Largeur adaptée au mobile : 84% de la largeur viewport */
     width: clamp(280px, 84vw, 360px) !important;
   }
   /* La piste de cartes ne dépasse pas de la section */

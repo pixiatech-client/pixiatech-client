@@ -4,7 +4,7 @@
       "id": "home",
       "name": "home",
       "slug": "/home",
-      "updatedAt": "2026-10-12T11:09:46.476Z",
+      "updatedAt": "2026-10-12T22:16:59.167Z",
       "sections": {
         "pixia-web": {
           "text_1790257213042": "sdsdsdsdÉDITEUR DIRECT : CLIQUEZ SUR UN TEXTE OU UNE IMAGE",
@@ -62,10 +62,10 @@
           "_i18n": {
             "title": {
               "fr": {
-                "value": "L'INGÉNIERIE ",
+                "value": "TECHNOLOGIES03 D’AFFICHAGE 01",
                 "status": "source",
-                "updatedAt": "2026-10-11T21:54:51.438Z",
-                "sourceText": "L'INGÉNIERIE "
+                "updatedAt": "2026-10-12T21:35:04.678Z",
+                "sourceText": "TECHNOLOGIES03 D’AFFICHAGE 01"
               }
             },
             "badge": {
@@ -91,42 +91,148 @@
                 "updatedAt": "2026-10-11T21:14:17.605Z",
                 "sourceText": "Démarrer un projet11 →"
               }
+            },
+            "tagline": {
+              "fr": {
+                "value": "AFFICHAGE SUR MESURE ",
+                "status": "source",
+                "updatedAt": "2026-10-12T16:38:02.475Z",
+                "sourceText": "AFFICHAGE SUR MESURE "
+              }
+            },
+            "slider3.title": {
+              "fr": {
+                "value": "SCIENCE BEHIND",
+                "status": "source",
+                "updatedAt": "2026-10-12T21:55:13.850Z",
+                "sourceText": "SCIENCE BEHIND"
+              }
+            },
+            "slider2.title": {
+              "fr": {
+                "value": "TURN SPACE",
+                "status": "source",
+                "updatedAt": "2026-10-12T21:53:04.437Z",
+                "sourceText": "TURN SPACE"
+              }
+            },
+            "slider3.description": {
+              "fr": {
+                "value": "Every pixel calibrated, every cabinet engineered — from Istanbul to installations worldwide.",
+                "status": "source",
+                "updatedAt": "2026-10-12T21:55:33.730Z",
+                "sourceText": "Every pixel calibrated, every cabinet engineered — from Istanbul to installations worldwide."
+              }
+            },
+            "slider2.description": {
+              "fr": {
+                "value": "Fine-pitch, transparent and kinetic surfaces that make the screen part of the space.",
+                "status": "source",
+                "updatedAt": "2026-10-12T21:54:20.666Z",
+                "sourceText": "Fine-pitch, transparent and kinetic surfaces that make the screen part of the space."
+              }
+            },
+            "slider1.description": {
+              "fr": {
+                "value": "Professional LED display systems engineered for architecture, business and unforgettable visual experiences.",
+                "status": "source",
+                "updatedAt": "2026-10-12T21:55:00.708Z",
+                "sourceText": "Professional LED display systems engineered for architecture, business and unforgettable visual experiences."
+              }
+            },
+            "slider2.tagline": {
+              "fr": {
+                "value": "INTO EXPERIENCE.",
+                "status": "source",
+                "updatedAt": "2026-10-12T21:53:16.367Z",
+                "sourceText": "INTO EXPERIENCE."
+              }
+            },
+            "slider1.title": {
+              "fr": {
+                "value": "ENGINEERED",
+                "status": "source",
+                "updatedAt": "2026-10-12T21:54:40.563Z",
+                "sourceText": "ENGINEERED"
+              }
+            },
+            "slider1.tagline": {
+              "fr": {
+                "value": "TO BE SEEN.",
+                "status": "source",
+                "updatedAt": "2026-10-12T21:54:49.265Z",
+                "sourceText": "TO BE SEEN."
+              }
+            },
+            "slider3.tagline": {
+              "fr": {
+                "value": "THE LED.",
+                "status": "source",
+                "updatedAt": "2026-10-12T21:55:23.447Z",
+                "sourceText": "THE LED."
+              }
             }
           },
-          "minHeight": 835,
-          "paddingBottom": 0,
-          "slideImage1": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fhero%2Fhero-slide-1-1791742783887-7flvtm.webp?alt=media",
+          "minHeight": 0,
+          "paddingBottom": 25,
+          "slideImage1": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FInstallation_LED_immersive_dans_un_espace_commercial_haut_de_gamme_rt3ns.webp?alt=media",
           "_elements": {
             "div:2/section:1/div:7/div:1/div:3/span:2": {
               "text": "PROJETS INTERNATIONAUX 11"
             },
             "div:2/section:1/div:7/div:1/div:3/span:1": {
               "text": "PARIS · MONDE 11"
+            },
+            "title": {
+              "fontSize": "116px"
+            },
+            "tagline": {
+              "fontSize": "120px"
             }
           },
           "slideImage2": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fhero%2Fhero-slide-2-1791742797712-dncls6.webp?alt=media",
           "slideImage3": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fhero%2Fhero-slide-3-1791742798286-6rfi9j.webp?alt=media",
-          "title": "L'INGÉNIERIE ",
+          "title": "TECHNOLOGIES03 D’AFFICHAGE 01",
           "badge": "PIXIATECH / VISUAL TECHNOLOGY ",
           "description": "Spécialisée dans la vente d’écrans professionnels et de technologies d’affichage LED, Micro LED et OLED, pour les entreprises, les commerces, l’architecture et l’événementiel",
-          "secondaryCta": "Démarrer un projet11 →"
+          "secondaryCta": "Démarrer un projet11 →",
+          "tagline": "AFFICHAGE SUR MESURE ",
+          "paddingTop": 80,
+          "visible": true,
+          "layout": {
+            "visible": true
+          },
+          "slider3.title": "SCIENCE BEHIND",
+          "slider2.title": "TURN SPACE",
+          "slider3.description": "Every pixel calibrated, every cabinet engineered — from Istanbul to installations worldwide.",
+          "slider2.description": "Fine-pitch, transparent and kinetic surfaces that make the screen part of the space.",
+          "slider1.description": "Professional LED display systems engineered for architecture, business and unforgettable visual experiences.",
+          "slider2.tagline": "INTO EXPERIENCE.",
+          "slider1.title": "ENGINEERED",
+          "slider1.tagline": "TO BE SEEN.",
+          "slider3.tagline": "THE LED."
         },
         "markets": {
           "_elements": {
             "div:2/div:1/div:1/div:1/h2:1": {
               "fontSize": "68px",
               "textAlign": "center",
-              "text": "Built for every environment. 111"
+              "text": "Built for every environment. 111",
+              "text_fr": "Built for every environment. "
             }
           },
           "market_rental_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2F_cran_LED_g_ant_incurv__pour_publicit__ext_rieure_sur_fa_ade_hgi2z.webp?alt=media",
-          "market_corporate_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2F_cran_d_affichage_num_rique_pour_r_union_et_pr_sentation_commerciale_x0194.webp?alt=media",
+          "market_corporate_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2F0cb8e92d-ed75-40b0-bb16-818fd2cddf6b_6k9ib.png?alt=media",
           "market_retail_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2F_crans_LED_publicitaires_pour_galerie_commerciale_et_commerce_de_d_tail_8q9qt.webp?alt=media",
           "market_dooh_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FFa_ade_commerciale_avec_affichage_LED_ext_rieur_grand_format_oks68.webp?alt=media",
           "market_xr_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FStudio_audiovisuel__quip__de_murs_vid_o_LED_professionnels_6kpn7.webp?alt=media",
           "market_sports_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2F_crans_LED_pour_stade_et_affichage_publicitaire_lors_d__v_nements_sportifs_711qi.webp?alt=media",
           "market_control_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FMur_d__crans_LED_pour_salle_de_contr_le_et_supervision_professionnelle_6cxfh.webp?alt=media",
-          "market_creative_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FAffichage_num_rique_grand_format_dans_un_hall_de_gare_b7b90.webp?alt=media"
+          "market_creative_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FAffichage_num_rique_grand_format_dans_un_hall_de_gare_b7b90.webp?alt=media",
+          "visible": true,
+          "layout": {
+            "visible": true
+          }
         },
         "header": {
           "_elements": {
@@ -145,14 +251,24 @@
             },
             "div:2/section:1/div:1/h2:1/span:1": {
               "color": "#e60505"
+            },
+            "titleLine3": {
+              "color": "#000000"
+            },
+            "titleLine2": {
+              "color": "#d91717"
             }
           },
           "paddingTop": 0,
           "overlayColor": "#d50b0b",
           "overlayOpacity": 85,
-          "minHeight": 708,
-          "marginBottom": 184,
-          "paddingBottom": 0
+          "minHeight": 100,
+          "marginBottom": 0,
+          "paddingBottom": 0,
+          "visible": true,
+          "layout": {
+            "visible": true
+          }
         },
         "pitch": {
           "paddingTop": 16,
@@ -500,5 +616,5 @@
       }
     }
   },
-  "updatedAt": "2026-10-12T11:09:47.183Z"
+  "updatedAt": "2026-10-12T22:16:59.827Z"
 }

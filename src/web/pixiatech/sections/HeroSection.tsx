@@ -1,11 +1,18 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Language } from '../../pixiatech-translations';
 import { useCms } from '@/lib/site-web/cms-context';
 import { getCmsText, normalizeLang } from '@/lib/site-web/cms-i18n';
 import { useSectionStyle } from '../../cms/useSectionStyle';
+import { heroSlideStore, useStoreValue } from '../../cms/editor-ui-store';
+import { computeValidHeroSlides } from './hero-slides';
+
+// Transition cinématique du Hero : fondu croisé + zoom Ken Burns continu.
+const HERO_FADE_MS = 1300; // fondu croisé (1–1,4 s)
+const HERO_ZOOM_MS = 7000; // durée du zoom Ken Burns (lent, discret)
+const HERO_ZOOM = 1.08; // échelle cible COMMUNE active + sortante (pas d'inversion)
 
 interface HeroSectionProps {
   lang?: Language;
@@ -18,65 +25,109 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ lang = 'FR', onOpenCon
   const cmsHero = pages['home']?.sections?.hero || {};
   const cmsData = cmsHero as Record<string, unknown>;
   const cms = useSectionStyle(cmsData);
-  const [activeSlide, setActiveSlide] = useState(0);
 
   const activeLang = isEditing ? currentLang : normalizeLang(lang);
 
-  // Les images de slides sont lues avec priorité sur le champ plat racine
-  // (écrit par HeroSlidersAdmin ou l'API) puis sur le stockage _i18n
-  // (écrit par updateSectionField) pour compatibilité absolue.
-  const slideImage1 =
-    (cmsHero.slideImage1 as string | undefined) ||
-    getCmsText(cmsHero, 'slideImage1', 'fr') ||
-    (cmsHero.primaryImage as string | undefined) ||
-    (cmsHero.heroImage as string | undefined) ||
-    '/uploads/site/hero-1.jpg';
-  const slideImage2 =
-    (cmsHero.slideImage2 as string | undefined) ||
-    getCmsText(cmsHero, 'slideImage2', 'fr') ||
-    '/uploads/site/hero-2.jpg';
-  const slideImage3 =
-    (cmsHero.slideImage3 as string | undefined) ||
-    getCmsText(cmsHero, 'slideImage3', 'fr') ||
-    '/uploads/site/hero-3.jpg';
+  // Photos réellement disponibles (aucune diapositive fantôme). Voir
+  // `hero-slides.ts` : liste vide → un unique visuel de repli.
+  const slides = React.useMemo(
+    () => computeValidHeroSlides(cmsData, activeLang),
+    [cmsData, activeLang]
+  );
 
-  const slides = [
-    {
-      img: slideImage1,
-      alt: activeLang === 'fr'
-        ? 'Installation LED — hall architectural avec structure illuminée'
-        : 'LED installation — architectural lobby with illuminated structure',
-      imageKey: 'slideImage1',
-    },
-    {
-      img: slideImage2,
-      alt: activeLang === 'fr'
-        ? 'Installation LED — atrium avec écran LED immersif'
-        : 'LED installation — atrium with immersive LED display',
-      imageKey: 'slideImage2',
-    },
-    {
-      img: slideImage3,
-      alt: activeLang === 'fr'
-        ? 'Installation LED — mur LED panoramique incurvé'
-        : 'LED installation — curved panoramic LED wall',
-      imageKey: 'slideImage3',
-    },
-  ];
+  const storedSlide = useStoreValue(heroSlideStore);
+  const activeSlide = slides.length ? storedSlide % slides.length : 0;
+  const activeSlideData = slides[activeSlide];
+
+  // Textes par slide : clés plates `sliderN.<champ>` dérivées de la clé
+  // STABLE de l'image active (`slideImageN`), jamais de l'index de tableau.
+  // Aucune migration : tant qu'aucune clé `sliderN.*` n'existe, la lecture
+  // retombe sur les champs globaux ci-dessous → affichage inchangé.
+  const slideFieldKey = (field: string): string => {
+    const n = activeSlideData?.imageKey?.replace(/^slideImage/u, '') || '1';
+    return `slider${n}.${field}`;
+  };
+  const slideValue = (field: string): string => getCmsText(cmsHero, slideFieldKey(field), activeLang);
+  const slideOrGlobal = (field: string, global: string): string => slideValue(field) || global;
+
+  // Ramène l'index dans une plage valide quand le nombre de photos change.
+  useEffect(() => {
+    if (slides.length === 0) return;
+    if (storedSlide >= slides.length) heroSlideStore.set(storedSlide % slides.length);
+  }, [slides.length, storedSlide]);
 
   useEffect(() => {
     if (isEditing) return; // Ne pas faire tourner automatiquement en mode édition
+    if (slides.length <= 1) return; // Rien à faire tourner avec une seule photo
     const timer = setInterval(() => {
-      setActiveSlide((prev) => (prev + 1) % slides.length);
+      heroSlideStore.set((heroSlideStore.get() + 1) % slides.length);
     }, 6000);
     return () => clearInterval(timer);
   }, [slides.length, isEditing]);
 
+  // --- Transition cinématique entre images (crossfade + Ken Burns) ---
+  // Active et sortante partagent la même cible : la course du zoom reste
+  // monotone et continue, sans inversion ni saut. Seule l'opacité change.
+  const [outgoingSlide, setOutgoingSlide] = React.useState(-1);
+  const [reduceMotion, setReduceMotion] = React.useState(false);
+  const [entered, setEntered] = React.useState(false);
+  const lastActive = React.useRef(activeSlide);
+  const outgoingRef = React.useRef(-1);
+  const transitionIdRef = React.useRef(0);
+
+  React.useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const sync = () => setReduceMotion(mq.matches);
+    sync();
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
+  }, []);
+
+  // Zoom doux du tout premier visuel, après le montage (pas de zoom au SSR).
+  React.useEffect(() => {
+    const id = window.requestAnimationFrame(() => setEntered(true));
+    return () => window.cancelAnimationFrame(id);
+  }, []);
+
+  // Seule la transition la plus récente définit/efface l'image sortante :
+  // annulation du minuteur précédent + identifiant de cycle unique.
+  React.useEffect(() => {
+    const incoming = activeSlide;
+    const changed = lastActive.current !== incoming;
+    const prevActive = lastActive.current;
+    lastActive.current = incoming;
+
+    const myId = ++transitionIdRef.current;
+    const nextOutgoing = changed ? prevActive : outgoingRef.current;
+    outgoingRef.current = nextOutgoing;
+    setOutgoingSlide(nextOutgoing);
+
+    const to = window.setTimeout(() => {
+      if (transitionIdRef.current !== myId) return; // cycle plus récent → ne rien effacer
+      outgoingRef.current = -1;
+      setOutgoingSlide(-1);
+    }, HERO_FADE_MS + 120);
+    return () => window.clearTimeout(to);
+  }, [activeSlide]);
+
   const t = {
-    eyebrow: getCmsText(cmsHero, 'badge', activeLang, 'PIXIATECH / VISUAL TECHNOLOGY'),
-    h1Line1: getCmsText(cmsHero, 'title', activeLang, activeLang === 'fr' ? "L'INGÉNIERIE" : 'ENGINEERED'),
-    h1Line2: getCmsText(cmsHero, 'tagline', activeLang, activeLang === 'fr' ? 'DU VISIBLE.' : 'TO BE SEEN.'),
+    eyebrow: slideOrGlobal(
+      'badge',
+      getCmsText(cmsHero, 'badge', activeLang, 'PIXIATECH / VISUAL TECHNOLOGY')
+    ),
+    h1Line1: slideOrGlobal(
+      'title',
+      getCmsText(cmsHero, 'title', activeLang, activeLang === 'fr' ? "L'INGÉNIERIE" : 'ENGINEERED')
+    ),
+    h1Line2: slideOrGlobal(
+      'tagline',
+      getCmsText(cmsHero, 'tagline', activeLang, activeLang === 'fr' ? 'DU VISIBLE.' : 'TO BE SEEN.')
+    ),
+    // Repli global recopié à l'identique : slide (description) → slide
+    // (subtitle) → `description` global → `subtitle` global → défaut.
     sub:
+      slideValue('description') ||
+      slideValue('subtitle') ||
       getCmsText(cmsHero, 'description', activeLang) ||
       getCmsText(
         cmsHero,
@@ -86,13 +137,19 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ lang = 'FR', onOpenCon
           ? "Systèmes d'affichage LED professionnels conçus pour l'architecture, l'entreprise et des expériences visuelles inoubliables."
           : 'Professional LED display systems engineered for architecture, business and unforgettable visual experiences.'
       ),
-    cta1: getCmsText(
-      cmsHero,
+    cta1: slideOrGlobal(
       'primaryCta',
-      activeLang,
-      getCmsText(cmsHero, 'ctaText', activeLang, activeLang === 'fr' ? 'Explorer les solutions →' : 'Explore Solutions →')
+      getCmsText(
+        cmsHero,
+        'primaryCta',
+        activeLang,
+        getCmsText(cmsHero, 'ctaText', activeLang, activeLang === 'fr' ? 'Explorer les solutions →' : 'Explore Solutions →')
+      )
     ),
-    cta2: getCmsText(cmsHero, 'secondaryCta', activeLang, activeLang === 'fr' ? 'Démarrer un projet →' : 'Start a Project →'),
+    cta2: slideOrGlobal(
+      'secondaryCta',
+      getCmsText(cmsHero, 'secondaryCta', activeLang, activeLang === 'fr' ? 'Démarrer un projet →' : 'Start a Project →')
+    ),
     city: activeLang === 'fr' ? 'PARIS · MONDE' : 'PARIS · GLOBAL PROJECTS',
     scroll: activeLang === 'fr' ? 'DÉFILEZ POUR DÉCOUVRIR ↓' : 'SCROLL TO DISCOVER ↓',
     tagline: activeLang === 'fr' ? "SYSTÈMES D'AFFICHAGE LED" : 'LED DISPLAY SYSTEMS',
@@ -110,6 +167,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ lang = 'FR', onOpenCon
       {/* Background Slides with smooth fade & Ken Burns zoom */}
       {slides.map((s, idx) => {
         const isActive = idx === activeSlide;
+        // Actif OU sortant → même cible (1.08) : le zoom de la sortante poursuit
+        // sa course pendant le fondu (jamais de retour arrière, jamais de saut).
+        const isOnScreen = isActive || idx === outgoingSlide;
+        const scale = reduceMotion ? 1 : isOnScreen ? (entered ? HERO_ZOOM : 1) : 1;
         return (
           <div
             key={idx}
@@ -117,9 +178,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ lang = 'FR', onOpenCon
               position: 'absolute',
               inset: 0,
               opacity: isActive ? 1 : 0,
-              transform: isActive ? 'scale(1.06)' : 'scale(1)',
-              transition: 'opacity .9s ease, transform 4s linear',
-              willChange: 'transform',
+              transform: `scale(${scale})`,
+              transition: reduceMotion
+                ? 'opacity 300ms ease'
+                : `opacity ${HERO_FADE_MS}ms ease, transform ${HERO_ZOOM_MS}ms linear`,
+              willChange: 'opacity, transform',
               pointerEvents: isActive ? 'auto' : 'none',
             }}
           >
@@ -134,97 +197,35 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ lang = 'FR', onOpenCon
         );
       })}
 
-      {/* Indicateur de slider actif en mode édition pour basculer facilement */}
-      {isEditing && (
-        <div
-          data-cms-ui
-          style={{
-            position: 'absolute',
-            top: 24,
-            left: 24,
-            zIndex: 60,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            padding: '8px 14px',
-            background: 'rgba(14, 14, 13, 0.94)',
-            border: '1px solid #C3F910',
-            borderRadius: 12,
-            boxShadow: '0 8px 30px rgba(0,0,0,0.85)',
-            backdropFilter: 'blur(8px)',
-          }}
-        >
-          <span style={{ fontSize: 11, fontFamily: 'monospace', fontWeight: 800, color: '#C3F910' }}>
-            SLIDER ACTIF :
-          </span>
-          {slides.map((_, i) => (
+      {/* Le sélecteur de photo du Hero est désormais intégré à la barre de
+          section unique (`CmsSectionBar`) quand le Hero est actif. */}
+
+      {/* Top right slide indicator dots (style Xeron 01/02/03) */}
+      {slides.length > 1 && (
+        <div className="hero-dots-top" data-cms-ui>
+          {slides.map((_, idx) => (
             <button
-              key={i}
+              key={idx}
               type="button"
               data-cms-ignore
+              className={`hero-dot ${idx === activeSlide ? 'on' : ''}`}
+              aria-current={idx === activeSlide ? 'true' : undefined}
+              aria-label={`Slide ${idx + 1}`}
               onClick={(e) => {
-                e.preventDefault();
                 e.stopPropagation();
-                setActiveSlide(i);
-              }}
-              style={{
-                padding: '4px 9px',
-                borderRadius: 6,
-                fontSize: 11,
-                fontFamily: 'monospace',
-                fontWeight: 700,
-                cursor: 'pointer',
-                background: i === activeSlide ? '#C3F910' : '#222',
-                color: i === activeSlide ? '#080808' : '#aaa',
-                border: i === activeSlide ? '1px solid #C3F910' : '1px solid #444',
-                transition: 'all 0.15s ease',
+                heroSlideStore.set(idx);
               }}
             >
-              0{i + 1}
+              {String(idx + 1).padStart(2, '0')}
             </button>
           ))}
-          <span style={{ fontSize: 10, color: '#888', marginLeft: 4 }}>
-            (cliquez sur le fond pour changer la photo)
-          </span>
         </div>
       )}
 
-      {/* Top right slide indicator dots */}
-      <div className="hero-dots-top" data-cms-ui>
-        {slides.map((_, i) => (
-          <button
-            key={i}
-            type="button"
-            data-cms-ignore
-            className={`hero-dot ${i === activeSlide ? 'on' : ''}`}
-            aria-current={i === activeSlide ? 'true' : undefined}
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setActiveSlide(i);
-            }}
-          >
-            0{i + 1}
-          </button>
-        ))}
-      </div>
-
-      {/* Vignette & Contrast Overlay */}
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          background:
-            'linear-gradient(180deg, rgba(8,8,8,.55) 0%, rgba(8,8,8,.15) 40%, rgba(8,8,8,.82) 100%)',
-          pointerEvents: 'none',
-        }}
-      />
-
-      {/* Hero Content Wrapper */}
       <div className="hero-wrap">
         <div className="hero-in">
           {/* Eyebrow */}
-          <div className="hero-eyebrow" data-text-key="badge">
+          <div className="hero-eyebrow" data-text-key="badge" data-slide-field={slideFieldKey('badge')}>
             {t.eyebrow}
           </div>
 
@@ -237,18 +238,18 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ lang = 'FR', onOpenCon
               ...cms.title,
             }}
           >
-            <span style={{ display: 'block' }} data-text-key="title">{t.h1Line1}</span>
-            <span style={{ display: 'block' }} data-text-key="tagline">{t.h1Line2}</span>
+            <span style={{ display: 'block' }} data-text-key="title" data-slide-field={slideFieldKey('title')}>{t.h1Line1}</span>
+            <span style={{ display: 'block' }} data-text-key="tagline" data-slide-field={slideFieldKey('tagline')}>{t.h1Line2}</span>
           </h1>
 
           {/* Subtitle */}
-          <p className="pretty hero-sub" style={{ opacity: 1, transition: 'opacity .5s ease' }} data-text-key="description">
+          <p className="pretty hero-sub" style={{ opacity: 1, transition: 'opacity .5s ease' }} data-text-key="description" data-slide-field={slideFieldKey('description')}>
             {t.sub}
           </p>
 
           {/* Action Buttons */}
           <div className="hero-ctas">
-            <a href="#markets" className="hero-cta1" data-text-key="primaryCta">
+            <a href="#markets" className="hero-cta1" data-text-key="primaryCta" data-slide-field={slideFieldKey('primaryCta')}>
               {t.cta1}
             </a>
             <button
@@ -257,6 +258,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ lang = 'FR', onOpenCon
               className="hero-cta2"
               style={{ cursor: 'pointer', fontFamily: 'inherit' }}
               data-text-key="secondaryCta"
+              data-slide-field={slideFieldKey('secondaryCta')}
             >
               {t.cta2}
             </button>
@@ -265,26 +267,23 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ lang = 'FR', onOpenCon
           {/* Hero Bottom Telemetry Bar */}
           <div className="hero-meta">
             <span>{t.city}</span>
-            <span className="hide-s">{activeLang === 'fr' ? 'PROJETS INTERNATIONAUX' : 'GLOBAL PROJECTS'}</span>
-            <span className="hide-s" style={{ animation: 'xr-pulse 2.6s ease-in-out infinite' }}>
-              {t.scroll}
-            </span>
-            <span className="hide-s">{t.tagline}</span>
+            <span>{t.scroll}</span>
+            <span>{t.tagline}</span>
             <div className="hero-dots-inline" data-cms-ui>
-              {slides.map((_, i) => (
+              {slides.map((_, idx) => (
                 <button
-                  key={i}
+                  key={idx}
                   type="button"
                   data-cms-ignore
-                  className={`hero-dot ${i === activeSlide ? 'on' : ''}`}
-                  aria-current={i === activeSlide ? 'true' : undefined}
+                  className={`hero-dot ${idx === activeSlide ? 'on' : ''}`}
+                  aria-current={idx === activeSlide ? 'true' : undefined}
+                  aria-label={`Slide ${idx + 1}`}
                   onClick={(e) => {
-                    e.preventDefault();
                     e.stopPropagation();
-                    setActiveSlide(i);
+                    heroSlideStore.set(idx);
                   }}
                 >
-                  0{i + 1}
+                  {String(idx + 1).padStart(2, '0')}
                 </button>
               ))}
             </div>

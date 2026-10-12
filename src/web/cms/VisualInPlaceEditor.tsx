@@ -152,6 +152,11 @@ export const VisualInPlaceEditor: React.FC = () => {
         background: rgba(195, 249, 16, 0.08) !important;
         box-shadow: 0 0 15px rgba(195, 249, 16, 0.3) !important;
       }
+      /* En mode édition CMS : tous les éléments de contenu data-reveal doivent être visibles et éditables immédiatement */
+      #pixia-web [data-reveal="true"] {
+        opacity: 1 !important;
+        transform: none !important;
+      }
     `;
     document.head.appendChild(styleEl);
 
@@ -364,7 +369,11 @@ export const VisualInPlaceEditor: React.FC = () => {
         const newText = target.innerText.replace(/[\n\r]+$/, '');
         if (newText.trim() === originalText.trim()) return;
 
-        const structuredKey = target.getAttribute('data-text-key');
+        // Cible d'écriture : `data-slide-field` (textes par slide, ex.
+        // `slider2.title`) prime sur la clé de style `data-text-key`. Sans
+        // `data-slide-field`, on garde le comportement historique.
+        const slideField = target.getAttribute('data-slide-field');
+        const structuredKey = slideField || target.getAttribute('data-text-key');
         if (structuredKey) {
           // Clé réelle : le champ existe dans la section, on l'édite
           // directement (donc traduit par le flux FR/EN existant).

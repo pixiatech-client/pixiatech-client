@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useCms } from '@/lib/site-web/cms-context';
 import { CMS_SOURCE_LANG, normalizeLang } from '@/lib/site-web/cms-i18n';
-import { forEachElementInSection, getRegisteredSections } from './section-registry';
+import { forEachElementInSection, getRegisteredSections, subscribeSections } from './section-registry';
 
 /**
  * Styles d'élément persistés par la barre contextuelle.
@@ -118,18 +118,16 @@ export function applyElementStyle(el: HTMLElement, style: ElementStyle, lang?: s
 
 /**
  * Balaye les sections montées et réapplique les styles d'élément persistés.
- * Exécuté au montage, au changement de page, de langue et de données CMS.
+ * Exécuté au montage, au changement de page, de langue, de données CMS, de mode
+ * édition (public ↔ édition) et à chaque (re)montage de section.
  */
 export function useCmsElementStyles(): void {
-  const { currentPageId, currentPageData, currentLang } = useCms();
+  const { isEditing, currentPageId, currentPageData, currentLang } = useCms();
 
   useEffect(() => {
-    // Deux passes : la seconde attend le rendu des sections qui viennent de
-    // s'insérer dans le même commit que le changement de langue.
+    let raf1 = 0;
     let raf2 = 0;
-    const raf1 = requestAnimationFrame(() => {
-      raf2 = requestAnimationFrame(apply);
-    });
+    let raf3 = 0;
 
     function apply() {
       const sections = currentPageData?.sections as
@@ -149,9 +147,29 @@ export function useCmsElementStyles(): void {
       }
     }
 
+    // Deux passes : la seconde attend le rendu des sections qui viennent de
+    // s'insérer dans le même commit que le changement de langue.
+    raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(apply);
+    });
+
+    // Le basculement public/édition fait remonter le sous-arbre de chaque
+    // section (`EditableWrapper` rend une arborescence différente — div
+    // d'enrobage + poignées), ce qui détruit les styles inline posés une seule
+    // fois. Sans resynchronisation, un titre Hero reprend alors la taille du CSS
+    // `.hero-h1` au lieu de sa taille CMS. On resynchronise donc dès qu'une
+    // section se (re)monte ou que le mode édition change. `apply()` ne lit et
+    // n'écrit que le DOM : il ne déclenche aucun `setState`, donc aucune boucle.
+    const unsubscribe = subscribeSections(() => {
+      cancelAnimationFrame(raf3);
+      raf3 = requestAnimationFrame(apply);
+    });
+
     return () => {
       cancelAnimationFrame(raf1);
       cancelAnimationFrame(raf2);
+      cancelAnimationFrame(raf3);
+      unsubscribe();
     };
-  }, [currentPageId, currentPageData, currentLang]);
+  }, [isEditing, currentPageId, currentPageData, currentLang]);
 }

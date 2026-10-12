@@ -1959,6 +1959,11 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
               id: estimation.id || 'DEV-XXXXXX',
               createdAt: new Date().toISOString(),
               totalQuote: calculations.finalTotal,
+              // Chemin admin SANS priceSnapshot : la page affiche « À Payer (TTC) ».
+              // On déclare explicitement la base d'affichage pour que le PDF soit
+              // cohérent (lignes HT × taux, étiquettes TTC) au lieu de mélanger
+              // un total TTC et des composantes HT.
+              taxMode: 'ttc',
               deliveryCost: estimation.deliveryCost,
               installationCost: estimation.laborCost,
               products: (estimation.products || []).map(p => ({

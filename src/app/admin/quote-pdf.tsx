@@ -4,6 +4,8 @@ import React from 'react';
 import { Mail, Phone, MapPin, Globe, Maximize, Monitor, Grid3X3, Zap, Activity, Truck, Sun, Eye, Cpu, Info, FileText, CheckSquare, Diamond, Lock, User, Heart } from 'lucide-react';
 import { format } from 'date-fns';
 import type { QuoteRequest, PdfSettings, Settings, City, Product, ProductSpec } from '@/lib/types';
+import { applyTaxMode } from '@/lib/pricing-engine';
+import { computeQuotePdfAmounts } from '@/lib/quote-pdf-amounts';
 
 const THEMES = [
   { id: 'indigo', primary: '#4f46e5', secondary: '#7c3aed', gradient: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)', text: '#1e1b4b' },
@@ -66,6 +68,8 @@ const PDF_LANG: Record<string, Record<string, string>> = {
     delivery: 'Delivery',
     total: 'TOTAL',
     exclTax: 'Excl. Tax',
+    inclTax: 'Incl. Tax',
+    subtotalIncl: 'Subtotal Incl. Tax',
     info: 'Information',
     infoText: 'This quote is an estimate automatically generated based on the information provided. It does not constitute a firm commitment on the part of',
     paymentTerms: 'Payment Terms',
@@ -129,6 +133,8 @@ const PDF_LANG: Record<string, Record<string, string>> = {
     delivery: 'Livraison',
     total: 'TOTAL',
     exclTax: 'HT',
+    inclTax: 'TTC',
+    subtotalIncl: 'Sous-total TTC',
     info: 'Information',
     infoText: 'Cette estimation est générée automatiquement sur la base des informations fournies. Elle ne constitue pas un engagement ferme de la part de',
     paymentTerms: 'Conditions de paiement',
@@ -172,13 +178,19 @@ export function QuotePDF({ id, request, settings, selectedCity, globalSettings, 
     const currentTheme = THEMES.find(t => t.id === settings.themeId) || THEMES[0];
     
     const products = request.products || [];
-    // SNAPSHOT PRIORITAIRE : montants FIGÉS du devis (immutable). Fallback legacy :
-    // devis antérieurs au snapshot (recalculés à la lecture, jamais inventés).
-    const snapshot = request.priceSnapshot;
-    const sousTotal = snapshot ? snapshot.productsSubtotal : (request.totalQuote || products.reduce((sum, p) => sum + (p.lineTotal || 0), 0));
-    const installation = snapshot ? snapshot.installation.cost : (request.installationCost || 0);
-    const livraison = snapshot ? snapshot.delivery.cost : (request.deliveryCost || 0);
-    const totalHT = snapshot ? snapshot.total : (sousTotal + installation + livraison);
+    // Montants affichés : base fiscale HARMONISÉE (HT/TTC) via la source de
+    // vérité unique partagée avec la page de résultat (computeQuotePdfAmounts /
+    // applyTaxMode). Le total utilise le total canonique du snapshot s'il existe.
+    const amounts = computeQuotePdfAmounts(request);
+    const taxConfig = amounts.tax;
+    const isTtc = amounts.isTtc;
+    const sousTotal = amounts.subtotal;
+    const installation = amounts.installation;
+    const livraison = amounts.delivery;
+    const totalDisplay = amounts.total;
+    const subtotalLabel = isTtc ? lang.subtotalIncl : lang.subtotal;
+    const totalTaxLabel = isTtc ? lang.inclTax : lang.exclTax;
+    const displayLine = (lineTotalHt: number) => applyTaxMode(lineTotalHt, taxConfig);
     
     // Technical Data calculations (Aggregated)
     const totalArea = products.reduce((sum, p) => sum + ((p.width || 0) * (p.height || 0) * (p.quantity || 1)), 0);
@@ -333,7 +345,10 @@ export function QuotePDF({ id, request, settings, selectedCity, globalSettings, 
                             <span className="text-right">{lang.unitExcl}</span>
                             <span className="text-right">{lang.totalExcl}</span>
                         </div>
-                        {products.map((item, idx) => (
+                        {products.map((item, idx) => {
+                            const lineDisplay = displayLine(item.lineTotal || 0);
+                            const unitDisplay = displayLine((item.lineTotal || 0) / (item.quantity || 1));
+                            return (
                             <div 
                                 key={idx} 
                                 className="grid grid-cols-[3em_1fr_4em_8em_9em] items-start py-3 px-2 border-b border-gray-100"
@@ -354,16 +369,17 @@ export function QuotePDF({ id, request, settings, selectedCity, globalSettings, 
                                 </div>
                                 <span style={{ textAlign: "right", fontWeight: 900, color: "#1e293b", fontSize: "1.1em" }}>{item.quantity || 1}</span>
                                 <div className="flex flex-col items-end">
-                                    <span style={{ textAlign: "right", color: "#475569", fontWeight: 600, fontSize: "1em" }}>{fmt((item.lineTotal / (item.quantity||1)) || 0, numLocale).replace(' €', '')}</span>
+                                    <span style={{ textAlign: "right", color: "#475569", fontWeight: 600, fontSize: "1em" }}>{fmt(unitDisplay, numLocale).replace(' €', '')}</span>
                                     <span className="text-[0.65em] font-bold text-gray-400 mt-0.5 uppercase tracking-tighter">EUR</span>
                                 </div>
                                 <div className="text-right">
                                     <span className="text-[1.2em] font-black tracking-tight" style={{ color: currentTheme.text }}>
-                                        {fmt(item.lineTotal || 0, numLocale)}
+                                        {fmt(lineDisplay, numLocale)}
                                     </span>
                                 </div>
                             </div>
-                        ))}
+                            );
+                        })}
 
                     </div>
 
@@ -415,13 +431,13 @@ export function QuotePDF({ id, request, settings, selectedCity, globalSettings, 
                                 </div>
                                 <div className="bg-white border border-slate-100 shadow-sm rounded-2xl p-8 flex-1 flex flex-col justify-between">
                                     <div className="flex flex-col gap-5 px-1">
-                                        <div className="flex justify-between items-center text-[0.78em]"><span className="text-slate-500 font-medium">{lang.subtotal}</span><span style={{ fontWeight: 800, textAlign: "right", color: "#0f172a" }}>{fmt(sousTotal, numLocale)}</span></div>
+                                        <div className="flex justify-between items-center text-[0.78em]"><span className="text-slate-500 font-medium">{subtotalLabel}</span><span style={{ fontWeight: 800, textAlign: "right", color: "#0f172a" }}>{fmt(sousTotal, numLocale)}</span></div>
                                         <div className="flex justify-between items-center text-[0.78em]"><span className="text-slate-500 font-medium">{lang.installation}</span><span style={{ fontWeight: 800, textAlign: "right", color: "#0f172a" }}>{fmt(installation, numLocale)}</span></div>
                                         <div className="flex justify-between items-center text-[0.78em]"><span className="text-slate-500 font-medium">{lang.delivery}</span><span style={{ fontWeight: 800, textAlign: "right", color: "#0f172a" }}>{fmt(livraison, numLocale)}</span></div>
                                     </div>
                                     <div className="mt-8 rounded-xl p-5 flex justify-between items-center text-white shadow-md mx-[-2px]" style={{ background: `linear-gradient(135deg, ${currentTheme.primary} 0%, ${currentTheme.primary}dd 100%)` }}>
-                                        <div className="flex flex-col"><span className="text-[0.65em] font-black uppercase tracking-widest opacity-90">{lang.total}</span><span className="text-[1.1em] font-black uppercase tracking-tight">{lang.exclTax}</span></div>
-                                        <span style={{ fontSize: "1.6em", fontWeight: 900, textAlign: "right", color: "white", letterSpacing: "-0.04em" }}>{fmt(totalHT, numLocale)}</span>
+                                        <div className="flex flex-col"><span className="text-[0.65em] font-black uppercase tracking-widest opacity-90">{lang.total}</span><span className="text-[1.1em] font-black uppercase tracking-tight">{totalTaxLabel}</span></div>
+                                        <span style={{ fontSize: "1.6em", fontWeight: 900, textAlign: "right", color: "white", letterSpacing: "-0.04em" }}>{fmt(totalDisplay, numLocale)}</span>
                                     </div>
                                 </div>
                             </div>
