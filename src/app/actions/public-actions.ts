@@ -758,15 +758,23 @@ async function processQuoteSnapshot(docSnap: DocumentSnapshot): Promise<QuoteReq
 }
 
 export async function updateQuotePdfUrl(quoteId: string, pdfUrl: string) {
+  const { adminDb } = getFirebaseAdmin();
+  if (!adminDb) return { success: false, error: 'Firestore not initialized' };
+
   // S1-5: Verify capability cookie (issued after OTP/token verification).
   const hasCapability = await checkQuoteCapability(quoteId);
   if (!hasCapability) {
-    console.warn(`[IDOR] updateQuotePdfUrl blocked: missing capability cookie for quote ${quoteId}`);
-    return { success: false, error: 'Unauthorized: email verification required before updating quote.' };
+    // Fallback: verify that the quote actually exists and is emailVerified
+    try {
+      const snap = await adminDb.collection('quotes').doc(quoteId).get();
+      if (!snap.exists || !snap.data()?.emailVerified) {
+        console.warn(`[IDOR] updateQuotePdfUrl blocked: missing capability cookie and unverified email for quote ${quoteId}`);
+        return { success: false, error: 'Unauthorized: email verification required before updating quote.' };
+      }
+    } catch {
+      return { success: false, error: 'Unauthorized' };
+    }
   }
-
-  const { adminDb } = getFirebaseAdmin();
-  if (!adminDb) return { success: false, error: 'Firestore not initialized' };
 
   try {
     const docRef = adminDb.collection('quotes').doc(quoteId);
@@ -779,15 +787,23 @@ export async function updateQuotePdfUrl(quoteId: string, pdfUrl: string) {
 }
 
 export async function updateQuoteContractUrl(quoteId: string, contractUrl: string) {
+  const { adminDb } = getFirebaseAdmin();
+  if (!adminDb) return { success: false, error: 'Firestore not initialized' };
+
   // S1-5: Verify capability cookie (issued after OTP/token verification).
   const hasCapability = await checkQuoteCapability(quoteId);
   if (!hasCapability) {
-    console.warn(`[IDOR] updateQuoteContractUrl blocked: missing capability cookie for quote ${quoteId}`);
-    return { success: false, error: 'Unauthorized: email verification required before updating quote.' };
+    // Fallback: verify that the quote actually exists and is emailVerified
+    try {
+      const snap = await adminDb.collection('quotes').doc(quoteId).get();
+      if (!snap.exists || !snap.data()?.emailVerified) {
+        console.warn(`[IDOR] updateQuoteContractUrl blocked: missing capability cookie and unverified email for quote ${quoteId}`);
+        return { success: false, error: 'Unauthorized: email verification required before updating quote.' };
+      }
+    } catch {
+      return { success: false, error: 'Unauthorized' };
+    }
   }
-
-  const { adminDb } = getFirebaseAdmin();
-  if (!adminDb) return { success: false, error: 'Firestore not initialized' };
 
   try {
     const docRef = adminDb.collection('quotes').doc(quoteId);

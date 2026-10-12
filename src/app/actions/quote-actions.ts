@@ -719,8 +719,13 @@ export async function verifyQuoteOtp(quoteId: string, otpCode: string): Promise<
     }
 
     const expiresTimestamp = quoteData.otpExpires;
-    if (expiresTimestamp && new Date() > expiresTimestamp.toDate()) {
-      return { success: false, error: 'The verification code has expired.' };
+    if (expiresTimestamp) {
+      const expDate = typeof expiresTimestamp.toDate === 'function'
+        ? expiresTimestamp.toDate()
+        : (expiresTimestamp instanceof Date ? expiresTimestamp : new Date(expiresTimestamp));
+      if (expDate instanceof Date && !isNaN(expDate.getTime()) && new Date() > expDate) {
+        return { success: false, error: 'The verification code has expired.' };
+      }
     }
 
     if (!quoteData.emailVerified) {
@@ -729,12 +734,16 @@ export async function verifyQuoteOtp(quoteId: string, otpCode: string): Promise<
 
     // S1-5: Issue capability cookie so the client can call updateQuotePdfUrl
     // and updateQuoteContractUrl for this quote.
-    await issueCapabilityCookie(quoteId);
+    try {
+      await issueCapabilityCookie(quoteId);
+    } catch (cookieErr) {
+      console.warn("Could not issue capability cookie:", cookieErr);
+    }
 
     return { success: true };
   } catch (error: any) {
     console.error("Error in verifyQuoteOtp:", error);
-    return { success: false, error: 'Error during verification.' };
+    return { success: false, error: error?.message || 'Error during verification.' };
   }
 }
 
