@@ -211,6 +211,7 @@ export type Settings = {
   performanceResetAt?: string;
   configuratorStatsResetAt?: string;
   emailVerification?: {
+    code?: string;
     companyName: string;
     companySlogan: string;
     documentLabel: string;

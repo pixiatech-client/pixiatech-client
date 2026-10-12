@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { RefreshCw, Timer, ShieldCheck, Sparkles, Users, Sliders, Layers } from 'lucide-react';
+import { RefreshCw, Timer, ShieldCheck, Sparkles, Users, Sliders, Layers, Save } from 'lucide-react';
 import type { MessageStyle, PreviewTheme, LogAction } from './types';
 import { useAdminT } from '@/hooks/useAdminT';
 
@@ -27,6 +27,8 @@ interface EmailConfiguratorProps {
   onResetTimer: () => void;
   onTogglePause: () => void;
   isPlaying: boolean;
+  onSave?: () => void;
+  isSaving?: boolean;
 }
 
 export function EmailConfigurator({
@@ -38,6 +40,7 @@ export function EmailConfigurator({
   previewTheme, onPreviewThemeChange,
   autoSimulatedDark, onAutoSimulatedDarkChange,
   timeLeft, onRandomizeCode, onResetTimer, onTogglePause, isPlaying,
+  onSave, isSaving,
 }: EmailConfiguratorProps) {
   const { t } = useAdminT();
   const [logs, setLogs] = useState<LogAction[]>([
@@ -69,9 +72,22 @@ export function EmailConfigurator({
           <Sliders className="w-4 h-4" />
           <span>{t("Pupitre de Contrôle")}</span>
         </div>
-        <span className="text-xs bg-indigo-500/10 text-indigo-400 px-2.5 py-1 rounded-full border border-indigo-500/15 font-medium">
-          {t("Administration")}
-        </span>
+        <div className="flex items-center gap-2">
+          {onSave && (
+            <button
+              type="button"
+              onClick={onSave}
+              disabled={isSaving}
+              className="text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded-xl font-bold shadow-sm transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+            >
+              <Save className="w-3.5 h-3.5" />
+              <span>{isSaving ? t("Enregistrement...") : t("Enregistrer")}</span>
+            </button>
+          )}
+          <span className="text-xs bg-indigo-500/10 text-indigo-400 px-2.5 py-1 rounded-full border border-indigo-500/15 font-medium">
+            {t("Administration")}
+          </span>
+        </div>
       </div>
 
       {/* Config Card */}
@@ -320,6 +336,20 @@ export function EmailConfigurator({
               onChange={(e) => onDocumentLabelChange(e.target.value)}
             />
           </div>
+
+          {onSave && (
+            <div className="pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={onSave}
+                disabled={isSaving}
+                className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs py-3 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-md cursor-pointer disabled:opacity-50"
+              >
+                <Save className="w-4 h-4" />
+                <span>{isSaving ? t("Enregistrement en cours...") : t("Enregistrer la configuration")}</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

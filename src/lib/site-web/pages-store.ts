@@ -219,10 +219,20 @@ export async function getCmsPage(pageId: string): Promise<CmsPageData | null> {
  */
 export async function saveCmsPage(pageId: string, page: CmsPageData): Promise<CmsDb> {
   const existing = await getCmsPage(pageId);
+  // Fusion AU NIVEAU DES SECTIONS : un PUT qui ne transporte pas une section
+  // existante (état client périmé, second onglet, requête partielle) ne doit
+  // jamais l'effacer. Remplacement au niveau page = perte de données
+  // silencieuse ; ici on ne supprime une section que si la section envoyée
+  // contient explicitement une valeur (jamais via omission).
+  const mergedSections = {
+    ...((existing?.sections as Record<string, unknown> | undefined) || {}),
+    ...((page.sections as Record<string, unknown> | undefined) || {}),
+  };
   const rawMerged: CmsPageData = {
     ...(existing || {}),
     ...page,
     id: pageId,
+    sections: mergedSections,
     updatedAt: new Date().toISOString(),
   };
   // Nettoie récursivement toute valeur undefined pour Firestore

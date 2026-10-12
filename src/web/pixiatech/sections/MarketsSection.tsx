@@ -241,6 +241,7 @@ export const MarketsSection: React.FC<MarketsSectionProps> = ({ lang = 'FR', onO
             }}
           >
             <div
+              data-text-key="badge"
               style={{
                 fontSize: 11,
                 letterSpacing: '.24em',
@@ -254,6 +255,7 @@ export const MarketsSection: React.FC<MarketsSectionProps> = ({ lang = 'FR', onO
               {t.eyebrow}
             </div>
             <h2
+              data-text-key="title"
               style={{
                 fontSize: 'clamp(36px, 3.6vw, 58px)',
                 fontWeight: 800,

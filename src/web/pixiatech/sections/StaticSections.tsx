@@ -112,6 +112,7 @@ export const ProjectsSection: React.FC<SectionCommonProps> = ({
       )}
       <div className="wrap" style={{ position: 'relative', zIndex: 2 }}>
         <div
+          data-text-key="badge"
           style={{
             fontSize: 11,
             letterSpacing: '.24em',
@@ -135,14 +136,15 @@ export const ProjectsSection: React.FC<SectionCommonProps> = ({
           }}
         >
           <h2 className="display" style={{ margin: 0, color: '#F5F4F0', ...cms.title }}>
-            {t.titleLine1}
+            <span data-text-key="title">{t.titleLine1}</span>
             <br />
-            {t.titleLine2}
+            <span data-text-key="titleLine2">{t.titleLine2}</span>
           </h2>
           <button
             type="button"
             onClick={onOpenConsultation}
             className="btn btn-solid"
+            data-text-key="primaryCta"
             style={{
               padding: '16px 28px',
               fontSize: 12.5,
@@ -169,6 +171,7 @@ export const ProjectsSection: React.FC<SectionCommonProps> = ({
         <p
           className="lede pretty"
           data-reveal="true"
+          data-text-key="description"
           style={{
             margin: '28px 0 64px',
             maxWidth: 620,
@@ -426,6 +429,7 @@ export const ProcessSection: React.FC<SectionCommonProps> = ({
       )}
       <div className="wrap" style={{ position: 'relative', zIndex: 2 }}>
         <div
+          data-text-key="badge"
           style={{
             fontSize: 11,
             letterSpacing: '.24em',
@@ -451,9 +455,9 @@ export const ProcessSection: React.FC<SectionCommonProps> = ({
             ...cms.title,
           }}
         >
-          {t.titleLine1}
+          <span data-text-key="title">{t.titleLine1}</span>
           <br />
-          {t.titleLine2}
+          <span data-text-key="titleLine2">{t.titleLine2}</span>
         </h2>
 
         {/* Process Step Rows with animated red/accent indicator line (Matches Image 4) */}
@@ -626,6 +630,7 @@ export const ExperienceSection: React.FC<SectionCommonProps> = ({
           }}
         >
           <div
+            data-text-key="badge"
             style={{
               fontSize: 11,
               letterSpacing: '.24em',
@@ -641,6 +646,7 @@ export const ExperienceSection: React.FC<SectionCommonProps> = ({
           <h2
             className="pretty h-xc"
             data-reveal="true"
+            data-text-key="title"
             style={{
               margin: '0 0 36px',
               lineHeight: 1.04,
@@ -666,6 +672,7 @@ export const ExperienceSection: React.FC<SectionCommonProps> = ({
               type="button"
               onClick={onOpenConsultation}
               className="btn btn-solid"
+              data-text-key="primaryCta"
               style={{
                 padding: '16px 28px',
                 fontSize: 13.5,
@@ -684,6 +691,7 @@ export const ExperienceSection: React.FC<SectionCommonProps> = ({
               type="button"
               onClick={onOpenConsultation}
               className="btn btn-outline"
+              data-text-key="secondaryCta"
               style={{
                 padding: '15px 28px',
                 fontSize: 13.5,
@@ -700,6 +708,7 @@ export const ExperienceSection: React.FC<SectionCommonProps> = ({
             </button>
           </div>
           <div
+            data-text-key="location"
             style={{
               fontSize: 12,
               letterSpacing: '.16em',
@@ -792,6 +801,7 @@ export const InsightsSection: React.FC<SectionCommonProps> = ({
         >
           <div>
             <div
+              data-text-key="badge"
               style={{
                 fontSize: 11,
                 letterSpacing: '.24em',
@@ -815,14 +825,15 @@ export const InsightsSection: React.FC<SectionCommonProps> = ({
                 ...cms.title,
               }}
             >
-              {t.titleLine1}
+              <span data-text-key="title">{t.titleLine1}</span>
               <br />
-              {t.titleLine2}
+              <span data-text-key="titleLine2">{t.titleLine2}</span>
             </h2>
           </div>
           <a
             className="link-ul"
             href="/web/insights"
+            data-text-key="primaryCta"
             style={{
               color: '#111110',
               fontWeight: 800,

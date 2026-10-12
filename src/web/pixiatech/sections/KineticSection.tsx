@@ -283,6 +283,7 @@ export const KineticSection: React.FC<KineticSectionProps> = ({ lang = 'FR' }) =
       )}
       <div className="wrap" style={{ position: 'relative', zIndex: 2, maxWidth: 1520, margin: '0 auto', padding: '0 clamp(16px, 3.5vw, 64px)' }}>
         <div
+          data-text-key="badge"
           style={{
             fontSize: 11,
             letterSpacing: '.24em',
@@ -308,11 +309,11 @@ export const KineticSection: React.FC<KineticSectionProps> = ({ lang = 'FR' }) =
             ...cms.title,
           }}
         >
-          {t.title1}
+          <span data-text-key="title1">{t.title1}</span>
           <br />
-          {t.title2}
+          <span data-text-key="title2">{t.title2}</span>
           <br />
-          <span style={{ color: '#7A7A76' }}>{t.title3}</span>
+          <span style={{ color: '#7A7A76' }} data-text-key="title3">{t.title3}</span>
         </h2>
 
         <div
@@ -349,6 +350,7 @@ export const KineticSection: React.FC<KineticSectionProps> = ({ lang = 'FR' }) =
               }}
             />
             <div
+              data-text-key="caption"
               style={{
                 position: 'absolute',
                 left: 22,
@@ -583,6 +585,7 @@ export const KineticSection: React.FC<KineticSectionProps> = ({ lang = 'FR' }) =
         </div>
 
         <div
+          data-text-key="description"
           style={{
             fontSize: 12,
             color: '#7A7A76',

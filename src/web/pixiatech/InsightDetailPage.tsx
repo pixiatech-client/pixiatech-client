@@ -9,6 +9,7 @@ import type { InsightArticle } from '../data/insights-articles-content';
 import { getAllInsightArticles } from '../data/insights-articles-content';
 import type { Language } from '../pixiatech-translations';
 import { useI18n } from '@/lib/i18n';
+import { useCms } from '@/lib/site-web/cms-context';
 
 interface InsightDetailPageProps {
   article: InsightArticle;
@@ -157,9 +158,18 @@ function parseMarkdownContent(content: string): {
 
 export function PixiaInsightDetailPage({ article }: InsightDetailPageProps) {
   const { locale } = useI18n();
+  const { setCurrentPageId } = useCms();
   const lang: Language = locale === 'en' ? 'EN' : 'FR';
   const [scrollProgress, setScrollProgress] = useState(0);
   const [activeTocId, setActiveTocId] = useState<string>('');
+
+  // L'article Ressources partage la page CMS "insights" (même contexte que la
+  // liste) : sans cela, la page arrivée en direct restait sur l'id précédent.
+  // Le corps de l'article est un contenu du référentiel éditorial, pas un texte
+  // de page — il n'est volontairement pas éditable inline (voir rapport).
+  useEffect(() => {
+    setCurrentPageId('insights');
+  }, [setCurrentPageId]);
 
   const relatedProduct = RELATED_PRODUCT[article.slug];
 

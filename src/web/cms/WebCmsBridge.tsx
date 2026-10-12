@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { useCms } from '@/lib/site-web/cms-context';
+import { useI18n } from '@/lib/i18n';
 import { AdminTopBar } from './AdminTopBar';
 import { BackendExportModal } from './BackendExportModal';
 import { VisualInPlaceEditor } from './VisualInPlaceEditor';
@@ -12,8 +13,18 @@ import { useCmsElementStyles } from './useCmsElementStyles';
 // Le rendu public (/web) est strictement identique pour les visiteurs : aucune UI CMS.
 
 export const WebCmsBridge: React.FC = () => {
-  const { isAdmin, pages, currentPageId } = useCms();
+  const { isAdmin, pages, currentPageId, setCurrentLang } = useCms();
+  const { locale } = useI18n();
   const [isBackendModalOpen, setIsBackendModalOpen] = useState(false);
+
+  // Source de vérité unique de la langue d'édition : la locale affichée par le
+  // site (contexte i18n global, persisté par cookie + localStorage). Sans cela,
+  // `currentLang` restait bloqué sur 'fr' hors accueil/fiche produit : éditer un
+  // texte anglais écrivait dans le slot FR, et `useCmsElementStyles` réappliquait
+  // les surcharges en FR. Ce pont est monté sur TOUTES les pages /web.
+  useEffect(() => {
+    setCurrentLang(locale);
+  }, [locale, setCurrentLang]);
 
   // Réapplique les styles d'élément enregistrés par la barre contextuelle
   // (couleurs, tailles, alignement, décalages). Monté AVANT le retour anticipé

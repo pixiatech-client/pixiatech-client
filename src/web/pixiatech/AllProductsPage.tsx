@@ -11,6 +11,8 @@ import { ConsultationModal } from './ConsultationModal';
 import { BackToTopButton } from './BackToTopButton';
 import { Language } from '../pixiatech-translations';
 import { useCms } from '@/lib/site-web/cms-context';
+import { getCmsText } from '@/lib/site-web/cms-i18n';
+import { EditableWrapper } from '../cms/EditableWrapper';
 import { useI18n } from '@/lib/i18n';
 import { ProductsProvider, useProducts } from '@/lib/products/products-context';
 import type { ProductCategoryGroup, ProductRecord } from '@/lib/products/types';
@@ -134,11 +136,17 @@ function AllProductsView({
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [query, setQuery] = useState('');
   const [hovered, setHovered] = useState<string | null>(null);
-  const { setCurrentPageId } = useCms();
+  const { pages, setCurrentPageId } = useCms();
 
   useEffect(() => {
     setCurrentPageId('products');
   }, [setCurrentPageId]);
+
+  // Textes éditoriaux de la page catalogue. Les fiches produit proviennent du
+  // catalogue Firestore : ce sont des contenus, pas des textes de page — ils ne
+  // sont volontairement PAS éditables ici (voir rapport).
+  const heroData = (pages['products']?.sections?.products_hero as Record<string, unknown>) || {};
+  const ctaData = (pages['products']?.sections?.products_cta as Record<string, unknown>) || {};
 
   const handleOpenConsultation = () => {
     if (onOpenConsultation) {
@@ -149,19 +157,21 @@ function AllProductsView({
   };
 
   const t = {
-    eyebrow: lang === 'FR' ? 'PIXIATECH / TOUS LES PRODUITS' : 'PIXIATECH / ALL PRODUCTS',
-    h1Line1: lang === 'FR' ? 'Trouvez l\'écran' : 'Find the display',
-    h1Line2: lang === 'FR' ? 'fait pour votre espace.' : 'built for your space.',
-    desc: lang === 'FR'
+    eyebrow: getCmsText(heroData, 'eyebrow', lang, lang === 'FR' ? 'PIXIATECH / TOUS LES PRODUITS' : 'PIXIATECH / ALL PRODUCTS'),
+    h1Line1: getCmsText(heroData, 'h1Line1', lang, lang === 'FR' ? 'Trouvez l\'écran' : 'Find the display'),
+    h1Line2: getCmsText(heroData, 'h1Line2', lang, lang === 'FR' ? 'fait pour votre espace.' : 'built for your space.'),
+    desc: getCmsText(heroData, 'desc', lang, lang === 'FR'
       ? 'Le catalogue complet PixiaTech — installation fixe, location, transparent, cinétique et créatif.'
-      : 'The complete PixiaTech display catalog — fixed installation, rental, transparent, kinetic and creative systems.',
+      : 'The complete PixiaTech display catalog — fixed installation, rental, transparent, kinetic and creative systems.'),
     all: lang === 'FR' ? 'TOUS' : 'ALL',
     search: lang === 'FR' ? 'RECHERCHER' : 'SEARCH',
     searchPlaceholder: lang === 'FR' ? 'Rechercher un produit…' : 'Search products…',
     clearSearch: lang === 'FR' ? 'Effacer la recherche' : 'Clear search',
     rearView: lang === 'FR' ? 'vue arrière' : 'rear view',
     series: lang === 'FR' ? 'SÉRIES' : 'SERIES',
-    startProject: lang === 'FR' ? 'DÉMARRER UN PROJET' : 'START A PROJECT',
+    startProject: getCmsText(ctaData, 'ctaButton', lang, lang === 'FR' ? 'DÉMARRER UN PROJET' : 'START A PROJECT'),
+    ctaQuestion: getCmsText(ctaData, 'ctaQuestion', lang, lang === 'FR' ? 'Vous ne trouvez pas ce qu\'il vous faut ?' : 'Can\'t find what you need?'),
+    ctaHeadline: getCmsText(ctaData, 'ctaHeadline', lang, lang === 'FR' ? 'Nos ingénieurs trouvent la solution.' : 'Our engineers will find the solution.'),
     pixelPitch: lang === 'FR' ? 'PAS DE PIXEL' : 'PIXEL PITCH',
     brightness: lang === 'FR' ? 'LUMINOSITÉ' : 'BRIGHTNESS',
     cabinet: 'CABINET',
@@ -238,7 +248,9 @@ function AllProductsView({
           }}
         >
         <div className="wrap">
+          <EditableWrapper sectionKey="products_hero" sectionLabel="Catalogue — En-tête">
           <div
+            data-text-key="eyebrow"
             style={{
               fontSize: 10.5,
               letterSpacing: '.24em',
@@ -263,13 +275,14 @@ function AllProductsView({
               color: '#111110',
             }}
           >
-            {t.h1Line1}
+            <span data-text-key="h1Line1">{t.h1Line1}</span>
             <br />
-            {t.h1Line2}
+            <span data-text-key="h1Line2">{t.h1Line2}</span>
           </h1>
 
           <p
             className="lede"
+            data-text-key="desc"
             style={{
               marginBottom: 48,
               maxWidth: 560,
@@ -280,6 +293,7 @@ function AllProductsView({
           >
             {t.desc}
           </p>
+          </EditableWrapper>
 
           {/* Filter bar */}
           <div
@@ -686,6 +700,7 @@ function AllProductsView({
           )}
 
           {/* CTA bottom */}
+          <EditableWrapper sectionKey="products_cta" sectionLabel="Catalogue — Appel à l'action">
           <div
             style={{
               marginTop: 80,
@@ -700,6 +715,7 @@ function AllProductsView({
           >
             <div>
               <p
+                data-text-key="ctaQuestion"
                 style={{
                   fontSize: 13,
                   color: '#8A8880',
@@ -707,11 +723,10 @@ function AllProductsView({
                   letterSpacing: '.05em',
                 }}
               >
-                {lang === 'FR'
-                  ? 'Vous ne trouvez pas ce qu\'il vous faut ?'
-                  : 'Can\'t find what you need?'}
+                {t.ctaQuestion}
               </p>
               <p
+                data-text-key="ctaHeadline"
                 style={{
                   fontSize: 22,
                   fontWeight: 800,
@@ -720,13 +735,12 @@ function AllProductsView({
                   letterSpacing: '-.01em',
                 }}
               >
-                {lang === 'FR'
-                  ? 'Nos ingénieurs trouvent la solution.'
-                  : 'Our engineers will find the solution.'}
+                {t.ctaHeadline}
               </p>
             </div>
             <button
               type="button"
+              data-text-key="ctaButton"
               onClick={handleOpenConsultation}
               style={{
                 padding: '18px 36px',
@@ -753,6 +767,7 @@ function AllProductsView({
               {t.startProject}
             </button>
           </div>
+          </EditableWrapper>
         </div>
       </section>
       </main>

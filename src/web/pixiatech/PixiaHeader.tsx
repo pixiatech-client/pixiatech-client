@@ -7,7 +7,7 @@ import { CATALOG_PRODUCTS, MEGA_COLUMNS, type CatalogProduct } from './pixiatech
 import { Language } from '../pixiatech-translations';
 import { useI18n } from '@/lib/i18n';
 import { SearchModal } from './SearchModal';
-import { Shield } from 'lucide-react';
+import { Shield, Globe } from 'lucide-react';
 import { ProductsProvider, useProducts } from '@/lib/products/products-context';
 import type { ProductRecord, MegaMenu, MegaMenuItem } from '@/lib/products/types';
 import { trackProductClick } from '@/lib/analytics/tracker';
@@ -32,6 +32,16 @@ export const PixiaHeader: React.FC<PixiaHeaderProps> = (props) => (
     <PixiaHeaderContent {...props} />
   </ProductsProvider>
 );
+
+/**
+ * Destination de l'assistant de projet : le domaine application.
+ *
+ * Le CTA "Démarrer un projet" faisait un `router.push('/')`. En production,
+ * `src/middleware.ts` réécrit `/` → `/web` sur le domaine vitrine, donc le
+ * bouton rechargeait l'accueil (aucun effet). L'assistant vit sur le domaine
+ * application — même cible que le footer (`PixiaFooter.tsx`).
+ */
+const START_PROJECT_URL = 'https://app.pixiatech.com/';
 
 interface MenuItemModel {
   id: string;
@@ -627,51 +637,22 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
               <Shield size={18} strokeWidth={2} />
             </button>
 
-            {/* Language Selector: FR / EN
-                `data-cms-ignore` : la couleur de ce sélecteur est pilotée par la
-                locale (une seule source de vérité). L'éditeur visuel ne doit
-                jamais la réécrire — sinon un style mémorisé force l'une des deux
-                couleurs au chargement, au refresh, en contournant React. */}
-            <div
+            {/* Bouton bascule de langue (identité de l'application : icône Globe
+                + langue courante). `data-cms-ignore` : ce bouton est piloté par la
+                locale (une seule source de vérité) ; l'éditeur visuel ne doit
+                jamais réécrire son style. Un clic inverse directement FR ↔ EN,
+                sans menu. */}
+            <button
               data-cms-ignore
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                fontSize: 11,
-                letterSpacing: '.14em',
-                fontWeight: 700,
-                fontFamily: 'var(--font-mono)',
-              }}
+              type="button"
+              onClick={() => pickLang(activeLang === 'FR' ? 'EN' : 'FR')}
+              title={activeLang === 'FR' ? 'Passer en anglais' : 'Switch to French'}
+              aria-label={activeLang === 'FR' ? 'Passer en anglais' : 'Switch to French'}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[#141B1E] hover:bg-[#1C2529] border border-neutral-800 text-xs text-neutral-300 hover:text-white transition-colors cursor-pointer"
             >
-              <button
-                type="button"
-                onClick={() => pickLang('FR')}
-                style={{
-                  background: 'transparent',
-                  border: 0,
-                  padding: '4px 2px',
-                  cursor: 'pointer',
-                  color: activeLang === 'FR' ? '#C3F910' : '#F5F4F0',
-                }}
-              >
-                FR
-              </button>
-              <span style={{ color: '#7A7A76' }}>/</span>
-              <button
-                type="button"
-                onClick={() => pickLang('EN')}
-                style={{
-                  background: 'transparent',
-                  border: 0,
-                  padding: '4px 2px',
-                  cursor: 'pointer',
-                  color: activeLang === 'EN' ? '#C3F910' : '#F5F4F0',
-                }}
-              >
-                EN
-              </button>
-            </div>
+              <Globe className="w-3.5 h-3.5 text-neutral-400" />
+              <span className="font-semibold">{activeLang}</span>
+            </button>
 
             <div
               style={{
@@ -711,7 +692,7 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
               type="button"
               onClick={() => {
                 setMegaOpen(false);
-                router.push('/');
+                window.location.href = START_PROJECT_URL;
               }}
               className="nav-desktop-cta"
               style={{
@@ -1298,7 +1279,7 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                   type="button"
                   onClick={() => {
                     setMobileMenuOpen(false);
-                    router.push('/');
+                    window.location.href = START_PROJECT_URL;
                   }}
                   style={{
                     marginTop: 20,

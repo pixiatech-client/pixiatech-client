@@ -7,6 +7,7 @@ import { EmailConfigurator } from '@/components/verification/EmailConfigurator';
 import { EmailTemplatePreview } from '@/components/verification/EmailTemplatePreview';
 import type { MessageStyle, PreviewTheme } from '@/components/verification/types';
 import { Save } from 'lucide-react';
+import { toast as sonnerToast } from 'sonner';
 import { useAdminT } from '@/hooks/useAdminT';
 import LiquidLoader from '@/components/LiquidLoader';
 
@@ -36,6 +37,7 @@ export default function EmailVerificationSettingsPage() {
         const s = await getSettings();
         setSettings(s);
         if (s.emailVerification) {
+          if (s.emailVerification.code) setCode(s.emailVerification.code);
           setCompanyName(s.emailVerification.companyName || 'PIXIATECH');
           setCompanySlogan(s.emailVerification.companySlogan || 'TECHNOLOGY PRO');
           setDocumentLabel(s.emailVerification.documentLabel || 'estimation du projet Pixiatech');
@@ -125,6 +127,7 @@ export default function EmailVerificationSettingsPage() {
       await updateSettings({
         ...settings,
         emailVerification: {
+          code: code.length === 6 ? code : undefined,
           companyName,
           companySlogan,
           documentLabel,
@@ -133,8 +136,12 @@ export default function EmailVerificationSettingsPage() {
           previewTheme,
         },
       });
+      sonnerToast.success(t('Configuration enregistrée !'), {
+        description: t('Les paramètres de vérification email ont été mis à jour.'),
+      });
     } catch (err) {
       console.error('Save failed', err);
+      sonnerToast.error(t('Erreur lors de la sauvegarde.'));
     } finally {
       setSaving(false);
     }

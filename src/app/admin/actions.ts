@@ -3863,11 +3863,12 @@ const settingsSchema = z.object({
   }).optional(),
   messaging: messagingSchema.optional(),
   emailVerification: z.object({
-    companyName: z.string(),
-    companySlogan: z.string(),
-    documentLabel: z.string(),
-    messageStyle: z.string(),
-    validityMinutes: z.number(),
+    code: z.string().optional(),
+    companyName: z.string().optional(),
+    companySlogan: z.string().optional(),
+    documentLabel: z.string().optional(),
+    messageStyle: z.string().optional(),
+    validityMinutes: z.coerce.number().optional(),
     previewTheme: z.string().optional(),
   }).optional(),
   estimationFlow: z.object({

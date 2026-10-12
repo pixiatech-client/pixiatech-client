@@ -660,7 +660,13 @@ export default function SignatureFlow({
   useEffect(() => {
     getSettings().then(s => {
       if (s?.estimationFlow) setServerFlowSettings(s.estimationFlow);
-      if (s) setGlobalSettings(s);
+      if (s) {
+        setGlobalSettings(s);
+        const mins = s.emailVerification?.validityMinutes;
+        if (mins && mins > 0) {
+          setOtpTimeLeft(mins * 60);
+        }
+      }
     }).catch(() => {});
     getPdfSettings().then(setPdfSettings).catch(() => {});
   }, []);
@@ -862,7 +868,8 @@ export default function SignatureFlow({
           setCurrentStep('confirmation');
         }, 800);
       } else {
-        setOtpError(result.error || t('signature.otpManualEntry'));
+        const isEnglishGeneric = result.error === 'Automatic validation failed. Enter the code received by email.';
+        setOtpError(isEnglishGeneric ? t('signature.otpManualEntry') : (result.error || t('signature.otpManualEntry')));
         setInputOtpCode('');
       }
     } catch (e: any) {
@@ -906,7 +913,7 @@ export default function SignatureFlow({
     setResendAttemptsLeft(prev => prev - 1);
     try {
       await resendQuoteOtp(quoteId);
-      setOtpTimeLeft(600);
+      setOtpTimeLeft(validityMinutes * 60);
       setOtpError(null);
       setInputOtpCode('');
       setOtpResent(true);
@@ -2197,6 +2204,7 @@ export default function SignatureFlow({
                     setEmailDeliveryStatus('sending');
                     setOtpError(null);
                     setInputOtpCode('');
+                    setOtpTimeLeft(validityMinutes * 60);
                   }
 
                   // Asynchronous background flow

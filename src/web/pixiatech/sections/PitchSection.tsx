@@ -228,6 +228,7 @@ export const PitchSection: React.FC<PitchSectionProps> = ({
       <div style={{ position: 'relative', zIndex: 2, maxWidth: 1520, margin: '0 auto', padding: '0 clamp(16px, 3.5vw, 64px)' }}>
         {/* Eyebrow */}
         <div
+          data-text-key="badge"
           style={{
             fontSize: 11,
             letterSpacing: '.24em',
@@ -262,12 +263,13 @@ export const PitchSection: React.FC<PitchSectionProps> = ({
                 ...cms.title,
               }}
             >
-              {t.titleLine1}
+              <span data-text-key="title">{t.titleLine1}</span>
               <br />
-              {t.titleLine2}
+              <span data-text-key="titleLine2">{t.titleLine2}</span>
             </h2>
 
             <p
+              data-text-key="description"
               style={{
                 margin: '0 0 48px',
                 maxWidth: 480,
@@ -449,7 +451,7 @@ export const PitchSection: React.FC<PitchSectionProps> = ({
                   e.currentTarget.style.borderBottomColor = '#111110';
                 }}
               >
-                <span>{t.cta}</span>
+                <span data-text-key="primaryCta">{t.cta}</span>
               </button>
             </div>
           </div>

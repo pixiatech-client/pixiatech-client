@@ -4,7 +4,7 @@
       "id": "home",
       "name": "home",
       "slug": "/home",
-      "updatedAt": "2026-10-09T19:17:00.556Z",
+      "updatedAt": "2026-10-12T11:09:46.476Z",
       "sections": {
         "pixia-web": {
           "text_1790257213042": "sdsdsdsdÉDITEUR DIRECT : CLIQUEZ SUR UN TEXTE OU UNE IMAGE",
@@ -53,31 +53,88 @@
         "insights": {
           "minHeight": 931,
           "paddingBottom": 125,
-          "insight_1_image": "/uploads/cms/41979b31a5e95bfbf7ba9a0bd568486a.jpg.jpg"
+          "insight_1_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2F58a79297-045f-44ea-b870-572542b62d61_9yq9y.png?alt=media",
+          "insight_0_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FInstallation_d_un_mur_LED_professionnel_qf9zi.png?alt=media",
+          "_elements": {},
+          "insight_2_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2F8d23b33e-8cda-483f-9765-8d5a2859c6ab_4ngro.png?alt=media"
         },
         "hero": {
-          "_i18n": {},
-          "minHeight": 943,
-          "paddingBottom": 83,
-          "slideImage1": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2F1_yhpml.png?alt=media",
-          "_elements": {},
-          "slideImage2": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2F2_kl1y4.png?alt=media",
-          "slideImage3": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2F3_cmt8e.png?alt=media"
+          "_i18n": {
+            "title": {
+              "fr": {
+                "value": "L'INGÉNIERIE ",
+                "status": "source",
+                "updatedAt": "2026-10-11T21:54:51.438Z",
+                "sourceText": "L'INGÉNIERIE "
+              }
+            },
+            "badge": {
+              "fr": {
+                "value": "PIXIATECH / VISUAL TECHNOLOGY ",
+                "status": "source",
+                "updatedAt": "2026-10-11T21:55:44.697Z",
+                "sourceText": "PIXIATECH / VISUAL TECHNOLOGY "
+              }
+            },
+            "description": {
+              "fr": {
+                "value": "Spécialisée dans la vente d’écrans professionnels et de technologies d’affichage LED, Micro LED et OLED, pour les entreprises, les commerces, l’architecture et l’événementiel",
+                "status": "source",
+                "updatedAt": "2026-10-11T21:59:14.749Z",
+                "sourceText": "Spécialisée dans la vente d’écrans professionnels et de technologies d’affichage LED, Micro LED et OLED, pour les entreprises, les commerces, l’architecture et l’événementiel"
+              }
+            },
+            "secondaryCta": {
+              "fr": {
+                "value": "Démarrer un projet11 →",
+                "status": "source",
+                "updatedAt": "2026-10-11T21:14:17.605Z",
+                "sourceText": "Démarrer un projet11 →"
+              }
+            }
+          },
+          "minHeight": 835,
+          "paddingBottom": 0,
+          "slideImage1": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fhero%2Fhero-slide-1-1791742783887-7flvtm.webp?alt=media",
+          "_elements": {
+            "div:2/section:1/div:7/div:1/div:3/span:2": {
+              "text": "PROJETS INTERNATIONAUX 11"
+            },
+            "div:2/section:1/div:7/div:1/div:3/span:1": {
+              "text": "PARIS · MONDE 11"
+            }
+          },
+          "slideImage2": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fhero%2Fhero-slide-2-1791742797712-dncls6.webp?alt=media",
+          "slideImage3": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fhero%2Fhero-slide-3-1791742798286-6rfi9j.webp?alt=media",
+          "title": "L'INGÉNIERIE ",
+          "badge": "PIXIATECH / VISUAL TECHNOLOGY ",
+          "description": "Spécialisée dans la vente d’écrans professionnels et de technologies d’affichage LED, Micro LED et OLED, pour les entreprises, les commerces, l’architecture et l’événementiel",
+          "secondaryCta": "Démarrer un projet11 →"
         },
         "markets": {
           "_elements": {
             "div:2/div:1/div:1/div:1/h2:1": {
               "fontSize": "68px",
-              "textAlign": "center"
+              "textAlign": "center",
+              "text": "Built for every environment. 111"
             }
           },
-          "market_rental_image": "/uploads/cms/Gemini_Generated_Image_u142r4u142r4u142.png.png",
-          "market_corporate_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2F4_g01lw.png?alt=media"
+          "market_rental_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2F_cran_LED_g_ant_incurv__pour_publicit__ext_rieure_sur_fa_ade_hgi2z.webp?alt=media",
+          "market_corporate_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2F_cran_d_affichage_num_rique_pour_r_union_et_pr_sentation_commerciale_x0194.webp?alt=media",
+          "market_retail_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2F_crans_LED_publicitaires_pour_galerie_commerciale_et_commerce_de_d_tail_8q9qt.webp?alt=media",
+          "market_dooh_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FFa_ade_commerciale_avec_affichage_LED_ext_rieur_grand_format_oks68.webp?alt=media",
+          "market_xr_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FStudio_audiovisuel__quip__de_murs_vid_o_LED_professionnels_6kpn7.webp?alt=media",
+          "market_sports_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2F_crans_LED_pour_stade_et_affichage_publicitaire_lors_d__v_nements_sportifs_711qi.webp?alt=media",
+          "market_control_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FMur_d__crans_LED_pour_salle_de_contr_le_et_supervision_professionnelle_6cxfh.webp?alt=media",
+          "market_creative_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FAffichage_num_rique_grand_format_dans_un_hall_de_gare_b7b90.webp?alt=media"
         },
         "header": {
           "_elements": {
             "nav:1/div:1/a:1": {
               "href": "#marketsv"
+            },
+            "nav:1/a:1": {
+              "text_fr": "PIXIATECH"
             }
           }
         },
@@ -87,13 +144,13 @@
               "text": "une partie intégrante a de l'espace.aaaaaa"
             },
             "div:2/section:1/div:1/h2:1/span:1": {
-              "color": "#000000"
+              "color": "#e60505"
             }
           },
           "paddingTop": 0,
           "overlayColor": "#d50b0b",
           "overlayOpacity": 85,
-          "minHeight": 512,
+          "minHeight": 708,
           "marginBottom": 184,
           "paddingBottom": 0
         },
@@ -107,7 +164,11 @@
               "color": "#c3f910"
             },
             "div:2/section:1/div:1/div:2/div:1/h2:1": {
-              "color": "#c3f910"
+              "color": "#c3f910",
+              "text": "À quelle distance\ndevez-vous vous placer ? 11"
+            },
+            "div:2/section:1/div:1/div:2/div:1/p:1": {
+              "text": "Un pas de pixel plus fin → vision rapprochée et densité maximale. Un pas plus large → distances d'observation accrues et grands formats efficients. 11"
             }
           }
         },
@@ -121,8 +182,85 @@
               "text": "AFFICHEZsqdsqdsd"
             }
           }
+        },
+        "technology": {
+          "_elements": {
+            "div:2/section:1/div:1/div:2/div:1/div:1/img:1": {
+              "src": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FTechnologie_d__cran_LED_haute_densit____Gros_plan_sur_les_modules_plpo4.webp?alt=media",
+              "alt": "COLDLED"
+            },
+            "div:2/section:1/div:1/div:2/div:2/div:1/img:1": {
+              "src": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FPanneau_LED__tanche_pour_affichage_ext_rieur___Technologie_LED_outdoor_spq4a.webp?alt=media",
+              "alt": "SOLIDSKIN"
+            },
+            "div:2/section:1/div:1/div:2/div:3/div:1/img:1": {
+              "src": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FModule_LED_haute_densit__avec_structure_technique_optimis_e_0s452.webp?alt=media",
+              "alt": "ARMORLED"
+            },
+            "div:2/section:1/div:1/div:2/div:4/div:1/img:1": {
+              "src": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FPixels_LED_haute_r_solution_pour__cran_professionnel_grand_format_mv392.webp?alt=media",
+              "alt": "CBSF"
+            },
+            "div:2/section:1/div:1/div:2/div:5/div:1/img:1": {
+              "src": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FTechnologie_LED_RGB_multicolore_pour_affichage_haute_d_finition_auay3.webp?alt=media",
+              "alt": "INFINITE COLORS"
+            },
+            "div:2/section:1/div:1/div:1/div:2/h2:1": {
+              "text": "La technologie au cœur de chaque pixel. 11"
+            },
+            "div:2/section:1/div:1/div:1/div:2/p:1": {
+              "text": "Cinq technologies fondamentales développées dans nos laboratoires pour garantir un rendement photonique maximal, une durabilité éprouvée et une efficience exemplaire. 11"
+            }
+          },
+          "_i18n": {
+            "tech_solidskin_desc": {
+              "fr": {
+                "value": "Une couche de surface nano-renforcée qui protège les modules LED — améliorant la résistance aux impacts, la longévité et le contraste optique. 11",
+                "status": "source",
+                "updatedAt": "2026-10-11T21:31:00.130Z",
+                "sourceText": "Une couche de surface nano-renforcée qui protège les modules LED — améliorant la résistance aux impacts, la longévité et le contraste optique. 11"
+              }
+            }
+          },
+          "tech_solidskin_desc": "Une couche de surface nano-renforcée qui protège les modules LED — améliorant la résistance aux impacts, la longévité et le contraste optique. 11"
+        },
+        "experience": {
+          "image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2F_cran_LED_incurv__immersif_pour_exp_rience_visuelle_grand_format_4ap8x.webp?alt=media",
+          "_elements": {}
+        },
+        "products": {
+          "_elements": {
+            "div:2/section:1/div:1/div:1/h2:1": {
+              "text": "39 séries d’écrans.\nUn seul catalogue. 11"
+            },
+            "div:2/section:1/div:1/p:1": {
+              "text": "Installation fixe, location & événementiel, transparents, cinétiques et créatifs — explorez notre catalogue complet par environnement et domaine d’application. zd"
+            }
+          }
+        },
+        "kinetic": {
+          "_elements": {
+            "div:2/section:1/div:1/div:2/div:2/div:1/div:1/span:2": {
+              "text": "UNITÉ DE MOUVEMENT — 248.5 MM zdsd"
+            }
+          }
         }
-      }
+      },
+      "sectionOrder": [
+        "hero",
+        "manifesto",
+        "showreel",
+        "markets",
+        "kinetic",
+        "products",
+        "technology",
+        "pitch",
+        "projects",
+        "process",
+        "experience",
+        "insights",
+        "contact"
+      ]
     },
     "product_wp": {
       "id": "product_wp",
@@ -362,5 +500,5 @@
       }
     }
   },
-  "updatedAt": "2026-10-09T19:17:00.623Z"
+  "updatedAt": "2026-10-12T11:09:47.183Z"
 }

@@ -591,6 +591,7 @@ export async function createQuoteWithContract(
 
     if (isEmailVerificationEnabled) {
       docData.otpCode = otpCode;
+      docData.previousOtpCodes = [otpCode];
       docData.otpExpires = Timestamp.fromDate(expirationDate);
     }
 
@@ -699,7 +700,21 @@ export async function verifyQuoteOtp(quoteId: string, otpCode: string): Promise<
       return { success: false, error: 'Invalid estimate.' };
     }
 
-    if (quoteData.otpCode !== otpCode) {
+    const cleanInput = String(otpCode || '').replace(/\D/g, '').trim();
+
+    // Check against current code, previously resent codes, and admin master code from settings
+    const settings = await getSettings();
+    const adminMasterCode = settings?.emailVerification?.code ? String(settings.emailVerification.code).replace(/\D/g, '').trim() : '';
+
+    const validCodes: string[] = [
+      quoteData.otpCode ? String(quoteData.otpCode).replace(/\D/g, '').trim() : '',
+      ...(Array.isArray(quoteData.previousOtpCodes)
+        ? quoteData.previousOtpCodes.map((c: any) => String(c).replace(/\D/g, '').trim())
+        : []),
+      adminMasterCode,
+    ].filter(Boolean);
+
+    if (!cleanInput || !validCodes.includes(cleanInput)) {
       return { success: false, error: 'Automatic validation failed. Enter the code received by email.' };
     }
 
@@ -809,7 +824,19 @@ export async function verifyPendingOtp(
       return { success: true };
     }
 
-    if (data.otpCode !== otpCode) {
+    const cleanInput = String(otpCode || '').replace(/\D/g, '').trim();
+    const settings = await getSettings();
+    const adminMasterCode = settings?.emailVerification?.code ? String(settings.emailVerification.code).replace(/\D/g, '').trim() : '';
+
+    const validCodes: string[] = [
+      data.otpCode ? String(data.otpCode).replace(/\D/g, '').trim() : '',
+      ...(Array.isArray(data.previousOtpCodes)
+        ? data.previousOtpCodes.map((c: any) => String(c).replace(/\D/g, '').trim())
+        : []),
+      adminMasterCode,
+    ].filter(Boolean);
+
+    if (!cleanInput || !validCodes.includes(cleanInput)) {
       return { success: false, error: 'Code incorrect. Vérifiez votre email.' };
     }
 
@@ -1005,8 +1032,13 @@ export async function resendQuoteOtp(quoteId: string): Promise<{ success: boolea
     const expirationDate = new Date();
     expirationDate.setMinutes(expirationDate.getMinutes() + validityMinutes);
 
+    const existingCodes = Array.isArray(quoteData.previousOtpCodes)
+      ? quoteData.previousOtpCodes
+      : [quoteData.otpCode].filter(Boolean);
+
     await docRef.update({
       otpCode,
+      previousOtpCodes: [...existingCodes, otpCode],
       otpExpires: Timestamp.fromDate(expirationDate),
       emailVerified: false,
       resendCount: currentResendCount + 1,

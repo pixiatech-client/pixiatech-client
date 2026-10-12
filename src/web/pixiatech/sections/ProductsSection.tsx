@@ -127,13 +127,14 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
               ...cms.title,
             }}
           >
-            {t.title}
+            <span data-text-key="title">{t.title}</span>
             <br />
-            {t.titleLine2}
+            <span data-text-key="titleLine2">{t.titleLine2}</span>
           </h2>
 
           <a
             href="/web/products"
+            data-text-key="primaryCta"
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -162,6 +163,7 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
 
         {/* Description */}
         <p
+          data-text-key="description"
           style={{
             marginTop: 28,
             maxWidth: 580,

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import '../pixiatech.css';
 import { PixiaHeader } from './PixiaHeader';
 import { PixiaFooter } from './PixiaFooter';
@@ -9,6 +9,9 @@ import { INSIGHT_CHIPS, PIXIA_INSIGHTS } from '../pixiatech-data';
 import type { Insight } from '../pixiatech-data';
 import type { Language } from '../pixiatech-translations';
 import { useI18n } from '@/lib/i18n';
+import { useCms } from '@/lib/site-web/cms-context';
+import { getCmsText } from '@/lib/site-web/cms-i18n';
+import { EditableWrapper } from '../cms/EditableWrapper';
 
 const CHIP_LABEL_FR: Record<string, string> = {
   All: 'Tous',
@@ -56,6 +59,28 @@ export function PixiaInsightsPage() {
   // Meme source de langue que le header (contexte i18n global, persiste).
   const { locale } = useI18n();
   const lang: Language = locale === 'en' ? 'EN' : 'FR';
+  const { pages, setCurrentPageId } = useCms();
+  useEffect(() => {
+    setCurrentPageId('insights');
+  }, [setCurrentPageId]);
+
+  // Textes éditoriaux de la page liste. Les cartes d'articles proviennent du
+  // référentiel éditorial (données) : contenus, pas textes de page.
+  const heroData = (pages['insights']?.sections?.insights_hero as Record<string, unknown>) || {};
+  const t = {
+    eyebrow: getCmsText(heroData, 'eyebrow', lang, 'PIXIATECH / INSIGHTS'),
+    h1Line1: getCmsText(heroData, 'h1Line1', lang, lang === 'FR' ? 'Notes sur la lumière,' : 'Notes on light,'),
+    h1Line2: getCmsText(heroData, 'h1Line2', lang, lang === 'FR' ? "les pixels et l'espace." : 'pixels and space.'),
+    lede: getCmsText(
+      heroData,
+      'lede',
+      lang,
+      lang === 'FR'
+        ? "Guides, notes techniques et observations terrain de l'équipe d'ingénierie PixiaTech."
+        : 'Guides, technical notes and field observations from the PixiaTech engineering team.'
+    ),
+  };
+
   const [chip, setChip] = useState('All');
   const featured = PIXIA_INSIGHTS.find((a) => a.featured) ?? PIXIA_INSIGHTS[0];
   const grid = useMemo(() => PIXIA_INSIGHTS.filter((a) => !a.featured), []);
@@ -68,27 +93,17 @@ export function PixiaInsightsPage() {
       <main>
         <section className="section-hero theme-light" style={{ color: 'var(--ink)' }}>
           <div className="wrap">
-            <div className="eyebrow">PIXIATECH / INSIGHTS</div>
+            <EditableWrapper sectionKey="insights_hero" sectionLabel="Ressources — En-tête">
+            <div className="eyebrow" data-text-key="eyebrow">{t.eyebrow}</div>
             <h1 className="display" data-reveal="true" style={{ marginBottom: 20, color: 'var(--ink)' }}>
-              {lang === 'FR' ? (
-                <>
-                  Notes sur la lumière,
-                  <br />
-                  les pixels et l'espace.
-                </>
-              ) : (
-                <>
-                  Notes on light,
-                  <br />
-                  pixels and space.
-                </>
-              )}
+              <span data-text-key="h1Line1">{t.h1Line1}</span>
+              <br />
+              <span data-text-key="h1Line2">{t.h1Line2}</span>
             </h1>
-            <p className="lede" data-reveal="true" style={{ marginBottom: 64, maxWidth: 560 }}>
-              {lang === 'FR'
-                ? "Guides, notes techniques et observations terrain de l'équipe d'ingénierie PixiaTech."
-                : 'Guides, technical notes and field observations from the PixiaTech engineering team.'}
+            <p className="lede" data-reveal="true" data-text-key="lede" style={{ marginBottom: 64, maxWidth: 560 }}>
+              {t.lede}
             </p>
+            </EditableWrapper>
             <div
               data-reveal="true"
               style={{ display: 'flex', gap: 8, flexWrap: 'wrap', borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)', padding: '20px 0', marginBottom: 64 }}

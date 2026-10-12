@@ -155,6 +155,7 @@ export const ManifestoSection: React.FC<ManifestoSectionProps> = ({ lang = 'FR' 
       <div className="wrap sec-manifesto" style={{ position: 'relative', zIndex: 1 }}>
         <div
           data-reveal="true"
+          data-text-key="badge"
           style={{
             fontSize: 11,
             letterSpacing: '.24em',
@@ -179,8 +180,8 @@ export const ManifestoSection: React.FC<ManifestoSectionProps> = ({ lang = 'FR' 
             ...cms.title,
           }}
         >
-          <span>{t.line1}<br /></span>
-          <span>{t.line2} <span style={{ color: 'var(--accent, #C3F910)' }}>{t.line3}</span></span>
+          <span><span data-text-key="title">{t.line1}</span><br /></span>
+          <span><span data-text-key="titleLine2">{t.line2}</span> <span style={{ color: 'var(--accent, #C3F910)' }} data-text-key="titleLine3">{t.line3}</span></span>
         </h2>
 
         <p
