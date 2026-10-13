@@ -28,6 +28,8 @@ import {
   Sliders,
   Check,
   Zap,
+  Ban,
+  GripVertical,
   type LucideIcon,
 } from 'lucide-react';
 import {
@@ -79,9 +81,67 @@ export const FloatingElementToolbar: React.FC<{
   const [showBoxStyles, setShowBoxStyles] = useState(false);
   const [showLinkEditor, setShowLinkEditor] = useState(false);
   const [coords, setCoords] = useState<{ top: number; left: number; placeBelow: boolean } | null>(null);
+  const [dragPosition, setDragPosition] = useState<{ top: number; left: number } | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartRef = useRef<{ startX: number; startY: number; startTop: number; startLeft: number } | null>(null);
 
   const toolbarRef = useRef<HTMLDivElement>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Réinitialise la position personnalisée lorsqu'un nouvel élément est sélectionné
+  useEffect(() => {
+    setDragPosition(null);
+  }, [selected?.elementKey, selected?.sectionKey]);
+
+  const handleDragStart = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const currentTop = dragPosition?.top ?? coords?.top ?? 100;
+      const currentLeft = dragPosition?.left ?? coords?.left ?? 100;
+
+      dragStartRef.current = {
+        startX: e.clientX,
+        startY: e.clientY,
+        startTop: currentTop,
+        startLeft: currentLeft,
+      };
+      setIsDragging(true);
+
+      const handleMouseMove = (moveEvent: MouseEvent) => {
+        if (!dragStartRef.current) return;
+        const dx = moveEvent.clientX - dragStartRef.current.startX;
+        const dy = moveEvent.clientY - dragStartRef.current.startY;
+
+        const tb = toolbarRef.current;
+        const tbWidth = tb ? tb.offsetWidth : 480;
+        const tbHeight = tb ? tb.offsetHeight : 48;
+
+        const newTop = Math.max(
+          10,
+          Math.min(window.innerHeight - tbHeight - 10, dragStartRef.current.startTop + dy)
+        );
+        const newLeft = Math.max(
+          10,
+          Math.min(window.innerWidth - tbWidth - 10, dragStartRef.current.startLeft + dx)
+        );
+
+        setDragPosition({ top: newTop, left: newLeft });
+      };
+
+      const handleMouseUp = () => {
+        dragStartRef.current = null;
+        setIsDragging(false);
+        window.removeEventListener('mousemove', handleMouseMove);
+        window.removeEventListener('mouseup', handleMouseUp);
+      };
+
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+    },
+    [coords, dragPosition]
+  );
 
   useEffect(() => subscribeSelectedElement(() => setSelected(getSelectedElement())), []);
 
@@ -232,6 +292,49 @@ export const FloatingElementToolbar: React.FC<{
     commit({ offsetX: 0, offsetY: 0 });
   }, [commit]);
 
+  const resetElementStyles = useCallback(() => {
+    if (!selected) return;
+    const sectionKey = selected.sectionKey;
+    const elementKey = selected.elementKey;
+    const clickableElementKey = selected.clickableElementKey;
+
+    const currentSections = (currentPageData?.sections || {}) as Record<string, Record<string, unknown>>;
+    const currentSection = currentSections[sectionKey] || {};
+    const currentBag = { ...((currentSection._elements as Record<string, ElementStyle>) || {}) };
+
+    delete currentBag[elementKey];
+    if (clickableElementKey) {
+      delete currentBag[clickableElementKey];
+    }
+
+    const targets = [selected.el, selected.clickableEl].filter(Boolean) as HTMLElement[];
+    for (const target of targets) {
+      target.style.backgroundColor = '';
+      target.style.color = '';
+      target.style.fontSize = '';
+      target.style.fontWeight = '';
+      target.style.fontStyle = '';
+      target.style.textDecoration = '';
+      target.style.textAlign = '';
+      target.style.borderRadius = '';
+      target.style.borderColor = '';
+      target.style.borderWidth = '';
+      target.style.borderStyle = '';
+      target.style.padding = '';
+      target.style.transform = '';
+    }
+
+    updateSectionField(sectionKey, '_elements', currentBag);
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    setSaveState('saving');
+    saveTimer.current = setTimeout(() => {
+      void saveCurrentPage().then((ok) => {
+        setSaveState(ok ? 'saved' : 'error');
+        setTimeout(() => setSaveState('idle'), 2500);
+      });
+    }, SAVE_DEBOUNCE_MS);
+  }, [selected, currentPageData, updateSectionField, saveCurrentPage]);
+
   if (!isEditing || !isAdmin || !selected || !coords) return null;
 
   // Détection exhaustive des liens et boutons
@@ -279,15 +382,25 @@ export const FloatingElementToolbar: React.FC<{
       data-cms-ui
       style={{
         position: 'fixed',
-        top: coords.top,
-        left: coords.left,
+        top: dragPosition ? dragPosition.top : coords.top,
+        left: dragPosition ? dragPosition.left : coords.left,
         zIndex: 350,
+        cursor: isDragging ? 'grabbing' : undefined,
       }}
       className="flex flex-col gap-1.5 bg-[#0e0e0d]/98 border border-[#2b2b28] text-[#f5f4f0] p-2 rounded-xl shadow-[0_16px_48px_rgba(0,0,0,0.92)] backdrop-blur-md select-none animate-in fade-in duration-100 max-w-[95vw]"
       onClick={(e) => e.stopPropagation()}
     >
       {/* ── Ligne 1 : Contrôles principaux ── */}
       <div className="flex items-center gap-1.5 overflow-x-auto">
+        {/* Poignée de déplacement (Click & Drag) */}
+        <div
+          onMouseDown={handleDragStart}
+          onDoubleClick={() => setDragPosition(null)}
+          className="flex items-center justify-center p-1 rounded-md text-[#7A7A75] hover:text-[#C3F910] hover:bg-[#1C1C19] active:cursor-grabbing cursor-grab transition-colors select-none shrink-0"
+          title="Cliquer et glisser pour déplacer la barre (Double-clic pour réaligner)"
+        >
+          <GripVertical className="w-3.5 h-3.5" />
+        </div>
         {/* Badge indicateur de type & section */}
         <span
           className="px-2 py-1 rounded-md bg-[#C3F910]/15 border border-[#C3F910]/30 text-[#C3F910] font-mono text-[10px] font-bold tracking-wider uppercase whitespace-nowrap"
@@ -422,11 +535,26 @@ export const FloatingElementToolbar: React.FC<{
                     <span className="w-3 h-2 rounded-[1px] border border-white/80" />
                     <input
                       type="color"
-                      value={style.backgroundColor || '#111111'}
+                      value={
+                        style.backgroundColor && style.backgroundColor.startsWith('#')
+                          ? style.backgroundColor
+                          : '#111111'
+                      }
                       onChange={(e) => commit({ backgroundColor: e.target.value })}
                       className="absolute inset-0 opacity-0 cursor-pointer"
                     />
                   </label>
+
+                  {/* Bouton pour revenir directement au fond transparent */}
+                  <button
+                    type="button"
+                    onClick={() => commit({ backgroundColor: 'transparent' })}
+                    className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-[#242422] hover:bg-[#333330] text-[#E0DFDA] hover:text-[#C3F910] border border-[#3A3A36] transition-colors cursor-pointer"
+                    title="Rétablir un fond transparent"
+                  >
+                    <Ban className="w-3 h-3 text-[#ff5555]" />
+                    <span>Fond transparent</span>
+                  </button>
                 </div>
               )}
             </div>
@@ -552,9 +680,17 @@ export const FloatingElementToolbar: React.FC<{
             onClick={resetPosition}
             disabled={!hasOffset}
             className={`${iconBtn} ${hasOffset ? off : 'text-[#444] cursor-not-allowed'}`}
-            title="Réinitialiser la position"
+            title="Réinitialiser la position (alignement)"
           >
             <RotateCcw className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={resetElementStyles}
+            className={`${iconBtn} ${off}`}
+            title="Réinitialiser tous les styles de l'élément (effacer fond, couleur, bordures, etc.)"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-[#C3F910]" />
           </button>
         </div>
 

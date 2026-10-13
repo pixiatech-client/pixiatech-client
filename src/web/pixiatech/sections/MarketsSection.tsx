@@ -136,27 +136,12 @@ export const MarketsSection: React.FC<MarketsSectionProps> = ({ lang = 'FR', onO
       const track = trackRef.current;
       if (!wrapper || !sticky || !track) return;
 
-      if (isEditing) {
-        sticky.style.position = 'relative';
-        sticky.style.top = '';
-        sticky.style.height = 'auto';
-        sticky.style.overflow = 'visible';
-        sticky.style.overflowX = 'auto';
-        sticky.style.scrollSnapType = 'none';
-        sticky.style.touchAction = '';
-        (sticky.style as CSSStyleDeclaration & { webkitOverflowScrolling?: string }).webkitOverflowScrolling = '';
-        wrapper.style.height = 'auto';
-        track.style.transform = 'none';
-        maxDist = 0;
-        return;
-      }
-
       const isMobile = window.innerWidth <= 768;
 
       // Base sticky styles (mobile and PC)
       sticky.style.touchAction = '';
       sticky.style.position = 'sticky';
-      sticky.style.top = '0';
+      sticky.style.top = 'var(--admin-bar-h, 0px)';
       sticky.style.overflow = 'hidden';
       sticky.style.overflowX = 'hidden';
       sticky.style.overflowY = 'hidden';
@@ -178,13 +163,13 @@ export const MarketsSection: React.FC<MarketsSectionProps> = ({ lang = 'FR', onO
           r = Math.max(track.scrollWidth - window.innerWidth + paddingEnd, 0);
         }
 
-        sticky.style.height = '100vh';
-        sticky.style.height = '100dvh';
+        sticky.style.height = 'calc(100vh - var(--admin-bar-h, 0px))';
+        sticky.style.height = 'calc(100dvh - var(--admin-bar-h, 0px))';
         wrapper.style.height = `calc(100vh + ${r}px)`;
         wrapper.style.height = `calc(100dvh + ${r}px)`;
       } else {
-        // Desktop: preserve EXACT original behavior
-        sticky.style.height = '100vh';
+        // Desktop: preserve EXACT original behavior with sticky pinning under admin bar
+        sticky.style.height = 'calc(100vh - var(--admin-bar-h, 0px))';
         const trackScrollWidth = track.scrollWidth;
         r = Math.max(trackScrollWidth - window.innerWidth + 80, 0);
         wrapper.style.height = `calc(100vh + ${r}px)`;
@@ -196,13 +181,16 @@ export const MarketsSection: React.FC<MarketsSectionProps> = ({ lang = 'FR', onO
     const handleScroll = () => {
       const wrapper = wrapperRef.current;
       const track = trackRef.current;
-      if (isEditing || maxDist <= 0 || !wrapper || !track) return;
+      if (maxDist <= 0 || !wrapper || !track) return;
 
       if (!animId) {
         animId = requestAnimationFrame(() => {
           animId = 0;
           const rect = wrapper.getBoundingClientRect();
-          const progress = Math.min(Math.max(-rect.top / maxDist, 0), 1);
+          const adminH = typeof window !== 'undefined'
+            ? parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--admin-bar-h') || '0')
+            : 0;
+          const progress = Math.min(Math.max((adminH - rect.top) / maxDist, 0), 1);
           track.style.transform = `translate3d(${-progress * maxDist}px, 0, 0)`;
         });
       }
@@ -267,6 +255,7 @@ export const MarketsSection: React.FC<MarketsSectionProps> = ({ lang = 'FR', onO
       <span id="markets" style={{ display: 'block', height: 0, marginTop: -90, paddingTop: 90 }} />
       <div
         ref={wrapperRef}
+        data-cms-section="markets"
         style={{
           position: 'relative',
           background: '#080808',
@@ -281,15 +270,15 @@ export const MarketsSection: React.FC<MarketsSectionProps> = ({ lang = 'FR', onO
           className="mkt-track-wrap"
           style={{
             position: 'sticky',
-            top: 0,
-            height: '100vh',
+            top: 'var(--admin-bar-h, 0px)',
+            height: 'calc(100vh - var(--admin-bar-h, 0px))',
             overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'center',
           }}
         >
-          {/* Header Title */}
+          {/* Header Title (fixe et stationnaire en haut de la section pendant le défilement des cartes) */}
           <div
             style={{
               maxWidth: 1520,
@@ -297,6 +286,7 @@ export const MarketsSection: React.FC<MarketsSectionProps> = ({ lang = 'FR', onO
               margin: '0 auto',
               padding: 'clamp(24px, 4vh, 48px) clamp(16px, 3.5vw, 64px) clamp(16px, 2.5vh, 28px)',
               flex: 'none',
+              zIndex: 10,
             }}
           >
             <div
@@ -339,98 +329,125 @@ export const MarketsSection: React.FC<MarketsSectionProps> = ({ lang = 'FR', onO
               willChange: 'transform',
             }}
           >
-            {t.markets.map((m) => (
-              <div
-                key={m.id}
-                className="mkt-card"
-                style={{
-                  flex: 'none',
-                  position: 'relative',
-                  overflow: 'hidden',
-                  width: '76vw',
-                  maxWidth: 1180,
-                  height: 'min(58vh, 560px)',
-                  minHeight: 360,
-                  background: '#0e0e0d',
-                  border: '1px solid #1a1a19',
-                }}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  data-image-key={`market_${m.id}_image`}
-                  src={(cmsData[`market_${m.id}_image`] as string) || (cmsData[`image_${m.id}`] as string) || m.img}
-                  alt={`${m.name} — PIXIATECH`}
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                    display: 'block',
-                  }}
-                />
+            {t.markets.map((m) => {
+              const label = getCmsText(
+                cmsData,
+                `market_${m.id}_label`,
+                activeLang,
+                `${m.num} — ${m.name}`
+              );
+              const desc = getCmsText(
+                cmsData,
+                `market_${m.id}_desc`,
+                activeLang,
+                m.desc
+              );
+              const cta = getCmsText(
+                cmsData,
+                `market_${m.id}_cta`,
+                activeLang,
+                m.cta
+              );
 
-                {/* Gradient shadow overlay */}
+              return (
                 <div
+                  key={m.id}
+                  className="mkt-card"
                   style={{
-                    position: 'absolute',
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    padding: '32px 36px',
-                    background: 'linear-gradient(180deg, transparent 0%, rgba(8,8,8,.88) 100%)',
-                    pointerEvents: 'none',
+                    flex: 'none',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    width: '76vw',
+                    maxWidth: 1180,
+                    height: 'min(58vh, 560px)',
+                    minHeight: 360,
+                    background: '#0e0e0d',
+                    border: '1px solid #1a1a19',
                   }}
                 >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    data-image-key={`market_${m.id}_image`}
+                    src={(cmsData[`market_${m.id}_image`] as string) || (cmsData[`image_${m.id}`] as string) || m.img}
+                    alt={`${m.name} — PIXIATECH`}
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      display: 'block',
+                    }}
+                  />
+
+                  {/* Gradient shadow overlay */}
                   <div
                     style={{
-                      fontSize: 11,
-                      letterSpacing: '.24em',
-                      color: '#C9C7C1',
-                      marginBottom: 8,
-                      fontFamily: 'var(--font-mono)',
-                      fontWeight: 600,
+                      position: 'absolute',
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      padding: '32px 36px',
+                      background: 'linear-gradient(180deg, transparent 0%, rgba(8,8,8,.88) 100%)',
+                      pointerEvents: 'none',
+                      zIndex: 2,
                     }}
                   >
-                    {m.num} — {m.name}
+                    <div
+                      data-text-key={`market_${m.id}_label`}
+                      style={{
+                        fontSize: 11,
+                        letterSpacing: '.24em',
+                        color: '#C9C7C1',
+                        marginBottom: 8,
+                        fontFamily: 'var(--font-mono)',
+                        fontWeight: 600,
+                        pointerEvents: 'auto',
+                      }}
+                    >
+                      {label}
+                    </div>
+                    <div
+                      data-text-key={`market_${m.id}_desc`}
+                      style={{
+                        fontSize: 'clamp(18px, 1.8vw, 24px)',
+                        fontWeight: 700,
+                        color: '#F5F4F0',
+                        marginBottom: 14,
+                        lineHeight: 1.3,
+                        maxWidth: 820,
+                        pointerEvents: 'auto',
+                      }}
+                    >
+                      {desc}
+                    </div>
+                    <button
+                      type="button"
+                      data-text-key={`market_${m.id}_cta`}
+                      onClick={onOpenConsultation}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        background: 'transparent',
+                        border: 0,
+                        padding: 0,
+                        fontSize: 12,
+                        letterSpacing: '.14em',
+                        fontWeight: 700,
+                        color: '#C3F910',
+                        cursor: 'pointer',
+                        textTransform: 'uppercase',
+                        pointerEvents: 'auto',
+                        borderBottom: '1px solid #C3F910',
+                      }}
+                    >
+                      {cta}
+                    </button>
                   </div>
-                  <div
-                    style={{
-                      fontSize: 'clamp(18px, 1.8vw, 24px)',
-                      fontWeight: 700,
-                      color: '#F5F4F0',
-                      marginBottom: 14,
-                      lineHeight: 1.3,
-                      maxWidth: 820,
-                    }}
-                  >
-                    {m.desc}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={onOpenConsultation}
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 6,
-                      background: 'transparent',
-                      border: 0,
-                      padding: 0,
-                      fontSize: 12,
-                      letterSpacing: '.14em',
-                      fontWeight: 700,
-                      color: '#C3F910',
-                      cursor: 'pointer',
-                      textTransform: 'uppercase',
-                      pointerEvents: 'auto',
-                      borderBottom: '1px solid #C3F910',
-                    }}
-                  >
-                    {m.cta}
-                  </button>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>

@@ -168,8 +168,9 @@ export const VisualInPlaceEditor: React.FC = () => {
     document.head.appendChild(styleEl);
 
     // Helper: Identifier si l'élément fait partie de l'interface d'administration
-    const isCmsTarget = (el: HTMLElement | null): boolean => {
-      if (!el) return true;
+    // (Supporte HTMLElement et SVGElement : <svg>, <path>, boutons, inputs, etc.)
+    const isCmsTarget = (el: Element | EventTarget | null | undefined): boolean => {
+      if (!el || !(el instanceof Element)) return false;
       return isInsideCmsUi(el);
     };
 
@@ -186,10 +187,14 @@ export const VisualInPlaceEditor: React.FC = () => {
     const pickAtPoint = (x: number, y: number): PickedTarget | null => {
       const stack = (document.elementsFromPoint ? document.elementsFromPoint(x, y) : []) as Element[];
       // Si le point est couvert par l'interface d'administration (barre d'outils
-      // flottante, modales…), on ne va pas chercher le contenu situé dessous :
+      // flottante, modales, icônes SVG, boutons…), on ne va pas chercher le contenu situé dessous :
       // l'UI reste opaque et ses boutons gardent leur comportement.
-      const top = stack[0];
-      if (top instanceof HTMLElement && isCmsTarget(top)) return null;
+      for (const el of stack) {
+        if (isCmsTarget(el)) return null;
+        if (el instanceof HTMLElement && (getSectionKey(el) || el.getAttribute('data-contact-key'))) {
+          break;
+        }
+      }
       for (const raw of stack) {
         if (!(raw instanceof HTMLElement) || isCmsTarget(raw)) continue;
         const contactKey = raw.getAttribute('data-contact-key');
@@ -223,6 +228,7 @@ export const VisualInPlaceEditor: React.FC = () => {
 
     const handleMouseOver = (e: MouseEvent) => {
       clearHover();
+      if (e.target && isCmsTarget(e.target)) return;
       const picked = pickAtPoint(e.clientX, e.clientY);
       if (!picked) return;
       hoveredElementRef.current = picked.el;
@@ -242,6 +248,13 @@ export const VisualInPlaceEditor: React.FC = () => {
 
     // 2. Click Handler Universel avec interception de navigation
     const handleClick = (e: MouseEvent) => {
+      // Origine réelle de l'événement : si le clic provient directement
+      // de l'interface CMS (barre d'outils, bouton, icône SVG, input, etc.),
+      // on ne doit ni intercepter, ni sélectionner d'élément sous-jacent.
+      if (e.target && isCmsTarget(e.target)) {
+        return;
+      }
+
       const picked = pickAtPoint(e.clientX, e.clientY);
       if (!picked) {
         // Aucune cible texte/média : on conserve au minimum la sélection de section.
@@ -425,7 +438,8 @@ export const VisualInPlaceEditor: React.FC = () => {
     };
 
     const handleDeselectClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
+      const target = e.target as Element | null;
+      if (target && isCmsTarget(target)) return;
       if (!target || target === document.body) setSelectedElement(null);
     };
 

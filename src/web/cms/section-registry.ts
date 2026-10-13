@@ -179,8 +179,9 @@ const NON_TEXT_TAGS = new Set([
   'OPTION',
 ]);
 
-/** L'élément appartient-il à l'interface d'administration ? */
-export function isInsideCmsUi(el: HTMLElement): boolean {
+/** L'élément appartient-il à l'interface d'administration ? (Supporte HTMLElement et SVGElement) */
+export function isInsideCmsUi(el: Element | null | undefined): boolean {
+  if (!el || typeof el.closest !== 'function') return false;
   return Boolean(el.closest(CMS_UI_CLOSEST_SELECTOR));
 }
 
