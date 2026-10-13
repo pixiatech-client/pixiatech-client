@@ -366,6 +366,7 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
     <>
       <div
         ref={headerRootRef}
+        data-cms-section="header"
         onMouseLeave={() => setMegaOpen(false)}
         style={{
           position: 'fixed',

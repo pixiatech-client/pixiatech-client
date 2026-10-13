@@ -30,6 +30,10 @@ export interface InsightArticle {
   faqs: InsightFaqItem[];
   faqsFr?: InsightFaqItem[];
   toc: InsightTocItem[];
+  /** Slug du produit PixiaTech associé (éditable via CMS) */
+  relatedProductSlug?: string;
+  /** Nom d'affichage du produit associé (éditable via CMS) */
+  relatedProductName?: string;
 }
 
 export const INSIGHTS_ARTICLES: InsightArticle[] = [

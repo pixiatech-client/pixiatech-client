@@ -31,12 +31,18 @@ export type ElementStyle = {
   textDecoration?: string;
   textAlign?: string;
   backgroundColor?: string;
+  borderRadius?: string;
+  borderColor?: string;
+  borderWidth?: string;
+  borderStyle?: string;
+  padding?: string;
   text?: string;
   src?: string;
   alt?: string;
   href?: string;
   target?: string;
   rel?: string;
+  actionType?: string;
   offsetX?: number;
   offsetY?: number;
 };
@@ -48,11 +54,6 @@ export const EMPTY_ELEMENT_STYLE: ElementStyle = {};
 
 /**
  * Clé de texte par langue dans le sac `_elements`.
- *
- * Le repli `_elements[elementKey]` était mono-langue (`text`), donc une même
- * valeur pour FR et EN — contraire à l'indépendance demandée. On stocke
- * désormais une valeur par langue sous `text_<lang>`. Le champ historique
- * `text` reste lu en dernier recours (rétrocompatibilité), mais plus écrit.
  */
 export function elementTextKey(lang: string): string {
   return `text_${normalizeLang(lang)}`;
@@ -62,8 +63,6 @@ export function elementTextKey(lang: string): string {
 export function resolveElementText(style: ElementStyle | undefined, lang: string): string | undefined {
   if (!style) return undefined;
   const bag = style as Record<string, unknown>;
-  // Uniquement la langue demandée : une saisie FR ne doit JAMAIS s'afficher en
-  // EN (indépendance FR/EN). `text` est l'ancien champ mono-langue (rétrocompat).
   const direct = bag[elementTextKey(lang)];
   if (typeof direct === 'string') return direct;
   return typeof bag.text === 'string' ? (bag.text as string) : undefined;
@@ -85,6 +84,9 @@ export function applyElementStyle(el: HTMLElement, style: ElementStyle, lang?: s
   }
   if (style.src !== undefined && el.getAttribute('src') !== style.src) {
     el.setAttribute('src', style.src);
+    if (el.tagName === 'IMG') {
+      (el as HTMLImageElement).src = style.src;
+    }
   }
   if (style.alt !== undefined) el.setAttribute('alt', style.alt);
   if (style.fontSize !== undefined) el.style.fontSize = style.fontSize;
@@ -94,13 +96,57 @@ export function applyElementStyle(el: HTMLElement, style: ElementStyle, lang?: s
   if (style.textDecoration !== undefined) el.style.textDecoration = style.textDecoration;
   if (style.textAlign !== undefined) el.style.textAlign = style.textAlign;
   if (style.backgroundColor !== undefined) el.style.backgroundColor = style.backgroundColor;
-  if (style.href !== undefined && el.tagName === 'A') el.setAttribute('href', style.href);
-  if (style.target !== undefined) el.setAttribute('target', style.target);
-  if (style.rel !== undefined) el.setAttribute('rel', style.rel);
+  if (style.borderRadius !== undefined) el.style.borderRadius = style.borderRadius;
+  if (style.borderColor !== undefined) el.style.borderColor = style.borderColor;
+  if (style.borderWidth !== undefined) {
+    el.style.borderWidth = style.borderWidth;
+    el.style.borderStyle = style.borderStyle || 'solid';
+  }
+  if (style.padding !== undefined) el.style.padding = style.padding;
 
-  // `target="_blank"` sans `rel` est un risque sécurité (reverse tabnabbing).
-  if (el.getAttribute('target') === '_blank' && !el.getAttribute('rel')) {
-    el.setAttribute('rel', 'noopener noreferrer');
+  // Gestion universelle des liens & boutons
+  const anchor = el.tagName === 'A' ? (el as HTMLAnchorElement) : (el.closest('a') as HTMLAnchorElement | null);
+  if (style.href !== undefined) {
+    if (anchor) {
+      anchor.setAttribute('href', style.href);
+      if (style.target !== undefined) anchor.setAttribute('target', style.target);
+      if (style.rel !== undefined) anchor.setAttribute('rel', style.rel);
+      if (anchor.getAttribute('target') === '_blank' && !anchor.getAttribute('rel')) {
+        anchor.setAttribute('rel', 'noopener noreferrer');
+      }
+    } else {
+      // Pour les éléments boutons ou conteneurs cliquables sans balise <a>
+      el.setAttribute('data-href', style.href);
+      if (style.target) el.setAttribute('data-target', style.target);
+      const btnObj = el as unknown as Record<string, unknown>;
+      btnObj.__cmsHref = style.href;
+      btnObj.__cmsTarget = style.target || '_self';
+
+      if (!btnObj.__cmsNavAttached && !style.href.startsWith('action:')) {
+        btnObj.__cmsNavAttached = true;
+        el.addEventListener('click', (e) => {
+          // Si on est en mode édition CMS, on n'exécute pas la navigation au clic
+          if (document.body.classList.contains('cms-editing') || (window as unknown as Record<string, unknown>).__CMS_IS_EDITING__) {
+            return;
+          }
+          const destination = btnObj.__cmsHref as string;
+          if (destination && !destination.startsWith('action:')) {
+            e.preventDefault();
+            e.stopPropagation();
+            const targetAttr = (btnObj.__cmsTarget as string) || '_self';
+            if (targetAttr === '_blank') {
+              window.open(destination, '_blank', 'noopener,noreferrer');
+            } else if (destination.startsWith('#')) {
+              const targetNode = document.querySelector(destination);
+              if (targetNode) targetNode.scrollIntoView({ behavior: 'smooth' });
+              else window.location.hash = destination;
+            } else {
+              window.location.href = destination;
+            }
+          }
+        });
+      }
+    }
   }
 
   const x = style.offsetX ?? 0;
@@ -109,8 +155,6 @@ export function applyElementStyle(el: HTMLElement, style: ElementStyle, lang?: s
     el.style.transform = `translate(${x}px, ${y}px)`;
     el.setAttribute(OFFSET_MARK, '1');
   } else if (el.hasAttribute(OFFSET_MARK)) {
-    // Reset : on ne retire que le transform posé par l'éditeur, jamais celui
-    // du design d'origine.
     el.style.removeProperty('transform');
     el.removeAttribute(OFFSET_MARK);
   }

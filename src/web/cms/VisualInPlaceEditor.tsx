@@ -105,16 +105,23 @@ export const VisualInPlaceEditor: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (!isEditing || !isAdmin) return;
+    if (!isEditing || !isAdmin) {
+      document.body.classList.remove('cms-editing');
+      (window as unknown as Record<string, unknown>).__CMS_IS_EDITING__ = false;
+      return;
+    }
+
+    document.body.classList.add('cms-editing');
+    (window as unknown as Record<string, unknown>).__CMS_IS_EDITING__ = true;
 
     // La clé de section vient du registre alimenté par EditableWrapper,
-    // ou détection sémantique header / footer / data-cms-section.
+    // ou détection sémantique header / footer / data-cms-section, ou fallback page 'main'.
     const getSectionKey = (el: HTMLElement): string | null => {
       const registered = findSectionKey(el);
       if (registered) return registered;
       if (el.closest('header, nav, #site-header')) return 'header';
       if (el.closest('footer, #site-footer')) return 'footer';
-      return null;
+      return 'main';
     };
 
     // Style injecté pour le mode inspecteur
@@ -297,6 +304,7 @@ export const VisualInPlaceEditor: React.FC = () => {
 
       const sectionRoot = getSectionNode(sectionKey);
       const elementKey = resolveElementKey(target, sectionRoot);
+      const clickableElementKey = clickableParent ? resolveElementKey(clickableParent, sectionRoot) : undefined;
       const isMediaTarget = picked.media;
 
       // Sélection de la section
@@ -308,15 +316,25 @@ export const VisualInPlaceEditor: React.FC = () => {
         prev.classList.remove('pixia-el-selected', 'pixia-el-anchor', 'pixia-el-media');
       }
       target.classList.add('pixia-el-selected');
-      if (target.closest('a, button, [role="button"]')) target.classList.add('pixia-el-anchor');
+      if (clickableParent) target.classList.add('pixia-el-anchor');
       if (isMediaTarget) target.classList.add('pixia-el-media');
+
+      const resolvedKind: 'text' | 'media' | 'button' | 'link' = isMediaTarget
+        ? 'media'
+        : clickableParent?.tagName === 'A'
+        ? 'link'
+        : clickableParent
+        ? 'button'
+        : 'text';
 
       // Sélection de l'élément pour la toolbar flottante
       setSelectedElement({
         el: target,
+        clickableEl: clickableParent,
         sectionKey,
         elementKey,
-        kind: isMediaTarget ? 'media' : 'text',
+        clickableElementKey,
+        kind: resolvedKind,
       });
 
       // Cas 1: Clic sur une image ou vidéo

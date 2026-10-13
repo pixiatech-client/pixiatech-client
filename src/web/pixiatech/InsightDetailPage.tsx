@@ -10,6 +10,9 @@ import { getAllInsightArticles } from '../data/insights-articles-content';
 import type { Language } from '../pixiatech-translations';
 import { useI18n } from '@/lib/i18n';
 import { useCms } from '@/lib/site-web/cms-context';
+import { EditableWrapper } from '../cms/EditableWrapper';
+import { ArticleEditorModal } from '../cms/ArticleEditorModal';
+import { Edit3 } from 'lucide-react';
 
 interface InsightDetailPageProps {
   article: InsightArticle;
@@ -158,31 +161,63 @@ function parseMarkdownContent(content: string): {
 
 export function PixiaInsightDetailPage({ article }: InsightDetailPageProps) {
   const { locale } = useI18n();
-  const { setCurrentPageId } = useCms();
+  const { setCurrentPageId, isAdmin, isEditing } = useCms();
   const lang: Language = locale === 'en' ? 'EN' : 'FR';
   const [scrollProgress, setScrollProgress] = useState(0);
   const [activeTocId, setActiveTocId] = useState<string>('');
+  const [currentArticle, setCurrentArticle] = useState<InsightArticle>(article);
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [editorInitialTab, setEditorInitialTab] = useState<'content' | 'metadata' | 'faqs'>('content');
 
-  // L'article Ressources partage la page CMS "insights" (même contexte que la
-  // liste) : sans cela, la page arrivée en direct restait sur l'id précédent.
-  // Le corps de l'article est un contenu du référentiel éditorial, pas un texte
-  // de page — il n'est volontairement pas éditable inline (voir rapport).
   useEffect(() => {
-    setCurrentPageId('insights');
-  }, [setCurrentPageId]);
+    setCurrentArticle(article);
+  }, [article]);
 
-  const relatedProduct = RELATED_PRODUCT[article.slug];
+  // Synchronise avec le serveur pour avoir la dernière version enregistrée de l'article
+  useEffect(() => {
+    let mounted = true;
+    async function loadFresh() {
+      try {
+        const res = await fetch(`/api/site-web/articles/${article.slug}`, { cache: 'no-store' });
+        if (res.ok) {
+          const data = await res.json();
+          if (data?.article && mounted) {
+            setCurrentArticle(data.article);
+          }
+        }
+      } catch (err) {
+        console.warn('[InsightDetailPage] Erreur lors de la récupération fraîche de l’article:', err);
+      }
+    }
+    loadFresh();
+    return () => {
+      mounted = false;
+    };
+  }, [article.slug]);
+
+  // Définit la page CMS active
+  useEffect(() => {
+    setCurrentPageId(`article__${article.slug}`);
+  }, [setCurrentPageId, article.slug]);
+
+  // Produit associé : priorité aux champs CMS, fallback sur le mapping statique
+  const relatedProduct = useMemo(() => {
+    if (currentArticle.relatedProductSlug && currentArticle.relatedProductName) {
+      return { slug: currentArticle.relatedProductSlug, name: currentArticle.relatedProductName };
+    }
+    return RELATED_PRODUCT[currentArticle.slug] ?? null;
+  }, [currentArticle.slug, currentArticle.relatedProductSlug, currentArticle.relatedProductName]);
 
   const nextArticle = useMemo(() => {
     const all = getAllInsightArticles();
-    const idx = all.findIndex((a) => a.slug === article.slug);
+    const idx = all.findIndex((a) => a.slug === currentArticle.slug);
     if (idx === -1 || idx === all.length - 1) return all[0];
     return all[idx + 1];
-  }, [article.slug]);
+  }, [currentArticle.slug]);
 
   const content =
-    lang === 'FR' ? article.contentFr ?? article.content : article.content;
-  const faqs = lang === 'FR' ? article.faqsFr ?? article.faqs : article.faqs;
+    lang === 'FR' ? currentArticle.contentFr ?? currentArticle.content : currentArticle.content;
+  const faqs = lang === 'FR' ? currentArticle.faqsFr ?? currentArticle.faqs : currentArticle.faqs;
 
   const { intro, sections } = useMemo(
     () => parseMarkdownContent(content),
@@ -250,132 +285,144 @@ export function PixiaInsightDetailPage({ article }: InsightDetailPageProps) {
       <main style={{ minHeight: '80vh', paddingTop: 'var(--nav-h,88px)' }}>
 
         {/* ── Article header ───────────────────────────────────────── */}
-        <div
-          className="wrap"
-          style={{
-            maxWidth: 1280,
-            margin: '0 auto',
-            padding: '40px var(--gutter,clamp(24px,3.4vw,56px)) 0',
-          }}
-        >
-          {/* Back + category breadcrumb */}
+        <EditableWrapper sectionKey="article_header" sectionLabel="En-tête de l'article">
           <div
+            className="wrap"
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              marginBottom: 32,
-              fontSize: 11,
-              letterSpacing: '.18em',
-              textTransform: 'uppercase',
-              color: 'var(--muted,#8a8880)',
+              maxWidth: 1280,
+              margin: '0 auto',
+              padding: '40px var(--gutter,clamp(24px,3.4vw,56px)) 0',
             }}
           >
-            <a
-              href="/web/insights"
+            {/* Back + category breadcrumb */}
+            <div
               style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                marginBottom: 32,
+                fontSize: 11,
+                letterSpacing: '.18em',
+                textTransform: 'uppercase',
                 color: 'var(--muted,#8a8880)',
-                textDecoration: 'none',
-                transition: 'color .2s',
-                fontWeight: 600,
               }}
-              className="hov-acc"
             >
-              {lang === 'FR' ? '← RESSOURCES' : '← INSIGHTS'}
-            </a>
-            <span>/</span>
-            <span style={{ color: 'var(--body,#4a4a46)' }}>
-              {categoryLabel(article.category, lang)}
-            </span>
-          </div>
+              <a
+                href="/web/insights"
+                data-link-key="back_link"
+                style={{
+                  color: 'var(--muted,#8a8880)',
+                  textDecoration: 'none',
+                  transition: 'color .2s',
+                  fontWeight: 600,
+                }}
+                className="hov-acc"
+              >
+                {lang === 'FR' ? '← RESSOURCES' : '← INSIGHTS'}
+              </a>
+              <span>/</span>
+              <span
+                data-text-key="category"
+                style={{ color: 'var(--body,#4a4a46)' }}
+              >
+                {categoryLabel(currentArticle.category, lang)}
+              </span>
+            </div>
 
-          {/* H1 */}
-          <h1
-            className="art-h1 pretty"
-            style={{
-              fontSize: 'clamp(30px,3.8vw,60px)',
-              fontWeight: 900,
-              lineHeight: 1.06,
-              letterSpacing: '-.025em',
-              color: 'var(--ink,#111110)',
-              margin: '0 0 20px',
-              maxWidth: 960,
-            }}
-          >
-            {titleOf(article, lang)}
-          </h1>
-
-          {/* Lead */}
-          {descOf(article, lang) && (
-            <p
-              className="pretty"
+            {/* H1 */}
+            <h1
+              className="art-h1 pretty"
+              data-text-key="title"
               style={{
-                fontSize: 'clamp(16px,1.2vw,19px)',
-                lineHeight: 1.6,
-                color: 'var(--body,#4a4a46)',
-                maxWidth: 800,
-                margin: '0 0 24px',
+                fontSize: 'clamp(30px,3.8vw,60px)',
+                fontWeight: 900,
+                lineHeight: 1.06,
+                letterSpacing: '-.025em',
+                color: 'var(--ink,#111110)',
+                margin: '0 0 20px',
+                maxWidth: 960,
               }}
             >
-              {descOf(article, lang)}
-            </p>
-          )}
+              {titleOf(currentArticle, lang)}
+            </h1>
 
-          {/* Meta row */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 18,
-              flexWrap: 'wrap',
-              fontSize: 11,
-              letterSpacing: '.16em',
-              textTransform: 'uppercase',
-              color: 'var(--muted,#8a8880)',
-              borderBottom: '1px solid var(--line,#dad8d2)',
-              paddingBottom: 20,
-              marginBottom: 0,
-            }}
-          >
-            <span style={{ fontWeight: 700 }}>PIXIATECH</span>
-            <span>·</span>
-            <span>{dateOf(article, lang)}</span>
-            <span>·</span>
-            <span>{readOf(article.read, lang)}</span>
+            {/* Lead */}
+            {descOf(currentArticle, lang) && (
+              <p
+                className="pretty"
+                data-text-key="desc"
+                style={{
+                  fontSize: 'clamp(16px,1.2vw,19px)',
+                  lineHeight: 1.6,
+                  color: 'var(--body,#4a4a46)',
+                  maxWidth: 800,
+                  margin: '0 0 24px',
+                }}
+              >
+                {descOf(currentArticle, lang)}
+              </p>
+            )}
+
+            {/* Meta row */}
+            <div
+              data-text-key="meta_row"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 18,
+                flexWrap: 'wrap',
+                fontSize: 11,
+                letterSpacing: '.16em',
+                textTransform: 'uppercase',
+                color: 'var(--muted,#8a8880)',
+                borderBottom: '1px solid var(--line,#dad8d2)',
+                paddingBottom: 20,
+                marginBottom: 0,
+              }}
+            >
+              <span style={{ fontWeight: 700 }}>PIXIATECH</span>
+              <span>·</span>
+              <span>{dateOf(currentArticle, lang)}</span>
+              <span>·</span>
+              <span>{readOf(currentArticle.read, lang)}</span>
+            </div>
           </div>
-        </div>
+        </EditableWrapper>
 
         {/* ── Cover image ──────────────────────────────────────────── */}
-        <div
-          className="wrap"
-          style={{
-            maxWidth: 1280,
-            margin: '0 auto',
-            padding: '0 var(--gutter,clamp(24px,3.4vw,56px))',
-          }}
-        >
+        <EditableWrapper sectionKey="article_cover" sectionLabel="Image de couverture">
           <div
+            className="wrap"
             style={{
-              position: 'relative',
-              height: 'min(62vh,580px)',
-              overflow: 'hidden',
-              background: '#e0ded8',
-              margin: '0 0 0',
+              maxWidth: 1280,
+              margin: '0 auto',
+              padding: '0 var(--gutter,clamp(24px,3.4vw,56px))',
             }}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={article.img}
-              alt={titleOf(article, lang)}
+            <div
               style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-                display: 'block',
+                position: 'relative',
+                height: 'min(62vh,580px)',
+                overflow: 'hidden',
+                background: '#e0ded8',
+                margin: '0 0 0',
               }}
-            />
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                data-image-key="cover_image"
+                src={currentArticle.img}
+                alt={titleOf(currentArticle, lang)}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  display: 'block',
+                }}
+              />
+            </div>
           </div>
-        </div>
+        </EditableWrapper>
 
         {/* ── Two-column body ──────────────────────────────────────── */}
         <div
@@ -391,17 +438,18 @@ export function PixiaInsightDetailPage({ article }: InsightDetailPageProps) {
           }}
         >
           {/* ── LEFT SIDEBAR ──────────────────────────────────────── */}
-          <aside
-            className="toc"
-            style={{
-              position: 'sticky',
-              top: 104,
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 28,
-              paddingTop: 36,
-            }}
-          >
+          <EditableWrapper sectionKey="article_sidebar" sectionLabel="Barre latérale (Sommaire & Produit)">
+            <aside
+              className="toc"
+              style={{
+                position: 'sticky',
+                top: 104,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 28,
+                paddingTop: 36,
+              }}
+            >
             {/* Table of Contents */}
             {tocSections.length > 0 && (
               <div>
@@ -453,15 +501,18 @@ export function PixiaInsightDetailPage({ article }: InsightDetailPageProps) {
             )}
 
             {/* Related product box */}
-            {relatedProduct && (
+            {relatedProduct ? (
               <div
+                data-element-key="sidebar_related_product_card"
                 style={{
+                  position: 'relative',
                   border: '1px solid var(--line,#dad8d2)',
                   padding: '20px 18px',
                   background: '#fff',
                 }}
               >
                 <div
+                  data-text-key="sidebar_product_label"
                   style={{
                     fontSize: 10,
                     letterSpacing: '.22em',
@@ -474,6 +525,7 @@ export function PixiaInsightDetailPage({ article }: InsightDetailPageProps) {
                   {lang === 'FR' ? 'PRODUIT ASSOCIÉ' : 'RELATED SERIES'}
                 </div>
                 <div
+                  data-text-key="sidebar_product_name"
                   style={{
                     fontSize: 17,
                     fontWeight: 800,
@@ -485,7 +537,9 @@ export function PixiaInsightDetailPage({ article }: InsightDetailPageProps) {
                   {relatedProduct.name}
                 </div>
                 <a
-                  href={`/web#products`}
+                  data-element-key="sidebar_product_button"
+                  data-text-key="sidebar_product_button_text"
+                  href={`/web/product/${relatedProduct.slug}`}
                   style={{
                     display: 'inline-flex',
                     alignItems: 'center',
@@ -502,13 +556,80 @@ export function PixiaInsightDetailPage({ article }: InsightDetailPageProps) {
                 >
                   {lang === 'FR' ? 'VOIR LE PRODUIT →' : 'VIEW PRODUCT →'}
                 </a>
+
+                {/* Bouton d'édition rapide du produit pour les administrateurs */}
+                {isAdmin && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setEditorInitialTab('metadata');
+                      setIsEditorOpen(true);
+                    }}
+                    data-cms-ui
+                    style={{
+                      position: 'absolute',
+                      top: 8,
+                      right: 8,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      background: '#111110',
+                      color: '#C3F910',
+                      border: '1px solid #C3F910',
+                      borderRadius: 6,
+                      padding: '4px 8px',
+                      fontSize: 10,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      zIndex: 10,
+                    }}
+                    title={lang === 'FR' ? 'Changer le produit associé (CMS)' : 'Change related product (CMS)'}
+                  >
+                    <Edit3 size={11} />
+                    <span>{lang === 'FR' ? 'Changer produit' : 'Change product'}</span>
+                  </button>
+                )}
               </div>
-            )}
-          </aside>
+            ) : isAdmin ? (
+              <div
+                style={{
+                  border: '1px dashed var(--line,#dad8d2)',
+                  padding: '16px',
+                  background: '#fafaf9',
+                  textAlign: 'center',
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditorInitialTab('metadata');
+                    setIsEditorOpen(true);
+                  }}
+                  data-cms-ui
+                  style={{
+                    background: '#111110',
+                    color: '#C3F910',
+                    border: '1px solid #C3F910',
+                    borderRadius: 6,
+                    padding: '6px 12px',
+                    fontSize: 11,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  + Associer un produit PixiaTech
+                </button>
+              </div>
+            ) : null}
+            </aside>
+          </EditableWrapper>
 
           {/* ── MAIN ARTICLE BODY ────────────────────────────────── */}
-          <article
-            id="art-body"
+          <EditableWrapper sectionKey="article_body" sectionLabel="Corps de l'article (Markdown)">
+            <article
+              id="art-body"
             style={{
               fontSize: 'clamp(16px,1.1vw,17.5px)',
               lineHeight: 1.75,
@@ -695,133 +816,179 @@ export function PixiaInsightDetailPage({ article }: InsightDetailPageProps) {
                 </section>
               );
             })}
-          </article>
+            </article>
+          </EditableWrapper>
         </div>
 
         {/* ── Next article ─────────────────────────────────────────── */}
         {nextArticle && (
-          <div
-            style={{
-              borderTop: '1px solid var(--line,#dad8d2)',
-              background: 'var(--paper,#f5f4f0)',
-              padding: '56px 0 80px',
-            }}
-          >
+          <EditableWrapper sectionKey="article_next" sectionLabel="Ressource suivante">
             <div
-              className="wrap"
               style={{
-                maxWidth: 1280,
-                margin: '0 auto',
-                padding: '0 var(--gutter,clamp(24px,3.4vw,56px))',
+                borderTop: '1px solid var(--line,#dad8d2)',
+                background: 'var(--paper,#f5f4f0)',
+                padding: '56px 0 80px',
               }}
             >
               <div
+                className="wrap"
                 style={{
-                  fontSize: 10.5,
-                  letterSpacing: '.24em',
-                  textTransform: 'uppercase',
-                  color: 'var(--muted,#8a8880)',
-                  fontWeight: 700,
-                  marginBottom: 22,
-                }}
-              >
-                {lang === 'FR' ? 'RESSOURCE SUIVANTE' : 'NEXT INSIGHT'}
-              </div>
-
-              <a
-                href={`/web/insights/${nextArticle.slug}`}
-                className="art"
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'min(380px,45%) 1fr',
-                  gap: 'clamp(24px,3.6vw,52px)',
-                  alignItems: 'center',
-                  color: 'var(--ink,#111110)',
-                  textDecoration: 'none',
-                  border: '1px solid var(--line,#dad8d2)',
-                  background: '#fff',
-                  padding: 'clamp(18px,2.4vw,30px)',
+                  maxWidth: 1280,
+                  margin: '0 auto',
+                  padding: '0 var(--gutter,clamp(24px,3.4vw,56px))',
                 }}
               >
                 <div
                   style={{
-                    position: 'relative',
-                    height: 240,
-                    overflow: 'hidden',
-                    background: '#e0ded8',
+                    fontSize: 10.5,
+                    letterSpacing: '.24em',
+                    textTransform: 'uppercase',
+                    color: 'var(--muted,#8a8880)',
+                    fontWeight: 700,
+                    marginBottom: 22,
                   }}
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    className="slot-img"
-                    src={nextArticle.img}
-                    alt={titleOf(nextArticle, lang)}
-                  />
+                  {lang === 'FR' ? 'RESSOURCE SUIVANTE' : 'NEXT INSIGHT'}
                 </div>
 
-                <div>
+                <a
+                  href={`/web/insights/${nextArticle.slug}`}
+                  className="art"
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'min(380px,45%) 1fr',
+                    gap: 'clamp(24px,3.6vw,52px)',
+                    alignItems: 'center',
+                    color: 'var(--ink,#111110)',
+                    textDecoration: 'none',
+                    border: '1px solid var(--line,#dad8d2)',
+                    background: '#fff',
+                    padding: 'clamp(18px,2.4vw,30px)',
+                  }}
+                >
                   <div
                     style={{
-                      fontSize: 10.5,
-                      letterSpacing: '.2em',
-                      textTransform: 'uppercase',
-                      color: 'var(--accent,#649600)',
-                      fontWeight: 700,
-                      marginBottom: 10,
+                      position: 'relative',
+                      height: 240,
+                      overflow: 'hidden',
+                      background: '#e0ded8',
                     }}
                   >
-                    {categoryLabel(nextArticle.category, lang)}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      className="slot-img"
+                      src={nextArticle.img}
+                      alt={titleOf(nextArticle, lang)}
+                    />
                   </div>
 
-                  <h3
-                    className="art-t pretty"
-                    style={{
-                      fontSize: 'clamp(20px,1.9vw,28px)',
-                      fontWeight: 800,
-                      lineHeight: 1.2,
-                      letterSpacing: '-.01em',
-                      margin: '0 0 14px',
-                    }}
-                  >
-                    {titleOf(nextArticle, lang)}
-                  </h3>
+                  <div>
+                    <div
+                      style={{
+                        fontSize: 10.5,
+                        letterSpacing: '.2em',
+                        textTransform: 'uppercase',
+                        color: 'var(--accent,#649600)',
+                        fontWeight: 700,
+                        marginBottom: 10,
+                      }}
+                    >
+                      {categoryLabel(nextArticle.category, lang)}
+                    </div>
 
-                  <div
-                    style={{
-                      fontSize: 11,
-                      letterSpacing: '.15em',
-                      textTransform: 'uppercase',
-                      color: 'var(--muted,#8a8880)',
-                      marginBottom: 20,
-                    }}
-                  >
-                    {readOf(nextArticle.read, lang)} · {dateOf(nextArticle, lang)}
+                    <h3
+                      className="art-t pretty"
+                      style={{
+                        fontSize: 'clamp(20px,1.9vw,28px)',
+                        fontWeight: 800,
+                        lineHeight: 1.2,
+                        letterSpacing: '-.01em',
+                        margin: '0 0 14px',
+                      }}
+                    >
+                      {titleOf(nextArticle, lang)}
+                    </h3>
+
+                    <div
+                      style={{
+                        fontSize: 11,
+                        letterSpacing: '.15em',
+                        textTransform: 'uppercase',
+                        color: 'var(--muted,#8a8880)',
+                        marginBottom: 20,
+                      }}
+                    >
+                      {readOf(nextArticle.read, lang)} · {dateOf(nextArticle, lang)}
+                    </div>
+
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        fontSize: 11.5,
+                        fontWeight: 800,
+                        letterSpacing: '.14em',
+                        textTransform: 'uppercase',
+                        color: 'var(--ink,#111110)',
+                        borderBottom: '2px solid var(--accent,#C3F910)',
+                        paddingBottom: 2,
+                      }}
+                    >
+                      {lang === 'FR' ? "LIRE L'ARTICLE →" : 'READ FULL INSIGHT →'}
+                    </span>
                   </div>
-
-                  <span
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 6,
-                      fontSize: 11.5,
-                      fontWeight: 800,
-                      letterSpacing: '.14em',
-                      textTransform: 'uppercase',
-                      color: 'var(--ink,#111110)',
-                      borderBottom: '2px solid var(--accent,#C3F910)',
-                      paddingBottom: 2,
-                    }}
-                  >
-                    {lang === 'FR' ? "LIRE L'ARTICLE →" : 'READ FULL INSIGHT →'}
-                  </span>
-                </div>
-              </a>
+                </a>
+              </div>
             </div>
-          </div>
+          </EditableWrapper>
         )}
       </main>
 
       <PixiaFooter lang={lang} />
+
+      {/* Bouton d'édition d'article complet pour les administrateurs */}
+      {isAdmin && (
+        <button
+          type="button"
+          onClick={() => setIsEditorOpen(true)}
+          style={{
+            position: 'fixed',
+            bottom: 24,
+            right: 24,
+            zIndex: 9999,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 10,
+            padding: '12px 22px',
+            background: '#111110',
+            color: '#C3F910',
+            border: '1.5px solid #C3F910',
+            borderRadius: 999,
+            fontWeight: 800,
+            fontSize: 13,
+            letterSpacing: '.06em',
+            textTransform: 'uppercase',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.35)',
+            cursor: 'pointer',
+          }}
+          className="hov-scale"
+          title={lang === 'FR' ? "Ouvrir l'éditeur complet de cet article" : 'Open full article editor'}
+        >
+          <Edit3 size={16} />
+          {lang === 'FR' ? "Éditer l'article (Markdown & Métadonnées)" : 'Edit Article (Markdown & Metadata)'}
+        </button>
+      )}
+
+      <ArticleEditorModal
+        article={currentArticle}
+        isOpen={isEditorOpen}
+        initialTab={editorInitialTab}
+        onClose={() => setIsEditorOpen(false)}
+        onSaved={(updated) => {
+          setCurrentArticle(updated);
+        }}
+      />
     </RevealRoot>
   );
 }

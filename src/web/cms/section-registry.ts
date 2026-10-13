@@ -89,13 +89,22 @@ export function findSectionKey(node: EventTarget | null): string | null {
       ? (node as HTMLElement)
       : null;
 
+  const startNode = current;
+
   while (current) {
     for (let i = entries.length - 1; i >= 0; i--) {
       if (entries[i].node === current) return entries[i].sectionKey;
     }
     const explicit = current.getAttribute?.('data-cms-section');
     if (explicit) return explicit;
+    if (current.tagName === 'HEADER' || current.id === 'site-header') return 'header';
+    if (current.tagName === 'FOOTER' || current.id === 'site-footer') return 'footer';
     current = current.parentElement || null;
+  }
+
+  // Fallback universel : si l'élément se trouve dans le conteneur du site PixiaTech
+  if (startNode && (startNode.closest('#pixia-web') || startNode.closest('main') || startNode.closest('.xer-site'))) {
+    return 'main';
   }
 
   return null;
@@ -154,7 +163,7 @@ export function resolveElementKey(el: HTMLElement, sectionRoot: HTMLElement | nu
  * anciens panneaux). Un seul endroit de vérité, réutilisé par l'éditeur.
  */
 export const CMS_UI_CLOSEST_SELECTOR =
-  '#admin-top-bar, #image-edit-modal, #backend-export-modal, [data-cms-ui], [data-cms-ignore], aside';
+  '#admin-top-bar, #image-edit-modal, #backend-export-modal, [data-cms-ui], [data-cms-ignore]';
 
 /** Balises qui ne portent jamais un texte éditable. */
 const NON_TEXT_TAGS = new Set([
@@ -259,9 +268,11 @@ export function forEachElementInSection(
 
 export type SelectedElement = {
   el: HTMLElement;
+  clickableEl?: HTMLElement | null;
   sectionKey: string;
   elementKey: string;
-  kind: 'text' | 'media';
+  clickableElementKey?: string;
+  kind: 'text' | 'media' | 'button' | 'link';
 };
 
 let selectedElement: SelectedElement | null = null;

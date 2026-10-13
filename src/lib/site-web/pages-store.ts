@@ -46,6 +46,11 @@ function writeJsonDb(db: CmsDb): boolean {
 
 async function getFirestoreDb() {
   try {
+    const hasServiceAccount = Boolean(process.env.ADMIN_CLIENT_EMAIL && process.env.ADMIN_PRIVATE_KEY);
+    const hasGoogleCredentials = Boolean(process.env.GOOGLE_APPLICATION_CREDENTIALS || process.env.K_SERVICE);
+    if (!hasServiceAccount && !hasGoogleCredentials) {
+      return null;
+    }
     const { getFirebaseAdmin } = await import('@/lib/firebase-admin');
     const { adminDb } = getFirebaseAdmin();
     return adminDb;

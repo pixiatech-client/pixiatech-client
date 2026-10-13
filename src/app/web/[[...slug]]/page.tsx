@@ -2,6 +2,7 @@ import { PixiaHomePage } from '@/web/pixiatech/HomePage';
 import { PixiaInsightsPage } from '@/web/pixiatech/InsightsPage';
 import { PixiaInsightDetailPage } from '@/web/pixiatech/InsightDetailPage';
 import { getInsightArticle } from '@/web/data/insights-articles-content';
+import { getArticle } from '@/lib/site-web/articles-store';
 import { WebPage } from '@/web/WebPage';
 import { AllProductsPage } from '@/web/pixiatech/AllProductsPage';
 import { MentionsLegalesPage } from '@/web/legal/MentionsLegalesPage';
@@ -31,7 +32,7 @@ export async function generateMetadata({
   }
   if (slug?.[0] === 'insights') {
     if (slug?.[1]) {
-      const article = getInsightArticle(slug[1]);
+      const article = (await getArticle(slug[1])) || getInsightArticle(slug[1]);
       if (article) {
         const title = isEn ? article.title : article.titleFr ?? article.title;
         const description = isEn
@@ -70,7 +71,7 @@ export default async function WebSlugPage({
 
   if (first === 'insights') {
     if (slug?.[1]) {
-      const article = getInsightArticle(slug[1]);
+      const article = (await getArticle(slug[1])) || getInsightArticle(slug[1]);
       if (!article) {
         notFound();
       }

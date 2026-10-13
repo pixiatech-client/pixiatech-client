@@ -614,7 +614,23 @@
           }
         }
       }
+    },
+    "article__event-led-screen-size": {
+      "id": "article__event-led-screen-size",
+      "name": "article__event-led-screen-size",
+      "slug": "/article__event-led-screen-size",
+      "updatedAt": "2026-10-13T08:55:18.829Z",
+      "sections": {
+        "article_sidebar": {
+          "minHeight": 636,
+          "paddingBottom": 2
+        }
+      },
+      "meta": {
+        "title": "Page PIXIATECH",
+        "description": ""
+      }
     }
   },
-  "updatedAt": "2026-10-12T22:16:59.827Z"
+  "updatedAt": "2026-10-13T08:55:18.890Z"
 }

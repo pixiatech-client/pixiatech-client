@@ -78,6 +78,7 @@ export const PixiaFooter: React.FC<PixiaFooterProps> = ({
   return (
     <footer
       id="site-footer"
+      data-cms-section="footer"
       ref={footerRootRef}
       style={{
         position: 'relative',
