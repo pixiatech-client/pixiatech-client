@@ -1,4 +1,5 @@
 import type React from 'react';
+import { fluidFontSizePx } from './fluid-font-size';
 
 /**
  * useSectionStyle
@@ -68,7 +69,8 @@ export function useSectionStyle(cmsData: Record<string, unknown>): SectionStyleR
   };
 
   const titleStyle: React.CSSProperties = {
-    ...(titleFontSize !== undefined && { fontSize: titleFontSize }),
+    // `titleFontSize` (px) = référence desktop ; rendue fluide à l'affichage.
+    ...(titleFontSize !== undefined && { fontSize: fluidFontSizePx(titleFontSize) }),
     ...(textColor     !== undefined && { color: textColor }),
   };
 

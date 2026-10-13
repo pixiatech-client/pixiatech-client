@@ -1,0 +1,30 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   Échelle fluide des tailles posées par l'éditeur CMS.
+
+   Les tailles enregistrées (px) restent la référence desktop du client.
+   Cette variable les réduit proportionnellement sur petit écran, sans jamais
+   toucher aux données. Valeur par défaut = 1 (desktop : taille exacte du
+   client). Voir `fluid-font-size.ts` (consommateur de `--cms-text-scale`).
+   ───────────────────────────────────────────────────────────────────────── */
+
+#pixia-web {
+  --cms-text-scale: 1;
+}
+
+@media (max-width: 900px) {
+  #pixia-web {
+    --cms-text-scale: 0.86;
+  }
+}
+
+@media (max-width: 640px) {
+  #pixia-web {
+    --cms-text-scale: 0.74;
+  }
+}
+
+@media (max-width: 420px) {
+  #pixia-web {
+    --cms-text-scale: 0.64;
+  }
+}

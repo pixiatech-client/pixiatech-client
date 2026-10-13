@@ -1,4 +1,5 @@
 import '@/web/web.css';
+import '@/web/cms/cms-text-scale.css';
 import { WebCmsShell } from './web-cms-shell';
 
 export const metadata = {

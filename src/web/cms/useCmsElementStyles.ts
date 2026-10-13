@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useCms } from '@/lib/site-web/cms-context';
 import { CMS_SOURCE_LANG, normalizeLang } from '@/lib/site-web/cms-i18n';
 import { forEachElementInSection, getRegisteredSections, subscribeSections } from './section-registry';
+import { fluidFontSize } from './fluid-font-size';
 
 /**
  * Styles d'élément persistés par la barre contextuelle.
@@ -89,7 +90,9 @@ export function applyElementStyle(el: HTMLElement, style: ElementStyle, lang?: s
     }
   }
   if (style.alt !== undefined) el.setAttribute('alt', style.alt);
-  if (style.fontSize !== undefined) el.style.fontSize = style.fontSize;
+  // La donnée enregistrée (px) reste la référence desktop ; on la rend fluide
+  // à l'affichage via `--cms-text-scale` (1 en desktop, réduite en mobile).
+  if (style.fontSize !== undefined) el.style.fontSize = fluidFontSize(style.fontSize);
   if (style.color !== undefined) el.style.color = style.color;
   if (style.fontWeight !== undefined) el.style.fontWeight = style.fontWeight;
   if (style.fontStyle !== undefined) el.style.fontStyle = style.fontStyle;
