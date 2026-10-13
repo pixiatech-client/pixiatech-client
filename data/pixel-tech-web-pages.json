@@ -4,7 +4,7 @@
       "id": "home",
       "name": "home",
       "slug": "/home",
-      "updatedAt": "2026-10-13T17:52:40.613Z",
+      "updatedAt": "2026-10-13T18:04:32.222Z",
       "sections": {
         "pixia-web": {
           "text_1790257213042": "sdsdsdsdÉDITEUR DIRECT : CLIQUEZ SUR UN TEXTE OU UNE IMAGE",
@@ -102,18 +102,18 @@
             },
             "slider3.title": {
               "fr": {
-                "value": "Caissons lumineux dynamiques sur-mesure",
+                "value": "Caissons lumineux dynamiques ",
                 "status": "source",
-                "updatedAt": "2026-10-13T10:16:43.880Z",
-                "sourceText": "Caissons lumineux dynamiques sur-mesure"
+                "updatedAt": "2026-10-13T17:54:31.826Z",
+                "sourceText": "Caissons lumineux dynamiques "
               }
             },
             "slider2.title": {
               "fr": {
-                "value": "Location d’écrans LED pour événements",
+                "value": "Location d’écrans LED ",
                 "status": "source",
-                "updatedAt": "2026-10-13T10:15:31.829Z",
-                "sourceText": "Location d’écrans LED pour événements"
+                "updatedAt": "2026-10-13T17:54:22.473Z",
+                "sourceText": "Location d’écrans LED "
               }
             },
             "slider3.description": {
@@ -142,42 +142,42 @@
             },
             "slider2.tagline": {
               "fr": {
-                "value": "Solution clé en main \"installation & techniciens\"",
+                "value": "Solution clé en main ",
                 "status": "source",
-                "updatedAt": "2026-10-13T10:50:27.687Z",
-                "sourceText": "Solution clé en main \"installation & techniciens\""
+                "updatedAt": "2026-10-13T17:54:12.448Z",
+                "sourceText": "Solution clé en main "
               }
             },
             "slider1.title": {
               "fr": {
-                "value": "Écrans LED & microLED sur-mesure",
+                "value": "Écrans LED & microLED ",
                 "status": "source",
-                "updatedAt": "2026-10-13T10:14:02.566Z",
-                "sourceText": "Écrans LED & microLED sur-mesure"
+                "updatedAt": "2026-10-13T17:53:40.568Z",
+                "sourceText": "Écrans LED & microLED "
               }
             },
             "slider1.tagline": {
               "fr": {
-                "value": "Technologie d’affichage ultra haute résolution",
+                "value": "Technologie d’affichage ultra haute ",
                 "status": "source",
-                "updatedAt": "2026-10-13T10:14:23.239Z",
-                "sourceText": "Technologie d’affichage ultra haute résolution"
+                "updatedAt": "2026-10-13T17:53:45.639Z",
+                "sourceText": "Technologie d’affichage ultra haute "
               }
             },
             "slider3.tagline": {
               "fr": {
-                "value": "Lightbox RGB animés pour vitrines",
+                "value": "Lightbox RGB ",
                 "status": "source",
-                "updatedAt": "2026-10-13T10:17:00.707Z",
-                "sourceText": "Lightbox RGB animés pour vitrines"
+                "updatedAt": "2026-10-13T17:54:38.098Z",
+                "sourceText": "Lightbox RGB "
               }
             },
             "slider1.badge": {
               "fr": {
-                "value": "Ma caractère terrassement avec moins cher la caisse pour les Amor PIXIATECH / TECHNOLOGIE VISUELLE",
+                "value": "PIXIATECH / TECHNOLOGIE VISUELLE",
                 "status": "source",
-                "updatedAt": "2026-10-13T17:08:55.127Z",
-                "sourceText": "Ma caractère terrassement avec moins cher la caisse pour les Amor PIXIATECH / TECHNOLOGIE VISUELLE"
+                "updatedAt": "2026-10-13T17:53:03.333Z",
+                "sourceText": "PIXIATECH / TECHNOLOGIE VISUELLE"
               }
             },
             "slider2.badge": {
@@ -210,7 +210,7 @@
             "title": {
               "fontSize": "62px",
               "textAlign": "left",
-              "backgroundColor": "transparent"
+              "backgroundColor": "#303030"
             },
             "tagline": {
               "fontSize": "50px",
@@ -241,16 +241,16 @@
           "layout": {
             "visible": true
           },
-          "slider3.title": "Caissons lumineux dynamiques sur-mesure",
-          "slider2.title": "Location d’écrans LED pour événements",
+          "slider3.title": "Caissons lumineux dynamiques ",
+          "slider2.title": "Location d’écrans LED ",
           "slider3.description": "Sublimez vos espaces et vitrines avec nos caissons lumineux dynamiques. Chaque lightbox sur-mesure utilise un cadre en aluminium tendu de toile (SEG) retroéclairée par LED RGB. Cette technologie met vos visuels en valeur en interieur comme en exterieur, avec un eclairage uniforme et economique. Avantage cle : nos installations consomment peu d'energie tout en offrant une luminosite maximale et 50000 heures de duree de vie en moyenne.",
           "slider2.description": "Profitez de nos écrans LED géants pour événements privés ou professionnels. Nous proposons une location complète avec manutention et techniciens qualifiés pour l’installation. Nos écrans sont faciles à monter et assurent une diffusion parfaite, même en plein jour grâce à leur haute luminosité. Cette solution packagée permet de capter l’attention du public sans compromis technique. Privilégiant simplicité et fiabilité, nous répondons à tous les besoins événementiels.",
           "slider1.description": "Nos écrans géants (LED/microLED/OLED) offrent une qualité d’image exceptionnelle pour l’architecture et la signalétique. Chaque installation est calibrée sur mesure pour la luminosité et la résolution requises. Conçus pour durer, nos écrans haut de gamme associent haute densité de pixels à une intégration professionnelle. L’attention aux détails et à la performance technique garantit un impact visuel optimal, captant immédiatement l’intérêt du visiteur.",
-          "slider2.tagline": "Solution clé en main \"installation & techniciens\"",
-          "slider1.title": "Écrans LED & microLED sur-mesure",
-          "slider1.tagline": "Technologie d’affichage ultra haute résolution",
-          "slider3.tagline": "Lightbox RGB animés pour vitrines",
-          "slider1.badge": "Ma caractère terrassement avec moins cher la caisse pour les Amor PIXIATECH / TECHNOLOGIE VISUELLE",
+          "slider2.tagline": "Solution clé en main ",
+          "slider1.title": "Écrans LED & microLED ",
+          "slider1.tagline": "Technologie d’affichage ultra haute ",
+          "slider3.tagline": "Lightbox RGB ",
+          "slider1.badge": "PIXIATECH / TECHNOLOGIE VISUELLE",
           "slider2.badge": "PIXIATECH / TECHNOLOGIE VISUELLE",
           "slider3.badge": "PIXIATECH / TECHNOLOGIE VISUELLE "
         },
@@ -261,6 +261,11 @@
               "textAlign": "center",
               "text": "Built for every environment. 111",
               "text_fr": "Built for every environment. "
+            },
+            "market_creative_cta": {
+              "href": "sd",
+              "target": "_blank",
+              "rel": "noopener noreferrer"
             }
           },
           "market_rental_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FLOCATION_ECRAN_EVENMENTIEL_3yxyk.webp?alt=media",
@@ -713,5 +718,5 @@
       }
     }
   },
-  "updatedAt": "2026-10-13T17:52:40.714Z"
+  "updatedAt": "2026-10-13T18:04:32.325Z"
 }
