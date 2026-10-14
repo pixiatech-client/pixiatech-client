@@ -772,12 +772,6 @@ function AllProductsView({
       </section>
       </main>
       <PixiaFooter companyName="PIXIATECH" lang={lang} onOpenConsultation={handleOpenConsultation} />
-      <ConsultationModal
-        isOpen={consultOpen}
-        onClose={() => setConsultOpen(false)}
-        companyName="PIXIATECH"
-        lang={lang}
-      />
       <BackToTopButton lang={lang} />
     </RevealRoot>
   );

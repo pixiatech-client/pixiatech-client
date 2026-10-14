@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useState, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { useCms } from '@/lib/site-web/cms-context';
 import { Image as ImageIcon, Upload, Check, X, Sparkles, Link as LinkIcon, Loader2 } from 'lucide-react';
 import { findSectionKey, getSectionNode, resolveElementKey, setSelectedElement } from './section-registry';
@@ -20,32 +20,54 @@ interface ImageEditState {
   alt: string;
 }
 
-const STOCK_LIBRARY_IMAGES = [
-  { label: 'Hero 1 — Hall Architectural', src: '/uploads/site/hero-1.jpg' },
-  { label: 'Hero 2 — Atrium Immersif', src: '/uploads/site/hero-2.jpg' },
-  { label: 'Hero 3 — Mur Courbé Panoramique', src: '/uploads/site/hero-3.jpg' },
-  { label: 'Tech — ColdLED', src: '/uploads/site/tech-coldled.jpg' },
-  { label: 'Tech — SolidSkin', src: '/uploads/site/tech-solidskin.jpg' },
-  { label: 'Tech — ArmorLED', src: '/uploads/site/tech-armorled.jpg' },
-  { label: 'Tech — CBSF', src: '/uploads/site/tech-cbsf.jpg' },
-  { label: 'Tech — Infinite Colors', src: '/uploads/site/tech-infinite.jpg' },
-  { label: 'Marché — Corporate', src: '/uploads/site/market-corporate.jpg' },
-  { label: 'Marché — Retail', src: '/uploads/site/market-retail.jpg' },
-  { label: 'Marché — DOOH', src: '/uploads/site/market-dooh.jpg' },
-  { label: 'Marché — Rental & Events', src: '/uploads/site/market-rental.jpg' },
-  { label: 'Marché — XR / VP', src: '/uploads/site/market-xr.jpg' },
-  { label: 'Experience Center', src: '/uploads/site/xc-bg.jpg' },
-  { label: 'Projet — Shenzhen Stage', src: '/uploads/projects/how-xeron-elevates-shenzhen-happy-valleys-summer-festival-stage.jpg' },
-  { label: 'Projet — Auckland Centre', src: '/uploads/projects/university-of-aucklands-hiwa-recreation-and-wellbeing-centre.jpg' },
-  { label: 'Projet — UAE Production', src: '/uploads/projects/xeron-powers-up-the-uaes-state-of-the-art-production-studio.jpg' },
-  { label: 'Projet — Poor Things Stage', src: '/uploads/projects/led-wall-evokes-early-cinema-effects-for-poor-things.jpg' },
+/** Entrée de la bibliothèque d'images réelle (API /api/site-web/media-library). */
+interface MediaLibraryItem {
+  url: string;
+  name: string;
+  source: 'static' | 'storage';
+}
+
+/**
+ * Repli hors-ligne : la bibliothèque réelle est fournie par
+ * `/api/site-web/media-library` (démo statiques + uploads Firebase). Si l'API
+ * est indisponible, on conserve au minimum les images de démonstration
+ * historiques pour que le sélecteur reste utilisable.
+ */
+const FALLBACK_LIBRARY_IMAGES: MediaLibraryItem[] = [
+  { name: 'Hero 1 — Hall Architectural', url: '/uploads/site/hero-1.jpg', source: 'static' },
+  { name: 'Hero 2 — Atrium Immersif', url: '/uploads/site/hero-2.jpg', source: 'static' },
+  { name: 'Hero 3 — Mur Courbé Panoramique', url: '/uploads/site/hero-3.jpg', source: 'static' },
+  { name: 'Tech — ColdLED', url: '/uploads/site/tech-coldled.jpg', source: 'static' },
+  { name: 'Tech — SolidSkin', url: '/uploads/site/tech-solidskin.jpg', source: 'static' },
+  { name: 'Tech — ArmorLED', url: '/uploads/site/tech-armorled.jpg', source: 'static' },
+  { name: 'Tech — CBSF', url: '/uploads/site/tech-cbsf.jpg', source: 'static' },
+  { name: 'Tech — Infinite Colors', url: '/uploads/site/tech-infinite.jpg', source: 'static' },
+  { name: 'Marché — Corporate', url: '/uploads/site/market-corporate.jpg', source: 'static' },
+  { name: 'Marché — Retail', url: '/uploads/site/market-retail.jpg', source: 'static' },
+  { name: 'Marché — DOOH', url: '/uploads/site/market-dooh.jpg', source: 'static' },
+  { name: 'Marché — Rental & Events', url: '/uploads/site/market-rental.jpg', source: 'static' },
+  { name: 'Marché — XR / VP', url: '/uploads/site/market-xr.jpg', source: 'static' },
+  { name: 'Experience Center', url: '/uploads/site/xc-bg.jpg', source: 'static' },
+  { name: 'Projet — Shenzhen Stage', url: '/uploads/projects/how-xeron-elevates-shenzhen-happy-valleys-summer-festival-stage.jpg', source: 'static' },
+  { name: 'Projet — Auckland Centre', url: '/uploads/projects/university-of-aucklands-hiwa-recreation-and-wellbeing-centre.jpg', source: 'static' },
+  { name: 'Projet — UAE Production', url: '/uploads/projects/xeron-powers-up-the-uaes-state-of-the-art-production-studio.jpg', source: 'static' },
+  { name: 'Projet — Poor Things Stage', url: '/uploads/projects/led-wall-evokes-early-cinema-effects-for-poor-things.jpg', source: 'static' },
 ];
+
+/** Une valeur texte ressemble-t-elle à une URL d'image (pour le filtre « utilisées ») ? */
+function looksLikeImageUrl(value: string): boolean {
+  if (value.startsWith('data:image')) return true;
+  if (value.startsWith('/uploads/')) return true;
+  if (value.includes('firebasestorage.googleapis.com')) return true;
+  return /^https?:\/\//.test(value) && /\.(jpg|jpeg|png|webp|gif|svg|avif|bmp)(\?|#|$)/i.test(value);
+}
 
 export const VisualInPlaceEditor: React.FC = () => {
   const {
   isEditing,
   isAdmin,
   currentLang,
+  pages,
   uploadMedia,
   updateSectionField,
   updateElementStyle,
@@ -59,6 +81,14 @@ export const VisualInPlaceEditor: React.FC = () => {
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [isApplying, setIsApplying] = useState<boolean>(false);
   const [toast, setToast] = useState<{ message: string; tone: 'ok' | 'pending' | 'error' } | null>(null);
+
+  // Bibliothèque d'images réelle (démo statiques + uploads Firebase), chargée
+  // depuis /api/site-web/media-library, avec recherche + filtre « utilisées ».
+  const [libraryItems, setLibraryItems] = useState<MediaLibraryItem[] | null>(null);
+  const [libraryLoading, setLibraryLoading] = useState<boolean>(false);
+  const [libraryError, setLibraryError] = useState<string | null>(null);
+  const [libraryQuery, setLibraryQuery] = useState<string>('');
+  const [libraryFilter, setLibraryFilter] = useState<'all' | 'used'>('all');
 
   // Éléments de survol pour l'inspection
   const hoveredElementRef = useRef<HTMLElement | null>(null);
@@ -103,6 +133,65 @@ export const VisualInPlaceEditor: React.FC = () => {
     });
     setNewImageSrc(el.getAttribute('src') || '');
   }, []);
+
+  // Charge la bibliothèque réelle depuis l'API admin (lecture seule). En cas
+  // d'échec, on retombe sur les images de démonstration historiques.
+  const loadLibrary = useCallback(async () => {
+    setLibraryLoading(true);
+    setLibraryError(null);
+    try {
+      const res = await fetch('/api/site-web/media-library', { cache: 'no-store' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = (await res.json()) as { success?: boolean; items?: MediaLibraryItem[] };
+      if (data?.success && Array.isArray(data.items)) {
+        setLibraryItems(data.items);
+      } else {
+        throw new Error('Réponse invalide');
+      }
+    } catch (err) {
+      setLibraryItems(FALLBACK_LIBRARY_IMAGES);
+      setLibraryError((err as Error).message || 'Bibliothèque indisponible');
+    } finally {
+      setLibraryLoading(false);
+    }
+  }, []);
+
+  // Recharge la bibliothèque à chaque ouverture de la modal (une nouvelle image
+  // importée depuis l'admin doit apparaître sans recharger la page).
+  useEffect(() => {
+    if (activeImageTarget) void loadLibrary();
+  }, [activeImageTarget, loadLibrary]);
+
+  // Ensemble des URLs d'images déjà utilisées dans les pages CMS (filtre).
+  const usedImageUrls = useMemo(() => {
+    const set = new Set<string>();
+    const visit = (value: unknown): void => {
+      if (typeof value === 'string') {
+        if (looksLikeImageUrl(value)) set.add(value);
+        return;
+      }
+      if (Array.isArray(value)) {
+        value.forEach(visit);
+        return;
+      }
+      if (value && typeof value === 'object') {
+        Object.values(value as Record<string, unknown>).forEach(visit);
+      }
+    };
+    visit(pages);
+    return set;
+  }, [pages]);
+
+  // Liste affichée : recherche par nom/URL + filtre « toutes / utilisées ».
+  const filteredLibrary = useMemo(() => {
+    const items = libraryItems || [];
+    const q = libraryQuery.trim().toLowerCase();
+    return items.filter((item) => {
+      if (libraryFilter === 'used' && !usedImageUrls.has(item.url)) return false;
+      if (!q) return true;
+      return item.name.toLowerCase().includes(q) || item.url.toLowerCase().includes(q);
+    });
+  }, [libraryItems, libraryQuery, libraryFilter, usedImageUrls]);
 
   useEffect(() => {
     if (!isEditing || !isAdmin) {
@@ -307,13 +396,15 @@ export const VisualInPlaceEditor: React.FC = () => {
       // Déjà en cours d'édition : laisser passer le clic (placement du curseur).
       if (target.isContentEditable) return;
 
-      // En mode édition : intercepter TOUT clic sur un lien, bouton ou ancre
-      // pour éviter la navigation intempestive et permettre la sélection / édition (Point 5).
-      const clickableParent = target.closest('a, button, [role="button"]') as HTMLElement | null;
-      if (clickableParent) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
+      // En mode édition : intercepter TOUT clic dans une section éditable
+      // pour éviter l'exécution d'actions interactives ou de navigations
+      // et se consacrer uniquement à la sélection et l'édition CMS.
+      e.preventDefault();
+      e.stopPropagation();
+
+      const clickableParent =
+        (target.closest('a, button, [role="button"]') as HTMLElement | null) ||
+        (target.tagName === 'A' || target.tagName === 'BUTTON' ? target : null);
 
       const sectionRoot = getSectionNode(sectionKey);
       const elementKey = resolveElementKey(target, sectionRoot);
@@ -516,6 +607,9 @@ export const VisualInPlaceEditor: React.FC = () => {
       const url = await uploadMedia(file);
       setNewImageSrc(url);
       await handleApplyImage(url);
+      // La nouvelle image doit être disponible dans la bibliothèque sans
+      // rechargement de la page.
+      void loadLibrary();
     } catch (err) {
       console.error('Upload failed:', err);
       showToast('✕ Erreur lors du téléversement', 'error');
@@ -653,34 +747,104 @@ export const VisualInPlaceEditor: React.FC = () => {
               </div>
             </div>
 
-            {/* Bibliothèque PixiaTech Sélection Rapide */}
+            {/* Bibliothèque d'images réelle (démo + uploads admin) */}
             <div className="mb-6">
               <label className="block text-[11px] font-mono text-[#8a8880] uppercase mb-2.5 flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5 text-[#C3F910]" />
-                <span>Sélectionner depuis la bibliothèque PixiaTech</span>
+                <span>Bibliothèque d&apos;images du site</span>
+                {libraryItems && (
+                  <span className="text-[#555] normal-case">
+                    ({filteredLibrary.length}
+                    {libraryItems.length !== filteredLibrary.length ? `/${libraryItems.length}` : ''})
+                  </span>
+                )}
               </label>
-              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 max-h-40 overflow-y-auto p-1 bg-[#141413] rounded-xl border border-[#222]">
-                {STOCK_LIBRARY_IMAGES.map((img) => (
+
+              {/* Recherche + filtre toutes / utilisées */}
+              <div className="flex items-center gap-2 mb-2.5">
+                <input
+                  type="text"
+                  value={libraryQuery}
+                  onChange={(e) => setLibraryQuery(e.target.value)}
+                  placeholder="Rechercher une image par nom…"
+                  className="flex-1 bg-[#171715] border border-[#2b2b28] rounded-lg px-3 py-2 text-xs text-white font-mono focus:border-[#C3F910] focus:outline-none"
+                />
+                <div className="flex rounded-lg overflow-hidden border border-[#2b2b28]">
                   <button
-                    key={img.src}
                     type="button"
-                    onClick={() => setNewImageSrc(img.src)}
-                    className={`relative rounded-lg overflow-hidden h-16 border transition-all cursor-pointer group ${
-                      newImageSrc === img.src
-                        ? 'border-[#C3F910] ring-2 ring-[#C3F910]/40'
-                        : 'border-[#222] hover:border-[#555]'
+                    onClick={() => setLibraryFilter('all')}
+                    className={`px-3 py-2 text-[11px] font-mono cursor-pointer transition-colors ${
+                      libraryFilter === 'all'
+                        ? 'bg-[#C3F910] text-[#080808] font-bold'
+                        : 'bg-[#171715] text-[#8a8880] hover:text-white'
                     }`}
-                    title={img.label}
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={img.src}
-                      alt={img.label}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform"
-                    />
+                    TOUTES
                   </button>
-                ))}
+                  <button
+                    type="button"
+                    onClick={() => setLibraryFilter('used')}
+                    className={`px-3 py-2 text-[11px] font-mono cursor-pointer transition-colors ${
+                      libraryFilter === 'used'
+                        ? 'bg-[#C3F910] text-[#080808] font-bold'
+                        : 'bg-[#171715] text-[#8a8880] hover:text-white'
+                    }`}
+                  >
+                    UTILISÉES
+                  </button>
+                </div>
               </div>
+
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 max-h-56 overflow-y-auto p-1 bg-[#141413] rounded-xl border border-[#222]">
+                {libraryLoading && (
+                  <div className="col-span-3 sm:col-span-6 flex items-center justify-center gap-2 py-8 text-xs text-[#555] font-mono">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>CHARGEMENT DE LA BIBLIOTHÈQUE…</span>
+                  </div>
+                )}
+
+                {!libraryLoading && filteredLibrary.length === 0 && (
+                  <div className="col-span-3 sm:col-span-6 flex items-center justify-center py-8 text-xs text-[#555] font-mono text-center px-4">
+                    {libraryFilter === 'used'
+                      ? 'Aucune image utilisée ne correspond à la recherche.'
+                      : 'Aucune image dans la bibliothèque.'}
+                  </div>
+                )}
+
+                {!libraryLoading &&
+                  filteredLibrary.map((img) => (
+                    <button
+                      key={img.url}
+                      type="button"
+                      onClick={() => setNewImageSrc(img.url)}
+                      className={`relative rounded-lg overflow-hidden h-16 border transition-all cursor-pointer group ${
+                        newImageSrc === img.url
+                          ? 'border-[#C3F910] ring-2 ring-[#C3F910]/40'
+                          : 'border-[#222] hover:border-[#555]'
+                      }`}
+                      title={
+                        usedImageUrls.has(img.url) ? `${img.name} (utilisée)` : img.name
+                      }
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={img.url}
+                        alt={img.name}
+                        loading="lazy"
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform"
+                      />
+                      {usedImageUrls.has(img.url) && (
+                        <span className="absolute top-1 left-1 w-2 h-2 rounded-full bg-[#C3F910] shadow" />
+                      )}
+                    </button>
+                  ))}
+              </div>
+
+              {libraryError && (
+                <p className="mt-2 text-[10.5px] font-mono text-[#ff8a8a]">
+                  Bibliothèque serveur indisponible ({libraryError}) — images de démonstration affichées.
+                </p>
+              )}
             </div>
 
             {/* Actions */}

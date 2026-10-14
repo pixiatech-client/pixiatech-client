@@ -343,21 +343,13 @@ export const FloatingElementToolbar: React.FC<{
     (selected.el.closest('a, button, [role="button"]') as HTMLElement | null) ||
     (selected.el.tagName === 'A' || selected.el.tagName === 'BUTTON' ? selected.el : null);
 
-  const isAnchor = clickableNode?.tagName === 'A';
-  const isButton = clickableNode?.tagName === 'BUTTON';
-  const isClickable = Boolean(clickableNode);
+  const isAnchor = clickableNode?.tagName === 'A' || selected.el.tagName === 'A';
+  const isButton = clickableNode?.tagName === 'BUTTON' || selected.el.tagName === 'BUTTON';
+  const isClickable = Boolean(clickableNode) || Boolean(style.href) || selected.el.hasAttribute('data-href');
   const isMedia = selected.kind === 'media' || selected.el.tagName === 'IMG' || selected.el.tagName === 'VIDEO';
   const hasOffset = Boolean(style.offsetX || style.offsetY);
 
-  // Détection de l'action existante (ex: ouverture modal consultation, recherche, etc.)
   const actionAttr = clickableNode?.getAttribute('data-action');
-  const isConsultationAction =
-    actionAttr === 'consultation' ||
-    clickableNode?.classList.contains('hero-cta2') ||
-    clickableNode?.getAttribute('data-text-key') === 'secondaryCta' ||
-    clickableNode?.innerText.toLowerCase().includes('projet') ||
-    clickableNode?.innerText.toLowerCase().includes('consultation');
-
   const isSearchAction = actionAttr === 'search' || clickableNode?.classList.contains('search-trigger');
 
   // URL réelle configurée actuellement
@@ -365,11 +357,16 @@ export const FloatingElementToolbar: React.FC<{
     style.href ??
     clickableNode?.getAttribute('href') ??
     clickableNode?.getAttribute('data-href') ??
+    selected.el.getAttribute('href') ??
+    selected.el.getAttribute('data-href') ??
     '';
 
   const isBlank =
-    (style.target ?? clickableNode?.getAttribute('target') ?? clickableNode?.getAttribute('data-target')) ===
-    '_blank';
+    (style.target ??
+      clickableNode?.getAttribute('target') ??
+      clickableNode?.getAttribute('data-target') ??
+      selected.el.getAttribute('target') ??
+      selected.el.getAttribute('data-target')) === '_blank';
 
   const iconBtn =
     'p-1.5 rounded-lg transition-colors cursor-pointer flex items-center justify-center min-w-[28px] h-[28px] text-xs';
@@ -615,22 +612,25 @@ export const FloatingElementToolbar: React.FC<{
           </>
         )}
 
-        {/* ── Cas 3 : BOUTON / LIEN (Point 2 : Gestion uniforme des boutons et liens) ── */}
-        {(isClickable || isAnchor || isButton) && (
-          <div className="flex items-center gap-1.5 px-1 border-l border-[#2b2b28]">
-            <button
-              type="button"
-              onClick={() => setShowLinkEditor((v) => !v)}
-              className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer ${
-                showLinkEditor || realCurrentUrl ? 'bg-[#C3F910]/20 text-[#C3F910] border border-[#C3F910]/40' : off
-              }`}
-              title="Configurer la destination ou l'action de ce bouton/lien"
-            >
-              <LinkIcon className="w-3.5 h-3.5" />
-              <span>LIEN / ACTION</span>
-            </button>
-          </div>
-        )}
+        {/* ── Outil LIEN / REDIRECTION (Disponible pour tout élément texte, bouton ou média) ── */}
+        <div className="flex items-center gap-1.5 px-1 border-l border-[#2b2b28]">
+          <button
+            type="button"
+            onClick={() => setShowLinkEditor((v) => !v)}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer ${
+              showLinkEditor || realCurrentUrl
+                ? 'bg-[#C3F910]/20 text-[#C3F910] border border-[#C3F910]/40'
+                : off
+            }`}
+            title="Éditer le lien de redirection de cet élément (URL / Page interne)"
+          >
+            <LinkIcon className="w-3.5 h-3.5" />
+            <span>LIEN</span>
+            {realCurrentUrl && (
+              <span className="w-1.5 h-1.5 rounded-full bg-[#C3F910]" title={`Lien : ${realCurrentUrl}`} />
+            )}
+          </button>
+        </div>
 
         {/* ── Cas 4 : DÉPLACEMENT (NUDGE TRANSFORM) ── */}
         <div className="flex items-center gap-0.5 px-1 border-l border-[#2b2b28]">
@@ -737,19 +737,8 @@ export const FloatingElementToolbar: React.FC<{
       </div>
 
       {/* ── Ligne 2 (Conditionnelle) : Panneau Complet d'Édition du Bouton / Lien ── */}
-      {showLinkEditor && (isClickable || isAnchor || isButton) && (
+      {showLinkEditor && (
         <div className="flex flex-col gap-2 pt-2 border-t border-[#2b2b28] bg-[#141412] p-2.5 rounded-lg animate-in slide-in-from-top-1">
-          {/* Action Détectée */}
-          {isConsultationAction && (
-            <div className="flex items-center justify-between bg-[#1f1e18] border border-[#524c25] px-2.5 py-1.5 rounded text-xs">
-              <span className="flex items-center gap-1.5 text-[#e5d470] font-mono">
-                <Zap className="w-3.5 h-3.5" />
-                Action native : Ouverture Demande de Devis / Consultation
-              </span>
-              <span className="text-[10px] text-[#aaa] font-mono">Action prioritaire</span>
-            </div>
-          )}
-
           {isSearchAction && (
             <div className="flex items-center justify-between bg-[#1f1e18] border border-[#524c25] px-2.5 py-1.5 rounded text-xs">
               <span className="flex items-center gap-1.5 text-[#e5d470] font-mono">
@@ -770,9 +759,11 @@ export const FloatingElementToolbar: React.FC<{
                 onChange={(e) => {
                   const url = e.target.value;
                   if (clickableNode && isAnchor) clickableNode.setAttribute('href', url);
+                  if (selected.el.tagName === 'A') (selected.el as HTMLAnchorElement).setAttribute('href', url);
+                  else selected.el.setAttribute('data-href', url);
                   commit({ href: url });
                 }}
-                placeholder="Destination : /contact, #markets, https://..."
+                placeholder="Destination : /web/contact, /web/products, #projects, https://..."
                 className="w-full bg-transparent text-xs text-white font-mono focus:outline-none"
                 title="URL de destination du bouton ou du lien"
               />
@@ -785,6 +776,8 @@ export const FloatingElementToolbar: React.FC<{
                 const url = e.target.value;
                 if (!url) return;
                 if (clickableNode && isAnchor) clickableNode.setAttribute('href', url);
+                if (selected.el.tagName === 'A') (selected.el as HTMLAnchorElement).setAttribute('href', url);
+                else selected.el.setAttribute('data-href', url);
                 commit({ href: url });
               }}
               className="bg-[#1f1f1d] border border-[#333] rounded px-2 py-1 text-xs text-[#ddd] font-mono focus:border-[#C3F910] cursor-pointer"
@@ -804,9 +797,10 @@ export const FloatingElementToolbar: React.FC<{
               onClick={() => {
                 const nextTarget = isBlank ? '_self' : '_blank';
                 if (clickableNode) clickableNode.setAttribute('target', nextTarget);
+                selected.el.setAttribute('target', nextTarget);
                 commit({ target: nextTarget, rel: nextTarget === '_blank' ? 'noopener noreferrer' : '' });
               }}
-              className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-mono transition-all ${
+              className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-mono transition-all cursor-pointer ${
                 isBlank ? 'bg-[#C3F910] text-[#080808] font-bold' : 'bg-[#222] text-[#aaa] hover:text-white'
               }`}
               title={isBlank ? 'S’ouvre dans un nouvel onglet (_blank)' : 'S’ouvre dans le même onglet (_self)'}
@@ -824,12 +818,15 @@ export const FloatingElementToolbar: React.FC<{
                     clickableNode.removeAttribute('href');
                     clickableNode.removeAttribute('data-href');
                   }
+                  selected.el.removeAttribute('href');
+                  selected.el.removeAttribute('data-href');
                   commit({ href: '', target: '_self' });
                 }}
-                className="p-1 rounded bg-[#2a1111] hover:bg-[#441111] text-[#ff6666] transition-colors"
-                title="Supprimer le lien de ce bouton"
+                className="flex items-center gap-1 px-2 py-1 rounded bg-[#2a1111] hover:bg-[#441111] text-[#ff6666] text-xs font-mono transition-colors cursor-pointer"
+                title="Supprimer le lien de cet élément"
               >
                 <Trash2 className="w-3.5 h-3.5" />
+                <span>Supprimer le lien</span>
               </button>
             )}
           </div>

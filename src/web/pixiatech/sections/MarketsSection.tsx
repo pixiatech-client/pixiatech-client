@@ -424,7 +424,11 @@ export const MarketsSection: React.FC<MarketsSectionProps> = ({ lang = 'FR', onO
                     <button
                       type="button"
                       data-text-key={`market_${m.id}_cta`}
-                      onClick={onOpenConsultation}
+                      data-href="/web/contact"
+                      onClick={(e) => {
+                        if (document.body.classList.contains('cms-editing')) return;
+                        window.location.href = '/web/contact';
+                      }}
                       style={{
                         display: 'inline-flex',
                         alignItems: 'center',

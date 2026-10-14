@@ -425,7 +425,11 @@ export const PitchSection: React.FC<PitchSectionProps> = ({
             <div style={{ marginTop: 44 }}>
               <button
                 type="button"
-                onClick={onOpenConsultation}
+                data-href="/web/contact"
+                onClick={(e) => {
+                  if (document.body.classList.contains('cms-editing')) return;
+                  window.location.href = '/web/contact';
+                }}
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',

@@ -106,14 +106,22 @@ export const AboutExperienceSection: React.FC<AboutExperienceSectionProps> = ({
           <div className="flex flex-wrap items-center gap-4 mb-8">
             <button
               type="button"
-              onClick={onOpenConsultation}
+              data-href="/web/contact"
+              onClick={(e) => {
+                if (document.body.classList.contains('cms-editing')) return;
+                window.location.href = '/web/contact';
+              }}
               className="px-7 py-4 bg-[#C3F910] text-black font-bold text-[13px] tracking-wider uppercase hover:bg-white transition-colors cursor-pointer"
             >
               {t.visitBtn}
             </button>
             <button
               type="button"
-              onClick={onOpenConsultation}
+              data-href="/web/contact"
+              onClick={(e) => {
+                if (document.body.classList.contains('cms-editing')) return;
+                window.location.href = '/web/contact';
+              }}
               className="px-7 py-4 bg-transparent border border-[#555] text-white font-semibold text-[13px] tracking-wider uppercase hover:border-white transition-colors cursor-pointer"
             >
               {t.demoBtn}

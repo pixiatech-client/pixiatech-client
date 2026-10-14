@@ -252,16 +252,15 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ lang = 'FR', onOpenCon
             <a href="#markets" className="hero-cta1" data-text-key="primaryCta" data-slide-field={slideFieldKey('primaryCta')}>
               {t.cta1}
             </a>
-            <button
-              type="button"
-              onClick={onOpenConsultation}
+            <a
+              href="/web/contact"
               className="hero-cta2"
-              style={{ cursor: 'pointer', fontFamily: 'inherit' }}
+              style={{ cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
               data-text-key="secondaryCta"
               data-slide-field={slideFieldKey('secondaryCta')}
             >
               {t.cta2}
-            </button>
+            </a>
           </div>
 
           {/* Hero Bottom Telemetry Bar */}

@@ -148,42 +148,41 @@ export const EditableWrapper: React.FC<EditableWrapperProps> = ({
     }
   }, [pTop, pBottom, pLeft, pRight, savedMinHeight, livePaddingBottom, liveMinHeight]);
 
-  // ── Mode public (visiteurs) ──
-  if (!isEditing) {
-    if (!isVisible) return null;
+  // Dès lors que la section sert à quelque chose, le niveau structurel doit être
+  // IDENTIQUE en public et en édition : le contenu est rendu directement comme
+  // enfant de `wrapperRef` dans les deux modes. C'est indispensable car
+  // `resolveElementKey` (section-registry) calcule les clés `_elements` à partir
+  // du chemin DOM réel : un `<div>` d'enveloppe supplémentaire uniquement en
+  // édition décalait le chemin (`div:1/section:1/...` vs `section:1/...`) et
+  // provoquait la perte des modifications après actualisation. Rendre le même
+  // arbre supprime aussi le remontage complet des sections au basculement en
+  // édition (qui faisait sauter la page vers le footer).
+  if (!isVisible && !isEditing) return null;
 
-    const hasMinHeight = savedMinHeight !== undefined && savedMinHeight > 0;
-    return (
-      <div
-        ref={wrapperRef}
-        data-cms-section={sectionKey}
-        className={`${hasMinHeight ? '[&>section]:min-h-[inherit] [&>section]:flex-1 [&>section]:w-full ' : ''}${className}`}
-        style={{
-          ...style,
-          minHeight: hasMinHeight ? `${savedMinHeight}px` : undefined,
-          display: hasMinHeight ? 'flex' : undefined,
-          flexDirection: hasMinHeight ? 'column' : undefined,
-        }}
-      >
-        {children}
-      </div>
-    );
-  }
-
-  // ── Mode édition (administrateurs) ──
-  const effectiveMinHeight = liveMinHeight ?? savedMinHeight;
+  // `liveMinHeight` n'est alimenté que pendant l'édition (poignée de
+  // redimensionnement). En public, on garde strictement la valeur persistée.
+  const effectiveMinHeight = isEditing ? liveMinHeight ?? savedMinHeight : savedMinHeight;
   const hasMinHeight = effectiveMinHeight !== undefined && effectiveMinHeight > 0;
 
+  // Chrome d'édition (panneau de style, masque, poignée de redimensionnement)
+  // rendu APRÈS le contenu. Tous ces éléments sont en position absolue/fixe :
+  // leur ordre DOM n'affecte pas le rendu visuel.
   return (
     <div
       ref={wrapperRef}
       data-cms-section={sectionKey}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      onClick={() => {
-        setSelectedBlockId(sectionKey);
-      }}
-      className={`relative transition-[outline,opacity] duration-150 ${
+      onMouseEnter={isEditing ? () => setIsHovered(true) : undefined}
+      onMouseLeave={isEditing ? () => setIsHovered(false) : undefined}
+      onClick={
+        isEditing
+          ? () => {
+              setSelectedBlockId(sectionKey);
+            }
+          : undefined
+      }
+      className={`${
+        isEditing ? 'relative transition-[outline,opacity] duration-150 ' : ''
+      }${
         hasMinHeight ? '[&>section]:min-h-[inherit] [&>section]:flex-1 [&>section]:w-full ' : ''
       }${className}`}
       style={{
@@ -191,17 +190,29 @@ export const EditableWrapper: React.FC<EditableWrapperProps> = ({
         minHeight: hasMinHeight ? `${effectiveMinHeight}px` : undefined,
         display: hasMinHeight ? 'flex' : undefined,
         flexDirection: hasMinHeight ? 'column' : undefined,
-        zIndex: isSelected ? 40 : isHovered || liveMinHeight !== null ? 35 : 1,
-        outline: isSelected
-          ? '2px solid #C3F910'
-          : isHovered
-          ? '2px dashed rgba(195, 249, 16, 0.7)'
-          : !isVisible
-          ? '2px dashed rgba(255, 68, 68, 0.5)'
-          : 'none',
-        outlineOffset: '-2px',
+        zIndex: isEditing
+          ? isSelected
+            ? 40
+            : isHovered || liveMinHeight !== null
+            ? 35
+            : 1
+          : undefined,
+        outline: isEditing
+          ? isSelected
+            ? '2px solid #C3F910'
+            : isHovered
+            ? '2px dashed rgba(195, 249, 16, 0.7)'
+            : !isVisible
+            ? '2px dashed rgba(255, 68, 68, 0.5)'
+            : 'none'
+          : undefined,
+        outlineOffset: isEditing ? '-2px' : undefined,
       }}
     >
+      {/* Contenu de la section — premier enfant direct, identique en public et
+          en édition pour garder les clés DOM stables. */}
+      {children}
+
       {/* La barre d'actions de section (nom, visibilité, glisser-déposer,
           réglages) est désormais centralisée dans la barre fixe unique
           `CmsSectionBar`, sous la barre d'administration. */}
@@ -209,7 +220,7 @@ export const EditableWrapper: React.FC<EditableWrapperProps> = ({
       {/* Panneau de style contextuel — reprend les contrôles de l'ancien drawer
           dans l'éditeur direct, sur le même système (useSectionStyle +
           updateSectionField + saveCurrentPage). */}
-      {isVisible && openStylePanel === sectionKey && (
+      {isEditing && isVisible && openStylePanel === sectionKey && (
         <SectionStylePanel
           sectionKey={sectionKey}
           sectionLabel={sectionLabel}
@@ -219,7 +230,7 @@ export const EditableWrapper: React.FC<EditableWrapperProps> = ({
       )}
 
       {/* Ghost Mask Overlay if Section is Hidden */}
-      {!isVisible && (
+      {isEditing && !isVisible && (
         <div data-cms-ui className="absolute inset-0 bg-[#080808]/75 backdrop-blur-[3px] border-2 border-dashed border-[#ff4444]/60 z-[130] flex flex-col items-center justify-center p-6 text-center pointer-events-auto">
           <div className="flex items-center gap-2 bg-[#171715] border border-[#ff4444] text-[#ff6666] px-4 py-2 rounded-lg font-mono text-xs font-bold shadow-2xl mb-3">
             <EyeOff className="w-4 h-4" />
@@ -242,13 +253,8 @@ export const EditableWrapper: React.FC<EditableWrapperProps> = ({
         </div>
       )}
 
-      {/* Children Section */}
-      <div className={!isVisible ? 'opacity-35 pointer-events-none' : undefined}>
-        {children}
-      </div>
-
       {/* Bottom Drag-to-Resize Handle ↕ */}
-      {isVisible && (
+      {isEditing && isVisible && (
         <SectionResizeHandle
           sectionKey={sectionKey}
           sectionLabel={sectionLabel}

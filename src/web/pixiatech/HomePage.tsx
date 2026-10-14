@@ -217,12 +217,6 @@ export function PixiaHomePage() {
         </SectionDragDropProvider>
       </main>
       <PixiaFooter companyName="PIXIATECH" lang={effectiveLang} onOpenConsultation={openConsultation} />
-      <ConsultationModal
-        isOpen={consultOpen}
-        onClose={() => setConsultOpen(false)}
-        companyName="PIXIATECH"
-        lang={effectiveLang}
-      />
       <BackToTopButton lang={effectiveLang} />
     </RevealRoot>
   );

@@ -4,7 +4,7 @@
       "id": "home",
       "name": "home",
       "slug": "/home",
-      "updatedAt": "2026-10-13T18:04:32.222Z",
+      "updatedAt": "2026-10-14T18:05:53.301Z",
       "sections": {
         "pixia-web": {
           "text_1790257213042": "sdsdsdsdÉDITEUR DIRECT : CLIQUEZ SUR UN TEXTE OU UNE IMAGE",
@@ -118,58 +118,58 @@
             },
             "slider3.description": {
               "fr": {
-                "value": "Sublimez vos espaces et vitrines avec nos caissons lumineux dynamiques. Chaque lightbox sur-mesure utilise un cadre en aluminium tendu de toile (SEG) retroéclairée par LED RGB. Cette technologie met vos visuels en valeur en interieur comme en exterieur, avec un eclairage uniforme et economique. Avantage cle : nos installations consomment peu d'energie tout en offrant une luminosite maximale et 50000 heures de duree de vie en moyenne.",
+                "value": "Valorisez vos vitrines et magasins grâce à des caissons lumineux LED fixes ou portables, conçus sur mesure pour un éclairage homogène et durable en France.",
                 "status": "source",
-                "updatedAt": "2026-10-13T10:19:21.253Z",
-                "sourceText": "Sublimez vos espaces et vitrines avec nos caissons lumineux dynamiques. Chaque lightbox sur-mesure utilise un cadre en aluminium tendu de toile (SEG) retroéclairée par LED RGB. Cette technologie met vos visuels en valeur en interieur comme en exterieur, avec un eclairage uniforme et economique. Avantage cle : nos installations consomment peu d'energie tout en offrant une luminosite maximale et 50000 heures de duree de vie en moyenne."
+                "updatedAt": "2026-10-13T22:49:10.257Z",
+                "sourceText": "Valorisez vos vitrines et magasins grâce à des caissons lumineux LED fixes ou portables, conçus sur mesure pour un éclairage homogène et durable en France."
               }
             },
             "slider2.description": {
               "fr": {
-                "value": "Profitez de nos écrans LED géants pour événements privés ou professionnels. Nous proposons une location complète avec manutention et techniciens qualifiés pour l’installation. Nos écrans sont faciles à monter et assurent une diffusion parfaite, même en plein jour grâce à leur haute luminosité. Cette solution packagée permet de capter l’attention du public sans compromis technique. Privilégiant simplicité et fiabilité, nous répondons à tous les besoins événementiels.",
+                "value": "Louez des écrans LED géants à Paris ou en Île-de-France pour vos événements privés ou professionnels, avec une prestation technique clé en main et un accompagnement.",
                 "status": "source",
-                "updatedAt": "2026-10-13T10:16:16.665Z",
-                "sourceText": "Profitez de nos écrans LED géants pour événements privés ou professionnels. Nous proposons une location complète avec manutention et techniciens qualifiés pour l’installation. Nos écrans sont faciles à monter et assurent une diffusion parfaite, même en plein jour grâce à leur haute luminosité. Cette solution packagée permet de capter l’attention du public sans compromis technique. Privilégiant simplicité et fiabilité, nous répondons à tous les besoins événementiels."
+                "updatedAt": "2026-10-13T22:52:36.135Z",
+                "sourceText": "Louez des écrans LED géants à Paris ou en Île-de-France pour vos événements privés ou professionnels, avec une prestation technique clé en main et un accompagnement."
               }
             },
             "slider1.description": {
               "fr": {
-                "value": "Nos écrans géants (LED/microLED/OLED) offrent une qualité d’image exceptionnelle pour l’architecture et la signalétique. Chaque installation est calibrée sur mesure pour la luminosité et la résolution requises. Conçus pour durer, nos écrans haut de gamme associent haute densité de pixels à une intégration professionnelle. L’attention aux détails et à la performance technique garantit un impact visuel optimal, captant immédiatement l’intérêt du visiteur.",
+                "value": "PIXIATECH conçoit des écrans LED sur mesure pour l’architecture, le retail et l’événementiel, avec conseil expert, installation et SAV partout en France.",
                 "status": "source",
-                "updatedAt": "2026-10-13T10:14:53.870Z",
-                "sourceText": "Nos écrans géants (LED/microLED/OLED) offrent une qualité d’image exceptionnelle pour l’architecture et la signalétique. Chaque installation est calibrée sur mesure pour la luminosité et la résolution requises. Conçus pour durer, nos écrans haut de gamme associent haute densité de pixels à une intégration professionnelle. L’attention aux détails et à la performance technique garantit un impact visuel optimal, captant immédiatement l’intérêt du visiteur."
+                "updatedAt": "2026-10-13T22:43:42.423Z",
+                "sourceText": "PIXIATECH conçoit des écrans LED sur mesure pour l’architecture, le retail et l’événementiel, avec conseil expert, installation et SAV partout en France."
               }
             },
             "slider2.tagline": {
               "fr": {
-                "value": "Solution clé en main ",
+                "value": "Événements privés et professionnels .",
                 "status": "source",
-                "updatedAt": "2026-10-13T17:54:12.448Z",
-                "sourceText": "Solution clé en main "
+                "updatedAt": "2026-10-13T22:49:43.608Z",
+                "sourceText": "Événements privés et professionnels ."
               }
             },
             "slider1.title": {
               "fr": {
-                "value": "Écrans LED & microLED ",
+                "value": "Mur et écrans LED  ",
                 "status": "source",
-                "updatedAt": "2026-10-13T17:53:40.568Z",
-                "sourceText": "Écrans LED & microLED "
+                "updatedAt": "2026-10-13T21:23:59.203Z",
+                "sourceText": "Mur et écrans LED  "
               }
             },
             "slider1.tagline": {
               "fr": {
-                "value": "Technologie d’affichage ultra haute ",
+                "value": "Donnez vie à vos espaces .",
                 "status": "source",
-                "updatedAt": "2026-10-13T17:53:45.639Z",
-                "sourceText": "Technologie d’affichage ultra haute "
+                "updatedAt": "2026-10-13T22:49:37.447Z",
+                "sourceText": "Donnez vie à vos espaces ."
               }
             },
             "slider3.tagline": {
               "fr": {
-                "value": "Lightbox RGB ",
+                "value": "Donnez plus d’impact à vos vitrines .",
                 "status": "source",
-                "updatedAt": "2026-10-13T17:54:38.098Z",
-                "sourceText": "Lightbox RGB "
+                "updatedAt": "2026-10-13T22:49:48.719Z",
+                "sourceText": "Donnez plus d’impact à vos vitrines ."
               }
             },
             "slider1.badge": {
@@ -195,11 +195,35 @@
                 "updatedAt": "2026-10-13T08:47:39.689Z",
                 "sourceText": "PIXIATECH / TECHNOLOGIE VISUELLE "
               }
+            },
+            "slider2.secondaryCta": {
+              "fr": {
+                "value": "Estimation gratuite →",
+                "status": "source",
+                "updatedAt": "2026-10-13T22:07:16.959Z",
+                "sourceText": "Estimation gratuite →"
+              }
+            },
+            "slider1.secondaryCta": {
+              "fr": {
+                "value": "Estimation gratuite →",
+                "status": "source",
+                "updatedAt": "2026-10-13T22:05:03.596Z",
+                "sourceText": "Estimation gratuite →"
+              }
+            },
+            "slider3.secondaryCta": {
+              "fr": {
+                "value": "Estimation gratuite →",
+                "status": "source",
+                "updatedAt": "2026-10-13T22:07:39.776Z",
+                "sourceText": "Estimation gratuite →"
+              }
             }
           },
-          "minHeight": 0,
-          "paddingBottom": 25,
-          "slideImage1": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FInstallation_LED_immersive_dans_un_espace_commercial_haut_de_gamme_p0pol.webp?alt=media",
+          "minHeight": 882,
+          "paddingBottom": 0,
+          "slideImage1": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FInstallation_LED_immersive_dans_un_espace_commercial_haut_de_gamme_0mzdc.webp?alt=media",
           "_elements": {
             "div:2/section:1/div:7/div:1/div:3/span:2": {
               "text": "PROJETS INTERNATIONAUX 11"
@@ -207,30 +231,29 @@
             "div:2/section:1/div:7/div:1/div:3/span:1": {
               "text": "PARIS · MONDE 11"
             },
-            "title": {
-              "fontSize": "62px",
-              "textAlign": "left",
-              "backgroundColor": "#303030"
-            },
             "tagline": {
-              "fontSize": "50px",
-              "offsetX": -4,
+              "fontSize": "56px",
+              "offsetX": 4,
               "offsetY": 0,
               "backgroundColor": "transparent",
               "color": "#ffffff"
             },
             "description": {
               "fontSize": "16px",
-              "color": "#ffffff"
+              "color": "#ebeaea",
+              "backgroundColor": "transparent"
             },
             "secondaryCta": {
-              "href": "https://app.pixiatech.com/",
+              "href": "/quote",
               "target": "_self",
               "rel": ""
+            },
+            "title": {
+              "fontSize": "90px"
             }
           },
-          "slideImage2": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2Fconf_rence-futuriste-sous-les-lumi_res-bleues_wn5nj.webp?alt=media",
-          "slideImage3": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2Fm_gastore-sportif-aux-paysages-lumineux_hsly9.webp?alt=media",
+          "slideImage2": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2Fconf_rence-futuriste-sous-les-lumi_res-bleues_s3bsi.webp?alt=media",
+          "slideImage3": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2Fm_gastore-sportif-aux-paysages-lumineux_pyc10.webp?alt=media",
           "title": "TECHNOLOGIES03 D’AFFICHAGE 01",
           "badge": "PIXIATECH / VISUAL TECHNOLOGY ",
           "description": "Spécialisée dans la vente d’écrans professionnels et de technologies d’affichage LED, Micro LED et OLED, pour les entreprises, les commerces, l’architecture et l’événementiel",
@@ -243,16 +266,19 @@
           },
           "slider3.title": "Caissons lumineux dynamiques ",
           "slider2.title": "Location d’écrans LED ",
-          "slider3.description": "Sublimez vos espaces et vitrines avec nos caissons lumineux dynamiques. Chaque lightbox sur-mesure utilise un cadre en aluminium tendu de toile (SEG) retroéclairée par LED RGB. Cette technologie met vos visuels en valeur en interieur comme en exterieur, avec un eclairage uniforme et economique. Avantage cle : nos installations consomment peu d'energie tout en offrant une luminosite maximale et 50000 heures de duree de vie en moyenne.",
-          "slider2.description": "Profitez de nos écrans LED géants pour événements privés ou professionnels. Nous proposons une location complète avec manutention et techniciens qualifiés pour l’installation. Nos écrans sont faciles à monter et assurent une diffusion parfaite, même en plein jour grâce à leur haute luminosité. Cette solution packagée permet de capter l’attention du public sans compromis technique. Privilégiant simplicité et fiabilité, nous répondons à tous les besoins événementiels.",
-          "slider1.description": "Nos écrans géants (LED/microLED/OLED) offrent une qualité d’image exceptionnelle pour l’architecture et la signalétique. Chaque installation est calibrée sur mesure pour la luminosité et la résolution requises. Conçus pour durer, nos écrans haut de gamme associent haute densité de pixels à une intégration professionnelle. L’attention aux détails et à la performance technique garantit un impact visuel optimal, captant immédiatement l’intérêt du visiteur.",
-          "slider2.tagline": "Solution clé en main ",
-          "slider1.title": "Écrans LED & microLED ",
-          "slider1.tagline": "Technologie d’affichage ultra haute ",
-          "slider3.tagline": "Lightbox RGB ",
+          "slider3.description": "Valorisez vos vitrines et magasins grâce à des caissons lumineux LED fixes ou portables, conçus sur mesure pour un éclairage homogène et durable en France.",
+          "slider2.description": "Louez des écrans LED géants à Paris ou en Île-de-France pour vos événements privés ou professionnels, avec une prestation technique clé en main et un accompagnement.",
+          "slider1.description": "PIXIATECH conçoit des écrans LED sur mesure pour l’architecture, le retail et l’événementiel, avec conseil expert, installation et SAV partout en France.",
+          "slider2.tagline": "Événements privés et professionnels .",
+          "slider1.title": "Mur et écrans LED  ",
+          "slider1.tagline": "Donnez vie à vos espaces .",
+          "slider3.tagline": "Donnez plus d’impact à vos vitrines .",
           "slider1.badge": "PIXIATECH / TECHNOLOGIE VISUELLE",
           "slider2.badge": "PIXIATECH / TECHNOLOGIE VISUELLE",
-          "slider3.badge": "PIXIATECH / TECHNOLOGIE VISUELLE "
+          "slider3.badge": "PIXIATECH / TECHNOLOGIE VISUELLE ",
+          "slider2.secondaryCta": "Estimation gratuite →",
+          "slider1.secondaryCta": "Estimation gratuite →",
+          "slider3.secondaryCta": "Estimation gratuite →"
         },
         "markets": {
           "_elements": {
@@ -261,11 +287,6 @@
               "textAlign": "center",
               "text": "Built for every environment. 111",
               "text_fr": "Built for every environment. "
-            },
-            "market_creative_cta": {
-              "href": "sd",
-              "target": "_blank",
-              "rel": "noopener noreferrer"
             }
           },
           "market_rental_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FLOCATION_ECRAN_EVENMENTIEL_3yxyk.webp?alt=media",
@@ -274,7 +295,7 @@
           "market_dooh_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FFa_ade_commerciale_avec_affichage_LED_ext_rieur_grand_format_bywyt.webp?alt=media",
           "market_xr_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FStudio_audiovisuel__quip__de_murs_vid_o_LED_professionnels_k4ph6.webp?alt=media",
           "market_sports_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2F_crans_LED_pour_stade_et_affichage_publicitaire_lors_d__v_nements_sportifs_24zyh.webp?alt=media",
-          "market_control_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FStudio_audiovisuel__quip__de_murs_vid_o_LED_professionnels_bhif8.webp?alt=media",
+          "market_control_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FMur_d__crans_LED_pour_salle_de_contr_le_et_supervision_professionnelle_7of10.webp?alt=media",
           "market_creative_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FAffichage_num_rique_grand_format_dans_un_hall_de_gare_121s4.webp?alt=media",
           "visible": true,
           "layout": {
@@ -293,6 +314,9 @@
             },
             "nav:1/div:2/button:4": {
               "text_fr": "Démarrer un projet"
+            },
+            "nav:1/div:1/a:6": {
+              "text_fr": "NOS CONSEILS"
             }
           }
         },
@@ -306,17 +330,17 @@
             },
             "titleLine3": {
               "color": "#000000",
-              "fontSize": "60px"
+              "fontSize": "68px"
             },
             "titleLine2": {
               "color": "#d91717",
-              "fontSize": "60px"
+              "fontSize": "68px"
             },
             "title": {
-              "fontSize": "60px"
+              "fontSize": "68px"
             },
             "subtitle": {
-              "fontSize": "18px"
+              "fontSize": "20px"
             },
             "badge": {
               "color": "#050505"
@@ -325,7 +349,7 @@
           "paddingTop": 0,
           "overlayColor": "#d50b0b",
           "overlayOpacity": 85,
-          "minHeight": 100,
+          "minHeight": 740,
           "marginBottom": 0,
           "paddingBottom": 0,
           "visible": true,
@@ -335,10 +359,10 @@
           "_i18n": {
             "subtitle": {
               "fr": {
-                "value": "Choisir Pixiatech, c'est s'assurer de l'excellence visuelle grace à une expertise rigoureuse. Nous proposons des solutions LED, MicroLED et OLED sur-mesure, avec un accompagnement complet (conception, installation, formation) et une transparence totale sur votre projet. L'adéquation\nparfaite du produit à vos besoins est notre priorité, de la salle de réunion à l'espace commercial.",
+                "value": "PIXIATECH est un spécialiste français de l'affichage LED sur mesure: vente, location et installation d'écrans LED intérieurs et extérieurs, incurvés, transparents ou holographiques, pour l'architecture, le Retail et l'événementiel.",
                 "status": "source",
-                "updatedAt": "2026-10-13T10:34:40.245Z",
-                "sourceText": "Choisir Pixiatech, c'est s'assurer de l'excellence visuelle grace à une expertise rigoureuse. Nous proposons des solutions LED, MicroLED et OLED sur-mesure, avec un accompagnement complet (conception, installation, formation) et une transparence totale sur votre projet. L'adéquation\nparfaite du produit à vos besoins est notre priorité, de la salle de réunion à l'espace commercial."
+                "updatedAt": "2026-10-14T07:30:39.744Z",
+                "sourceText": "PIXIATECH est un spécialiste français de l'affichage LED sur mesure: vente, location et installation d'écrans LED intérieurs et extérieurs, incurvés, transparents ou holographiques, pour l'architecture, le Retail et l'événementiel."
               }
             },
             "badge": {
@@ -350,7 +374,7 @@
               }
             }
           },
-          "subtitle": "Choisir Pixiatech, c'est s'assurer de l'excellence visuelle grace à une expertise rigoureuse. Nous proposons des solutions LED, MicroLED et OLED sur-mesure, avec un accompagnement complet (conception, installation, formation) et une transparence totale sur votre projet. L'adéquation\nparfaite du produit à vos besoins est notre priorité, de la salle de réunion à l'espace commercial.",
+          "subtitle": "PIXIATECH est un spécialiste français de l'affichage LED sur mesure: vente, location et installation d'écrans LED intérieurs et extérieurs, incurvés, transparents ou holographiques, pour l'architecture, le Retail et l'événementiel.",
           "badge": "01 / À PROPOS - POURQUOI PIXIATECH "
         },
         "pitch": {
@@ -373,7 +397,54 @@
         },
         "projects": {
           "minHeight": 1039,
-          "paddingBottom": 227
+          "paddingBottom": 227,
+          "_elements": {
+            "div:1/section:1/div:1/div:3/div:1/div:2/span:1": {
+              "text_fr": "Comment sublime la scène du festival d’été."
+            },
+            "div:1/section:1/div:1/div:3/div:1/div:3": {
+              "text_fr": "LOCATION EVENMENTIEL"
+            },
+            "div:1/section:1/div:1/div:3/div:2/div:2/span:1": {
+              "text_fr": "Le centre de loisirs et de bien-être"
+            },
+            "div:1/section:1/div:1/div:3/div:3/div:2/span:1": {
+              "text_fr": "Le studio de production ultramoderne"
+            },
+            "div:1/section:1/div:1/div:3/div:4/div:3": {
+              "text_fr": "LOCATION EVENMENTIEL"
+            },
+            "div:1/section:1/div:1/div:3/div:2/div:2/span:2": {
+              "text_fr": " 2026"
+            },
+            "div:1/section:1/div:1/div:3/div:1/div:2/span:2": {
+              "text_fr": " 2026"
+            },
+            "div:1/section:1/div:1/div:3/div:4/div:2/span:1": {
+              "text_fr": "Un mur LED évoque les effets du cinéma primitif "
+            },
+            "div:1/section:1/div:1/div:3/div:4/div:2/span:2": {
+              "text_fr": "       2026"
+            },
+            "section:1/div:1/div:3/div:2/div:2/span:1": {
+              "text_fr": "Le centre de loisirs et de bien-être Hiwa de l’Université d’Auckland1"
+            },
+            "section:1/div:1/div:3/div:2/div:3": {
+              "text_fr": "EDUCATION1"
+            }
+          },
+          "_i18n": {
+            "description": {
+              "fr": {
+                "value": "Scènes de festivals, studios de production virtuelle, façades DOOH et campus universitaires études de cas concrètes de nos déploiements.",
+                "status": "source",
+                "updatedAt": "2026-10-14T11:37:33.161Z",
+                "sourceText": "Scènes de festivals, studios de production virtuelle, façades DOOH et campus universitaires études de cas concrètes de nos déploiements."
+              }
+            }
+          },
+          "description": "Scènes de festivals, studios de production virtuelle, façades DOOH et campus universitaires études de cas concrètes de nos déploiements.",
+          "project_1_image": "/uploads/site/market-corporate.jpg"
         },
         "showreel": {
           "_elements": {
@@ -412,19 +483,121 @@
             },
             "div:2/section:1/div:1/div:1/div:2/p:1": {
               "text": "Cinq technologies fondamentales développées dans nos laboratoires pour garantir un rendement photonique maximal, une durabilité éprouvée et une efficience exemplaire. 11"
+            },
+            "div:1/section:1/div:1/div:2/div:1/div:1/img:1": {
+              "src": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FTechnologie_d__cran_LED_haute_densit____Gros_plan_sur_les_modules_97o9o.webp?alt=media",
+              "alt": "COLDLED"
+            },
+            "div:1/section:1/div:1/div:2/div:3/div:1/img:1": {
+              "src": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FTechnologie_d__cran_LED_haute_densit____Gros_plan_sur_les_modules_lvavr.webp?alt=media",
+              "alt": "ARMORLED"
+            },
+            "div:1/section:1/div:1/div:2/div:2/div:1/img:1": {
+              "src": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2F_cran-holographique-dans-un-loft-futuriste_z80hm.webp?alt=media",
+              "alt": "SOLIDSKIN"
+            },
+            "div:1/section:1/div:1/div:2/div:4/div:1/img:1": {
+              "src": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FModule_LED_haute_densit__avec_structure_technique_optimis_e_fk3kp.webp?alt=media",
+              "alt": "CBSF"
+            },
+            "div:1/section:1/div:1/div:2/div:5/div:1/img:1": {
+              "src": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FPanneau_LED__tanche_pour_affichage_ext_rieur___Technologie_LED_outdoor_2dlav.webp?alt=media",
+              "alt": "INFINITE COLORS"
             }
           },
           "_i18n": {
             "tech_solidskin_desc": {
               "fr": {
-                "value": "Une couche de surface nano-renforcée qui protège les modules LED — améliorant la résistance aux impacts, la longévité et le contraste optique. 11",
+                "value": "L’OLED transparent révèle des contenus lumineux et immersifs sans masquer l’espace, transformant vitrines et environnements premium en expériences visuelles.1",
                 "status": "source",
-                "updatedAt": "2026-10-11T21:31:00.130Z",
-                "sourceText": "Une couche de surface nano-renforcée qui protège les modules LED — améliorant la résistance aux impacts, la longévité et le contraste optique. 11"
+                "updatedAt": "2026-10-14T18:04:49.714Z",
+                "sourceText": "L’OLED transparent révèle des contenus lumineux et immersifs sans masquer l’espace, transformant vitrines et environnements premium en expériences visuelles.1"
+              }
+            },
+            "tech_coldled_desc": {
+              "fr": {
+                "value": "La technologie ColdLED associe performance et durabilite pour les professionnels de l'affichage numerique, de l'evenementiel, du commerce et de la diffusion.",
+                "status": "source",
+                "updatedAt": "2026-10-13T21:51:22.799Z",
+                "sourceText": "La technologie ColdLED associe performance et durabilite pour les professionnels de l'affichage numerique, de l'evenementiel, du commerce et de la diffusion."
+              }
+            },
+            "tech_coldled_name": {
+              "fr": {
+                "value": "Les LED froides",
+                "status": "source",
+                "updatedAt": "2026-10-13T21:51:12.518Z",
+                "sourceText": "Les LED froides"
+              }
+            },
+            "tech_armorled_name": {
+              "fr": {
+                "value": "les LED froides.",
+                "status": "source",
+                "updatedAt": "2026-10-13T19:37:09.591Z",
+                "sourceText": "les LED froides."
+              }
+            },
+            "tech_solidskin_name": {
+              "fr": {
+                "value": "OLED1 transparent",
+                "status": "source",
+                "updatedAt": "2026-10-14T18:04:47.031Z",
+                "sourceText": "OLED1 transparent"
+              }
+            },
+            "tech_cbsf_name": {
+              "fr": {
+                "value": "LED renforcée",
+                "status": "source",
+                "updatedAt": "2026-10-13T19:38:48.857Z",
+                "sourceText": "LED renforcée"
+              }
+            },
+            "tech_cbsf_desc": {
+              "fr": {
+                "value": "Les connexions de soudure renforcees multiplient la resistance\nmécanique par 3 à 5x pour des écrans plus robustes et d'une\nfiabilite totale.",
+                "status": "source",
+                "updatedAt": "2026-10-13T19:39:09.441Z",
+                "sourceText": "Les connexions de soudure renforcees multiplient la resistance\nmécanique par 3 à 5x pour des écrans plus robustes et d'une\nfiabilite totale."
+              }
+            },
+            "tech_armorled_desc": {
+              "fr": {
+                "value": "La technologie ColdLED associe performance et durabilite pour\nles professionnels de l'affichage numerique, de l'evenementiel, du\ncommerce et de la diffusion.",
+                "status": "source",
+                "updatedAt": "2026-10-13T19:37:25.479Z",
+                "sourceText": "La technologie ColdLED associe performance et durabilite pour\nles professionnels de l'affichage numerique, de l'evenementiel, du\ncommerce et de la diffusion."
+              }
+            },
+            "tech_infinite_desc": {
+              "fr": {
+                "value": "Chaque LED encapsulée protège votre écran LED, renforce sa résistance et assure une image fluide et durable pour vos installations d’affichage professionnel.",
+                "status": "source",
+                "updatedAt": "2026-10-13T19:43:32.622Z",
+                "sourceText": "Chaque LED encapsulée protège votre écran LED, renforce sa résistance et assure une image fluide et durable pour vos installations d’affichage professionnel."
+              }
+            },
+            "tech_infinite_name": {
+              "fr": {
+                "value": "LED encapsulée",
+                "status": "source",
+                "updatedAt": "2026-10-13T19:40:29.754Z",
+                "sourceText": "LED encapsulée"
               }
             }
           },
-          "tech_solidskin_desc": "Une couche de surface nano-renforcée qui protège les modules LED — améliorant la résistance aux impacts, la longévité et le contraste optique. 11"
+          "tech_solidskin_desc": "L’OLED transparent révèle des contenus lumineux et immersifs sans masquer l’espace, transformant vitrines et environnements premium en expériences visuelles.1",
+          "tech_coldled_desc": "La technologie ColdLED associe performance et durabilite pour les professionnels de l'affichage numerique, de l'evenementiel, du commerce et de la diffusion.",
+          "tech_coldled_name": "Les LED froides",
+          "tech_armorled_name": "les LED froides.",
+          "tech_solidskin_name": "OLED1 transparent",
+          "tech_cbsf_name": "LED renforcée",
+          "tech_cbsf_desc": "Les connexions de soudure renforcees multiplient la resistance\nmécanique par 3 à 5x pour des écrans plus robustes et d'une\nfiabilite totale.",
+          "tech_armorled_desc": "La technologie ColdLED associe performance et durabilite pour\nles professionnels de l'affichage numerique, de l'evenementiel, du\ncommerce et de la diffusion.",
+          "tech_infinite_desc": "Chaque LED encapsulée protège votre écran LED, renforce sa résistance et assure une image fluide et durable pour vos installations d’affichage professionnel.",
+          "tech_infinite_name": "LED encapsulée",
+          "tech_solidskin_image": "/uploads/site/market-rental.jpg"
         },
         "experience": {
           "image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2F_cran_LED_incurv__immersif_pour_exp_rience_visuelle_grand_format_4ap8x.webp?alt=media",
@@ -438,7 +611,27 @@
             "div:2/section:1/div:1/p:1": {
               "text": "Installation fixe, location & événementiel, transparents, cinétiques et créatifs — explorez notre catalogue complet par environnement et domaine d’application. zd"
             }
-          }
+          },
+          "_i18n": {
+            "title": {
+              "fr": {
+                "value": "Séries d’écrans.",
+                "status": "source",
+                "updatedAt": "2026-10-14T09:41:04.693Z",
+                "sourceText": "Séries d’écrans."
+              }
+            },
+            "description": {
+              "fr": {
+                "value": "Installation fixe, location & événementiel, transparents, cinétiques et créatifs. Explorez notre catalogue complet par environnement et domaine d’application.",
+                "status": "source",
+                "updatedAt": "2026-10-14T09:41:29.515Z",
+                "sourceText": "Installation fixe, location & événementiel, transparents, cinétiques et créatifs. Explorez notre catalogue complet par environnement et domaine d’application."
+              }
+            }
+          },
+          "title": "Séries d’écrans.",
+          "description": "Installation fixe, location & événementiel, transparents, cinétiques et créatifs. Explorez notre catalogue complet par environnement et domaine d’application."
         },
         "kinetic": {
           "_elements": {
@@ -718,5 +911,5 @@
       }
     }
   },
-  "updatedAt": "2026-10-13T18:04:32.325Z"
+  "updatedAt": "2026-10-14T18:05:53.397Z"
 }

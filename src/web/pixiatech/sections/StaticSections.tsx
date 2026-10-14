@@ -142,7 +142,11 @@ export const ProjectsSection: React.FC<SectionCommonProps> = ({
           </h2>
           <button
             type="button"
-            onClick={onOpenConsultation}
+            data-href="/web/products"
+            onClick={(e) => {
+              if (document.body.classList.contains('cms-editing')) return;
+              window.location.href = '/web/products';
+            }}
             className="btn btn-solid"
             data-text-key="primaryCta"
             style={{
@@ -196,8 +200,7 @@ export const ProjectsSection: React.FC<SectionCommonProps> = ({
             return (
             <div
               key={p.title}
-              onClick={onOpenConsultation}
-              style={{ display: 'block', cursor: 'pointer' }}
+              style={{ display: 'block' }}
               className="group"
             >
               <div
@@ -670,7 +673,11 @@ export const ExperienceSection: React.FC<SectionCommonProps> = ({
           >
             <button
               type="button"
-              onClick={onOpenConsultation}
+              data-href="/web/contact"
+              onClick={(e) => {
+                if (document.body.classList.contains('cms-editing')) return;
+                window.location.href = '/web/contact';
+              }}
               className="btn btn-solid"
               data-text-key="primaryCta"
               style={{
@@ -689,7 +696,11 @@ export const ExperienceSection: React.FC<SectionCommonProps> = ({
             </button>
             <button
               type="button"
-              onClick={onOpenConsultation}
+              data-href="/web/contact"
+              onClick={(e) => {
+                if (document.body.classList.contains('cms-editing')) return;
+                window.location.href = '/web/contact';
+              }}
               className="btn btn-outline"
               data-text-key="secondaryCta"
               style={{

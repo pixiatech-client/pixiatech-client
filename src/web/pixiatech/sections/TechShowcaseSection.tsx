@@ -132,6 +132,7 @@ export const TechShowcaseSection: React.FC<TechShowcaseSectionProps> = ({ lang =
         {/* Header */}
         <div style={{ marginBottom: 54 }}>
           <div
+            data-text-key="badge"
             style={{
               fontSize: 11,
               letterSpacing: '.24em',
@@ -154,6 +155,7 @@ export const TechShowcaseSection: React.FC<TechShowcaseSectionProps> = ({ lang =
             }}
           >
             <h2
+              data-text-key="title"
               style={{
                 fontSize: 'clamp(34px, 4.2vw, 68px)',
                 fontWeight: 800,
@@ -168,6 +170,7 @@ export const TechShowcaseSection: React.FC<TechShowcaseSectionProps> = ({ lang =
               {t.title}
             </h2>
             <p
+              data-text-key="description"
               style={{
                 fontSize: 15.5,
                 lineHeight: 1.6,
@@ -221,6 +224,7 @@ export const TechShowcaseSection: React.FC<TechShowcaseSectionProps> = ({ lang =
                   <img
                     src={imgSrc}
                     alt={tech.name}
+                    data-image-key={`tech_${tech.id}_image`}
                     style={{
                       width: '100%',
                       height: '100%',

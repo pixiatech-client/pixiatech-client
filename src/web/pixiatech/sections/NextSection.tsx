@@ -6,7 +6,7 @@ import { useCms } from '@/lib/site-web/cms-context';
 import { useSectionStyle } from '../../cms/useSectionStyle';
 
 interface NextSectionProps {
-  onOpenConsultation: () => void;
+  onOpenConsultation?: () => void;
   lang?: Language;
 }
 
@@ -76,7 +76,11 @@ export const NextSection: React.FC<NextSectionProps> = ({ onOpenConsultation, la
           </h2>
           <button
             type="button"
-            onClick={onOpenConsultation}
+            data-href="/web/contact"
+            onClick={(e) => {
+              if (document.body.classList.contains('cms-editing')) return;
+              window.location.href = '/web/contact';
+            }}
             className="btn btn-solid py-5 px-9 text-[14px] font-semibold text-black bg-white hover:bg-[#C3F910] hover:text-black transition-all cursor-pointer tracking-[0.06em]"
           >
             {t.ctaBtn}

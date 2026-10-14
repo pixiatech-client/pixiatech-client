@@ -361,12 +361,7 @@ export function LegalPageLayout({ pageData, pageKey, isCookiePage = false }: Leg
 
       <PixiaFooter companyName="PIXIATECH" lang={lang} onOpenConsultation={openConsultation} />
 
-      <ConsultationModal
-        isOpen={consultOpen}
-        onClose={() => setConsultOpen(false)}
-        companyName="PIXIATECH"
-        lang={lang}
-      />
+
 
       <BackToTopButton lang={lang} />
     </RevealRoot>

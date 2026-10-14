@@ -285,13 +285,7 @@ function ProductView({ slug, fallbackProduct, isPreview = false }: ProductPageTe
         onOpenConsultation={() => setIsConsultationOpen(true)}
       />
 
-      {/* Consultation & Quote Modal */}
-      <ConsultationModal
-        isOpen={isConsultationOpen}
-        onClose={() => setIsConsultationOpen(false)}
-        companyName={companyName}
-        lang={effectiveLang}
-      />
+
 
       {/* Datasheet Printable Modal — alimenté par le produit courant */}
       <DatasheetModal

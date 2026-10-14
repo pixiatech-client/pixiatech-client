@@ -1438,7 +1438,11 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
               <div style={{ display: 'flex', gap: 14, marginTop: 28, pointerEvents: 'auto' }}>
                 <button
                   type="button"
-                  onClick={onOpenConsultation}
+                  data-href="/web/contact"
+                  onClick={(e) => {
+                    if (document.body.classList.contains('cms-editing')) return;
+                    window.location.href = '/web/contact';
+                  }}
                   className="btn btn-solid"
                   style={{
                     padding: '15px 26px',

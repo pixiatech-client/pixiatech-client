@@ -196,13 +196,7 @@ function WebPageView({ seedProduct }: { seedProduct?: Product } = {}) {
         onOpenConsultation={() => setIsConsultationOpen(true)}
       />
 
-      {/* Consultation & Quote Modal */}
-      <ConsultationModal
-        isOpen={isConsultationOpen}
-        onClose={() => setIsConsultationOpen(false)}
-        companyName={brandName}
-        lang={lang}
-      />
+
 
       {/* Datasheet Printable Modal */}
       <DatasheetModal
