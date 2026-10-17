@@ -181,7 +181,7 @@ export function PixiaInsightsPage() {
             {featured && (
               <EditableWrapper sectionKey="insights_featured" sectionLabel="Ressources — Article à la Une">
                 <div style={{ position: 'relative', marginBottom: 96 }}>
-                  {isAdmin && (
+                  {isAdmin && isEditing && (
                     <div style={{ position: 'absolute', top: 12, right: 12, zIndex: 10 }}>
                       <a
                         href={`/web/insights/${featured.slug}`}
@@ -273,7 +273,7 @@ export function PixiaInsightsPage() {
               >
                 {visible.map((a) => (
                   <div key={a.slug} style={{ position: 'relative' }}>
-                    {isAdmin && (
+                    {isAdmin && isEditing && (
                       <div style={{ position: 'absolute', top: 8, right: 8, zIndex: 10 }}>
                         <a
                           href={`/web/insights/${a.slug}`}

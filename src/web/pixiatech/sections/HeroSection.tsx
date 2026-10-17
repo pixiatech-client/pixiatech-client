@@ -113,15 +113,20 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ lang = 'FR', onOpenCon
   const t = {
     eyebrow: slideOrGlobal(
       'badge',
-      getCmsText(cmsHero, 'badge', activeLang, 'PIXIATECH / VISUAL TECHNOLOGY')
+      getCmsText(
+        cmsHero,
+        'badge',
+        activeLang,
+        activeLang === 'fr' ? 'PIXIATECH / TECHNOLOGIE VISUELLE' : 'PIXIATECH / VISUAL TECHNOLOGY'
+      )
     ),
     h1Line1: slideOrGlobal(
       'title',
-      getCmsText(cmsHero, 'title', activeLang, activeLang === 'fr' ? "L'INGÉNIERIE" : 'ENGINEERED')
+      getCmsText(cmsHero, 'title', activeLang, activeLang === 'fr' ? 'Mur et écrans LED' : 'LED Walls & Displays')
     ),
     h1Line2: slideOrGlobal(
       'tagline',
-      getCmsText(cmsHero, 'tagline', activeLang, activeLang === 'fr' ? 'DU VISIBLE.' : 'TO BE SEEN.')
+      getCmsText(cmsHero, 'tagline', activeLang, activeLang === 'fr' ? 'Donnez vie à vos espaces.' : 'Bringing your spaces to life.')
     ),
     // Repli global recopié à l'identique : slide (description) → slide
     // (subtitle) → `description` global → `subtitle` global → défaut.
@@ -134,8 +139,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ lang = 'FR', onOpenCon
         'subtitle',
         activeLang,
         activeLang === 'fr'
-          ? "Systèmes d'affichage LED professionnels conçus pour l'architecture, l'entreprise et des expériences visuelles inoubliables."
-          : 'Professional LED display systems engineered for architecture, business and unforgettable visual experiences.'
+          ? "PIXIATECH conçoit des écrans LED sur mesure pour l’architecture, le retail et l’événementiel, avec conseil expert, installation et SAV partout en France."
+          : 'PIXIATECH designs custom LED displays for architecture, retail and events, with expert consulting, installation and support across France.'
       ),
     cta1: slideOrGlobal(
       'primaryCta',
@@ -148,7 +153,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ lang = 'FR', onOpenCon
     ),
     cta2: slideOrGlobal(
       'secondaryCta',
-      getCmsText(cmsHero, 'secondaryCta', activeLang, activeLang === 'fr' ? 'Démarrer un projet →' : 'Start a Project →')
+      getCmsText(cmsHero, 'secondaryCta', activeLang, activeLang === 'fr' ? 'Estimation gratuite →' : 'Free quote →')
     ),
     city: activeLang === 'fr' ? 'PARIS · MONDE' : 'PARIS · GLOBAL PROJECTS',
     scroll: activeLang === 'fr' ? 'DÉFILEZ POUR DÉCOUVRIR ↓' : 'SCROLL TO DISCOVER ↓',

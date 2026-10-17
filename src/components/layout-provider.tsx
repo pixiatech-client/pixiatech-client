@@ -9,6 +9,7 @@ import { FirebaseClientProvider } from '@/firebase';
 import { cn } from '@/lib/utils';
 import { useEffect } from 'react';
 import { FloatingChatWrapper } from '@/components/chat/FloatingChatWrapper';
+import { PixiaGlobalAnimation } from '@/components/pixia/PixiaGlobalAnimation';
 import { RoleProvider } from '@/contexts/RoleContext';
 import { SiteBanners } from './SiteBanners';
 import { ExpandableTabs } from '@/components/ui/expandable-tabs';
@@ -149,6 +150,9 @@ export function LayoutProvider({
               </div>
             )}
             {(isFrontendPage || isWebPage) && <FloatingChatWrapper />}
+            {/* Mascotte Pixia globale : animation pilotée par le scroll sur les
+                pages du site public uniquement (`/web` + pages légales). */}
+            <PixiaGlobalAnimation active={isWebPage} />
           </div>
           </CartProvider>
           </ProfileProvider>

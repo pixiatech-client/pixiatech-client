@@ -5,23 +5,17 @@ import { X, Check, Upload, Image as ImageIcon, Sparkles, Loader2, FileText, Help
 import type { InsightArticle, InsightFaqItem } from '@/web/data/insights-articles-content';
 import { useCms } from '@/lib/site-web/cms-context';
 
-/** Liste de tous les produits PixiaTech disponibles pour le sélecteur */
-const PIXIATECH_PRODUCTS = [
-  { slug: 'sp', name: 'XR Arena' },
-  { slug: 'wp', name: 'XR Fine' },
-  { slug: 'wt', name: 'XR Ultra' },
-  { slug: 'mv', name: 'XR Vision' },
-  { slug: 'wv', name: 'XR Seamless' },
-  { slug: 'armk2', name: 'XR Flex' },
-  { slug: 'dfmk2', name: 'XR Floor' },
-  { slug: 'mvmesh', name: 'XR Air' },
-  { slug: 'xmk2', name: 'XR Arc' },
-  { slug: 'orion', name: 'XR Orion' },
-  { slug: 'halo', name: 'XR Spin' },
-  { slug: 'studio', name: 'XR Studio' },
-  { slug: 'poster', name: 'Poster LED Display' },
-  { slug: 'spki', name: 'SPKI Kinetic Series' },
-] as const;
+import { subscribeProducts } from '@/lib/products/products-service';
+import { isSystemTemplate } from '@/lib/products/system-template';
+import type { ProductRecord } from '@/lib/products/types';
+
+/** Produits de secours pour le sélecteur si hors ligne ou avant le chargement */
+const FALLBACK_PRODUCTS = [
+  { slug: 'caisson-dynamique', name: 'Caisson dynamique' },
+  { slug: 'pxt-fine', name: 'PXT FINE' },
+  { slug: 'pxt-seamless', name: 'PXT SEAMLESS' },
+  { slug: 'pxt-wrap', name: 'PXT WRAP' },
+];
 
 interface ArticleEditorModalProps {
   article: InsightArticle;
@@ -67,6 +61,30 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
   const [faqsFr, setFaqsFr] = useState<InsightFaqItem[]>(article.faqsFr || article.faqs || []);
   const [relatedProductSlug, setRelatedProductSlug] = useState(article.relatedProductSlug ?? '');
   const [relatedProductName, setRelatedProductName] = useState(article.relatedProductName ?? '');
+  const [availableProducts, setAvailableProducts] = useState<Array<{ slug: string; name: string }>>(FALLBACK_PRODUCTS);
+
+  // Charge dynamiquement les vrais produits depuis Firestore (avec exclusion du template maître et des produits supprimés)
+  useEffect(() => {
+    if (!isOpen) return;
+    const unsub = subscribeProducts(
+      (records: ProductRecord[]) => {
+        const filtered = records
+          .filter((p) => !isSystemTemplate(p) && p.status !== 'deleted')
+          .map((p) => ({
+            slug: p.slug,
+            name: p.name || p.slug,
+          }));
+
+        if (filtered.length > 0) {
+          setAvailableProducts(filtered);
+        }
+      },
+      (err) => {
+        console.warn('[ArticleEditorModal] Erreur chargement produits:', err);
+      }
+    );
+    return () => unsub();
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -397,7 +415,7 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
                   <span className="text-xs font-mono font-bold text-[#aaa]">Produit PixiaTech associé</span>
                 </div>
                 <p className="text-[11px] font-mono text-[#666] leading-relaxed">
-                  Sélectionnez un produit de la gamme PixiaTech à afficher dans la barre latérale de cet article.
+                  Sélectionnez un produit de la gamme PixiaTech à afficher sous l'introduction de cet article.
                   Si aucun produit n'est sélectionné, le produit par défaut (s'il existe) sera utilisé.
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -406,18 +424,25 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
                     <select
                       value={relatedProductSlug}
                       onChange={(e) => {
-                        const selected = PIXIATECH_PRODUCTS.find(p => p.slug === e.target.value);
-                        setRelatedProductSlug(e.target.value);
+                        const val = e.target.value;
+                        const selected = availableProducts.find(p => p.slug === val);
+                        setRelatedProductSlug(val);
                         if (selected) {
                           setRelatedProductName(selected.name);
-                        } else if (!e.target.value) {
+                        } else if (!val) {
                           setRelatedProductName('');
                         }
                       }}
                       className="w-full bg-[#181816] border border-[#333] rounded-lg px-3 py-2 text-xs text-white font-mono focus:border-[#C3F910] focus:outline-none"
                     >
                       <option value="">— Aucun / Défaut automatique —</option>
-                      {PIXIATECH_PRODUCTS.map((p) => (
+                      {/* Si un produit actuellement configuré sur l'article n'est pas encore dans availableProducts, on l'affiche */}
+                      {relatedProductSlug && !availableProducts.some(p => p.slug === relatedProductSlug) && (
+                        <option value={relatedProductSlug}>
+                          {relatedProductName || relatedProductSlug} ({relatedProductSlug})
+                        </option>
+                      )}
+                      {availableProducts.map((p) => (
                         <option key={p.slug} value={p.slug}>
                           {p.name} ({p.slug})
                         </option>
@@ -430,7 +455,7 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
                       type="text"
                       value={relatedProductName}
                       onChange={(e) => setRelatedProductName(e.target.value)}
-                      placeholder={relatedProductSlug ? (PIXIATECH_PRODUCTS.find(p => p.slug === relatedProductSlug)?.name ?? '') : 'Sélectionnez un produit'}
+                      placeholder={relatedProductSlug ? (availableProducts.find(p => p.slug === relatedProductSlug)?.name ?? relatedProductName ?? '') : 'Sélectionnez un produit'}
                       className="w-full bg-[#181816] border border-[#333] rounded-lg px-3 py-2 text-xs text-white font-mono focus:border-[#C3F910] focus:outline-none"
                     />
                   </div>

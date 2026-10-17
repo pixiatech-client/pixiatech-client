@@ -5,12 +5,20 @@
  * Features: Draggable with screen constraints, responsive positioning.
  */
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { WizardBotFlow } from '@/components/chat/WizardBotFlow';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
+import {
+  PIXIA_MASCOT_RELEASE_EVENT,
+  PIXIA_MASCOT_TAKEOVER_EVENT,
+  PIXIA_OPEN_CHATBOT_EVENT,
+  consumePendingChatOpen,
+  isMascotTakeover,
+  notifyChatState,
+} from '@/lib/pixia-global';
 import type { Product, Settings, LaborSettings, DeliverySettings, Locations } from '@/lib/types';
 
 interface FloatingChatButtonProps {
@@ -26,6 +34,8 @@ interface FloatingChatButtonProps {
 
 export function FloatingChatButton({ allProducts, settings, laborSettings, deliverySettings, locations, onHome, shifted, elevated }: FloatingChatButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
+  /** L'animation globale de Pixia contrôle la mascotte : ce bouton se retire. */
+  const [takeover, setTakeover] = useState(false);
   const constraintsRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -45,6 +55,41 @@ export function FloatingChatButton({ allProducts, settings, laborSettings, deliv
     setIsOpen((prev) => !prev);
   };
 
+  // Ouverture demandée par la mascotte globale (clic sur le robot ou la tête).
+  // Un clic peut précéder le montage de ce bouton (données du chatbot chargées
+  // en asynchrone) : la demande en attente est consommée au montage.
+  useEffect(() => {
+    if (consumePendingChatOpen()) setIsOpen(true);
+
+    const handleOpenChat = () => {
+      // La demande est servie : on vide le drapeau « en attente » pour qu'un
+      // remontage ultérieur du bouton n'ouvre pas le chat tout seul.
+      consumePendingChatOpen();
+      setIsOpen(true);
+    };
+    const handleTakeover = () => setTakeover(true);
+    const handleRelease = () => setTakeover(false);
+
+    window.addEventListener(PIXIA_OPEN_CHATBOT_EVENT, handleOpenChat);
+    window.addEventListener(PIXIA_MASCOT_TAKEOVER_EVENT, handleTakeover);
+    window.addEventListener(PIXIA_MASCOT_RELEASE_EVENT, handleRelease);
+
+    // L'animation a pu prendre le relais avant notre montage.
+    setTakeover(isMascotTakeover());
+
+    return () => {
+      window.removeEventListener(PIXIA_OPEN_CHATBOT_EVENT, handleOpenChat);
+      window.removeEventListener(PIXIA_MASCOT_TAKEOVER_EVENT, handleTakeover);
+      window.removeEventListener(PIXIA_MASCOT_RELEASE_EVENT, handleRelease);
+    };
+  }, []);
+
+  // L'animation globale se retire tant que le chat est ouvert (la mascotte
+  // laisse la place à la conversation) puis reprend la main à la fermeture.
+  useEffect(() => {
+    notifyChatState(isOpen);
+  }, [isOpen]);
+
   return (
     <>
       {/* Container used to define the boundaries for dragging */}
@@ -60,6 +105,10 @@ export function FloatingChatButton({ allProducts, settings, laborSettings, deliv
         className={cn(
           "fixed pointer-events-auto touch-none will-change-transform transition-[bottom,left,right] duration-500 ease-out",
           elevated ? "z-[290]" : "z-[101]",
+          // L'animation globale de Pixia porte la mascotte : ce robot se retire
+          // entièrement (chat ouvert compris) — la fermeture reste celle de
+          // WizardBotFlow, ce qui évite une croix en double.
+          takeover && "hidden",
           isMobile ? "bottom-24 left-2" : shifted ? "bottom-[38%] right-[440px]" : "bottom-[38%] right-12"
         )}
         style={{ touchAction: "none" }}

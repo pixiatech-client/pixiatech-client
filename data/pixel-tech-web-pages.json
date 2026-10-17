@@ -898,7 +898,7 @@
       "id": "article__event-led-screen-size",
       "name": "article__event-led-screen-size",
       "slug": "/article__event-led-screen-size",
-      "updatedAt": "2026-10-13T08:55:18.829Z",
+      "updatedAt": "2026-10-17T20:48:38.563Z",
       "sections": {
         "article_sidebar": {
           "minHeight": 636,
@@ -909,7 +909,43 @@
         "title": "Page PIXIATECH",
         "description": ""
       }
+    },
+    "article__led-in-outdoor-advertising": {
+      "id": "article__led-in-outdoor-advertising",
+      "name": "article__led-in-outdoor-advertising",
+      "slug": "/article__led-in-outdoor-advertising",
+      "updatedAt": "2026-10-17T16:49:43.238Z",
+      "sections": {
+        "article_body": {
+          "_elements": {
+            "article:1/div:1/div:2/img:1": {
+              "src": "/uploads/products/gemini/back.jpg",
+              "alt": "XR Vision"
+            }
+          },
+          "_i18n": {
+            "product_name": {
+              "fr": {
+                "value": "PIX Vision",
+                "status": "source",
+                "updatedAt": "2026-10-17T16:12:28.856Z",
+                "sourceText": "PIX Vision"
+              }
+            },
+            "product_desc": {
+              "fr": {
+                "value": "Une solution LED de nouvelle génération, conçue pour offrir une qualité d'image exceptionnelle et une fiabilité optimale, en intérieur comme en extérieur. Teste",
+                "status": "source",
+                "updatedAt": "2026-10-17T16:12:36.583Z",
+                "sourceText": "Une solution LED de nouvelle génération, conçue pour offrir une qualité d'image exceptionnelle et une fiabilité optimale, en intérieur comme en extérieur. Teste"
+              }
+            }
+          },
+          "product_name": "PIX Vision",
+          "product_desc": "Une solution LED de nouvelle génération, conçue pour offrir une qualité d'image exceptionnelle et une fiabilité optimale, en intérieur comme en extérieur. Teste"
+        }
+      }
     }
   },
-  "updatedAt": "2026-10-14T18:05:53.397Z"
+  "updatedAt": "2026-10-17T20:48:38.625Z"
 }

@@ -13,6 +13,8 @@ import { useCms } from '@/lib/site-web/cms-context';
 import { EditableWrapper } from '../cms/EditableWrapper';
 import { ArticleEditorModal } from '../cms/ArticleEditorModal';
 import { Edit3 } from 'lucide-react';
+import { getProductBySlug } from '@/lib/products/products-service';
+import type { ProductRecord } from '@/lib/products/types';
 
 interface InsightDetailPageProps {
   article: InsightArticle;
@@ -46,6 +48,125 @@ const RELATED_PRODUCT: Record<string, { slug: string; name: string }> = {
   'xr-stages': { slug: 'studio', name: 'XR Studio' },
   'kinetic': { slug: 'spki', name: 'SPKI Kinetic Series' },
 };
+
+interface ProductSummary {
+  name: string;
+  descFr: string;
+  descEn: string;
+  img: string;
+}
+
+const PRODUCT_SUMMARIES: Record<string, ProductSummary> = {
+  mv: {
+    name: 'XR Vision',
+    descFr: 'Une solution LED de nouvelle génération, conçue pour offrir une qualité d\'image exceptionnelle et une fiabilité optimale, en intérieur comme en extérieur.',
+    descEn: 'A next-generation LED solution engineered for exceptional image quality and optimal reliability, both indoors and outdoors.',
+    img: '/uploads/products/mv/front.jpg',
+  },
+  wp: {
+    name: 'XR Fine',
+    descFr: 'L\'écran LED ultra-fin conçu pour les espaces d\'exception où contrôle thermique, fiabilité sans compromis et intégration architecturale sont primordiaux.',
+    descEn: 'The wallpaper-thin LED display engineered for executive spaces where thermal control, reliability and architectural integration are critical.',
+    img: '/uploads/products/wp/front.jpg',
+  },
+  wt: {
+    name: 'XR Ultra',
+    descFr: 'Écran LED micro-pitch pour salles de contrôle critiques et régies broadcast exigeant une densité de pixels absolue et une protection de surface COB.',
+    descEn: 'Micro-pitch LED display engineered for mission-critical command centers, broadcast rooms and luxury boardrooms requiring absolute pixel permanence.',
+    img: '/uploads/products/wt/front.jpg',
+  },
+  wv: {
+    name: 'XR Seamless',
+    descFr: 'Grands modules avec alimentation déportée, garantissant un affichage 4K/8K natif sans aucun bruit ni dissipation de chaleur dans la pièce.',
+    descEn: 'Large-format display blocks with remote power units, delivering native 4K/8K resolution with zero ambient noise and zero heat emissions.',
+    img: '/uploads/products/wv/front.jpg',
+  },
+  sp: {
+    name: 'XR Arena',
+    descFr: 'Système d\'affichage LED périmétrique et scoreboards haute visibilité certifié pour les stades et arènes sportives internationales.',
+    descEn: 'Impact-absorbing perimeter boards and continuous arena fascia displays certified for international sports federation broadcasts.',
+    img: '/uploads/products/sp/front.jpg',
+  },
+  armk2: {
+    name: 'XR Flex',
+    descFr: 'Châssis magnésium ultra-légers pour tournées de concerts et salons, dotés de verrous rapides et d\'angles d\'incurvation de -10° à +10°.',
+    descEn: 'Rugged, featherweight rental platform for events, touring and XR/VP with quick-locks and telescopic alignment.',
+    img: '/uploads/products/armk2/front.jpg',
+  },
+  dfmk2: {
+    name: 'XR Floor',
+    descFr: 'Système de sol LED porteur haute résistance conçu pour la production virtuelle, les plateaux XR et les scénographies événementielles.',
+    descEn: 'Load-bearing LED floor system engineered for XR, virtual production and immersive events — 1,500 kg/m² capacity.',
+    img: '/uploads/products/dfmk2/front.jpg',
+  },
+  mvmesh: {
+    name: 'XR Air',
+    descFr: 'Grille LED architecturale ultra-légère et perméable au vent transformant les façades de verre entières en écrans médiatiques lumineux.',
+    descEn: 'Lightweight, wind-permeable architectural LED mesh transforming entire building envelopes into glowing media facades.',
+    img: '/uploads/products/mvmesh/front.jpg',
+  },
+  xmk2: {
+    name: 'XR Arc',
+    descFr: 'Affichage courbé haute précision avec angles réglables pour créer des vagues et volumes immersifs spectaculaires.',
+    descEn: 'Patented curved display for premium installations with precise angle positions from -30° to +30°.',
+    img: '/uploads/products/xmk2/front.jpg',
+  },
+  orion: {
+    name: 'XR Orion',
+    descFr: 'Écran LED de collaboration tout-en-un avec système vidéo intégré, conçu pour les auditoriums et salles de conseil de direction.',
+    descEn: 'All-in-one indoor collaboration LED display integrated for executive boardrooms and auditoriums.',
+    img: '/uploads/products/orion/front.jpg',
+  },
+  halo: {
+    name: 'XR Spin',
+    descFr: 'Affichage holographique 3D à effet visuel saisissant sans lunettes, conçu pour attirer les regards en retail et événementiel.',
+    descEn: 'Naked-eye 3D holographic fan displays from desktop units to large outdoor walls for high-impact visual presence.',
+    img: '/uploads/products/halo/front.jpg',
+  },
+  studio: {
+    name: 'XR Studio',
+    descFr: 'L\'écosystème LED complet pour la production virtuelle : plafond, arrière-plan et sol pour un tournage sans scintillement.',
+    descEn: 'The complete LED ecosystem for virtual production — ceiling, background and floor, engineered together for flicker-free filming.',
+    img: '/uploads/products/studio/front.jpg',
+  },
+  poster: {
+    name: 'Poster LED Display',
+    descFr: 'Totem LED autonome et ultra-fin pour espaces d\'accueil, retail et salons — sur pied, suspendu ou mural, prêt à l\'emploi.',
+    descEn: 'Slim, freestanding LED poster for retail, lobbies and events — floor-standing, hanging or wall-mounted, plug in and play.',
+    img: '/uploads/products/poster/front.jpg',
+  },
+  spki: {
+    name: 'SPKI Kinetic Series',
+    descFr: 'Modules LED cinétiques motorisés avec déplacement en profondeur synchronisé créant des reliefs tridimensionnels en mouvement.',
+    descEn: 'Indoor kinetic LED with synchronized motion units on the Z-axis creating striking three-dimensional wave surfaces.',
+    img: '/uploads/products/spki/front.jpg',
+  },
+  'caisson-dynamique': {
+    name: 'Caisson dynamique',
+    descFr: 'Caisson lumineux architectural dynamique avec modules LED haute luminosité, idéal pour façades et enseignes haute visibilité.',
+    descEn: 'Dynamic architectural light box with high-brightness LED modules, engineered for striking facades and premium brand signage.',
+    img: 'https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site_web_products%2Fcaisson-dynamique%2Fphotos%2F1790978420554-P30-RGB-W-1.jpg?alt=media&token=21610b97-91e7-43a7-a009-692fe2a12003',
+  },
+  'pxt-fine': {
+    name: 'PXT FINE',
+    descFr: 'Cabinet aluminium usiné 600x337,5 mm, pitch ultra-fin, calibrage 16-bit et rafraîchissement 7680 Hz pour espaces d\'exception.',
+    descEn: 'Precision-machined 600x337.5 mm aluminum cabinet, ultra-fine pitch, 16-bit calibration and 7680 Hz refresh rate for premium indoor venues.',
+    img: 'https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site_web_products%2Fpxt-fine%2Fphotos%2F1791631887517-001.jpg?alt=media&token=4312c463-5859-4e7a-a418-14f6536744b8',
+  },
+  'pxt-seamless': {
+    name: 'PXT SEAMLESS',
+    descFr: 'Série LED COB indoor avec technologie d\'assemblage sans raccord, garantissant une surface visuelle continue et une protection renforcée.',
+    descEn: 'Indoor COB LED series engineered with seamless joint technology, providing uninterrupted viewing planes and superior surface protection.',
+    img: '/uploads/products/wp/module-1.jpg',
+  },
+  'pxt-wrap': {
+    name: 'PXT WRAP',
+    descFr: 'Modules LED flexibles indoor pour surfaces incurvées, cylindres et colonnes architecturales, offrant une courbure fluide sans compromis.',
+    descEn: 'Flexible indoor LED modules for curved architecture, columns and cylinders, delivering smooth continuous contours with zero distortion.',
+    img: 'https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site_web_products%2Fpxt-wrap%2Fphotos%2F1791629982153-front.jpg?alt=media&token=3dfcf7b3-bec8-4377-9367-d3ce05eb4d51',
+  },
+};
+
 
 const CATEGORY_FR: Record<string, string> = {
   GUIDE: 'GUIDE',
@@ -200,13 +321,68 @@ export function PixiaInsightDetailPage({ article }: InsightDetailPageProps) {
     setCurrentPageId(`article__${article.slug}`);
   }, [setCurrentPageId, article.slug]);
 
-  // Produit associé : priorité aux champs CMS, fallback sur le mapping statique
-  const relatedProduct = useMemo(() => {
-    if (currentArticle.relatedProductSlug && currentArticle.relatedProductName) {
-      return { slug: currentArticle.relatedProductSlug, name: currentArticle.relatedProductName };
+  // Chargement dynamique du produit depuis Firestore s'il existe (pour les produits créés via le backoffice)
+  const [liveProduct, setLiveProduct] = useState<ProductRecord | null>(null);
+
+  const activeProductSlug = currentArticle.relatedProductSlug || RELATED_PRODUCT[currentArticle.slug]?.slug;
+
+  useEffect(() => {
+    let mounted = true;
+    if (!activeProductSlug) {
+      setLiveProduct(null);
+      return;
     }
-    return RELATED_PRODUCT[currentArticle.slug] ?? null;
-  }, [currentArticle.slug, currentArticle.relatedProductSlug, currentArticle.relatedProductName]);
+    getProductBySlug(activeProductSlug)
+      .then((p) => {
+        if (mounted && p) {
+          setLiveProduct(p);
+        }
+      })
+      .catch((err) => {
+        console.warn('[InsightDetailPage] Info produit non trouvée en base pour:', activeProductSlug, err);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, [activeProductSlug]);
+
+  // Produit associé : priorité aux champs CMS, puis live Firestore, puis fallback sur le mapping statique
+  const relatedProduct = useMemo(() => {
+    const slug = activeProductSlug;
+    if (!slug) return null;
+    const summary = PRODUCT_SUMMARIES[slug];
+
+    // Nom : custom CMS > produit Firestore > nom statique > slug
+    const name =
+      currentArticle.relatedProductName ||
+      liveProduct?.name ||
+      RELATED_PRODUCT[currentArticle.slug]?.name ||
+      summary?.name ||
+      slug;
+
+    // Description : summary statique > hero subtitle Firestore > default
+    const desc =
+      (lang === 'FR' ? summary?.descFr : summary?.descEn) ||
+      liveProduct?.hero?.subtitle ||
+      (liveProduct?.series ? `${liveProduct.series} · Solution haute performance PixiaTech.` : null);
+
+    const defaultDesc = lang === 'FR'
+      ? 'Une solution LED de nouvelle génération, conçue pour offrir une qualité d\'image exceptionnelle et une fiabilité optimale, en intérieur comme en extérieur.'
+      : 'A next-generation LED solution engineered for exceptional image quality and optimal reliability, both indoors and outdoors.';
+
+    // Image : photo 0 Firestore > photo summary statique > fallback standard
+    const img =
+      liveProduct?.media?.photos?.[0]?.url ||
+      summary?.img ||
+      `/uploads/products/${slug}/front.jpg`;
+
+    return {
+      slug,
+      name,
+      desc: desc || defaultDesc,
+      img,
+    };
+  }, [activeProductSlug, currentArticle.relatedProductName, currentArticle.slug, liveProduct, lang]);
 
   const nextArticle = useMemo(() => {
     const all = getAllInsightArticles();
@@ -438,7 +614,7 @@ export function PixiaInsightDetailPage({ article }: InsightDetailPageProps) {
           }}
         >
           {/* ── LEFT SIDEBAR ──────────────────────────────────────── */}
-          <EditableWrapper sectionKey="article_sidebar" sectionLabel="Barre latérale (Sommaire & Produit)">
+          <EditableWrapper sectionKey="article_sidebar" sectionLabel="Barre latérale (Sommaire)">
             <aside
               className="toc"
               style={{
@@ -500,129 +676,6 @@ export function PixiaInsightDetailPage({ article }: InsightDetailPageProps) {
               </div>
             )}
 
-            {/* Related product box */}
-            {relatedProduct ? (
-              <div
-                data-element-key="sidebar_related_product_card"
-                style={{
-                  position: 'relative',
-                  border: '1px solid var(--line,#dad8d2)',
-                  padding: '20px 18px',
-                  background: '#fff',
-                }}
-              >
-                <div
-                  data-text-key="sidebar_product_label"
-                  style={{
-                    fontSize: 10,
-                    letterSpacing: '.22em',
-                    textTransform: 'uppercase',
-                    color: 'var(--muted,#8a8880)',
-                    fontWeight: 700,
-                    marginBottom: 10,
-                  }}
-                >
-                  {lang === 'FR' ? 'PRODUIT ASSOCIÉ' : 'RELATED SERIES'}
-                </div>
-                <div
-                  data-text-key="sidebar_product_name"
-                  style={{
-                    fontSize: 17,
-                    fontWeight: 800,
-                    color: 'var(--ink,#111110)',
-                    marginBottom: 10,
-                    letterSpacing: '-.01em',
-                  }}
-                >
-                  {relatedProduct.name}
-                </div>
-                <a
-                  data-element-key="sidebar_product_button"
-                  data-text-key="sidebar_product_button_text"
-                  href={`/web/product/${relatedProduct.slug}`}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    fontSize: 11,
-                    fontWeight: 800,
-                    letterSpacing: '.14em',
-                    textTransform: 'uppercase',
-                    color: 'var(--accent,#649600)',
-                    textDecoration: 'none',
-                    borderBottom: '1px solid currentColor',
-                    paddingBottom: 2,
-                  }}
-                >
-                  {lang === 'FR' ? 'VOIR LE PRODUIT →' : 'VIEW PRODUCT →'}
-                </a>
-
-                {/* Bouton d'édition rapide du produit pour les administrateurs */}
-                {isAdmin && (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setEditorInitialTab('metadata');
-                      setIsEditorOpen(true);
-                    }}
-                    data-cms-ui
-                    style={{
-                      position: 'absolute',
-                      top: 8,
-                      right: 8,
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 4,
-                      background: '#111110',
-                      color: '#C3F910',
-                      border: '1px solid #C3F910',
-                      borderRadius: 6,
-                      padding: '4px 8px',
-                      fontSize: 10,
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      zIndex: 10,
-                    }}
-                    title={lang === 'FR' ? 'Changer le produit associé (CMS)' : 'Change related product (CMS)'}
-                  >
-                    <Edit3 size={11} />
-                    <span>{lang === 'FR' ? 'Changer produit' : 'Change product'}</span>
-                  </button>
-                )}
-              </div>
-            ) : isAdmin ? (
-              <div
-                style={{
-                  border: '1px dashed var(--line,#dad8d2)',
-                  padding: '16px',
-                  background: '#fafaf9',
-                  textAlign: 'center',
-                }}
-              >
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEditorInitialTab('metadata');
-                    setIsEditorOpen(true);
-                  }}
-                  data-cms-ui
-                  style={{
-                    background: '#111110',
-                    color: '#C3F910',
-                    border: '1px solid #C3F910',
-                    borderRadius: 6,
-                    padding: '6px 12px',
-                    fontSize: 11,
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                  }}
-                >
-                  + Associer un produit PixiaTech
-                </button>
-              </div>
-            ) : null}
             </aside>
           </EditableWrapper>
 
@@ -653,8 +706,142 @@ export function PixiaInsightDetailPage({ article }: InsightDetailPageProps) {
               </p>
             ))}
 
+            {/* ── GRAND BLOC PRODUIT ASSOCIÉ (immédiatement sous le paragraphe introductif) ── */}
+            {relatedProduct && (
+              <div
+                className="article-related-product-card"
+                data-element-key="main_related_product_card"
+              >
+                <div className="article-related-product-content">
+                  <div
+                    className="article-related-product-badge"
+                    data-text-key="product_badge"
+                  >
+                    <svg
+                      width="13"
+                      height="13"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                      stroke="none"
+                      aria-hidden="true"
+                    >
+                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                    </svg>
+                    <span>{lang === 'FR' ? 'PRODUIT ASSOCIÉ' : 'RELATED PRODUCT'}</span>
+                  </div>
+
+                  <h3
+                    className="article-related-product-title"
+                    data-text-key="product_name"
+                  >
+                    {relatedProduct.name}
+                  </h3>
+
+                  <p
+                    className="article-related-product-desc pretty"
+                    data-text-key="product_desc"
+                  >
+                    {relatedProduct.desc}
+                  </p>
+
+                  <a
+                    className="article-related-product-btn"
+                    data-element-key="product_cta_button"
+                    href={`/web/product/${relatedProduct.slug}`}
+                  >
+                    <span>{lang === 'FR' ? 'VOIR LE PRODUIT' : 'VIEW PRODUCT'}</span>
+                    <span className="btn-arrow" aria-hidden="true">→</span>
+                  </a>
+                </div>
+
+                <div className="article-related-product-media">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={relatedProduct.img}
+                    alt={relatedProduct.name}
+                    loading="lazy"
+                    onError={(e) => {
+                      const target = e.currentTarget;
+                      if (!target.src.endsWith('/front.jpg')) {
+                        target.src = `/uploads/products/${relatedProduct.slug}/front.jpg`;
+                      }
+                    }}
+                  />
+                </div>
+
+                {/* Bouton d'édition rapide du produit pour les administrateurs CMS */}
+                {isAdmin && isEditing && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setEditorInitialTab('metadata');
+                      setIsEditorOpen(true);
+                    }}
+                    data-cms-ui
+                    style={{
+                      position: 'absolute',
+                      top: 12,
+                      right: 12,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      background: '#111110',
+                      color: '#C3F910',
+                      border: '1px solid #C3F910',
+                      borderRadius: 6,
+                      padding: '4px 8px',
+                      fontSize: 10,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      zIndex: 10,
+                    }}
+                    title={lang === 'FR' ? 'Changer le produit associé (CMS)' : 'Change related product (CMS)'}
+                  >
+                    <Edit3 size={11} />
+                    <span>{lang === 'FR' ? 'Changer produit' : 'Change product'}</span>
+                  </button>
+                )}
+              </div>
+            )}
+
+            {!relatedProduct && isAdmin && isEditing && (
+              <div
+                style={{
+                  border: '1px dashed var(--line,#dad8d2)',
+                  borderRadius: 12,
+                  padding: '20px',
+                  background: '#fafaf9',
+                  textAlign: 'center',
+                  margin: '24px 0 36px',
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditorInitialTab('metadata');
+                    setIsEditorOpen(true);
+                  }}
+                  data-cms-ui
+                  style={{
+                    background: '#111110',
+                    color: '#C3F910',
+                    border: '1px solid #C3F910',
+                    borderRadius: 6,
+                    padding: '8px 14px',
+                    fontSize: 11,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  + Associer un produit PixiaTech (CMS)
+                </button>
+              </div>
+            )}
+
             {/* Sections */}
-            {sections.map((section) => {
+            {sections.map((section, idx) => {
               const isFaq = isFaqSection(section);
 
               return (
@@ -671,8 +858,8 @@ export function PixiaInsightDetailPage({ article }: InsightDetailPageProps) {
                       letterSpacing: '-.015em',
                       color: 'var(--ink,#111110)',
                       margin: '0 0 20px',
-                      borderTop: '1px solid var(--line,#dad8d2)',
-                      paddingTop: 32,
+                      borderTop: idx === 0 && relatedProduct ? 'none' : '1px solid var(--line,#dad8d2)',
+                      paddingTop: idx === 0 && relatedProduct ? 0 : 32,
                     }}
                   >
                     {section.title}
@@ -948,7 +1135,7 @@ export function PixiaInsightDetailPage({ article }: InsightDetailPageProps) {
       <PixiaFooter lang={lang} />
 
       {/* Bouton d'édition d'article complet pour les administrateurs */}
-      {isAdmin && (
+      {isAdmin && isEditing && (
         <button
           type="button"
           onClick={() => setIsEditorOpen(true)}
@@ -982,7 +1169,7 @@ export function PixiaInsightDetailPage({ article }: InsightDetailPageProps) {
 
       <ArticleEditorModal
         article={currentArticle}
-        isOpen={isEditorOpen}
+        isOpen={isEditorOpen && isAdmin && isEditing}
         initialTab={editorInitialTab}
         onClose={() => setIsEditorOpen(false)}
         onSaved={(updated) => {

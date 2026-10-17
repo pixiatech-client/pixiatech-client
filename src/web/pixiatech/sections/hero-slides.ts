@@ -8,8 +8,9 @@ export interface HeroSlide {
   imageKey: string;
 }
 
-/** Visuel de repli du Hero (asset réel livré avec le site, jamais inventé). */
-const FALLBACK_HERO_IMAGE = '/uploads/site/hero-1.jpg';
+/** Visuel de repli du Hero (asset réel de la page d'accueil PixiaTech actuelle). */
+const FALLBACK_HERO_IMAGE =
+  'https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FInstallation_LED_immersive_dans_un_espace_commercial_haut_de_gamme_0mzdc.webp?alt=media';
 
 /**
  * Référence d'image exploitable ? On rejette les valeurs vides et les chaînes

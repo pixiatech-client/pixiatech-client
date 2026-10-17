@@ -87,44 +87,48 @@ export const AdminTopBar: React.FC<AdminTopBarProps> = ({ onOpenBackendModal, cu
         </div>
 
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => saveCurrentPage()}
-            disabled={saveStatus === 'saving'}
-            className="flex items-center gap-1.5 bg-[#171715] hover:bg-[#20201D] text-[#EDEBE6] hover:text-[#C3F910] border border-[#2B2B28] hover:border-[#C3F910]/50 px-3 py-1.5 rounded transition-all cursor-pointer"
-          >
-            {saveStatus === 'saving' ? (
-              <>
-                <span className="w-3 h-3 border-2 border-[#C3F910] border-t-transparent rounded-full animate-spin" />
-                <span>Enregistrement...</span>
-              </>
-            ) : saveStatus === 'saved' ? (
-              <>
-                <CheckCircle2 className="w-3.5 h-3.5 text-[#C3F910]" />
-                <span className="text-[#C3F910] font-bold">✓ Enregistré</span>
-              </>
-            ) : saveStatus === 'error' ? (
-              <>
-                <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
-                <span className="text-red-400 font-bold">⚠ Échec de l&apos;enregistrement</span>
-              </>
-            ) : (
-              <>
-                <Save className="w-3.5 h-3.5" />
-                <span>Enregistrer</span>
-              </>
-            )}
-          </button>
+          {isEditing && (
+            <>
+              <button
+                type="button"
+                onClick={() => saveCurrentPage()}
+                disabled={saveStatus === 'saving'}
+                className="flex items-center gap-1.5 bg-[#171715] hover:bg-[#20201D] text-[#EDEBE6] hover:text-[#C3F910] border border-[#2B2B28] hover:border-[#C3F910]/50 px-3 py-1.5 rounded transition-all cursor-pointer"
+              >
+                {saveStatus === 'saving' ? (
+                  <>
+                    <span className="w-3 h-3 border-2 border-[#C3F910] border-t-transparent rounded-full animate-spin" />
+                    <span>Enregistrement...</span>
+                  </>
+                ) : saveStatus === 'saved' ? (
+                  <>
+                    <CheckCircle2 className="w-3.5 h-3.5 text-[#C3F910]" />
+                    <span className="text-[#C3F910] font-bold">✓ Enregistré</span>
+                  </>
+                ) : saveStatus === 'error' ? (
+                  <>
+                    <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
+                    <span className="text-red-400 font-bold">⚠ Échec de l&apos;enregistrement</span>
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-3.5 h-3.5" />
+                    <span>Enregistrer</span>
+                  </>
+                )}
+              </button>
 
-          <button
-            type="button"
-            onClick={() => setIsRestoreOpen(true)}
-            className="flex items-center gap-1.5 bg-[#171715] hover:bg-[#20201D] text-[#9A9A94] hover:text-white border border-[#2B2B28] px-3 py-1.5 rounded transition-all cursor-pointer"
-            title="Relire la derniere version enregistree sur le serveur"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span className="hidden md:inline">Restaurer la page</span>
-          </button>
+              <button
+                type="button"
+                onClick={() => setIsRestoreOpen(true)}
+                className="flex items-center gap-1.5 bg-[#171715] hover:bg-[#20201D] text-[#9A9A94] hover:text-white border border-[#2B2B28] px-3 py-1.5 rounded transition-all cursor-pointer"
+                title="Relire la derniere version enregistree sur le serveur"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span className="hidden md:inline">Restaurer la page</span>
+              </button>
+            </>
+          )}
 
           {/* La console developpeur (JSON / API / export / reglages serveur) n'a
               pas sa place dans l'interface CMS quotidienne : elle reste

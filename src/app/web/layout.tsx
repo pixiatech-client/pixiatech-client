@@ -1,6 +1,7 @@
 import '@/web/web.css';
 import '@/web/cms/cms-text-scale.css';
 import { WebCmsShell } from './web-cms-shell';
+import { getCmsPages } from '@/lib/site-web/pages-store';
 
 export const metadata = {
   title: 'PixiaTech PXT Fine - Indoor LED Display',
@@ -15,7 +16,14 @@ export const metadata = {
   },
 };
 
-export default function WebLayout({ children }: { children: React.ReactNode }) {
+export default async function WebLayout({ children }: { children: React.ReactNode }) {
+  let initialPages = {};
+  try {
+    initialPages = await getCmsPages();
+  } catch (err) {
+    console.warn('[WebLayout] getCmsPages fallback:', err);
+  }
+
   return (
     <>
       <link rel="preconnect" href="https://api.fontshare.com" />
@@ -37,7 +45,7 @@ export default function WebLayout({ children }: { children: React.ReactNode }) {
             'calc(var(--admin-bar-h, 0px) + var(--preview-bar-h, 0px) + var(--cms-section-bar-h, 0px))',
         }}
       >
-        <WebCmsShell>{children}</WebCmsShell>
+        <WebCmsShell initialPages={initialPages}>{children}</WebCmsShell>
       </div>
     </>
   );

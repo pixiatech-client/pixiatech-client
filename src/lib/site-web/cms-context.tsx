@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { DEFAULT_CMS_SETTINGS, type CmsBackendSettings, type CmsFieldTranslation, type CmsPageData } from './cms-types';
+import defaultPagesJson from '../../../data/pixel-tech-web-pages.json';
 import {
   CMS_DEFAULT_LANG,
   CMS_LANGUAGES,
@@ -14,6 +15,9 @@ import {
 
 const STORAGE_KEY = 'pixiatech_site_web_pages_v3';
 const SETTINGS_STORAGE_KEY = 'pixiatech_site_web_settings_v3';
+
+const DEFAULT_PAGES = ((defaultPagesJson as unknown as { pages?: Record<string, CmsPageData> })?.pages ||
+  {}) as Record<string, CmsPageData>;
 
 // Fallback localStorage de données UNIQUEMENT (jamais utilisé comme preuve d'authentification).
 function loadLocalPages(): Record<string, CmsPageData> | null {
@@ -35,6 +39,15 @@ function loadLocalSettings(): Partial<CmsBackendSettings> | null {
   } catch {
     return null;
   }
+}
+
+function pagesWithLocal(initialPages?: Record<string, CmsPageData>): Record<string, CmsPageData> {
+  const local = typeof window !== 'undefined' ? loadLocalPages() : null;
+  return {
+    ...DEFAULT_PAGES,
+    ...(local || {}),
+    ...(initialPages || {}),
+  };
 }
 
 interface CmsContextType {
@@ -79,19 +92,22 @@ function settingsWithLocal(): CmsBackendSettings {
   return { ...DEFAULT_CMS_SETTINGS, ...(loadLocalSettings() || {}) };
 }
 
-export const CmsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const CmsProvider: React.FC<{
+  children: React.ReactNode;
+  initialPages?: Record<string, CmsPageData>;
+}> = ({ children, initialPages }) => {
   // isAdmin = décision serveur UNIQUEMENT (GET /api/site-web/status, protégé par requireAdmin).
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [adminChecked, setAdminChecked] = useState<boolean>(false);
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [currentPageId, setCurrentPageId] = useState<string>('home');
-  const [pages, setPages] = useState<Record<string, CmsPageData>>({});
+  const [pages, setPages] = useState<Record<string, CmsPageData>>(() => pagesWithLocal(initialPages));
   // Miroir synchrone de `pages`. Indispensable : une édition inline appelle
   // `updateSectionField()` puis `saveCurrentPage()` dans le même tick. Le
   // `setState` est asynchrone, donc `saveCurrentPage()` lirait sinon un état
   // périmé et n'enverrait pas la valeur réellement modifiée au serveur.
-  const pagesRef = useRef<Record<string, CmsPageData>>({});
+  const pagesRef = useRef<Record<string, CmsPageData>>(pages);
   pagesRef.current = pages;
 
   /**
@@ -152,9 +168,9 @@ export const CmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     let mounted = true;
     async function loadData() {
-      // Premier paint depuis localStorage (peut être périmé, sera corrigé par le réseau).
+      // Cache local s'il existe
       const local = loadLocalPages();
-      if (local) commitPages(() => local);
+      if (local) commitPages((prev) => ({ ...DEFAULT_PAGES, ...prev, ...local }));
       if (mounted) {
         try {
           const res = await fetch('/api/site-web/pages', { cache: 'no-store' });
