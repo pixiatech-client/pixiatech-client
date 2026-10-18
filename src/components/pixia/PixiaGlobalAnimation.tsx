@@ -13,16 +13,16 @@
  *      déplacements ;
  *   2. sortie du Hero → la progression du scroll pilote la transformation : le
  *      robot quitte sa position **réelle** (celle où l'utilisateur l'a laissé),
- *      rejoint le centre **réel** de la tête (mesuré sur `/pixia.png`), se
- *      réduit progressivement et s'efface exactement à l'arrivée — le corps
- *      disparaît au moment même où il atteint la tête ;
- *   3. tête dockée → seule la tête du PNG transparent est visible, sans cercle
+ *      rejoint le centre **réel** de l'icône (mesuré sur le canal alpha de
+ *      `/pixiaicon.webm`), se réduit progressivement et s'efface exactement à
+ *      l'arrivée — le corps disparaît au moment même où il atteint l'icône ;
+ *   3. icône dockée → seule l'icône WebM transparente est visible, sans cercle
  *      ni fond, juste au-dessus du bouton « retour en haut » existant (dont la
  *      position réelle est lue à l'écran) ;
  *   4. retour vers le haut → la courbe est parcourue à l'envers : le robot
- *      ressort de sa tête, reprend sa taille, retrouve immédiatement sa
+ *      ressort de son icône, reprend sa taille, retrouve immédiatement sa
  *      liberté de déplacement et la bulle de bienvenue réapparaît ;
- *   5. clic (robot du Hero **ou** tête flottante) → ouverture du chatbot
+ *   5. clic (robot du Hero **ou** icône dockée) → ouverture du chatbot
  *      existant (`FloatingChatButton` → `WizardBotFlow`) via l'événement
  *      `pixia:open-chatbot`. Aucun second chatbot, aucune conversation
  *      parallèle, aucune croix supplémentaire.
@@ -36,8 +36,8 @@
  * écrits directement sur les nœuds), `transform`/`opacity` uniquement, boucle
  * `requestAnimationFrame` bornée et nettoyée, `prefers-reduced-motion` honoré
  * sans retirer le glisser-déposer, aucun accès au DOM avant le montage client
- * (donc pas d'erreur d'hydratation), canal alpha de la vidéo ET du PNG
- * préservés (affichés tels quels, sans filtre ni canvas).
+ * (donc pas d'erreur d'hydratation), canal alpha de la vidéo, de l'icône et de
+ * l'affiche préservés (affichés tels quels, sans filtre ni canvas).
  */
 
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
@@ -60,8 +60,10 @@ const VIDEO_SRC = '/bot-avatars/pixia_robot.webm';
 const VIDEO_POSTER = '/bot-avatars/010.webp';
 /** Ratio largeur/hauteur réel du WebM Pixia. */
 const VIDEO_ASPECT = 586 / 720;
-/** Tête de Pixia seule (PNG 1024 × 1024 à canal alpha réel). */
-const HEAD_ICON_SRC = '/pixia.png';
+/** Icône dockée : WebM VP9 à canal alpha réel (903 × 720). */
+const ICON_VIDEO_SRC = '/pixiaicon.webm';
+/** Affiche de repli (PNG alpha extrait de la vidéo) si le WebM ne lit pas. */
+const ICON_POSTER_SRC = '/pixiaicon-poster.png';
 
 /* -------------------------------------------------------------------------- */
 /* Métriques mesurées sur le canal alpha RÉEL des ressources                   */
@@ -81,10 +83,22 @@ const VIDEO_HEAD_CX = 0.403;
 const VIDEO_HEAD_CY = 0.362;
 const VIDEO_HEAD_H = 0.319;
 
-/** Tête dans `/pixia.png` : centre et hauteur (fractions du PNG). */
-const ICON_HEAD_CX = 0.5186;
-const ICON_HEAD_CY = 0.5596;
-const ICON_HEAD_H = 0.536;
+/** Tête dans l'icône dockée : centre et hauteur (fractions du conteneur).
+ *
+ * L'icône est un WebM 903 × 720 (paysage) affiché avec `objectFit: contain`
+ * dans un conteneur carré : largeur pleine, hauteur 720/903 = 0,7973 du
+ * conteneur, marges verticales de 0,1013 en haut et en bas.
+ *
+ * Le contenu opaque, mesuré sur le canal alpha RÉEL de `/pixiaicon.webm`
+ * (décode RGBA pixel par pixel, bbox x 0,150 → 0,842 / y 0,067 → 0,823,
+ * stable sur toute la boucle de 10 s), se reprojette donc ainsi :
+ *   CX = 0,496                         (centre x du contenu, sans décalage)
+ *   CY = 0,1013 + 0,4450 × 0,7973 = 0,456
+ *   H  = 0,7560 × 0,7973 = 0,603
+ */
+const ICON_HEAD_CX = 0.496;
+const ICON_HEAD_CY = 0.456;
+const ICON_HEAD_H = 0.603;
 
 /* -------------------------------------------------------------------------- */
 /* Réglages                                                                    */
@@ -235,7 +249,7 @@ export function PixiaGlobalAnimation({ active = false }: PixiaGlobalAnimationPro
   const dragRef = useRef<HTMLDivElement>(null);
   const boxRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const iconRef = useRef<HTMLImageElement>(null);
+  const iconRef = useRef<HTMLVideoElement>(null);
   const bubbleRef = useRef<HTMLDivElement>(null);
 
   /* --- Déplacement libre (Framer Motion) --- */
@@ -336,7 +350,7 @@ export function PixiaGlobalAnimation({ active = false }: PixiaGlobalAnimationPro
     const curX = dragRect.left + dragRect.width / 2;
     const curY = dragRect.top + dragRect.height / 2;
 
-    /* --- Cible RÉELLE : centre de la tête du PNG, au-dessus du bouton --- */
+    /* --- Cible RÉELLE : centre du contenu de l'icône, au-dessus du bouton --- */
     const anchor = readBackToTop();
     const headH = ICON_HEAD_H * D;
     // Jamais coupée par un bord (zoom, petite fenêtre, barre de défilement) :
@@ -517,7 +531,8 @@ export function PixiaGlobalAnimation({ active = false }: PixiaGlobalAnimationPro
   }, [frame]);
 
   /**
-   * Relance la vidéo du robot (animation d'origine, boucle infinie).
+   * Relance la lecture des deux vidéos (animation d'origine, boucle infinie) :
+   * le robot du Hero et l'icône dockée.
    *
    * L'autoplay peut être refusé par le navigateur — typiquement quand la page
    * est ouverte dans un onglet non visible : la vidéo reste alors figée sur son
@@ -525,18 +540,20 @@ export function PixiaGlobalAnimation({ active = false }: PixiaGlobalAnimationPro
    * fin de chargement, premier geste), avec un garde-fou anti-boucle.
    */
   const ensureVideoPlaying = useCallback(() => {
-    const v = videoRef.current;
-    if (!v || !v.paused) return;
     const now = performance.now();
     if (now - videoPlayRetryRef.current < 500) return;
     videoPlayRetryRef.current = now;
-    void v.play().catch(() => {});
+    for (const v of [videoRef.current, iconRef.current]) {
+      if (v && v.paused) void v.play().catch(() => {});
+    }
   }, []);
 
-  /* --- Lecture de la vidéo : autoplay, onglet réaffiché, média prêt --- */
+  /* --- Lecture des vidéos : autoplay, onglet réaffiché, média prêt --- */
   useEffect(() => {
     if (!active) return;
-    const v = videoRef.current;
+    const videos = [videoRef.current, iconRef.current].filter(
+      (v): v is HTMLVideoElement => !!v
+    );
     const onWake = () => {
       if (document.visibilityState === 'visible') ensureVideoPlaying();
       schedule();
@@ -552,9 +569,11 @@ export function PixiaGlobalAnimation({ active = false }: PixiaGlobalAnimationPro
     window.addEventListener('pageshow', onWake);
     window.addEventListener('pointerdown', onReady, { passive: true });
     window.addEventListener('keydown', onReady);
-    v?.addEventListener('loadeddata', onReady);
-    v?.addEventListener('canplay', onReady);
-    v?.addEventListener('pause', onPause);
+    for (const v of videos) {
+      v.addEventListener('loadeddata', onReady);
+      v.addEventListener('canplay', onReady);
+      v.addEventListener('pause', onPause);
+    }
     ensureVideoPlaying();
     const id = window.setTimeout(ensureVideoPlaying, 300);
     return () => {
@@ -563,9 +582,11 @@ export function PixiaGlobalAnimation({ active = false }: PixiaGlobalAnimationPro
       window.removeEventListener('pageshow', onWake);
       window.removeEventListener('pointerdown', onReady);
       window.removeEventListener('keydown', onReady);
-      v?.removeEventListener('loadeddata', onReady);
-      v?.removeEventListener('canplay', onReady);
-      v?.removeEventListener('pause', onPause);
+      for (const v of videos) {
+        v.removeEventListener('loadeddata', onReady);
+        v.removeEventListener('canplay', onReady);
+        v.removeEventListener('pause', onPause);
+      }
       window.clearTimeout(id);
     };
   }, [active, pathname, ensureVideoPlaying, schedule]);
@@ -870,14 +891,20 @@ export function PixiaGlobalAnimation({ active = false }: PixiaGlobalAnimationPro
         </div>
       </motion.div>
 
-      {/* Tête de Pixia seule : PNG transparent, sans cercle ni fond, juste
-          au-dessus du bouton « retour en haut ». */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
+      {/* Icône dockée de Pixia : WebM VP9 à canal alpha réel, sans cercle ni
+          fond, juste au-dessus du bouton « retour en haut ». L'affiche PNG
+          (même géométrie, alpha réel) couvre l'instant de chargement et les
+          navigateurs qui ne lisent pas le WebM/VP9. */}
+      <video
         ref={iconRef}
         data-pixia-icon
-        src={HEAD_ICON_SRC}
-        alt=""
+        src={ICON_VIDEO_SRC}
+        poster={ICON_POSTER_SRC}
+        autoPlay
+        muted
+        playsInline
+        loop
+        preload="auto"
         aria-label={iconLabel}
         role={docked ? 'button' : undefined}
         tabIndex={docked ? 0 : -1}
@@ -898,6 +925,12 @@ export function PixiaGlobalAnimation({ active = false }: PixiaGlobalAnimationPro
           pointerEvents: 'none',
           willChange: 'opacity, transform',
           userSelect: 'none',
+          background: 'transparent',
+        }}
+        onLoadedMetadata={(e) => {
+          // Autoplay parfois refusé (onglet non visible) : on retente dès que
+          // le média est prêt. Sans lecture, l'affiche reste en place.
+          void (e.target as HTMLVideoElement).play().catch(() => {});
         }}
       />
 
