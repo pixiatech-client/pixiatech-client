@@ -480,7 +480,10 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
     setFormAddress('');
 
     setBotStatus('smiling');
-    pushBotMessage(t('bot.welcome'), undefined, 400, undefined, undefined, 'bot.welcome');
+    // Message d'accueil personnalisé (réglé depuis l'admin, stocké dans
+    // settings/main.botWelcomeMessage) ; sinon texte i18n par défaut.
+    const welcomeOverride = typeof settings.botWelcomeMessage === 'string' ? settings.botWelcomeMessage.trim() : '';
+    pushBotMessage(welcomeOverride || t('bot.welcome'), undefined, 400, undefined, undefined, welcomeOverride ? undefined : 'bot.welcome');
 
     setTimeout(() => {
       const types: MessageOption[] = [];
@@ -490,7 +493,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
         types.push({ label: t('bot.sale'), value: 'vente', imageUrl: settingsObj.projectTypes?.vente?.imageUrl, translationKey: 'bot.sale' });
       pushBotMessage(t('bot.questionType'), types, 600, undefined, undefined, 'bot.questionType');
     }, 800);
-  }, [wizardSettings, pushBotMessage]);
+  }, [wizardSettings, pushBotMessage, settings]);
 
   useEffect(() => {
     if (!wizardSettings || initialized.current) return;

@@ -3849,6 +3849,7 @@ const settingsSchema = z.object({
   zoomMaxDistance: z.coerce.number().min(1, 'Must be at least 1').optional(),
   zoomMinDistance: z.coerce.number().min(0.1, 'Must be at least 0.1').optional(),
   isWizardBotEnabled: z.boolean().optional(),
+  botWelcomeMessage: z.string().max(500).optional(),
   isGuidedConfigEnabled: z.boolean().optional(),
   isManualConfigEnabled: z.boolean().optional(),
   isBoutiqueEnabled: z.boolean().optional(),

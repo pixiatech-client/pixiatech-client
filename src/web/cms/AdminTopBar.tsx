@@ -1,9 +1,8 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useCms } from '@/lib/site-web/cms-context';
-import { Edit3, Eye, Save, CheckCircle2, AlertTriangle, RotateCcw, LogOut, Layers } from 'lucide-react';
-import { RestorePageDialog } from './RestorePageDialog';
+import { Edit3, Eye, Save, CheckCircle2, AlertTriangle, LogOut, Layers } from 'lucide-react';
 
 interface AdminTopBarProps {
   /** Ouvre la console développeur. Volontairement hors de la barre visible. */
@@ -13,7 +12,6 @@ interface AdminTopBarProps {
 
 export const AdminTopBar: React.FC<AdminTopBarProps> = ({ onOpenBackendModal, currentPageTitle }) => {
   const { isAdmin, isEditing, setIsEditing, saveCurrentPage, saveStatus, settings } = useCms();
-  const [isRestoreOpen, setIsRestoreOpen] = useState(false);
 
   // Mesure la hauteur réelle de la barre et l'expose à l'ensemble de la page
   // via --admin-bar-h posée sur l'ancêtre commun (#pixia-web). Aucun 42px
@@ -117,16 +115,6 @@ export const AdminTopBar: React.FC<AdminTopBarProps> = ({ onOpenBackendModal, cu
                   </>
                 )}
               </button>
-
-              <button
-                type="button"
-                onClick={() => setIsRestoreOpen(true)}
-                className="flex items-center gap-1.5 bg-[#171715] hover:bg-[#20201D] text-[#9A9A94] hover:text-white border border-[#2B2B28] px-3 py-1.5 rounded transition-all cursor-pointer"
-                title="Relire la derniere version enregistree sur le serveur"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span className="hidden md:inline">Restaurer la page</span>
-              </button>
             </>
           )}
 
@@ -152,7 +140,6 @@ export const AdminTopBar: React.FC<AdminTopBarProps> = ({ onOpenBackendModal, cu
         </div>
       </div>
     </aside>
-    <RestorePageDialog open={isRestoreOpen} onClose={() => setIsRestoreOpen(false)} />
     </>
   );
 };

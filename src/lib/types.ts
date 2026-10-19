@@ -191,6 +191,8 @@ export type Settings = {
   isEmailVerificationEnabled?: boolean;
   isPriceHidden?: boolean;
   isWizardBotEnabled?: boolean;
+  /** Message d'accueil personnalisé du robot Pixia (vide/absent = texte i18n par défaut). */
+  botWelcomeMessage?: string;
   isGuidedConfigEnabled?: boolean;
   isManualConfigEnabled?: boolean;
   isBoutiqueEnabled?: boolean;

@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import type { Settings as AppSettings, TranslatedString, Theme } from '@/lib/types';
 import { updateSettings } from '../actions';
 import { Switch } from '@/components/ui/switch';
-import { AlertCircle, MailCheck, EyeOff, Sun, Moon, Bot, Zap, Eye, Server, Play, AlertTriangle, ShieldCheck, LogOut, ShoppingBag } from 'lucide-react';
+import { AlertCircle, MailCheck, EyeOff, Sun, Moon, Bot, Pencil, Zap, Eye, Server, Play, AlertTriangle, ShieldCheck, LogOut, ShoppingBag } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -19,6 +19,7 @@ import { useAdminT } from '@/hooks/useAdminT';
 import { InputWithUpload } from './_components/input-with-upload';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 
 const translatedStringSchema = z.object({
@@ -67,6 +68,7 @@ const settingsSchema = z.object({
   isPriceHidden: z.boolean().optional(),
   isSingleSessionEnabled: z.boolean().optional(),
   isWizardBotEnabled: z.boolean().optional(),
+  botWelcomeMessage: z.string().max(500).optional(),
   isGuidedConfigEnabled: z.boolean().optional(),
   isBoutiqueEnabled: z.boolean().optional(),
 
@@ -125,6 +127,7 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
       isPriceHidden: initialSettings.isPriceHidden ?? false,
       isSingleSessionEnabled: initialSettings.isSingleSessionEnabled ?? false,
       isWizardBotEnabled: initialSettings.isWizardBotEnabled ?? true,
+      botWelcomeMessage: initialSettings.botWelcomeMessage ?? '',
       isGuidedConfigEnabled: initialSettings.isGuidedConfigEnabled ?? true,
       isBoutiqueEnabled: initialSettings.isBoutiqueEnabled ?? true,
 
@@ -160,7 +163,7 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
     const sectionKey = (Object.entries(sectionLabels) as [string, string][]).find(([, label]) => label === sectionName)?.[0] || sectionName;
 
     const sectionFields: Record<string, string[]> = {
-      general: ['defaultWidth', 'defaultHeight', 'maxWidth', 'maxHeight', 'maxRentalWidth', 'maxRentalHeight', 'maxProductsPerQuote', 'isEmailVerificationEnabled', 'isPriceHidden', 'isSingleSessionEnabled', 'isWizardBotEnabled', 'isGuidedConfigEnabled', 'isBoutiqueEnabled', 'estimationFlow'],
+      general: ['defaultWidth', 'defaultHeight', 'maxWidth', 'maxHeight', 'maxRentalWidth', 'maxRentalHeight', 'maxProductsPerQuote', 'isEmailVerificationEnabled', 'isPriceHidden', 'isSingleSessionEnabled', 'isWizardBotEnabled', 'botWelcomeMessage', 'isGuidedConfigEnabled', 'isBoutiqueEnabled', 'estimationFlow'],
       emergency: ['emergencyStopEnabled', 'emergencyReturnUrl', 'emergencyStopMessage'],
       images: ['previewScreenImageUrl', 'previewScreenVideoUrl', 'previewScreenFallbackImageUrl', 'previewScreenHomeFallbackImageUrl'],
       content: ['congratulationsTitle', 'congratulationsMessage', 'deliveryTitle', 'deliveryMessage', 'installationTitle', 'installationMessage', 'disclaimerMessage', 'quoteFormNotesPlaceholder', 'isDeliveryStepEnabled', 'isInstallationStepEnabled'],
@@ -218,6 +221,33 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
     const payload = { [fieldName]: value };
     const result = await updateSettings(payload);
     if (!result.success) {
+      toast({
+        variant: 'destructive',
+        title: t('Error'),
+        description: t('An error occurred while saving.'),
+      });
+    }
+  };
+
+  // Message d'accueil du robot Pixia : modal d'édition, sauvegarde via la
+  // même server action updateSettings (champ botWelcomeMessage de settings/main).
+  const [isWelcomeOpen, setIsWelcomeOpen] = useState(false);
+  const [welcomeText, setWelcomeText] = useState('');
+  const [welcomeSaving, setWelcomeSaving] = useState(false);
+
+  const saveWelcomeMessage = async () => {
+    setWelcomeSaving(true);
+    const result = await updateSettings({ botWelcomeMessage: welcomeText });
+    setWelcomeSaving(false);
+    if (result.success) {
+      form.setValue('botWelcomeMessage', welcomeText);
+      toast({
+        title: t('Settings saved'),
+        description: t('The robot welcome message has been updated.'),
+        variant: 'success',
+      });
+      setIsWelcomeOpen(false);
+    } else {
       toast({
         variant: 'destructive',
         title: t('Error'),
@@ -358,29 +388,73 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
                         <p className="text-sm text-slate-500">{t('Allows using the conversational chatbot to guide customers.')}</p>
                       </div>
                     </div>
-                    <Controller
-                      control={form.control}
-                      name="isWizardBotEnabled"
-                      render={({ field }) => (
-                        <Switch
-                          id="isWizardBotEnabled"
-                          checked={field.value}
-                          onCheckedChange={(checked) => {
-                            if (!checked && !hasOtherAccessMode('isWizardBotEnabled')) {
-                              toast({
-                                title: t("Action unavailable"),
-                                description: t("You must leave at least one access option enabled."),
-                                variant: "destructive",
-                              });
-                              return;
-                            }
-                            field.onChange(checked);
-                            autoSaveField('isWizardBotEnabled', checked);
-                          }}
-                        />
-                      )}
-                    />
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-amber-700 hover:text-amber-900 hover:bg-amber-100"
+                        title={t('Edit the welcome message of the Pixia robot')}
+                        aria-label={t('Edit the welcome message of the Pixia robot')}
+                        onClick={() => {
+                          setWelcomeText(form.getValues('botWelcomeMessage') ?? '');
+                          setIsWelcomeOpen(true);
+                        }}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Controller
+                        control={form.control}
+                        name="isWizardBotEnabled"
+                        render={({ field }) => (
+                          <Switch
+                            id="isWizardBotEnabled"
+                            checked={field.value}
+                            onCheckedChange={(checked) => {
+                              if (!checked && !hasOtherAccessMode('isWizardBotEnabled')) {
+                                toast({
+                                  title: t("Action unavailable"),
+                                  description: t("You must leave at least one access option enabled."),
+                                  variant: "destructive",
+                                });
+                                return;
+                              }
+                              field.onChange(checked);
+                              autoSaveField('isWizardBotEnabled', checked);
+                            }}
+                          />
+                        )}
+                      />
+                    </div>
                   </div>
+
+                  {/* Édition du message d'accueil du robot Pixia */}
+                  <Dialog open={isWelcomeOpen} onOpenChange={setIsWelcomeOpen}>
+                    <DialogContent className="sm:max-w-lg">
+                      <DialogHeader>
+                        <DialogTitle>{t('Edit the welcome message')}</DialogTitle>
+                        <DialogDescription>
+                          {t('This custom message replaces the default welcome message of the Pixia robot on the site. Leave empty to restore the default message.')}
+                        </DialogDescription>
+                      </DialogHeader>
+                      <Textarea
+                        value={welcomeText}
+                        onChange={(e) => setWelcomeText(e.target.value)}
+                        maxLength={500}
+                        rows={4}
+                        className="resize-none"
+                        placeholder={t('Bonjour ! 👋 Je suis votre assistant pour votre projet d\'écran LED.')}
+                      />
+                      <DialogFooter>
+                        <Button type="button" variant="outline" onClick={() => setIsWelcomeOpen(false)} disabled={welcomeSaving}>
+                          {t('Cancel')}
+                        </Button>
+                        <Button type="button" onClick={saveWelcomeMessage} disabled={welcomeSaving}>
+                          {welcomeSaving ? t('Saving...') : t('Save')}
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
 
                   {/* Option 2: Guided Configuration */}
                   <div className="flex items-center justify-between rounded-lg border border-amber-100 bg-white p-4 shadow-sm">
