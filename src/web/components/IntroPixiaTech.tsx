@@ -8,7 +8,7 @@ import { useEffect, useRef, useState } from 'react';
  * Reproduction fidèle du principe observé sur xeron.co (analyse du code source
  * public) : des particules carrées colorées, nées aléatoirement dans un grand
  * rectangle centré, convergent en ligne droite (easing cubic in-out) vers les
- * formes réelles des lettres « Pixiatech » rendues avec la police GRATIS.ttf,
+ * formes réelles des lettres « PIXIATECH » rendues avec la police GRATIS.ttf,
  * claquent sur les couleurs finales, puis se fondent dans le texte net avant
  * un fondu de l'overlay qui révèle le site.
  *
@@ -19,7 +19,14 @@ import { useEffect, useRef, useState } from 'react';
 
 const STORAGE_KEY = 'pixiatech-intro';
 const FONT_FAMILY = 'PixiaTechLogo';
-const INTRO_TEXT = 'Pixiatech';
+/**
+ * Texte affiché en majuscules. Dans GRATIS.ttf, seules les capitales sont des
+ * lettres pleines et normales ; les bas-de-casse portent le motif décoratif de
+ * perforation (pellicule cinéma). Aucune variante OpenType ni glyphe de repli
+ * n'existe (pas de table GSUB), donc les capitales sont le seul moyen d'obtenir
+ * le tracé « flèche verte ». Le mot reste bien « Pixiatech ».
+ */
+const INTRO_TEXT = 'PIXIATECH';
 /** Palette flash identique à la référence Xeron. */
 const PARTICLE_COLORS = ['#ff3b30', '#34d97b', '#3b7bff'];
 
