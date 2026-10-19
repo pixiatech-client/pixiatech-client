@@ -2,6 +2,7 @@ import '@/web/web.css';
 import '@/web/cms/cms-text-scale.css';
 import { WebCmsShell } from './web-cms-shell';
 import { getCmsPages } from '@/lib/site-web/pages-store';
+import { IntroPixiaTech } from '@/web/components/IntroPixiaTech';
 
 export const metadata = {
   title: 'PixiaTech PXT Fine - Indoor LED Display',
@@ -47,6 +48,8 @@ export default async function WebLayout({ children }: { children: React.ReactNod
       >
         <WebCmsShell initialPages={initialPages}>{children}</WebCmsShell>
       </div>
+      {/* Intro « pixels → texte » : première visite uniquement (localStorage). */}
+      <IntroPixiaTech />
     </>
   );
 }

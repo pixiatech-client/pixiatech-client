@@ -104,8 +104,16 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/' + request.nextUrl.search, baseUrl));
     }
     if (pathname.startsWith('/web/')) {
-      const cleanPath = pathname.replace(/^\/web/, '');
-      return NextResponse.redirect(new URL(cleanPath + request.nextUrl.search, baseUrl));
+      // Les fichiers statiques de public/web/ (ex. /web/fonts/GRATIS.ttf) portent
+      // /web dans leur chemin RÉEL : si on retirait le préfixe, Next ne pourrait
+      // plus les servir (la requête retomberait sur une route HTML). Seules les
+      // routes HTML sont normalisées vers l'URL propre sans /web.
+      const lastSegment = pathname.split('/').pop() || '';
+      const isStaticAsset = lastSegment.includes('.');
+      if (!isStaticAsset) {
+        const cleanPath = pathname.replace(/^\/web/, '');
+        return NextResponse.redirect(new URL(cleanPath + request.nextUrl.search, baseUrl));
+      }
     }
   }
 

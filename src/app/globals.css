@@ -4,6 +4,17 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Police du futur logo texte « Pixiatech » — utilisée notamment par le canvas
+   de l'animation d'intro (IntroPixiaTech). Fichier statique servi depuis
+   public/web/fonts/GRATIS.ttf → /web/fonts/GRATIS.ttf */
+@font-face {
+  font-family: 'PixiaTechLogo';
+  src: url('/web/fonts/GRATIS.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   --aurora-color1: rgba(168, 85, 247, 0.2);
   --aurora-color2: rgba(79, 70, 229, 0.2);
