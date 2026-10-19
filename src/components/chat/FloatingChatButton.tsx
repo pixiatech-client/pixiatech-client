@@ -5,12 +5,13 @@
  * Features: Draggable with screen constraints, responsive positioning.
  */
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { WizardBotFlow } from '@/components/chat/WizardBotFlow';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useI18n } from '@/lib/i18n';
 import {
   PIXIA_MASCOT_RELEASE_EVENT,
   PIXIA_MASCOT_TAKEOVER_EVENT,
@@ -20,6 +21,12 @@ import {
   notifyChatState,
 } from '@/lib/pixia-global';
 import type { Product, Settings, LaborSettings, DeliverySettings, Locations } from '@/lib/types';
+
+/* Salut d'accueil du robot côté application : même trame que la mascotte du
+   site (frappe caractère par caractère, maintien, fondu de sortie). */
+const GREET_TYPE_MS = 42;
+const GREET_HOLD_MS = 3400;
+const GREET_FADE_MS = 600;
 
 interface FloatingChatButtonProps {
   allProducts: Product[];
@@ -40,6 +47,92 @@ export function FloatingChatButton({ allProducts, settings, laborSettings, deliv
   const isMobile = useIsMobile();
   const videoRef = useRef<HTMLVideoElement>(null);
   const dragStartRef = useRef<{ x: number; y: number } | null>(null);
+
+  const { t } = useI18n();
+
+  /* Bulle d'accueil du robot (version application) : le message enregistré
+     depuis l'admin (`settings.botWelcomeMessage`) sinon le message d'accueil du
+     chat (`bot.welcome`, disponible dans les 3 langues) — le robot dit donc la
+     même chose dans la bulle et dans le premier message du chat. */
+  const greeting = (
+    (typeof settings.botWelcomeMessage === 'string' ? settings.botWelcomeMessage.trim() : '') ||
+    t('bot.welcome')
+  ).trim();
+  /** Message figé au montage : le salut n'est joué qu'une fois par chargement. */
+  const greetingRef = useRef(greeting);
+  const greetCleanupRef = useRef<(() => void) | null>(null);
+  const [greetText, setGreetText] = useState('');
+  const [bubbleMounted, setBubbleMounted] = useState(false);
+  /** Début du fondu de sortie (comme `markedAtRef` de la mascotte du site). */
+  const [bubbleFading, setBubbleFading] = useState(false);
+
+  /** Interrompt le salut en cours (chat ouvert, mascotte du site…). */
+  const dismissGreeting = useCallback(() => {
+    greetCleanupRef.current?.();
+    greetCleanupRef.current = null;
+    setBubbleFading(false);
+    setBubbleMounted(false);
+  }, []);
+
+  /* Salut unique par chargement de page : l'effet (aucune dépendance) ne se
+     rejoue pas lors des navigations internes — pas de réarmement au scroll ni
+     au changement de page ; une actualisation remonte le composant et rejoue le
+     salut. Idempotent : la double invocation des effets en développement
+     (StrictMode) doit pouvoir le relancer. */
+  useEffect(() => {
+    // Sur le site public, la mascotte globale porte le salut : le robot
+    // applicatif (masqué) reste muet.
+    if (isMascotTakeover()) return;
+    const message = greetingRef.current;
+    if (!message) return;
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const timeouts: number[] = [];
+    let typeId = 0;
+
+    setGreetText('');
+    setBubbleFading(false);
+    setBubbleMounted(true);
+
+    if (reduceMotion) {
+      setGreetText(message);
+    } else {
+      let i = 0;
+      typeId = window.setInterval(() => {
+        i += 1;
+        setGreetText(message.slice(0, i));
+        if (i >= message.length) window.clearInterval(typeId);
+      }, GREET_TYPE_MS);
+    }
+
+    // Même cycle que la mascotte du site : maintien, puis fondu linéaire
+    // avant démontage (l'opacité est pilotée par CSS via `bubbleFading`).
+    const typingMs = reduceMotion ? 0 : message.length * GREET_TYPE_MS;
+    timeouts.push(window.setTimeout(() => setBubbleFading(true), typingMs + GREET_HOLD_MS));
+    timeouts.push(
+      window.setTimeout(
+        () => setBubbleMounted(false),
+        typingMs + GREET_HOLD_MS + GREET_FADE_MS
+      )
+    );
+
+    greetCleanupRef.current = () => {
+      if (typeId) window.clearInterval(typeId);
+      timeouts.forEach((id) => window.clearTimeout(id));
+    };
+
+    return () => {
+      greetCleanupRef.current?.();
+      greetCleanupRef.current = null;
+    };
+  }, []);
+
+  /* Ouvrir le chat consomme le salut : la bulle ne réapparaît pas à la
+     fermeture (le robot a déjà parlé). */
+  useEffect(() => {
+    if (!isOpen) return;
+    dismissGreeting();
+  }, [isOpen, dismissGreeting]);
 
   const handlePointerDown = (e: React.PointerEvent) => {
     dragStartRef.current = { x: e.clientX, y: e.clientY };
@@ -67,7 +160,11 @@ export function FloatingChatButton({ allProducts, settings, laborSettings, deliv
       consumePendingChatOpen();
       setIsOpen(true);
     };
-    const handleTakeover = () => setTakeover(true);
+    const handleTakeover = () => {
+      // La mascotte du site reprend le salut : la bulle applicative se tait.
+      setTakeover(true);
+      dismissGreeting();
+    };
     const handleRelease = () => setTakeover(false);
 
     window.addEventListener(PIXIA_OPEN_CHATBOT_EVENT, handleOpenChat);
@@ -82,7 +179,7 @@ export function FloatingChatButton({ allProducts, settings, laborSettings, deliv
       window.removeEventListener(PIXIA_MASCOT_TAKEOVER_EVENT, handleTakeover);
       window.removeEventListener(PIXIA_MASCOT_RELEASE_EVENT, handleRelease);
     };
-  }, []);
+  }, [dismissGreeting]);
 
   // L'animation globale se retire tant que le chat est ouvert (la mascotte
   // laisse la place à la conversation) puis reprend la main à la fermeture.
@@ -113,6 +210,55 @@ export function FloatingChatButton({ allProducts, settings, laborSettings, deliv
         )}
         style={{ touchAction: "none" }}
       >
+        {/* Bulle d'accueil du robot (version application) : mêmes styles et
+            mêmes timings que la mascotte du site — frappe caractère par
+            caractère, maintien, puis fondu linéaire de 600 ms. Apparition
+            instantanée, non bloquante (aucun événement pointeur), masquée dès
+            que le chat s'ouvre. Placée à gauche du robot (tête au centre) ou,
+            sur mobile, au-dessus — comme la mascotte du site. */}
+        {/* `width: max-content` + `max-width` (comme la bulle `position: fixed`
+            du site) : sans cela, la bulle positionnée en `right: 100%` dans le
+            petit conteneur du robot est réduite par le calcul « shrink-to-fit »
+            à la largeur de son plus long mot (bulle étroite et haute).
+            Sur mobile le robot est collé au bord gauche : la bulle est alignée
+            sur son bord gauche (équivalent du « clamp » du site, 12 px de marge)
+            et bornée à 70vw — elle ne peut donc pas sortir de l'écran. */}
+        <div
+          className="pointer-events-none absolute z-10 max-w-[min(280px,70vw)]"
+          style={
+            isMobile
+              ? { width: 'max-content', bottom: '100%', left: 0, marginBottom: 12 }
+              : { width: 'max-content', right: '100%', top: '50%', transform: 'translateY(-50%)', marginRight: 12 }
+          }
+        >
+          {bubbleMounted && !isOpen && (
+            <div
+              data-pixia-app-bubble
+              style={{
+                padding: '14px 18px',
+                borderRadius: '18px',
+                background: 'rgba(225, 255, 170, 0.97)',
+                color: '#0f1a00',
+                fontFamily: 'Satoshi, "Helvetica Neue", Helvetica, Arial, sans-serif',
+                fontSize: '14px',
+                lineHeight: 1.45,
+                fontWeight: 600,
+                boxShadow: '0 20px 45px rgba(0,0,0,0.35)',
+                border: '1px solid rgba(195, 249, 16, 0.6)',
+                willChange: 'opacity',
+                pointerEvents: 'none',
+                opacity: bubbleFading ? 0 : 1,
+                transition: `opacity ${GREET_FADE_MS}ms linear`,
+              }}
+            >
+              {greetText}
+              {greetText.length > 0 && greetText.length < greetingRef.current.length && (
+                <span aria-hidden="true">|</span>
+              )}
+            </div>
+          )}
+        </div>
+
         <motion.button
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}

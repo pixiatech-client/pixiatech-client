@@ -49,6 +49,8 @@ import {
   openPixiaChatbot,
   setMascotTakeover,
 } from '@/lib/pixia-global';
+import { getSettings } from '@/app/actions/public-actions';
+import { PIXIA_GREETING_FR, PIXIA_GREETING_EN } from '@/lib/pixia-greeting';
 
 /* -------------------------------------------------------------------------- */
 /* Ressources                                                                  */
@@ -118,17 +120,14 @@ const ARC_PX = 26;
 const ROT_DEG = 7;
 /** Au-delà de cette progression, le robot devient interactif de nouveau. */
 const ROBOT_MODE_T = 0.02;
-/** Au-delà de cette progression, la bulle est réarmée pour un nouveau passage. */
-const GREET_REARM_P = 0.25;
+/* La bulle d'accueil n'est jouée qu'une seule fois par actualisation : pas de
+   réarmement au retour dans le Hero (`awaitingGreetRef` reste false). */
 
 const GREETING_HOLD_MS = 3400; // délai d'affichage après la frappe
 const GREETING_FADE_MS = 600; // fondu de sortie de la bulle
 const TYPE_MS = 42; // cadence de frappe, caractère par caractère
 
-const GREETING_FR =
-  'Bonjour, je suis Pixia, ton assistant. Besoin d\u2019aide ? Clique sur moi !';
-const GREETING_EN =
-  'Hello, I\u2019m Pixia, your assistant. Need help? Click me!';
+/* Textes d'origine déplacés dans `@/lib/pixia-greeting` (partagés avec l'éditeur admin). */
 
 /* -------------------------------------------------------------------------- */
 /* Utilitaires                                                                 */
@@ -241,7 +240,43 @@ interface PixiaGlobalAnimationProps {
 export function PixiaGlobalAnimation({ active = false }: PixiaGlobalAnimationProps) {
   const pathname = usePathname();
   const { locale } = useI18n();
-  const greeting = (locale === 'en' ? GREETING_EN : GREETING_FR).trim();
+
+  /* Message personnalisé du robot (admin → `settings.botWelcomeMessage`).
+     S'il est vide, la bulle utilise le texte d'origine (pixia-greeting). */
+  /**
+   * Message personnalisé du robot : `null` tant que les réglages ne sont pas
+   * résolus. Le salut reste bloqué pendant ce délai (voir `greeting` + effet de
+   * relance plus bas) pour ne jamais partir avec le texte d'origine alors que
+   * l'admin a enregistré un message — il n'est joué qu'une fois par
+   * actualisation, il doit d'emblée être le bon.
+   */
+  const [botMessage, setBotMessage] = useState<string | null>(null);
+  useEffect(() => {
+    if (!active) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const s = await getSettings();
+        if (!cancelled) {
+          setBotMessage(
+            typeof s.botWelcomeMessage === 'string' ? s.botWelcomeMessage : ''
+          );
+        }
+      } catch {
+        /* Repli silencieux sur le texte d'origine. */
+        if (!cancelled) setBotMessage('');
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [active]);
+  const greeting = (
+    botMessage === null
+      ? ''
+      : botMessage.trim() ||
+        (locale === 'en' ? PIXIA_GREETING_EN : PIXIA_GREETING_FR)
+  ).trim();
 
   /* --- Références DOM --- */
   const rootRef = useRef<HTMLDivElement>(null);
@@ -264,7 +299,7 @@ export function PixiaGlobalAnimation({ active = false }: PixiaGlobalAnimationPro
   const iconSizeRef = useRef(76);
   const bubbleSizeRef = useRef({ w: 0, h: 0 });
   const bubbleActiveRef = useRef(false);
-  /** Vrai quand un prochain retour du robot doit déclencher un nouveau salut. */
+  /** Vrai tant que le salut d'accueil n'a pas été joué (une seule fois par actualisation). */
   const awaitingGreetRef = useRef(true);
   const markedAtRef = useRef(0); // début du fondu de sortie de la bulle
   const greetingTypeTimerRef = useRef(0);
@@ -402,8 +437,7 @@ export function PixiaGlobalAnimation({ active = false }: PixiaGlobalAnimationPro
       setInteractive(nextInteractive);
     }
 
-    /* --- Bulle : réarmement dès que le robot quitte franchement le Hero --- */
-    if (!hero || editing || p > GREET_REARM_P) awaitingGreetRef.current = true;
+    /* --- Bulle : un seul salut par actualisation, pas de réarmement --- */
     const robotVisible = !!hero && !editing && p <= 0.02 && !chat;
 
     /* --- Bulle : démarrage du salut (typé) et positionnement réel --- */
@@ -531,6 +565,17 @@ export function PixiaGlobalAnimation({ active = false }: PixiaGlobalAnimationPro
   }, [frame]);
 
   /**
+   * Dès que le texte du salut est résolu (réglages chargés en async), on
+   * relance une frame : sans cela, la première frame d'hydration partirait
+   * avec `greeting` encore vide (ou le texte d'origine avant la correction),
+   * et le salut — unique par actualisation — ne montrerait jamais le message
+   * personnalisé.
+   */
+  useEffect(() => {
+    if (active) schedule();
+  }, [greeting, active, schedule]);
+
+  /**
    * Relance la lecture des deux vidéos (animation d'origine, boucle infinie) :
    * le robot du Hero et l'icône dockée.
    *
@@ -632,7 +677,8 @@ export function PixiaGlobalAnimation({ active = false }: PixiaGlobalAnimationPro
     heroRef.current = null;
     clearGreetingTimers();
     bubbleActiveRef.current = false;
-    awaitingGreetRef.current = true;
+    /* Pas de réarmement ici : le salut est unique par ACTUALISATION, même lors
+       d'une navigation interne (changement de `pathname` sans rechargement). */
     markedAtRef.current = 0;
     setHeroFound(false);
     setBubbleMounted(false);
@@ -934,8 +980,9 @@ export function PixiaGlobalAnimation({ active = false }: PixiaGlobalAnimationPro
         }}
       />
 
-      {/* Bulle d'accueil : écrite caractère par caractère, rejouée à chaque
-          retour du robot, jamais bloquante (aucun événement pointeur).
+      {/* Bulle d'accueil : écrite caractère par caractère, jouée une seule
+          fois par actualisation (pas de réarmement au retour dans le Hero),
+          jamais bloquante (aucun événement pointeur).
           Pas de `role="status"` : le texte change toutes les ~40 ms, un live
           region annoncerait caractère par caractère. Le texte reste lisible en
           navigation, la mascotte expose son propre `aria-label`. */}
