@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Language } from '../../pixiatech-translations';
 import { useCms } from '@/lib/site-web/cms-context';
+import { getCmsText, normalizeLang } from '@/lib/site-web/cms-i18n';
 import { useSectionStyle } from '../../cms/useSectionStyle';
 
 interface ShowreelSectionProps {
@@ -11,41 +12,138 @@ interface ShowreelSectionProps {
 }
 
 export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', onOpenConsultation }) => {
-  const { pages } = useCms();
+  const { pages, currentLang, isEditing } = useCms();
   const cmsData = (pages['home']?.sections?.showreel as Record<string, unknown>) || {};
   const cms = useSectionStyle(cmsData);
+  const activeLang = isEditing ? currentLang : normalizeLang(lang);
   const containerRef = useRef<HTMLDivElement>(null);
   const stickyRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const t = {
-    label: 'PIXIATECH / SHOWREEL',
-    scrollHint: lang === 'FR' ? 'FAITES DÉFILER — DU PIXEL À LA VILLE' : 'SCROLL TO PULL BACK — ONE PIXEL TO THE CITY',
-    eyebrow: lang === 'FR' ? '02 / SHOWREEL — DU PIXEL À LA VILLE' : '02 / SHOWREEL — ONE PIXEL TO THE CITY',
-    head1: lang === 'FR' ? 'AFFICHEZ' : 'SCREEN THE',
-    head2: lang === 'FR' ? "L'IMPOSSIBLE." : 'IMPOSSIBLE.',
-    lede:
-      lang === 'FR'
+    label: getCmsText(cmsData, 'label', activeLang, 'PIXIATECH / SHOWREEL'),
+    scrollHint: getCmsText(
+      cmsData,
+      'scrollHint',
+      activeLang,
+      activeLang === 'fr' ? 'FAITES DÉFILER — DU PIXEL À LA VILLE' : 'SCROLL TO PULL BACK — ONE PIXEL TO THE CITY'
+    ),
+    eyebrow: getCmsText(
+      cmsData,
+      'eyebrow',
+      activeLang,
+      activeLang === 'fr' ? '02 / SHOWREEL — DU PIXEL À LA VILLE' : '02 / SHOWREEL — ONE PIXEL TO THE CITY'
+    ),
+    head1: getCmsText(
+      cmsData,
+      'head1',
+      activeLang,
+      activeLang === 'fr' ? 'AFFICHEZ' : 'SCREEN THE'
+    ),
+    head2: getCmsText(
+      cmsData,
+      'head2',
+      activeLang,
+      activeLang === 'fr' ? "L'IMPOSSIBLE." : 'IMPOSSIBLE.'
+    ),
+    lede: getCmsText(
+      cmsData,
+      'lede',
+      activeLang,
+      activeLang === 'fr'
         ? "Faites défiler — la caméra recule d'un seul pixel LED jusqu'à l'horizon de la métropole."
-        : 'Keep scrolling — the camera pulls back from a single LED to the whole city.',
-    chapters:
-      lang === 'FR'
-        ? [
-            ['01 / LE MODULE', 'Des milliers de pixels.', 'Un module calibré.', "Chaque LED est mesurée et appairée en laboratoire afin d'assurer une chromaticité et une luminance parfaites d'un bord à l'autre."],
-            ['02 / LE MUR', "Les cabinets s'assemblent en", 'une surface continue.', 'Châssis 500 × 500 mm, profondeur 29.5 mm. Aucune limite de largeur ou de hauteur.'],
-            ["03 / L'ARCHITECTURE", "L'écran devient", 'la façade.', "Nous n'intégrons pas simplement des écrans dans l'espace : nous faisons des écrans une partie intégrante de l'architecture."],
-            ['04 / LA VILLE', 'De la technologie', 'à la skyline métropolitaine.', ''],
-          ]
-        : [
-            ['01 / THE MODULE', 'Thousands of pixels.', 'One calibrated module.', 'Every LED measured and matched, so no module is brighter than its neighbour.'],
-            ['02 / THE WALL', 'Cabinets lock into', 'one seamless surface.', '500 × 500 mm cabinets, 29.5 mm deep. Any width. Any height.'],
-            ['03 / THE ARCHITECTURE', 'The screen becomes', 'the façade.', "We don't place screens into spaces. We make screens part of the space."],
-            ['04 / THE CITY', 'From engineering', 'to every surface.', ''],
-          ],
-    cta: lang === 'FR' ? 'Découvrir les réalisations →' : 'See the projects →',
-    steps: lang === 'FR' ? ['PIXEL', 'MODULE', 'MUR', 'FAÇADE', 'VILLE'] : ['PIXEL', 'MODULE', 'WALL', 'FAÇADE', 'CITY'],
-    hud: lang === 'FR' ? ['DISTANCE CAMÉRA', 'PIXELS VISIBLES', 'ÉCHELLE VISUELLE'] : ['CAMERA DISTANCE', 'PIXELS IN VIEW', 'WHAT YOU SEE'],
-    content: { tagline: lang === 'FR' ? 'La science derrière la LED' : 'Science Behind The LED' },
+        : 'Keep scrolling — the camera pulls back from a single LED to the whole city.'
+    ),
+    chapters: [
+      [
+        getCmsText(cmsData, 'ch1Eyebrow', activeLang, activeLang === 'fr' ? '01 / LE MODULE' : '01 / THE MODULE'),
+        getCmsText(cmsData, 'ch1TitleLine1', activeLang, activeLang === 'fr' ? 'Des milliers de pixels.' : 'Thousands of pixels.'),
+        getCmsText(cmsData, 'ch1TitleLine2', activeLang, activeLang === 'fr' ? 'Un module calibré.' : 'One calibrated module.'),
+        getCmsText(
+          cmsData,
+          'ch1Desc',
+          activeLang,
+          activeLang === 'fr'
+            ? "Chaque LED est mesurée et appairée en laboratoire afin d'assurer une chromaticité et une luminance parfaites d'un bord à l'autre."
+            : 'Every LED measured and matched, so no module is brighter than its neighbour.'
+        ),
+      ],
+      [
+        getCmsText(cmsData, 'ch2Eyebrow', activeLang, activeLang === 'fr' ? '02 / LE MUR' : '02 / THE WALL'),
+        getCmsText(cmsData, 'ch2TitleLine1', activeLang, activeLang === 'fr' ? "Les cabinets s'assemblent en" : 'Cabinets lock into'),
+        getCmsText(cmsData, 'ch2TitleLine2', activeLang, activeLang === 'fr' ? 'une surface continue.' : 'one seamless surface.'),
+        getCmsText(
+          cmsData,
+          'ch2Desc',
+          activeLang,
+          activeLang === 'fr'
+            ? 'Châssis 500 × 500 mm, profondeur 29.5 mm. Aucune limite de largeur ou de hauteur.'
+            : '500 × 500 mm cabinets, 29.5 mm deep. Any width. Any height.'
+        ),
+      ],
+      [
+        getCmsText(cmsData, 'ch3Eyebrow', activeLang, activeLang === 'fr' ? "03 / L'ARCHITECTURE" : '03 / THE ARCHITECTURE'),
+        getCmsText(cmsData, 'ch3TitleLine1', activeLang, activeLang === 'fr' ? "L'écran devient" : 'The screen becomes'),
+        getCmsText(cmsData, 'ch3TitleLine2', activeLang, activeLang === 'fr' ? 'la façade.' : 'the façade.'),
+        getCmsText(
+          cmsData,
+          'ch3Desc',
+          activeLang,
+          activeLang === 'fr'
+            ? "Nous n'intégrons pas simplement des écrans dans l'espace : nous faisons des écrans une partie intégrante de l'architecture."
+            : "We don't place screens into spaces. We make screens part of the space."
+        ),
+      ],
+      [
+        getCmsText(cmsData, 'ch4Eyebrow', activeLang, activeLang === 'fr' ? '04 / LA VILLE' : '04 / THE CITY'),
+        getCmsText(cmsData, 'ch4TitleLine1', activeLang, activeLang === 'fr' ? 'De la technologie' : 'From engineering'),
+        getCmsText(cmsData, 'ch4TitleLine2', activeLang, activeLang === 'fr' ? 'à la skyline métropolitaine.' : 'to every surface.'),
+        '',
+      ],
+    ],
+
+    cta: getCmsText(
+      cmsData,
+      'cta',
+      activeLang,
+      activeLang === 'fr' ? 'Découvrir les réalisations →' : 'See the projects →'
+    ),
+    steps: [
+      getCmsText(cmsData, 'step1', activeLang, 'PIXEL'),
+      getCmsText(cmsData, 'step2', activeLang, 'MODULE'),
+      getCmsText(cmsData, 'step3', activeLang, activeLang === 'fr' ? 'MUR' : 'WALL'),
+      getCmsText(cmsData, 'step4', activeLang, 'FAÇADE'),
+      getCmsText(cmsData, 'step5', activeLang, activeLang === 'fr' ? 'VILLE' : 'CITY'),
+    ],
+    hud: [
+      getCmsText(
+        cmsData,
+        'hudDistanceLabel',
+        activeLang,
+        activeLang === 'fr' ? 'DISTANCE CAMÉRA' : 'CAMERA DISTANCE'
+      ),
+      getCmsText(
+        cmsData,
+        'hudPixelsLabel',
+        activeLang,
+        activeLang === 'fr' ? 'PIXELS VISIBLES' : 'PIXELS IN VIEW'
+      ),
+      getCmsText(
+        cmsData,
+        'hudScaleLabel',
+        activeLang,
+        activeLang === 'fr' ? 'ÉCHELLE VISUELLE' : 'WHAT YOU SEE'
+      ),
+    ],
+    smdPixel: getCmsText(cmsData, 'smdPixelLabel', activeLang, 'SMD PIXEL'),
+    content: {
+      tagline: getCmsText(
+        cmsData,
+        'tagline',
+        activeLang,
+        activeLang === 'fr' ? 'La science derrière la LED' : 'Science Behind The LED'
+      ),
+    },
   };
 
   useEffect(() => {
@@ -1086,7 +1184,7 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
       if (stageIdx !== lastStageIdx) {
         lastStageIdx = stageIdx;
         if (hudStage) {
-          hudStage.textContent = ['SMD PIXEL', stepNames[1], stepNames[2], stepNames[3], stepNames[4]][stageIdx];
+          hudStage.textContent = [t.smdPixel, stepNames[1], stepNames[2], stepNames[3], stepNames[4]][stageIdx];
         }
       }
 
@@ -1168,12 +1266,27 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
       ro.disconnect();
       if (animId) cancelAnimationFrame(animId);
     };
-  }, [lang]);
+  }, [lang, activeLang, t.content.tagline, t.smdPixel, t.steps.join(',')]);
 
-  const hudStatItem = (key: string, initialVal: string, label: string, color?: string) => (
+  const chapterKeys = [
+    { eyebrow: 'ch1Eyebrow', line1: 'ch1TitleLine1', line2: 'ch1TitleLine2', desc: 'ch1Desc' },
+    { eyebrow: 'ch2Eyebrow', line1: 'ch2TitleLine1', line2: 'ch2TitleLine2', desc: 'ch2Desc' },
+    { eyebrow: 'ch3Eyebrow', line1: 'ch3TitleLine1', line2: 'ch3TitleLine2', desc: 'ch3Desc' },
+    { eyebrow: 'ch4Eyebrow', line1: 'ch4TitleLine1', line2: 'ch4TitleLine2', desc: 'ch4Desc' },
+  ];
+
+  const hudStatItem = (
+    key: string,
+    initialVal: string,
+    label: string,
+    color?: string,
+    labelKey?: string,
+    valKey?: string
+  ) => (
     <div>
       <div
         data-hud={key}
+        data-text-key={valKey}
         style={{
           fontSize: 'clamp(20px, 1.8vw, 28px)',
           fontWeight: 700,
@@ -1184,6 +1297,7 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
         {initialVal}
       </div>
       <div
+        data-text-key={labelKey}
         style={{
           fontSize: 9.5,
           letterSpacing: '.22em',
@@ -1279,7 +1393,7 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <span>{t.label}</span>
+            <span data-text-key="label">{t.label}</span>
           </div>
 
           <span
@@ -1299,7 +1413,7 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
                 animation: 'xr-blink 1.4s ease-in-out infinite',
               }}
             />
-            {t.scrollHint}
+            <span data-text-key="scrollHint">{t.scrollHint}</span>
           </span>
         </div>
 
@@ -1319,9 +1433,9 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
             fontVariantNumeric: 'tabular-nums',
           }}
         >
-          {hudStatItem('scale', '20 mm', t.hud[0])}
-          {hudStatItem('px', '1', t.hud[1])}
-          {hudStatItem('dist', 'SMD PIXEL', t.hud[2], '#C3F910')}
+          {hudStatItem('scale', '20 mm', t.hud[0], undefined, 'hudDistanceLabel')}
+          {hudStatItem('px', '1', t.hud[1], undefined, 'hudPixelsLabel')}
+          {hudStatItem('dist', t.smdPixel, t.hud[2], '#C3F910', 'hudScaleLabel', 'smdPixelLabel')}
         </div>
 
         {/* Initial Hero Typography at Bottom-Left */}
@@ -1337,6 +1451,7 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
           }}
         >
           <div
+            data-text-key="eyebrow"
             style={{
               fontSize: 11,
               letterSpacing: '.24em',
@@ -1358,6 +1473,7 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
             }}
           >
             <span
+              data-text-key="head1"
               style={{
                 display: 'block',
                 color: 'transparent',
@@ -1366,9 +1482,10 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
             >
               {t.head1}
             </span>
-            <span style={{ display: 'block', color: '#F5F4F0' }}>{t.head2}</span>
+            <span data-text-key="head2" style={{ display: 'block', color: '#F5F4F0' }}>{t.head2}</span>
           </div>
           <p
+            data-text-key="lede"
             style={{
               margin: '26px 0 0',
               maxWidth: 460,
@@ -1382,86 +1499,92 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
         </div>
 
         {/* Scroll Chapters that sequence in as user travels back */}
-        {t.chapters.map((ch, idx) => (
-          <div
-            key={idx}
-            className="xr-ch"
-            data-ch={idx + 1}
-            style={{
-              position: 'absolute',
-              left: 'clamp(16px, 3.5vw, 64px)',
-              bottom: 'clamp(56px, 8vh, 72px)',
-              maxWidth: 720,
-              opacity: 0,
-              transform: 'translateY(18px)',
-              transition: 'opacity .4s ease, transform .5s ease',
-              pointerEvents: 'none',
-            }}
-          >
+        {t.chapters.map((ch, idx) => {
+          const chKey = chapterKeys[idx];
+          return (
             <div
+              key={idx}
+              className="xr-ch"
+              data-ch={idx + 1}
               style={{
-                fontSize: 11,
-                letterSpacing: '.24em',
-                color: '#A3A3A3',
-                marginBottom: 18,
-                fontFamily: 'var(--font-mono)',
+                position: 'absolute',
+                left: 'clamp(16px, 3.5vw, 64px)',
+                bottom: 'clamp(56px, 8vh, 72px)',
+                maxWidth: 720,
+                opacity: 0,
+                transform: 'translateY(18px)',
+                transition: 'opacity .4s ease, transform .5s ease',
+                pointerEvents: 'none',
               }}
             >
-              {ch[0]}
-            </div>
-            <div
-              style={{
-                fontSize: 'clamp(30px, 4.4vw, 72px)',
-                lineHeight: 1,
-                letterSpacing: '-.03em',
-                fontWeight: 700,
-                color: '#F5F4F0',
-              }}
-            >
-              {ch[1]}
-              <br />
-              {ch[2]}
-            </div>
-            {ch[3] ? (
-              <p
+              <div
+                data-text-key={chKey?.eyebrow}
                 style={{
-                  margin: '20px 0 0',
-                  maxWidth: 460,
-                  fontSize: 15.5,
-                  lineHeight: 1.6,
+                  fontSize: 11,
+                  letterSpacing: '.24em',
                   color: '#A3A3A3',
+                  marginBottom: 18,
+                  fontFamily: 'var(--font-mono)',
                 }}
               >
-                {ch[3]}
-              </p>
-            ) : (
-              <div style={{ display: 'flex', gap: 14, marginTop: 28, pointerEvents: 'auto' }}>
-                <button
-                  type="button"
-                  data-href="/web/contact"
-                  onClick={(e) => {
-                    if (document.body.classList.contains('cms-editing')) return;
-                    window.location.href = '/web/contact';
-                  }}
-                  className="btn btn-solid"
+                {ch[0]}
+              </div>
+              <div
+                style={{
+                  fontSize: 'clamp(30px, 4.4vw, 72px)',
+                  lineHeight: 1,
+                  letterSpacing: '-.03em',
+                  fontWeight: 700,
+                  color: '#F5F4F0',
+                }}
+              >
+                <span data-text-key={chKey?.line1} style={{ display: 'inline-block' }}>{ch[1]}</span>
+                <br />
+                <span data-text-key={chKey?.line2} style={{ display: 'inline-block' }}>{ch[2]}</span>
+              </div>
+              {ch[3] ? (
+                <p
+                  data-text-key={chKey?.desc}
                   style={{
-                    padding: '15px 26px',
-                    fontSize: 12.5,
-                    textTransform: 'none',
-                    letterSpacing: '.06em',
-                    border: 0,
-                    background: '#C3F910',
-                    color: '#050505',
-                    fontWeight: 700,
-                    cursor: 'pointer',
+                    margin: '20px 0 0',
+                    maxWidth: 460,
+                    fontSize: 15.5,
+                    lineHeight: 1.6,
+                    color: '#A3A3A3',
                   }}
                 >
-                  {t.cta}
-                </button>
-              </div>
-            )}
-          </div>
-        ))}
+                  {ch[3]}
+                </p>
+              ) : (
+                <div style={{ display: 'flex', gap: 14, marginTop: 28, pointerEvents: 'auto' }}>
+                  <button
+                    type="button"
+                    data-href="/web/contact"
+                    data-text-key="cta"
+                    onClick={(e) => {
+                      if (document.body.classList.contains('cms-editing')) return;
+                      window.location.href = '/web/contact';
+                    }}
+                    className="btn btn-solid"
+                    style={{
+                      padding: '15px 26px',
+                      fontSize: 12.5,
+                      textTransform: 'none',
+                      letterSpacing: '.06em',
+                      border: 0,
+                      background: '#C3F910',
+                      color: '#050505',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {t.cta}
+                  </button>
+                </div>
+              )}
+            </div>
+          );
+        })}
 
         {/* Bottom Timeline with Scrubber & Steps */}
         <div
@@ -1494,8 +1617,12 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
               transition: 'width .1s linear',
             }}
           />
-          {t.steps.map((st) => (
-            <span key={st} style={{ position: 'relative', background: '#050505', padding: '0 8px' }}>
+          {t.steps.map((st, sIdx) => (
+            <span
+              key={sIdx}
+              data-text-key={`step${sIdx + 1}`}
+              style={{ position: 'relative', background: '#050505', padding: '0 8px' }}
+            >
               {st}
             </span>
           ))}

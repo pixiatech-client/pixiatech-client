@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
-import { Eye, EyeOff, Settings, GripVertical, Layers } from 'lucide-react';
+import { Eye, EyeOff, Settings, GripVertical, Layers, Sliders } from 'lucide-react';
 import { useCms } from '@/lib/site-web/cms-context';
 import { getRegisteredSections, subscribeSections, getSectionLabel } from './section-registry';
 import { getSectionDragController } from './SectionDragDropManager';
@@ -263,6 +263,19 @@ export const CmsSectionBar: React.FC = () => {
               <Settings className="w-3.5 h-3.5" />
               Réglages
             </button>
+
+            {activeKey === 'showreel' && (
+              <a
+                href="/admin/site-web/showreel"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 px-2 py-0.5 rounded border border-cyan-500/40 text-cyan-300 hover:bg-cyan-500/15 transition-colors cursor-pointer"
+                title="Gérer tous les textes du Showreel 3D dans l'administration"
+              >
+                <Sliders className="w-3.5 h-3.5" />
+                <span>Textes Showreel</span>
+              </a>
+            )}
 
             {activeKey === 'hero' && heroSlides.length > 1 && (
               <span className="flex items-center gap-1 ml-1 pl-2 border-l border-[#2B2B28]">

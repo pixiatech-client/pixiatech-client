@@ -19,6 +19,7 @@ import {
   Layers,
   Inbox,
   AlertTriangle,
+  Film,
 } from 'lucide-react';
 import { toast } from 'sonner';
 

@@ -932,6 +932,18 @@ const mapsUrl = (address: string) =>
 const digits = (value: string) => value.replace(/[^0-9]/g, '');
 
 /**
+ * Extrait une URL propre depuis un champ qui pourrait contenir du markdown.
+ * Cas typique : "... [texte](https://maps.google.com/...)" -> URL propre.
+ */
+const extractUrl = (value: string): string => {
+  if (!value) return '';
+  const mdMatch = value.match(/\(https?:\/\/[^)]+\)/);
+  if (mdMatch) return mdMatch[0].slice(1, -1);
+  if (/^https?:\/\//.test(value.trim())) return value.trim();
+  return value;
+};
+
+/**
  * Coordonnées publiques issues du back-office (`siteWeb/contactInfo`).
  *
  * Elles ne vivent pas dans `PageContentConfig.info` : ce document ne porte que
@@ -948,10 +960,13 @@ type ContactPublicInfo = {
 };
 
 /**
- * Recompose l'adresse postale à partir des champs séparés du back-office
- * (rue, code postal, ville, pays). Le code postal et la ville ne sont réinjectés
- * que s'ils ne figurent pas déjà dans le champ « adresse » : un admin qui saisit
- * une adresse complète ne voit donc jamais son code postal affiché deux fois.
+ * Recompose l'adresse postale à partir des champs séparés du back-office.
+ *
+ * Règle d'anti-doublon : si le champ `address` contient déjà un code postal
+ * à 5 chiffres (pattern \d{5}), on considère que l'adresse est complète et on
+ * n'ajoute PAS les champs postalCode+city — cela évite d'afficher deux villes
+ * différentes (ex : "93000 Bobigny" et "93400 Saint-Ouen") côte à côte.
+ * Le pays n'est ajouté que s'il est absent du texte final.
  */
 const composeAddress = (
   address: string,
@@ -960,12 +975,21 @@ const composeAddress = (
   country?: string
 ): string => {
   const street = (address ?? '').trim();
-  const locality = [postalCode, city].map((v) => (v ?? '').trim()).filter(Boolean).join(' ');
   const nation = (country ?? '').trim();
   const parts: string[] = [];
   if (street) parts.push(street);
-  if (locality && !street.includes(locality)) parts.push(locality);
-  const haystack = `${street} ${locality}`.toLowerCase();
+
+  // Si l'adresse ne contient pas encore de code postal (5 chiffres), on ajoute
+  // postalCode + city. Sinon l'adresse est déjà complète → on ne les ajoute pas.
+  const addressAlreadyHasPostalCode = /\d{5}/.test(street);
+  if (!addressAlreadyHasPostalCode) {
+    const pc = (postalCode ?? '').trim();
+    const ct = (city ?? '').trim();
+    const locality = [pc, ct].filter(Boolean).join(' ');
+    if (locality) parts.push(locality);
+  }
+
+  const haystack = parts.join(' ').toLowerCase();
   if (nation && !haystack.includes(nation.toLowerCase())) parts.push(nation);
   return parts.join(', ');
 };
@@ -1440,7 +1464,7 @@ function RetailContact({
   // Valeurs du back-office, avec repli sur le contenu de page si l'API
   // `contact/info` est momentanément injoignable.
   const displayAddress = publicInfo.fullAddress || info.addressValue;
-  const directionsHref = publicInfo.googleMapsUrl || mapsUrl(displayAddress);
+  const directionsHref = (publicInfo.googleMapsUrl ? extractUrl(publicInfo.googleMapsUrl) : null) || mapsUrl(displayAddress);
   const responseBadge = publicInfo.responseTimeCommitment || '';
 
   return (

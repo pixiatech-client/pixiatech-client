@@ -32,6 +32,7 @@ import {
   ShieldAlert,
   LayoutTemplate,
   BarChart3,
+  Film,
 } from 'lucide-react';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import { UserRole } from './dashboard-new-types';
@@ -80,6 +81,7 @@ const VIEW_TO_ROUTE: Record<string, string> = {
   sitewebCategories: '/admin/site-web/categories',
   sitewebAnalytics: '/admin/site-web/analytics',
   sitewebSettings: '/admin/site-web/parametres',
+  sitewebShowreel: '/admin/site-web/showreel',
 };
 
 const ROUTE_TO_VIEW: Record<string, string> = {
@@ -114,6 +116,7 @@ const ROUTE_TO_VIEW: Record<string, string> = {
   '/admin/site-web/categories': 'sitewebCategories',
   '/admin/site-web/analytics': 'sitewebAnalytics',
   '/admin/site-web/parametres': 'sitewebSettings',
+  '/admin/site-web/showreel': 'sitewebShowreel',
 };
 
 export type SettingsSection = 'general' | 'images' | 'appearance' | 'wizard' | 'livraison' | 'main-doeuvre' | 'pdf' | 'emergency' | 'messaging' | 'software' | 'email-verification' | 'flow' | 'content';
@@ -275,6 +278,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'sitewebProduits', label: t('admin.siteWeb.navProduits'), icon: Box, color: 'text-yellow-500', roles: [UserRole.ADMINISTRATEUR] },
     { id: 'sitewebCategories', label: t('admin.siteWeb.navCategories'), icon: Tag, color: 'text-violet-500', roles: [UserRole.ADMINISTRATEUR] },
     { id: 'sitewebDashboard', label: 'Pages', icon: Globe, color: 'text-emerald-500', roles: [UserRole.ADMINISTRATEUR] },
+    { id: 'sitewebShowreel', label: 'Showreel 3D', icon: Film, color: 'text-cyan-500', roles: [UserRole.ADMINISTRATEUR] },
   ], [t]);
 
   const initialItems = useMemo(() => {

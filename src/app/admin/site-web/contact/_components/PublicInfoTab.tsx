@@ -17,6 +17,15 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { toast } from 'sonner';
+
+/** Extrait une URL propre depuis un champ qui peut contenir du markdown. */
+function extractCleanUrl(value: string): string {
+  if (!value) return '';
+  const mdMatch = value.match(/\(https?:\/\/[^)]+\)/);
+  if (mdMatch) return mdMatch[0].slice(1, -1);
+  if (/^https?:\/\//.test(value.trim())) return value.trim();
+  return value;
+}
 import type { ContactInfo } from '@/lib/site-web/types';
 import {
   BACKOFFICE_HEADER,
@@ -147,10 +156,16 @@ export function PublicInfoTab({ refreshToken, onSaved }: PublicInfoTabProps) {
     if (!form) return;
     setIsSaving(true);
     try {
+      // Nettoyage préventif : si l'admin a collé un lien markdown dans le champ
+      // URL Google Maps, on extrait l'URL brute avant de persister.
+      const sanitized: ContactInfo = {
+        ...form,
+        googleMapsUrl: extractCleanUrl(form.googleMapsUrl ?? ''),
+      };
       const res = await fetch('/api/site-web/contact/info', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify(sanitized),
       });
       const json = await res.json();
       if (!res.ok || !json?.success) {

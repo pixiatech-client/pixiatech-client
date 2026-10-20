@@ -54,11 +54,42 @@ export interface CmsSectionFeatures {
 }
 
 export interface CmsSectionShowreel {
+  label?: string;
+  scrollHint?: string;
   eyebrow?: string;
+  head1?: string;
+  head2?: string;
   title?: string;
+  lede?: string;
   subtitle?: string;
+  hudDistanceLabel?: string;
+  hudPixelsLabel?: string;
+  hudScaleLabel?: string;
+  smdPixelLabel?: string;
+  ch1Eyebrow?: string;
+  ch1TitleLine1?: string;
+  ch1TitleLine2?: string;
+  ch1Desc?: string;
+  ch2Eyebrow?: string;
+  ch2TitleLine1?: string;
+  ch2TitleLine2?: string;
+  ch2Desc?: string;
+  ch3Eyebrow?: string;
+  ch3TitleLine1?: string;
+  ch3TitleLine2?: string;
+  ch3Desc?: string;
+  ch4Eyebrow?: string;
+  ch4TitleLine1?: string;
+  ch4TitleLine2?: string;
+  cta?: string;
+  step1?: string;
+  step2?: string;
+  step3?: string;
+  step4?: string;
+  step5?: string;
   tagline?: string;
   billboardImage?: string;
+  [key: string]: unknown;
 }
 
 export interface CmsSectionMarkets {

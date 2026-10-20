@@ -4,7 +4,7 @@
       "id": "home",
       "name": "home",
       "slug": "/home",
-      "updatedAt": "2026-10-14T18:05:53.301Z",
+      "updatedAt": "2026-10-20T20:35:48.347Z",
       "sections": {
         "pixia-web": {
           "text_1790257213042": "sdsdsdsdÉDITEUR DIRECT : CLIQUEZ SUR UN TEXTE OU UNE IMAGE",
@@ -102,10 +102,10 @@
             },
             "slider3.title": {
               "fr": {
-                "value": "Caissons lumineux dynamiques ",
+                "value": "Caissons dynamiques.  ",
                 "status": "source",
-                "updatedAt": "2026-10-13T17:54:31.826Z",
-                "sourceText": "Caissons lumineux dynamiques "
+                "updatedAt": "2026-10-19T18:02:35.725Z",
+                "sourceText": "Caissons dynamiques.  "
               }
             },
             "slider2.title": {
@@ -118,10 +118,10 @@
             },
             "slider3.description": {
               "fr": {
-                "value": "Valorisez vos vitrines et magasins grâce à des caissons lumineux LED fixes ou portables, conçus sur mesure pour un éclairage homogène et durable en France.",
+                "value": "Valorisez vos vitrines avec des caissons lumineux LED fixes ou portables, conçus sur mesure. Leur animation s’adapte à chaque image pour un rendu unique et dynamique.",
                 "status": "source",
-                "updatedAt": "2026-10-13T22:49:10.257Z",
-                "sourceText": "Valorisez vos vitrines et magasins grâce à des caissons lumineux LED fixes ou portables, conçus sur mesure pour un éclairage homogène et durable en France."
+                "updatedAt": "2026-10-17T11:33:47.692Z",
+                "sourceText": "Valorisez vos vitrines avec des caissons lumineux LED fixes ou portables, conçus sur mesure. Leur animation s’adapte à chaque image pour un rendu unique et dynamique."
               }
             },
             "slider2.description": {
@@ -166,10 +166,10 @@
             },
             "slider3.tagline": {
               "fr": {
-                "value": "Donnez plus d’impact à vos vitrines .",
+                "value": "Chaque image mérite sa propre animation .",
                 "status": "source",
-                "updatedAt": "2026-10-13T22:49:48.719Z",
-                "sourceText": "Donnez plus d’impact à vos vitrines ."
+                "updatedAt": "2026-10-17T11:31:52.400Z",
+                "sourceText": "Chaque image mérite sa propre animation ."
               }
             },
             "slider1.badge": {
@@ -250,10 +250,14 @@
             },
             "title": {
               "fontSize": "90px"
+            },
+            "primaryCta": {
+              "backgroundColor": "transparent",
+              "color": "#ffffff"
             }
           },
           "slideImage2": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2Fconf_rence-futuriste-sous-les-lumi_res-bleues_s3bsi.webp?alt=media",
-          "slideImage3": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2Fm_gastore-sportif-aux-paysages-lumineux_pyc10.webp?alt=media",
+          "slideImage3": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fhero%2Fhero-slide-3-1792491704490-9kco9d.png?alt=media",
           "title": "TECHNOLOGIES03 D’AFFICHAGE 01",
           "badge": "PIXIATECH / VISUAL TECHNOLOGY ",
           "description": "Spécialisée dans la vente d’écrans professionnels et de technologies d’affichage LED, Micro LED et OLED, pour les entreprises, les commerces, l’architecture et l’événementiel",
@@ -264,15 +268,15 @@
           "layout": {
             "visible": true
           },
-          "slider3.title": "Caissons lumineux dynamiques ",
+          "slider3.title": "Caissons dynamiques.  ",
           "slider2.title": "Location d’écrans LED ",
-          "slider3.description": "Valorisez vos vitrines et magasins grâce à des caissons lumineux LED fixes ou portables, conçus sur mesure pour un éclairage homogène et durable en France.",
+          "slider3.description": "Valorisez vos vitrines avec des caissons lumineux LED fixes ou portables, conçus sur mesure. Leur animation s’adapte à chaque image pour un rendu unique et dynamique.",
           "slider2.description": "Louez des écrans LED géants à Paris ou en Île-de-France pour vos événements privés ou professionnels, avec une prestation technique clé en main et un accompagnement.",
           "slider1.description": "PIXIATECH conçoit des écrans LED sur mesure pour l’architecture, le retail et l’événementiel, avec conseil expert, installation et SAV partout en France.",
           "slider2.tagline": "Événements privés et professionnels .",
           "slider1.title": "Mur et écrans LED  ",
           "slider1.tagline": "Donnez vie à vos espaces .",
-          "slider3.tagline": "Donnez plus d’impact à vos vitrines .",
+          "slider3.tagline": "Chaque image mérite sa propre animation .",
           "slider1.badge": "PIXIATECH / TECHNOLOGIE VISUELLE",
           "slider2.badge": "PIXIATECH / TECHNOLOGIE VISUELLE",
           "slider3.badge": "PIXIATECH / TECHNOLOGIE VISUELLE ",
@@ -329,14 +333,11 @@
               "color": "#e60505"
             },
             "titleLine3": {
-              "color": "#000000",
+              "color": "#111111",
               "fontSize": "68px"
             },
             "titleLine2": {
-              "color": "#d91717",
-              "fontSize": "68px"
-            },
-            "title": {
+              "color": "#111111",
               "fontSize": "68px"
             },
             "subtitle": {
@@ -344,6 +345,9 @@
             },
             "badge": {
               "color": "#050505"
+            },
+            "title": {
+              "color": "#7c9c07"
             }
           },
           "paddingTop": 0,
@@ -359,10 +363,10 @@
           "_i18n": {
             "subtitle": {
               "fr": {
-                "value": "PIXIATECH est un spécialiste français de l'affichage LED sur mesure: vente, location et installation d'écrans LED intérieurs et extérieurs, incurvés, transparents ou holographiques, pour l'architecture, le Retail et l'événementiel.",
+                "value": "PIXIATECH est une entreprise française spécialisée dans les solutions d’affichage LED sur mesure. Nous proposons la vente, la location et l’installation d’écrans LED intérieurs et extérieurs, incurvés, transparents ou à effet holographique, pour les projets d’architecture, de retail et d’événementiel.",
                 "status": "source",
-                "updatedAt": "2026-10-14T07:30:39.744Z",
-                "sourceText": "PIXIATECH est un spécialiste français de l'affichage LED sur mesure: vente, location et installation d'écrans LED intérieurs et extérieurs, incurvés, transparents ou holographiques, pour l'architecture, le Retail et l'événementiel."
+                "updatedAt": "2026-10-17T11:19:23.933Z",
+                "sourceText": "PIXIATECH est une entreprise française spécialisée dans les solutions d’affichage LED sur mesure. Nous proposons la vente, la location et l’installation d’écrans LED intérieurs et extérieurs, incurvés, transparents ou à effet holographique, pour les projets d’architecture, de retail et d’événementiel."
               }
             },
             "badge": {
@@ -372,10 +376,37 @@
                 "updatedAt": "2026-10-13T16:27:35.276Z",
                 "sourceText": "01 / À PROPOS - POURQUOI PIXIATECH "
               }
+            },
+            "title": {
+              "fr": {
+                "value": "Des solutions d’affichage LED conçues pour vos projets\n  ",
+                "status": "source",
+                "updatedAt": "2026-10-17T11:19:53.166Z",
+                "sourceText": "Des solutions d’affichage LED conçues pour vos projets\n  "
+              }
+            },
+            "titleLine2": {
+              "fr": {
+                "value": "NOUS DONNONS VIE À ",
+                "status": "source",
+                "updatedAt": "2026-10-17T11:23:13.771Z",
+                "sourceText": "NOUS DONNONS VIE À "
+              }
+            },
+            "titleLine3": {
+              "fr": {
+                "value": "VOS ESPACES",
+                "status": "source",
+                "updatedAt": "2026-10-17T11:23:26.413Z",
+                "sourceText": "VOS ESPACES"
+              }
             }
           },
-          "subtitle": "PIXIATECH est un spécialiste français de l'affichage LED sur mesure: vente, location et installation d'écrans LED intérieurs et extérieurs, incurvés, transparents ou holographiques, pour l'architecture, le Retail et l'événementiel.",
-          "badge": "01 / À PROPOS - POURQUOI PIXIATECH "
+          "subtitle": "PIXIATECH est une entreprise française spécialisée dans les solutions d’affichage LED sur mesure. Nous proposons la vente, la location et l’installation d’écrans LED intérieurs et extérieurs, incurvés, transparents ou à effet holographique, pour les projets d’architecture, de retail et d’événementiel.",
+          "badge": "01 / À PROPOS - POURQUOI PIXIATECH ",
+          "title": "Des solutions d’affichage LED conçues pour vos projets\n  ",
+          "titleLine2": "NOUS DONNONS VIE À ",
+          "titleLine3": "VOS ESPACES"
         },
         "pitch": {
           "paddingTop": 16,
@@ -454,7 +485,18 @@
             "div:1/div:1/div:1/div:5/div:1": {
               "text_fr": "02 / FILM DE PRÉSENTATION — DU PIXEL À LA VILLE"
             }
-          }
+          },
+          "_i18n": {
+            "ch3TitleLine1": {
+              "fr": {
+                "value": "L'écran devientA",
+                "status": "source",
+                "updatedAt": "2026-10-20T20:35:46.063Z",
+                "sourceText": "L'écran devientA"
+              }
+            }
+          },
+          "ch3TitleLine1": "L'écran devientA"
         },
         "technology": {
           "_elements": {
@@ -597,7 +639,9 @@
           "tech_armorled_desc": "La technologie ColdLED associe performance et durabilite pour\nles professionnels de l'affichage numerique, de l'evenementiel, du\ncommerce et de la diffusion.",
           "tech_infinite_desc": "Chaque LED encapsulée protège votre écran LED, renforce sa résistance et assure une image fluide et durable pour vos installations d’affichage professionnel.",
           "tech_infinite_name": "LED encapsulée",
-          "tech_solidskin_image": "/uploads/site/market-rental.jpg"
+          "tech_solidskin_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FModule_LED_haute_densit__avec_structure_technique_optimis_e_70rz7.webp?alt=media",
+          "tech_coldled_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FTechnologie_d__cran_LED_haute_densit____Gros_plan_sur_les_modules_lvavr.webp?alt=media",
+          "tech_armorled_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FPanneau_LED__tanche_pour_affichage_ext_rieur___Technologie_LED_outdoor_dl5ni.webp?alt=media"
         },
         "experience": {
           "image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2F_cran_LED_incurv__immersif_pour_exp_rience_visuelle_grand_format_4ap8x.webp?alt=media",
@@ -756,7 +800,7 @@
       "id": "contact",
       "name": "Contact & Paramètres Généraux",
       "slug": "#contact",
-      "updatedAt": "2026-10-02T18:56:12.565Z",
+      "updatedAt": "2026-10-20T21:13:08.471Z",
       "settings": {
         "companyName": "PIXIATECH",
         "tagline": "Systèmes LED Architecturaux de Pointe",
@@ -775,7 +819,7 @@
               "offsetX": 0,
               "offsetY": 0,
               "backgroundColor": "#000000",
-              "text": "PIXIATECH FRANCE 11"
+              "text": "PIXIATECH FRANCE 2000"
             },
             "body:1/div:5/main:1/div:1/div:3/main:1/section:1/div:2/header:1": {
               "fontWeight": "400",
@@ -786,6 +830,43 @@
             "body:1/div:5/main:1/div:1/div:3/main:1/section:1/div:2/header:1/div:1/h2:1": {
               "fontSize": "62px",
               "color": "#175869"
+            },
+            "body:1/div:5/main:1/div:1/div:2/main:1/section:1/div:2/header:1/div:2/p:1": {
+              "text": "Venez découvrir nos modules d'affichage en conditions réelles dans notre showroom à Saint-Ouen ou échangez en direct avec nos ingénieurs LED.200"
+            },
+            "nav:1/div:1/span:1": {
+              "text": "PRODUITS ▾",
+              "color": "#ffffff"
+            },
+            "nav:1/div:1/a:2": {
+              "href": "/web/insights",
+              "target": "_blank",
+              "rel": "noopener noreferrer",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "textDecoration": "none",
+              "offsetX": 0,
+              "offsetY": -4,
+              "color": "#ffffff"
+            }
+          }
+        },
+        "main": {
+          "_elements": {
+            "body:1/div:5/main:1/div:1/div:3/main:1/section:1/div:2/div:2/div:1/span:3": {
+              "text_fr": "Solutions ddddd'affichage dynamique, murs d'images LED & technologies visuelles avancées"
+            },
+            "body:1/div:5/main:1/div:1/div:4/main:1/section:1/div:2/div:2/div:6/span:2/span:1": {
+              "text_fr": "Discussion instantanée avec un responsable techniqueddddd"
+            },
+            "body:1/div:5/main:1/div:1/div:3/main:1/section:1/div:2/div:2/div:7/span:2": {
+              "text_fr": "Lundi au Vendredi de 09h00 à 18h00 "
+            },
+            "body:1/div:5/main:1/div:1/div:4/main:1/section:1/div:2/div:2/div:1/span:3": {
+              "text_fr": "Solutions d'affichage dynamique, murs d'images LED & technologies visuelles avancées"
+            },
+            "body:1/div:5/main:1/div:1/div:5/main:1/section:1/div:2/div:2/div:6/span:2/span:1": {
+              "text_fr": "Discussion instantanée avec un responsable technique"
             }
           }
         }
@@ -947,5 +1028,5 @@
       }
     }
   },
-  "updatedAt": "2026-10-17T20:48:38.625Z"
+  "updatedAt": "2026-10-20T21:13:08.798Z"
 }
