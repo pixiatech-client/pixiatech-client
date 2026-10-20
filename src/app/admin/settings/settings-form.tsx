@@ -80,6 +80,8 @@ const settingsSchema = z.object({
     allowCommercialMessaging: z.boolean(),
     allowSupplierMessaging: z.boolean(),
   }).optional(),
+  seoTitle: translatedStringSchema.optional(),
+  seoDescription: translatedStringSchema.optional(),
   estimationFlow: z.object({
     enableRentalPeriod: z.boolean(),
     enableDigitalSignature: z.boolean(),
@@ -133,6 +135,8 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
       botWelcomeMessage: initialSettings.botWelcomeMessage ?? '',
       isGuidedConfigEnabled: initialSettings.isGuidedConfigEnabled ?? true,
       isBoutiqueEnabled: initialSettings.isBoutiqueEnabled ?? true,
+      seoTitle: { fr: initialSettings.seoTitle?.fr ?? '', en: initialSettings.seoTitle?.en ?? '' },
+      seoDescription: { fr: initialSettings.seoDescription?.fr ?? '', en: initialSettings.seoDescription?.en ?? '' },
 
       estimationFlow: {
         ...initialSettings.estimationFlow,
@@ -166,7 +170,7 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
     const sectionKey = (Object.entries(sectionLabels) as [string, string][]).find(([, label]) => label === sectionName)?.[0] || sectionName;
 
     const sectionFields: Record<string, string[]> = {
-      general: ['defaultWidth', 'defaultHeight', 'maxWidth', 'maxHeight', 'maxRentalWidth', 'maxRentalHeight', 'maxProductsPerQuote', 'isEmailVerificationEnabled', 'isPriceHidden', 'isSingleSessionEnabled', 'isWizardBotEnabled', 'botWelcomeMessage', 'isGuidedConfigEnabled', 'isBoutiqueEnabled', 'estimationFlow'],
+      general: ['defaultWidth', 'defaultHeight', 'maxWidth', 'maxHeight', 'maxRentalWidth', 'maxRentalHeight', 'maxProductsPerQuote', 'isEmailVerificationEnabled', 'isPriceHidden', 'isSingleSessionEnabled', 'isWizardBotEnabled', 'botWelcomeMessage', 'isGuidedConfigEnabled', 'isBoutiqueEnabled', 'estimationFlow', 'seoTitle', 'seoDescription'],
       emergency: ['emergencyStopEnabled', 'emergencyReturnUrl', 'emergencyStopMessage'],
       images: ['previewScreenImageUrl', 'previewScreenVideoUrl', 'previewScreenFallbackImageUrl', 'previewScreenHomeFallbackImageUrl'],
       content: ['congratulationsTitle', 'congratulationsMessage', 'deliveryTitle', 'deliveryMessage', 'installationTitle', 'installationMessage', 'disclaimerMessage', 'quoteFormNotesPlaceholder', 'isDeliveryStepEnabled', 'isInstallationStepEnabled'],

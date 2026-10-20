@@ -1,4 +1,21 @@
 const adminTranslationsZhCN: Record<string, string> = {
+  // Site identity & SEO (PixiaTech Web)
+  'Identity & SEO': '身份与 SEO',
+  'Site title': '网站标题',
+  'Site description': '网站描述',
+  'Google preview': 'Google 预览',
+  'characters': '字符',
+  'General settings': '常规设置',
+  'Discard changes': '放弃更改',
+  'Title displayed in the browser tab and Google results.': '显示在浏览器标签页和 Google 结果中的标题。',
+  'Short description shown under the title in Google results.': '显示在 Google 结果标题下方的简短描述。',
+  'Empty fields fall back to the current default values.': '留空的字段将使用当前默认值。',
+  'Google preview of the French version of the home page.': '首页法语版本的 Google 预览。',
+  'Google preview of the French and English versions of the home page.': '首页法语与英语版本的 Google 预览。',
+  'Identity and SEO of the public site, used on the marketing home page.': '公共网站的身份与 SEO，用于营销首页。',
+  'Title and description used for the marketing home page in Google results. Empty fields fall back to the current default values.': '用于营销首页在 Google 结果中的标题和描述。留空的字段将使用当前默认值。',
+  'The site identity and SEO settings have been updated.': '网站身份与 SEO 设置已更新。',
+  'The display of this text in Google depends on Google and its crawl of the site: changes are not shown instantly.': '该文本在 Google 中的显示取决于 Google 及其对网站的抓取：更改不会立即显示。',
   // Login
   'Login': '登录',
   'Create an account': '创建账户',

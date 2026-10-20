@@ -19,9 +19,7 @@ import {
   Layers,
   Inbox,
   AlertTriangle,
-  FileJson,
 } from 'lucide-react';
-import { useCms } from '@/lib/site-web/cms-context';
 import { toast } from 'sonner';
 
 interface StatusInfo {
@@ -30,6 +28,16 @@ interface StatusInfo {
   pagesCount?: number;
   dataFile?: string;
 }
+
+/**
+ * Famille d'une entrée du catalogue Admin.
+ * - `system`  : page principale (accueil)
+ * - `legal`   : page juridique (CGV / RGPD / cookies)
+ * - `article` : RÉGLAGES INTERNES d'une fiche article du hub Ressources
+ *               (`article__<slug>`) — pas une page publique, pas d'URL directe.
+ * - `custom`  : page éditoriale créée à la main
+ */
+type PageKind = 'system' | 'legal' | 'article' | 'custom';
 
 interface PageItem {
   id: string;
@@ -40,6 +48,24 @@ interface PageItem {
   sectionsCount?: number;
   badge?: string;
   isSystem?: boolean;
+  kind: PageKind;
+}
+
+/** Une entrée est un « réglage d'article » si son id est préfixé par `article__`. */
+function isArticlePageId(id: string): boolean {
+  return id.startsWith('article__');
+}
+
+/**
+ * Transforme un slug d'article technique en libellé lisible.
+ * `event-led-screen-size` → `Event led screen size`.
+ * Reste volontairement neutre : on ne prétend pas reconstituer le titre exact
+ * de l'article (qui vit dans le référentiel éditorial, pas dans le CMS page).
+ */
+function humanizeArticleSlug(slug: string): string {
+  const cleaned = slug.replace(/[-_]+/g, ' ').trim();
+  if (!cleaned) return slug;
+  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
 }
 
 const DEFAULT_PAGES: PageItem[] = [
@@ -52,6 +78,7 @@ const DEFAULT_PAGES: PageItem[] = [
     sectionsCount: 13,
     badge: 'Principale',
     isSystem: true,
+    kind: 'system',
   },
   {
     // Conservée dans la liste par défaut (le nom sert de repli au merge) mais
@@ -63,6 +90,7 @@ const DEFAULT_PAGES: PageItem[] = [
     description: 'Fiche produit écran LED PXT Fine (Série WP 600×337,5 mm, ColdLED)',
     sectionsCount: 5,
     badge: 'Produit',
+    kind: 'custom',
   },
   {
     id: 'mentions_legales',
@@ -72,6 +100,7 @@ const DEFAULT_PAGES: PageItem[] = [
     description: 'Conditions générales de vente, de services et de location (CGV / CGL), informations société',
     sectionsCount: 14,
     badge: 'Juridique',
+    kind: 'legal',
   },
   {
     id: 'politique_confidentialite',
@@ -81,6 +110,7 @@ const DEFAULT_PAGES: PageItem[] = [
     description: 'Protection des données personnelles, conformité RGPD, finalités et droits des utilisateurs',
     sectionsCount: 8,
     badge: 'RGPD',
+    kind: 'legal',
   },
   {
     id: 'gestion_cookies',
@@ -90,23 +120,49 @@ const DEFAULT_PAGES: PageItem[] = [
     description: 'Politique de gestion des traceurs, catégories de cookies et centre de consentement CNIL',
     sectionsCount: 7,
     badge: 'CNIL',
+    kind: 'legal',
   },
 ];
 
-/** Familles proposées en filtre, calquées sur les badges du catalogue. */
+/**
+ * Familles proposées en filtre, calquées sur les badges du catalogue.
+ * Note : plus de famille « article » ici — les réglages internes `article__*`
+ * sont désormais exclus de la liste (masqués, pas supprimés).
+ */
 type PageFilter = 'ALL' | 'system' | 'legal' | 'custom';
-
-const LEGAL_BADGES = ['Juridique', 'RGPD', 'CNIL'];
-
 function matchesFilter(page: PageItem, filter: PageFilter): boolean {
   if (filter === 'ALL') return true;
-  if (filter === 'system') return Boolean(page.isSystem);
-  if (filter === 'legal') return LEGAL_BADGES.includes(page.badge ?? '');
-  return !page.isSystem && !LEGAL_BADGES.includes(page.badge ?? '');
+  if (filter === 'system') return page.kind === 'system';
+  if (filter === 'legal') return page.kind === 'legal';
+  return page.kind === 'custom';
 }
 
+/**
+ * Entrées VOLONTAIREMENT MASQUÉES du tableau d'administration des pages.
+ *
+ * ⚠️ « Masquer » ne veut PAS dire « supprimer » : ces documents restent intacts
+ * dans Firestore, conservent leur contenu, leur route publique et leur
+ * fonctionnement complet sur le site. On cesse simplement de les lister ici.
+ *
+ * Règles (strictes, pour ne jamais masquer une vraie page par erreur) :
+ * - `article__*` : réglages internes de mise en forme d'une fiche article,
+ *   pilotés depuis l'éditeur d'article — pas des pages publiques éditables ici.
+ * - `insights`   : page hub des Ressources, gérée/dérivée de son propre module ;
+ *   sa route publique `/insights` et son contenu restent inchangés.
+ */
+function isHiddenFromPagesTable(id: string): boolean {
+  return isArticlePageId(id) || id === 'insights';
+}
+
+/**
+ * Options de pagination proposées dans le sélecteur « Éléments par page ».
+ * Le nombre choisi borne réellement le nombre de lignes rendues par écran.
+ */
+const PAGE_SIZE_OPTIONS = [5, 10, 15] as const;
+type PageSize = (typeof PAGE_SIZE_OPTIONS)[number];
+const DEFAULT_PAGE_SIZE: PageSize = 5;
+
 export default function SiteWebDashboardPage() {
-  const { saveStatus } = useCms();
   const [status, setStatus] = useState<StatusInfo | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -116,6 +172,12 @@ export default function SiteWebDashboardPage() {
 
   const [filter, setFilter] = useState<PageFilter>('ALL');
   const [query, setQuery] = useState('');
+
+  // Pagination réelle (slice de `filtered`) : la liste affichée est bornée,
+  // et non un simple effet visuel — c'est bien `paginated` qui est rendu.
+  const [page, setPage] = useState(1);
+  // Nombre d'éléments affichés par page, choisissable par l'administrateur.
+  const [pageSize, setPageSize] = useState<PageSize>(DEFAULT_PAGE_SIZE);
 
   // Modales
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -153,16 +215,32 @@ export default function SiteWebDashboardPage() {
             ? p.slug
             : `/web${p.slug?.startsWith('/') ? p.slug : `/${p.slug}`}`;
 
+          // Les `article__*` sont des RÉGLAGES INTERNES (mise en forme d'une fiche
+          // article du hub Ressources), pas des pages publiques. On leur donne un
+          // libellé lisible au lieu de l'identifiant technique brut.
+          const isArticle = isArticlePageId(id);
+          const articleSlug = isArticle ? id.slice('article__'.length) : '';
+
+          const displayName = isArticle
+            ? `Réglages — Article « ${humanizeArticleSlug(articleSlug)} »`
+            : p.name || existing?.name || id;
+
           mergedMap.set(id, {
             id,
-            name: p.name || existing?.name || id,
+            name: displayName,
             slug: p.slug || existing?.slug || `/${id}`,
             editorPath: editorUrl,
-            description:
-              p.meta?.description || existing?.description || 'Page gérée par le CMS',
+            description: isArticle
+              ? "Mise en forme d'une fiche article du hub Ressources. Modifiée depuis l'éditeur d'article — pas une page publique."
+              : p.meta?.description ||
+                existing?.description ||
+                'Page gérée par le CMS',
             sectionsCount: count > 0 ? count : existing?.sectionsCount || 1,
-            badge: existing?.badge || 'Custom',
+            badge: isArticle
+              ? "Réglages d'article"
+              : existing?.badge || 'Custom',
             isSystem: existing?.isSystem || false,
+            kind: isArticle ? 'article' : existing?.kind || 'custom',
           });
         });
 
@@ -181,8 +259,17 @@ export default function SiteWebDashboardPage() {
           (p) => !isSuperseded(p.id)
         );
 
+        // Les réglages internes d'article (`article__*`) et la page hub
+        // `insights` ne sont PAS listés ici : ils restent intacts dans Firestore
+        // et continuent d'être gérés par leurs modules respectifs, mais on ne les
+        // expose plus dans ce catalogue. Le filtre est strictement limité à des
+        // identifiants connus, donc aucune vraie page n'est masquée par erreur.
+        const visiblePages = filtered.filter(
+          (p) => !isHiddenFromPagesTable(p.id)
+        );
+
         // Une page CMS sans aucune section n'a rien à éditer : on ne la liste pas.
-        const cleaned = filtered.filter(
+        const cleaned = visiblePages.filter(
           (p) => p.isSystem || (p.sectionsCount ?? 0) > 0
         );
 
@@ -246,6 +333,33 @@ export default function SiteWebDashboardPage() {
     });
   }, [pagesList, filter, query]);
 
+  // Taille de page : bornée pour rester lisible et éviter un défilement long.
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+
+  // Si un filtre/recherche/taille de page réduit la liste, on borne la page
+  // courante pour ne jamais afficher un écran vide ni un numéro invalide.
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
+
+  // Réinitialise à la première page dès que le filtre ou la recherche change.
+  useEffect(() => {
+    setPage(1);
+  }, [filter, query]);
+
+  // Revenir à la première page lorsque le nombre d'éléments par page change.
+  useEffect(() => {
+    setPage(1);
+  }, [pageSize]);
+
+  // Tranche réellement rendue — c'est bien cette liste qui est mappée dans le tableau.
+  const paginated = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, page, pageSize]);
+
+  const rangeStart = filtered.length === 0 ? 0 : (page - 1) * pageSize + 1;
+  const rangeEnd = Math.min(page * pageSize, filtered.length);
   // Action: créer une page
   const handleCreatePage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -458,7 +572,7 @@ export default function SiteWebDashboardPage() {
 
           <div className="flex items-center gap-2.5 flex-wrap shrink-0">
             <Link
-              href="/web"
+              href="https://pixiatech.com/"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-neutral-800/80 hover:bg-neutral-700 text-white text-xs font-bold border border-white/10 transition-all cursor-pointer shadow-sm active:scale-95"
@@ -593,7 +707,7 @@ export default function SiteWebDashboardPage() {
                     </td>
                   </tr>
                 ) : (
-                  filtered.map((page) => (
+                  paginated.map((page) => (
                     <tr
                       key={page.id}
                       className="relative hover:bg-neutral-50/90 transition-colors"
@@ -609,7 +723,13 @@ export default function SiteWebDashboardPage() {
                                 {page.name}
                               </span>
                               {page.badge && (
-                                <span className="text-[9.5px] font-mono uppercase px-1.5 py-0.5 rounded bg-neutral-100 text-neutral-600 font-semibold shrink-0">
+                                <span
+                                  className={`text-[9.5px] uppercase px-1.5 py-0.5 rounded font-semibold shrink-0 ${
+                                    page.kind === 'article'
+                                      ? 'bg-slate-100 text-slate-600'
+                                      : 'font-mono bg-neutral-100 text-neutral-600'
+                                  }`}
+                                >
                                   {page.badge}
                                 </span>
                               )}
@@ -636,6 +756,10 @@ export default function SiteWebDashboardPage() {
                           <span className="text-[10px] font-mono font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
                             Principale
                           </span>
+                        ) : page.kind === 'article' ? (
+                          <span className="text-[10px] font-mono font-extrabold uppercase px-2 py-0.5 rounded-full bg-slate-200 text-slate-700">
+                            Réglages internes
+                          </span>
                         ) : (
                           <span className="text-[10px] font-mono font-extrabold uppercase px-2 py-0.5 rounded-full bg-sky-100 text-sky-700">
                             CMS actif
@@ -651,15 +775,28 @@ export default function SiteWebDashboardPage() {
                           >
                             <PenSquare className="w-4 h-4" />
                           </Link>
-                          <Link
-                            href={page.slug}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="p-2 rounded-xl text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100 transition-colors cursor-pointer"
-                            title="Voir la page publique"
-                          >
-                            <ExternalLink className="w-4 h-4" />
-                          </Link>
+                          {page.kind === 'article' ? (
+                            // Pas d'URL publique : `/web/article__*` retombe sur
+                            // l'accueil. On désactive le lien plutôt que de laisser
+                            // croire à une page consultable.
+                            <span
+                              className="p-2 rounded-xl text-neutral-300 cursor-not-allowed"
+                              title="Réglage interne : pas d'URL publique directe"
+                              aria-disabled="true"
+                            >
+                              <ExternalLink className="w-4 h-4" />
+                            </span>
+                          ) : (
+                            <Link
+                              href={page.slug}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-2 rounded-xl text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100 transition-colors cursor-pointer"
+                              title="Voir la page publique"
+                            >
+                              <ExternalLink className="w-4 h-4" />
+                            </Link>
+                          )}
                           <button
                             type="button"
                             onClick={() => handleOpenEdit(page)}
@@ -770,6 +907,72 @@ export default function SiteWebDashboardPage() {
               </tbody>
             </table>
           </div>
+
+          {/* Pagination réelle : `paginated` est la tranche effectivement rendue.
+              Sélecteur « Éléments par page » + Précédent/Suivant + numéros de page
+              + compteur « X–Y sur N ». */}
+          {filtered.length > 0 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-neutral-200/80 px-4 py-3 text-xs">
+              <div className="flex items-center gap-3">
+                <label htmlFor="pages-size" className="text-neutral-500 font-semibold">
+                  Éléments par page
+                </label>
+                <select
+                  id="pages-size"
+                  value={pageSize}
+                  onChange={(e) => setPageSize(Number(e.target.value) as PageSize)}
+                  className="rounded-xl border border-neutral-200 bg-white px-2.5 py-1.5 font-bold text-neutral-700 focus:border-emerald-600 focus:outline-none cursor-pointer"
+                >
+                  {PAGE_SIZE_OPTIONS.map((size) => (
+                    <option key={size} value={size}>
+                      {size}
+                    </option>
+                  ))}
+                </select>
+                <span className="text-neutral-500">
+                  {`${rangeStart}–${rangeEnd} sur ${filtered.length} page${
+                    filtered.length > 1 ? 's' : ''
+                  }`}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page <= 1}
+                  className="px-3 py-1.5 rounded-xl border border-neutral-200 text-neutral-600 font-semibold hover:bg-neutral-100 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Précédent
+                </button>
+
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => setPage(n)}
+                    aria-current={n === page ? 'page' : undefined}
+                    className={`min-w-[32px] px-2 py-1.5 rounded-xl font-bold transition-colors cursor-pointer ${
+                      n === page
+                        ? 'bg-neutral-900 text-white shadow-sm'
+                        : 'text-neutral-600 hover:bg-neutral-100'
+                    }`}
+                  >
+                    {n}
+                  </button>
+                ))}
+
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page >= totalPages}
+                  className="px-3 py-1.5 rounded-xl border border-neutral-200 text-neutral-600 font-semibold hover:bg-neutral-100 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Suivant
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -944,15 +1147,6 @@ export default function SiteWebDashboardPage() {
           </div>
         </div>
       )}
-
-      {/* Pied : état de persistance + sauvegarde CMS */}
-      <div className="flex flex-wrap items-center justify-between gap-3 text-[11px] font-mono text-neutral-400">
-        <span className="inline-flex items-center gap-1.5">
-          <FileJson className="w-3.5 h-3.5" />
-          {status?.dataFile ? `Persistance : ${status.dataFile}` : 'Persistance : JSON serveur synchronisé'}
-        </span>
-        {saveStatus ? <span>{String(saveStatus)}</span> : null}
-      </div>
     </div>
   );
 }

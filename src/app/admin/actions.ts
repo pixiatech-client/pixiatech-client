@@ -3863,6 +3863,8 @@ const settingsSchema = z.object({
     image: z.string().nullable(),
   }).optional(),
   messaging: messagingSchema.optional(),
+  seoTitle: translatedStringSchema.optional(),
+  seoDescription: translatedStringSchema.optional(),
   emailVerification: z.object({
     code: z.string().optional(),
     companyName: z.string().optional(),

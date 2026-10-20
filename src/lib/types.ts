@@ -213,6 +213,13 @@ export type Settings = {
     favicon?: string | null;
   };
   messaging?: MessagingSettings;
+  /**
+   * Identité & référencement SEO global de la page d'accueil marketing (/web).
+   * Bilingue FR/EN. Vide/absent = les métadonnées statiques de
+   * `src/app/web/layout.tsx` restent utilisées comme repli.
+   */
+  seoTitle?: TranslatedString;
+  seoDescription?: TranslatedString;
   performanceResetAt?: string;
   configuratorStatsResetAt?: string;
   emailVerification?: {

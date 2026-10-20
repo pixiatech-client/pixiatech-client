@@ -3,19 +3,71 @@ import '@/web/cms/cms-text-scale.css';
 import { WebCmsShell } from './web-cms-shell';
 import { getCmsPages } from '@/lib/site-web/pages-store';
 import { IntroPixiaTech } from '@/web/components/IntroPixiaTech';
+import { getSettings } from '@/app/actions/public-actions';
+import {
+  DEFAULT_SITE_TITLE,
+  DEFAULT_SITE_DESCRIPTION,
+  DEFAULT_SITE_OG_DESCRIPTION,
+} from '@/lib/site-identity';
+import { cookies } from 'next/headers';
+import type { Metadata } from 'next';
 
-export const metadata = {
-  title: 'PixiaTech PXT Fine - Indoor LED Display',
-  description:
-    'Official product template for PixiaTech PXT Fine indoor LED display, featuring animated LED canvas, ColdLED technology, interactive architectural specs, and 3D cabinet visualization.',
-  openGraph: {
-    title: 'PixiaTech PXT Fine - Indoor LED Display',
-    description:
-      'Official product template for PixiaTech PXT Fine indoor LED display.',
-    type: 'website',
-    siteName: 'PixiaTech',
-  },
-};
+// Valeurs de repli : utilisées tant qu'aucun titre/description SEO global
+// n'a été enregistré depuis l'administration (PixiaTech Web > Paramètres
+// généraux > « Identité & SEO »). Source unique : `src/lib/site-identity.ts`.
+const FALLBACK_TITLE = DEFAULT_SITE_TITLE;
+const FALLBACK_DESCRIPTION = DEFAULT_SITE_DESCRIPTION;
+const FALLBACK_OG_DESCRIPTION = DEFAULT_SITE_OG_DESCRIPTION;
+
+/**
+ * Métadonnées globales du site marketing. Le titre et la description sont
+ * pilotés par les paramètres administrables (settings/main : `seoTitle` /
+ * `seoDescription`, bilingue FR/EN) ; les pages filles qui définissent leur
+ * propre `generateMetadata` (contact, insights, produits, légales) continuent
+ * de remplacer ces valeurs.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const title = FALLBACK_TITLE;
+  const description = FALLBACK_DESCRIPTION;
+  try {
+    const settings = await getSettings();
+    const locale = (await cookies()).get('admin-locale')?.value;
+    const isEn = locale === 'en';
+    const seoTitle = isEn
+      ? settings.seoTitle?.en || settings.seoTitle?.fr
+      : settings.seoTitle?.fr || settings.seoTitle?.en;
+    const seoDescription = isEn
+      ? settings.seoDescription?.en || settings.seoDescription?.fr
+      : settings.seoDescription?.fr || settings.seoDescription?.en;
+
+    const resolvedTitle = seoTitle?.trim() || title;
+    const resolvedDescription = seoDescription?.trim() || description;
+
+    return {
+      title: resolvedTitle,
+      description: resolvedDescription,
+      openGraph: {
+        title: resolvedTitle,
+        description: seoDescription?.trim() || FALLBACK_OG_DESCRIPTION,
+        type: 'website',
+        siteName: 'PixiaTech',
+      },
+    };
+  } catch (err) {
+    console.warn('[WebLayout] getSettings fallback:', err);
+  }
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description: FALLBACK_OG_DESCRIPTION,
+      type: 'website',
+      siteName: 'PixiaTech',
+    },
+  };
+}
 
 export default async function WebLayout({ children }: { children: React.ReactNode }) {
   let initialPages = {};
