@@ -238,6 +238,7 @@ export function closestExplicitKeyElement(
   while (cur && cur !== root) {
     if (
       cur.hasAttribute('data-text-key') ||
+      cur.hasAttribute('data-element-key') ||
       cur.hasAttribute('data-editable') ||
       cur.hasAttribute('data-contact-key')
     ) {

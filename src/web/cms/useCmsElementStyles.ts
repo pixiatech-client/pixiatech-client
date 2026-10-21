@@ -169,7 +169,7 @@ export function applyElementStyle(el: HTMLElement, style: ElementStyle, lang?: s
  * édition (public ↔ édition) et à chaque (re)montage de section.
  */
 export function useCmsElementStyles(): void {
-  const { isEditing, currentPageId, currentPageData, currentLang } = useCms();
+  const { isEditing, currentPageId, currentPageData, currentLang, pages } = useCms();
 
   useEffect(() => {
     let raf1 = 0;
@@ -177,13 +177,14 @@ export function useCmsElementStyles(): void {
     let raf3 = 0;
 
     function apply() {
-      const sections = currentPageData?.sections as
-        | Record<string, Record<string, unknown>>
-        | undefined;
-      if (!sections) return;
+      const sections = (currentPageData?.sections || {}) as
+        | Record<string, Record<string, unknown>>;
+      const homeSections = (pages?.['home']?.sections || {}) as
+        | Record<string, Record<string, unknown>>;
 
       for (const { node, sectionKey } of getRegisteredSections()) {
-        const sectionData = sections[sectionKey];
+        const isGlobal = sectionKey === 'footer' || sectionKey === 'header';
+        const sectionData = sections[sectionKey] || (isGlobal ? homeSections[sectionKey] : undefined);
         const bag = sectionData?._elements as Record<string, ElementStyle> | undefined;
         if (!bag || Object.keys(bag).length === 0) continue;
 
@@ -218,5 +219,5 @@ export function useCmsElementStyles(): void {
       cancelAnimationFrame(raf3);
       unsubscribe();
     };
-  }, [isEditing, currentPageId, currentPageData, currentLang]);
+  }, [isEditing, currentPageId, currentPageData, currentLang, pages]);
 }

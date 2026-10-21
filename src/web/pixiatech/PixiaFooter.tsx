@@ -13,6 +13,12 @@ interface PixiaFooterProps {
 }
 
 const FOOTER_CSS = `
+  #site-footer,
+  #site-footer .wrap,
+  #site-footer .foot-grid,
+  #site-footer [data-element-key] {
+    pointer-events: auto;
+  }
   #site-footer a, #site-footer button, #site-footer input {
     pointer-events: auto !important;
   }
@@ -95,7 +101,7 @@ export const PixiaFooter: React.FC<PixiaFooterProps> = ({
           texte à comparer entre le HTML serveur et l'arbre client. */}
       <style dangerouslySetInnerHTML={{ __html: FOOTER_CSS }} />
 
-      <div className="wrap" style={{ position: 'relative', zIndex: 1, padding: '80px var(--gutter) 0', pointerEvents: 'none' }}>
+      <div className="wrap" style={{ position: 'relative', zIndex: 1, padding: '80px var(--gutter) 0', pointerEvents: 'auto' }}>
 
         {/* Foot Grid: 4 columns */}
         <div
@@ -110,6 +116,7 @@ export const PixiaFooter: React.FC<PixiaFooterProps> = ({
           {/* Column 1: PRODUCTS */}
           <div>
             <div
+              data-element-key="footer_col1_title"
               style={{
                 fontSize: 11,
                 letterSpacing: '.24em',
@@ -123,20 +130,21 @@ export const PixiaFooter: React.FC<PixiaFooterProps> = ({
               {t.products}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, fontSize: 14 }}>
-              <a href={webLink('/product/pxt-fine')} style={{ color: 'var(--dark-text-2, #c9c7c1)', transition: 'all .2s ease', textDecoration: 'none' }}>
+              <a href={webLink('/product/pxt-fine')} data-element-key="footer_col1_link_1" style={{ color: 'var(--dark-text-2, #c9c7c1)', transition: 'all .2s ease', textDecoration: 'none' }}>
                 XR Fine (WP Series)
               </a>
-              <a href={webLink('/products')} style={{ color: 'var(--dark-text-2, #c9c7c1)', transition: 'all .2s ease', textDecoration: 'none' }}>
+              <a href={webLink('/products')} data-element-key="footer_col1_link_2" style={{ color: 'var(--dark-text-2, #c9c7c1)', transition: 'all .2s ease', textDecoration: 'none' }}>
                 XR Vision (MV Series)
               </a>
-              <a href={webLink('/products')} style={{ color: 'var(--dark-text-2, #c9c7c1)', transition: 'all .2s ease', textDecoration: 'none' }}>
+              <a href={webLink('/products')} data-element-key="footer_col1_link_3" style={{ color: 'var(--dark-text-2, #c9c7c1)', transition: 'all .2s ease', textDecoration: 'none' }}>
                 XR Flex (AR MKII)
               </a>
-              <a href={webLink('/products')} style={{ color: 'var(--dark-text-2, #c9c7c1)', transition: 'all .2s ease', textDecoration: 'none' }}>
+              <a href={webLink('/products')} data-element-key="footer_col1_link_4" style={{ color: 'var(--dark-text-2, #c9c7c1)', transition: 'all .2s ease', textDecoration: 'none' }}>
                 XR Studio (VP Series)
               </a>
               <a
                 href={webLink('/products')}
+                data-element-key="footer_col1_all_series"
                 style={{
                   color: '#C3F910',
                   fontWeight: 700,
@@ -156,6 +164,7 @@ export const PixiaFooter: React.FC<PixiaFooterProps> = ({
           {/* Column 2: COMPANY */}
           <div>
             <div
+              data-element-key="footer_col2_title"
               style={{
                 fontSize: 11,
                 letterSpacing: '.24em',
@@ -171,6 +180,7 @@ export const PixiaFooter: React.FC<PixiaFooterProps> = ({
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, fontSize: 14 }}>
               <a
                 href={webLink('/#manifesto')}
+                data-element-key="footer_col2_link_1"
                 onClick={(e) => {
                   e.preventDefault();
                   scrollTo('#manifesto');
@@ -181,6 +191,7 @@ export const PixiaFooter: React.FC<PixiaFooterProps> = ({
               </a>
               <a
                 href={webLink('/#projects')}
+                data-element-key="footer_col2_link_2"
                 onClick={(e) => {
                   e.preventDefault();
                   scrollTo('#projects');
@@ -191,6 +202,7 @@ export const PixiaFooter: React.FC<PixiaFooterProps> = ({
               </a>
               <a
                 href={webLink('/#technology')}
+                data-element-key="footer_col2_link_3"
                 onClick={(e) => {
                   e.preventDefault();
                   scrollTo('#technology');
@@ -201,6 +213,7 @@ export const PixiaFooter: React.FC<PixiaFooterProps> = ({
               </a>
               <a
                 href={webLink('/#experience')}
+                data-element-key="footer_col2_link_4"
                 onClick={(e) => {
                   e.preventDefault();
                   scrollTo('#experience');
@@ -215,6 +228,7 @@ export const PixiaFooter: React.FC<PixiaFooterProps> = ({
           {/* Column 3: SUPPORT */}
           <div>
             <div
+              data-element-key="footer_col3_title"
               style={{
                 fontSize: 11,
                 letterSpacing: '.24em',
@@ -228,17 +242,18 @@ export const PixiaFooter: React.FC<PixiaFooterProps> = ({
               {t.support}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, fontSize: 14 }}>
-              <a href={webLink('/contact')} style={{ color: 'var(--dark-text-2, #c9c7c1)', transition: 'all .2s ease', textDecoration: 'none' }}>
+              <a href={webLink('/contact')} data-element-key="footer_col3_link_1" style={{ color: 'var(--dark-text-2, #c9c7c1)', transition: 'all .2s ease', textDecoration: 'none' }}>
                 {t.contact}
               </a>
-              <a href={webLink('/contact')} style={{ color: 'var(--dark-text-2, #c9c7c1)', transition: 'all .2s ease', textDecoration: 'none' }}>
+              <a href={webLink('/contact')} data-element-key="footer_col3_link_2" style={{ color: 'var(--dark-text-2, #c9c7c1)', transition: 'all .2s ease', textDecoration: 'none' }}>
                 {t.techSupport}
               </a>
-              <a href={webLink('/insights')} style={{ color: 'var(--dark-text-2, #c9c7c1)', transition: 'all .2s ease', textDecoration: 'none' }}>
+              <a href={webLink('/insights')} data-element-key="footer_col3_link_3" style={{ color: 'var(--dark-text-2, #c9c7c1)', transition: 'all .2s ease', textDecoration: 'none' }}>
                 {t.resources}
               </a>
               <button
                 type="button"
+                data-element-key="footer_col3_start_project"
                 onClick={handleStartProject}
                 style={{
                   background: 'transparent',
@@ -262,6 +277,7 @@ export const PixiaFooter: React.FC<PixiaFooterProps> = ({
           {/* Column 4: HEADQUARTERS */}
           <div>
             <div
+              data-element-key="footer_col4_title"
               style={{
                 fontSize: 11,
                 letterSpacing: '.24em',
@@ -275,6 +291,8 @@ export const PixiaFooter: React.FC<PixiaFooterProps> = ({
               {t.hq}
             </div>
             <div
+              data-element-key="footer_col4_address"
+              data-multiline="true"
               style={{
                 fontSize: 14,
                 lineHeight: 1.7,
@@ -282,9 +300,7 @@ export const PixiaFooter: React.FC<PixiaFooterProps> = ({
                 whiteSpace: 'pre-line',
               }}
             >
-              PixiaTech International
-              14 Avenue des Champs-Élysées
-              75008 Paris / France
+              {`PixiaTech International\n14 Avenue des Champs-Élysées\n75008 Paris / France`}
             </div>
             <div
               style={{
@@ -297,6 +313,7 @@ export const PixiaFooter: React.FC<PixiaFooterProps> = ({
             >
               <a
                 href="https://www.linkedin.com"
+                data-element-key="footer_col4_linkedin"
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{
@@ -322,6 +339,7 @@ export const PixiaFooter: React.FC<PixiaFooterProps> = ({
               </a>
               <a
                 href="https://www.instagram.com"
+                data-element-key="footer_col4_instagram"
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{
@@ -382,7 +400,7 @@ export const PixiaFooter: React.FC<PixiaFooterProps> = ({
               fontFamily: 'var(--font-mono)',
             }}
           >
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+            <span data-element-key="footer_bottom_location" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
               <span
                 style={{
                   width: 6,
@@ -398,6 +416,7 @@ export const PixiaFooter: React.FC<PixiaFooterProps> = ({
             <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
               <a
                 href="/politique-confidentialite"
+                data-element-key="footer_legal_privacy"
                 className="footer-legal-link"
                 style={{ color: 'inherit', transition: 'color .2s', textDecoration: 'none' }}
               >
@@ -405,6 +424,7 @@ export const PixiaFooter: React.FC<PixiaFooterProps> = ({
               </a>
               <a
                 href="/gestion-cookies"
+                data-element-key="footer_legal_cookies"
                 className="footer-legal-link"
                 style={{ color: 'inherit', transition: 'color .2s', textDecoration: 'none' }}
               >
@@ -412,6 +432,7 @@ export const PixiaFooter: React.FC<PixiaFooterProps> = ({
               </a>
               <a
                 href="/mentions-legales"
+                data-element-key="footer_legal_mentions"
                 className="footer-legal-link"
                 style={{ color: 'inherit', transition: 'color .2s', textDecoration: 'none' }}
               >

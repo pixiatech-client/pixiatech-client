@@ -330,7 +330,22 @@ export const CmsProvider: React.FC<{
         updatedAt: new Date().toISOString(),
         sections: { ...sections, [sectionKey]: { ...section, _elements: next } },
       };
-      commitPages((prev) => ({ ...prev, [currentPageId]: updatedPage }));
+
+      const isGlobalShared = sectionKey === 'footer' || sectionKey === 'header';
+      commitPages((prev) => {
+        const nextPages = { ...prev, [currentPageId]: updatedPage };
+        if (isGlobalShared && currentPageId !== 'home' && nextPages['home']) {
+          const homePage = nextPages['home'];
+          const homeSections = (homePage.sections || {}) as Record<string, Record<string, unknown>>;
+          const homeSec = homeSections[sectionKey] || {};
+          nextPages['home'] = {
+            ...homePage,
+            updatedAt: new Date().toISOString(),
+            sections: { ...homeSections, [sectionKey]: { ...homeSec, _elements: next } },
+          };
+        }
+        return nextPages;
+      });
       return next[elementKey] || {};
     },
     [currentPageId, commitPages]

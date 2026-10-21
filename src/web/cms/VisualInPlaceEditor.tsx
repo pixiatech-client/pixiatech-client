@@ -251,6 +251,17 @@ export const VisualInPlaceEditor: React.FC = () => {
         opacity: 1 !important;
         transform: none !important;
       }
+      /* Mode édition CMS : déverrouiller tous les conteneurs et textes du footer pour inspection et édition */
+      body.cms-editing #site-footer,
+      body.cms-editing #site-footer .wrap,
+      body.cms-editing #site-footer .foot-grid,
+      body.cms-editing #site-footer [data-element-key],
+      body.cms-editing #site-footer div,
+      body.cms-editing #site-footer span,
+      body.cms-editing #site-footer a,
+      body.cms-editing #site-footer button {
+        pointer-events: auto !important;
+      }
     `;
     document.head.appendChild(styleEl);
 
@@ -450,6 +461,7 @@ export const VisualInPlaceEditor: React.FC = () => {
       // Cas 2: Clic sur un texte — feuille de texte ou élément à clé explicite.
       if (
         !target.hasAttribute('data-text-key') &&
+        !target.hasAttribute('data-element-key') &&
         !target.hasAttribute('data-editable') &&
         !isSimpleTextElement(target)
       ) {
@@ -472,11 +484,20 @@ export const VisualInPlaceEditor: React.FC = () => {
       const editLang = normalizeLang(currentLang);
 
       const handleEditKey = (ev: KeyboardEvent) => {
-        // Ne pas laisser les raccourcis globaux / l'action par défaut d'un
-        // bouton (Entrée) faire défiler la page pendant la saisie. La barre
-        // d'espace doit rester insérable (aucun preventDefault).
         ev.stopPropagation();
-        if (ev.key === 'Enter' && !ev.shiftKey) ev.preventDefault();
+        if (ev.key === 'Enter') {
+          const computedWs = typeof window !== 'undefined' ? window.getComputedStyle(target).whiteSpace : '';
+          const isMultiLine =
+            target.tagName === 'P' ||
+            target.tagName === 'TEXTAREA' ||
+            computedWs === 'pre-line' ||
+            computedWs === 'pre-wrap' ||
+            target.hasAttribute('data-multiline');
+          if (!isMultiLine && !ev.shiftKey) {
+            ev.preventDefault();
+            target.blur();
+          }
+        }
       };
 
       const onBlur = () => {
