@@ -65,10 +65,10 @@ PDF obligatoirement exploitables automatiquement, robuste à différentes struct
 | 5 | Réalisations (`FieldworkSection`) | eyebrow, **titre** | CMS `fieldwork.title` | ✅ |
 | 5 | Réalisations | **projets** (image, légende, lieu/année) | codé en dur (`projects`) | ❌ (CMS `fieldwork.projects[]` existe mais non lu) |
 | 6 | CTA final (`NextSection`) | bouton consultation | codé en dur | — |
-| — | En-tête (`XerHeader`) | méga-menu produits + carte produit active | `src/web/xeron/xeron-catalog.ts` (`CATALOG_PRODUCTS`, `MEGA_COLUMNS`) | ✅ |
-| — | Routeur | `/web/pxt-fine` → WebPage ; clic produit → TOUJOURS `/web/pxt-fine` | `XerHeader.handleProductClick` | ⚠️ slug ignoré |
+| — | En-tête (`PixiaHeader`) | méga-menu produits + carte produit active | `src/web/pixiatech/pixiatech-catalog.ts` (`CATALOG_PRODUCTS`, `MEGA_COLUMNS`) | ✅ |
+| — | Routeur | `/web/pxt-fine` → WebPage ; clic produit → TOUJOURS `/web/pxt-fine` | `PixiaHeader.handleProductClick` | ⚠️ slug ignoré |
 | — | SEO | meta.title / meta.description | CMS `product_wp.meta` | ❌ (non rendu dans `<head>`) |
-| — | Pied (`XerFooter`) | liens produits génériques → `/web/products` | codé en dur | — |
+| — | Pied (`PixiaFooter`) | liens produits génériques → `/web/products` | codé en dur | — |
 
 ### 2.2 Sources de données actuelles (dispersées — obstacle au multi-produits)
 
@@ -76,7 +76,7 @@ PDF obligatoirement exploitables automatiquement, robuste à différentes struct
    (`hero/overview/design/features/fieldwork` + `meta`), servie par `/api/site-web/pages`,
    lue par `useCms()` (`src/lib/site-web/cms-context.tsx`), modifiable en visuel via l'éditeur.
 2. **Fichier** `src/web/data/specs-data.json` → 9 modèles « IL-FISS-IRWPx » (matrice de specs).
-3. **Fichier** `src/web/xeron/xeron-catalog.ts` → 13 séries (`CATALOG_PRODUCTS`) + méga-menu (`MEGA_COLUMNS`).
+3. **Fichier** `src/web/pixiatech/pixiatech-catalog.ts` → 13 séries (`CATALOG_PRODUCTS`) + méga-menu (`MEGA_COLUMNS`).
 4. **Composants** → contenus codés en dur (tags, stats, technologies, blueprint, configurations, 7 features, 2 projets, vidéos).
 5. **Admin boutique** `/admin/produits` → produits de la boutique (Firestore) :
    `ProductManagementClient.tsx` (~8 000 lignes) + `firebase.ts`.

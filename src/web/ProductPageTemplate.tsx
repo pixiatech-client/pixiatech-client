@@ -182,7 +182,7 @@ function ProductView({ slug, fallbackProduct, isPreview = false }: ProductPageTe
           validé la session admin et que le produit n'est pas publié. */}
       {isPreview && <ProductPreviewBar slug={slug} />}
 
-      {/* Sticky Blur Header matching xeron.co.
+      {/* Sticky Blur Header.
           La navigation interne de la fiche vit ICI, dans le header principal
           (Accueil | Produits | [sections] | Ressources | Contact). Elle ne
           passe que sur une fiche produit : `PixiaHeader` l'ignore ailleurs, et
@@ -194,7 +194,7 @@ function ProductView({ slug, fallbackProduct, isPreview = false }: ProductPageTe
         productSections={anchors}
       />
 
-      {/* Main Product Sections matching xeron.co/en/products/wp —
+      {/* Main Product Sections —
           chaque section est enveloppée par EditableWrapper pour l'éditeur visuel (Point 2 & 4). */}
       <main>
         {/* Section 0: Hero & Animated LED Canvas */}
@@ -278,7 +278,7 @@ function ProductView({ slug, fallbackProduct, isPreview = false }: ProductPageTe
         )}
       </main>
 
-      {/* Site Footer matching xeron.co */}
+      {/* Site Footer */}
       <PixiaFooter
         companyName={companyName}
         lang={effectiveLang}

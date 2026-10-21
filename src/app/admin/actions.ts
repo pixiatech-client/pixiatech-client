@@ -3958,7 +3958,7 @@ export async function getSettings(): Promise<Settings> {
     maxProductsPerQuote: 3,
     previewScreenImageUrl: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&q=90&w=2000',
     emergencyStopEnabled: false,
-    emergencyReturnUrl: 'https://mahboubidz.com/',
+    emergencyReturnUrl: '/',
     emergencyStopMessage: "Pour des raisons de maintenance, notre outil d'estimation en ligne est actuellement suspendu. Veuillez nous excuser pour la gêne occasionnée.",
     congratulationsTitle: { fr: "🌟🌟 Félicitations ! 🌟🌟", en: "🌟🌟 Congratulations! 🌟🌟" },
     congratulationsMessage: { fr: "Votre demande d'estimation a bien été envoyée. Un commercial vous contactera dans les plus brefs délais pour discuter de votre projet.", en: "Your quote request has been sent successfully. A sales representative will contact you shortly to discuss your project." },

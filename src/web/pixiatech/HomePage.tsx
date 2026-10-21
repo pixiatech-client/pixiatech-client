@@ -10,7 +10,7 @@ import { useI18n } from '@/lib/i18n';
 import { ConsultationModal } from './ConsultationModal';
 import { BackToTopButton } from './BackToTopButton';
 
-// All Sections in Authentic xeron.co Hierarchy
+// All Sections in Authentic PixiaTech Hierarchy
 import { HeroSection } from './sections/HeroSection';
 import { ManifestoSection } from './sections/ManifestoSection';
 import { ShowreelSection } from './sections/ShowreelSection';

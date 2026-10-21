@@ -5,8 +5,8 @@ import { useEffect, useRef, useState } from 'react';
 /**
  * IntroPixiaTech — animation d'introduction « pixels → texte » du site Web.
  *
- * Reproduction fidèle du principe observé sur xeron.co (analyse du code source
- * public) : des particules carrées colorées, nées aléatoirement dans un grand
+ * Reproduction fidèle d'un principe d'animation observé sur le Web (analyse du
+ * code source public) : des particules carrées colorées, nées aléatoirement dans un grand
  * rectangle centré, convergent en ligne droite (easing cubic in-out) vers les
  * formes réelles des lettres « PIXIATECH » rendues avec la police GRATIS.ttf,
  * claquent sur les couleurs finales, puis se fondent dans le texte net avant
@@ -27,7 +27,7 @@ const FONT_FAMILY = 'PixiaTechLogo';
  * le tracé « flèche verte ». Le mot reste bien « Pixiatech ».
  */
 const INTRO_TEXT = 'PIXIATECH';
-/** Palette flash identique à la référence Xeron. */
+/** Palette flash des particules. */
 const PARTICLE_COLORS = ['#ff3b30', '#34d97b', '#3b7bff'];
 
 type IntroState = 'pending' | 'run' | 'off';
@@ -165,7 +165,7 @@ export function IntroPixiaTech() {
             ctx.fillRect(pt.sx + (pt.tx - pt.sx) * ease, pt.sy + (pt.ty - pt.sy) * ease, size, size);
           }
         }
-        // Fond du texte net à travers les particules (équivalent du PNG chez Xeron).
+        // Fond du texte net à travers les particules.
         if (xf > 0) {
           ctx.globalAlpha = xf;
           drawText(ctx);
@@ -205,7 +205,7 @@ export function IntroPixiaTech() {
 
   return (
     <div
-      /* z-index 9999 (Xeron : 400) — doit passer au-dessus de la bannière
+      /* z-index 9999 — doit passer au-dessus de la bannière
          cookies (z-1000) et des modales du site PixiaTech. */
       style={{ position: 'fixed', inset: 0, zIndex: 9999, background: '#050505' }}
       aria-hidden="true"

@@ -212,7 +212,7 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
   const prevScrollRef = useRef(0);
   const headerRootRef = useRef<HTMLDivElement>(null);
 
-  // Scroll listener matching xeron.co
+  // Scroll listener
   useEffect(() => {
     let anim = 0;
     const handleScroll = () => {
@@ -752,7 +752,7 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
           </div>
         </nav>
 
-        {/* Mega Menu Dropdown (Xeron style) */}
+        {/* Mega Menu Dropdown */}
         {megaOpen && (
           <div
             className="mega"

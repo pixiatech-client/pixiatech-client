@@ -135,7 +135,7 @@ function AppContent() {
       {/* Main Content Router */}
       <main>
         {currentPage === "home" ? (
-          /* Primary Homepage: Exact reproduction of https://xeron.co/en#markets */
+          /* Primary Homepage: reproduction of the PixiaTech markets layout */
           <AboutPage
             lang={lang}
             onOpenConsultation={() => setIsConsultationOpen(true)}

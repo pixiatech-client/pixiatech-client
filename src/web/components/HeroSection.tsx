@@ -104,7 +104,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       }}
     >
       <div className="wrap">
-        {/* Breadcrumb matching xeron.co */}
+        {/* Breadcrumb */}
         <div
           style={{
             display: 'flex',
@@ -154,7 +154,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           />
         )}
 
-        {/* Sub-header, Tags & Request Quote button matching xeron.co */}
+        {/* Sub-header, Tags & Request Quote button */}
         <div
           style={{
             display: 'flex',

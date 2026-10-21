@@ -205,7 +205,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ lang = 'FR', onOpenCon
       {/* Le sélecteur de photo du Hero est désormais intégré à la barre de
           section unique (`CmsSectionBar`) quand le Hero est actif. */}
 
-      {/* Top right slide indicator dots (style Xeron 01/02/03) */}
+      {/* Top right slide indicator dots (01/02/03) */}
       {slides.length > 1 && (
         <div className="hero-dots-top" data-cms-ui>
           {slides.map((_, idx) => (

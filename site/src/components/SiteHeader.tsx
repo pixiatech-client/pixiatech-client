@@ -33,7 +33,7 @@ export const SiteHeader: React.FC<SiteHeaderProps> = ({
 
   const prevScrollRef = useRef(0);
 
-  // Scroll listener matching xeron.co
+  // Scroll listener
   useEffect(() => {
     let anim = 0;
     const handleScroll = () => {
@@ -205,7 +205,7 @@ export const SiteHeader: React.FC<SiteHeaderProps> = ({
 
           {/* Desktop Navigation Links */}
           {currentPage === "home" ? (
-            /* Main Page Navigation: Exact Xeron Layout */
+            /* Main Page Navigation: exact PixiaTech layout */
             <div
               className="nav-desktop-links"
               style={{
@@ -510,7 +510,7 @@ export const SiteHeader: React.FC<SiteHeaderProps> = ({
           </div>
         </nav>
 
-        {/* Mega Menu Dropdown (Xeron style) */}
+        {/* Mega Menu Dropdown */}
         {megaOpen && currentPage === "home" && (
           <div
             className="mega"

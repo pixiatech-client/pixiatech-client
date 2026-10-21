@@ -111,7 +111,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             >
               <source src="/uploads/products/wp/wp-cabinet.webm" type="video/webm" />
               <source src="/uploads/products/wp/wp-cabinet.mov" type="video/quicktime" />
-              <source src="https://xeron.co/uploads/products/wp/wp-cabinet.webm" type="video/webm" />
             </video>
 
             {/* Video overlay caption badge */}

@@ -104,14 +104,14 @@ function WebPageView({ seedProduct }: { seedProduct?: Product } = {}) {
 
   return (
     <div className="min-h-screen bg-[#080808] text-[#f5f4f0] antialiased selection:bg-white/20 selection:text-white">
-      {/* Sticky Blur Header matching xeron.co */}
+      {/* Sticky Blur Header */}
       <PixiaHeader
         companyName={brandName}
         onOpenConsultation={() => setIsConsultationOpen(true)}
         forceSolidDark={false}
       />
 
-      {/* Main Product Sections matching xeron.co/en/products/wp */}
+      {/* Main Product Sections */}
       <main>
         {/* Section 0: Hero & Animated LED Canvas */}
         <EditableWrapper sectionKey="hero" sectionLabel="Hero Produit (PXT Fine)">
@@ -189,7 +189,7 @@ function WebPageView({ seedProduct }: { seedProduct?: Product } = {}) {
         )}
       </main>
 
-      {/* Site Footer matching xeron.co */}
+      {/* Site Footer */}
       <PixiaFooter
         companyName={brandName}
         lang={lang}

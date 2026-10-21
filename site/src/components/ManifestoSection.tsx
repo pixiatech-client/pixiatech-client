@@ -30,7 +30,7 @@ export const ManifestoSection: React.FC<ManifestoSectionProps> = ({
         : "PIXIATECH combines advanced LED technologies, engineering and architectural thinking to create visual systems designed around each environment.",
   };
 
-  // Exact PixelGrid reactive canvas from xeron.co module 18283
+  // PixelGrid reactive canvas (module 18283)
   useEffect(() => {
     const canvas = canvasRef.current;
     const parent = canvas?.parentElement;

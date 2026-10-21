@@ -9,7 +9,7 @@ export interface PixiaProduct {
   apps: string[];
 }
 
-// Extracted from the live xeron.co /en/products flight payload (39 series).
+// Catalogue produits PIXIATECH (39 séries).
 export const PIXIA_PRODUCTS: PixiaProduct[] = [
   { slug: 'wp', name: 'XR Fine', environment: 'INDOOR', category: 'Indoor LED display', menuGroup: 'FIXED INSTALLATION / INDOOR', menuTag: 'FINE PITCH', shortDesc: 'The wallpaper-thin LED display engineered for spaces where thermal control, reliability and architectural integration are critical.', apps: ['Corporate', 'Control Room', 'Retail', 'XR / VP'] },
   { slug: 'wt', name: 'XR Ultra', environment: 'INDOOR', category: 'Indoor fine-pitch LED', menuGroup: 'FIXED INSTALLATION / INDOOR', menuTag: 'ULTRA-THIN', shortDesc: 'The micro-pitch LED display engineered for control rooms, broadcast studios and premium interiors.', apps: ['Corporate', 'Control Room', 'Broadcast'] },
@@ -125,9 +125,7 @@ export interface Project {
 }
 
 export const PIXIA_PROJECTS: Project[] = [
-  { img: '/uploads/projects/how-xeron-elevates-shenzhen-happy-valleys-summer-festival-stage.jpg', title: 'How PixiaTech Elevates Shenzhen Happy Valley&rsquo;s Summer Festival Stage', titleFr: 'Comment PixiaTech sublime la scène du festival d’été de Shenzhen Happy Valley', meta: 'China — 2026', tag: 'RENTAL & EVENTS' },
   { img: '/uploads/projects/university-of-aucklands-hiwa-recreation-and-wellbeing-centre.jpg', title: 'University of Auckland’s Hiwa Recreation and Wellbeing Centre', titleFr: 'Le centre de loisirs et de bien-être Hiwa de l’Université d’Auckland', meta: 'New Zealand — 2026', tag: 'EDUCATION' },
-  { img: '/uploads/projects/xeron-powers-up-the-uaes-state-of-the-art-production-studio.jpg', title: 'PixiaTech Powers Up the UAE&rsquo;s State-of-The-Art Production Studio', titleFr: 'PixiaTech alimente le studio de production ultramoderne des Émirats arabes unis', meta: 'UAE', tag: 'XR / VP' },
   { img: '/uploads/projects/led-wall-evokes-early-cinema-effects-for-poor-things.jpg', title: 'LED Wall Evokes Early-Cinema Effects for Poor Things', titleFr: 'Un mur LED évoque les effets du cinéma primitif pour Poor Things', meta: 'Hungary — 2024', tag: 'RENTAL & EVENTS' },
 ];
 

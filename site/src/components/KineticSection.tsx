@@ -50,7 +50,7 @@ export const KineticSection: React.FC<KineticSectionProps> = ({
         : "Large-format, lightweight indoor kinetic LED — 4-in-1 motion units on industrial linear guide rails, engineered for large-scale and elevated installations.",
   };
 
-  // Exact 3D kinetic canvas algorithm from xeron.co module 65561
+  // 3D kinetic canvas algorithm (module 65561)
   useEffect(() => {
     const canvas = canvasRef.current;
     const parent = canvas?.parentElement;

@@ -12,7 +12,7 @@
   "deliveryImageUrl": "https://pixiatech.com/wp-content/uploads/2025/11/Livraison.png",
   "congratulationsImageUrl": "https://pixiatech.com/wp-content/uploads/2025/11/Felicitations.png",
   "emergencyStopEnabled": false,
-  "emergencyReturnUrl": "https://mahboubidz.com/",
+  "emergencyReturnUrl": "/",
   "emergencyStopMessage": "Pour des raisons de maintenance, notre outil d'estimation en ligne est actuellement suspendu. Veuillez nous excuser pour la gêne occasionnée.",
   "congratulationsTitle": {
     "fr": "🌟🌟 Félicitations ! 🌟🌟",

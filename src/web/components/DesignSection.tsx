@@ -14,7 +14,7 @@ interface DesignSectionProps {
   hasSpecsTable?: boolean;
 }
 
-/* ── Hover-aware spec row (mirrors xeron.co behavior) ─────────────────────── */
+/* ── Hover-aware spec row ─────────────────────────────────────────────────── */
 function SpecRow({
   label,
   val,

@@ -48,9 +48,7 @@ const FALLBACK_LIBRARY_IMAGES: MediaLibraryItem[] = [
   { name: 'Marché — Rental & Events', url: '/uploads/site/market-rental.jpg', source: 'static' },
   { name: 'Marché — XR / VP', url: '/uploads/site/market-xr.jpg', source: 'static' },
   { name: 'Experience Center', url: '/uploads/site/xc-bg.jpg', source: 'static' },
-  { name: 'Projet — Shenzhen Stage', url: '/uploads/projects/how-xeron-elevates-shenzhen-happy-valleys-summer-festival-stage.jpg', source: 'static' },
   { name: 'Projet — Auckland Centre', url: '/uploads/projects/university-of-aucklands-hiwa-recreation-and-wellbeing-centre.jpg', source: 'static' },
-  { name: 'Projet — UAE Production', url: '/uploads/projects/xeron-powers-up-the-uaes-state-of-the-art-production-studio.jpg', source: 'static' },
   { name: 'Projet — Poor Things Stage', url: '/uploads/projects/led-wall-evokes-early-cinema-effects-for-poor-things.jpg', source: 'static' },
 ];
 

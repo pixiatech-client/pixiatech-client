@@ -79,9 +79,6 @@ export const FeaturesSection: React.FC<FeaturesSectionProps> = ({ lang = "FR" })
                       item.fit === "contain" ? "object-contain p-6" : "object-cover"
                     }`}
                     loading="lazy"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = `https://xeron.co${item.img}`;
-                    }}
                   />
                   {/* Subtle vignette gradient */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />

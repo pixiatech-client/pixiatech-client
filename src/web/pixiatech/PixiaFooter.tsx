@@ -97,7 +97,7 @@ export const PixiaFooter: React.FC<PixiaFooterProps> = ({
 
       <div className="wrap" style={{ position: 'relative', zIndex: 1, padding: '80px var(--gutter) 0', pointerEvents: 'none' }}>
 
-        {/* Foot Grid: 4 columns matching xeron.co */}
+        {/* Foot Grid: 4 columns */}
         <div
           className="foot-grid"
           style={{

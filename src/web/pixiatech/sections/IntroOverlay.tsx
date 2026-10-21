@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { usePrefersReducedMotion } from '../../pixiatech-hooks';
 
 /**
- * Page-load intro overlay that mirrors xeron.co's fixed black layer.
+ * Page-load intro overlay with a fixed black layer.
  * Draws an igniting pixel-field on a canvas, then fades the overlay away.
  */
 export function IntroOverlay() {

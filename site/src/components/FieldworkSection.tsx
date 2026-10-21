@@ -20,12 +20,6 @@ export const FieldworkSection: React.FC<FieldworkSectionProps> = ({
           countryYear: "France / 2026",
           img: "/uploads/projects/westfield-paris-retail-led-screen.jpg",
         },
-        {
-          id: "saudi-ministry",
-          title: `ÉCRANS LED ${companyName.toUpperCase()} POUR LE MINISTÈRE DE LA CULTURE SAOUDIEN`,
-          countryYear: "Arabie Saoudite / 2026",
-          img: "/uploads/projects/xeron-led-screens-for-saudi-arabias-ministry-of-culture.jpg",
-        },
       ]
     : [
         {
@@ -33,12 +27,6 @@ export const FieldworkSection: React.FC<FieldworkSectionProps> = ({
           title: `${companyName.toUpperCase()}, SCENARCHIE AND BTB AUDIOVISUEL DELIVER NEW DIGITAL IMPACT IN PARIS`,
           countryYear: "France / 2026",
           img: "/uploads/projects/westfield-paris-retail-led-screen.jpg",
-        },
-        {
-          id: "saudi-ministry",
-          title: `${companyName.toUpperCase()} LED SCREENS FOR SAUDI ARABIA’S MINISTRY OF CULTURE`,
-          countryYear: "Saudi Arabia / 2026",
-          img: "/uploads/projects/xeron-led-screens-for-saudi-arabias-ministry-of-culture.jpg",
         },
       ];
 
@@ -75,9 +63,6 @@ export const FieldworkSection: React.FC<FieldworkSectionProps> = ({
                   alt={proj.title}
                   className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
                   loading="lazy"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = `https://xeron.co${proj.img}`;
-                  }}
                 />
               </div>
               <div className="text-[11px] tracking-[0.2em] text-[#8a8880] uppercase mt-4.5 leading-[1.6]">

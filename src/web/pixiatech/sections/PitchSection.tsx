@@ -23,7 +23,7 @@ interface PitchSectionProps {
 
 /**
  * 07 / PIXEL PITCH — interactive pitch slider + simulated LED color spectrum canvas
- * and viewing distance ruler with silhouette icon. Direct mirror of xeron.co.
+ * and viewing distance ruler with silhouette icon.
  */
 export const PitchSection: React.FC<PitchSectionProps> = ({
   lang = 'FR',

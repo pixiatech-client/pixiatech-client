@@ -73,7 +73,6 @@ export const OverviewSection: React.FC<OverviewSectionProps> = ({
               >
                 <source src="/uploads/products/wp/wp-cabinet.webm" type="video/webm" />
                 <source src="/uploads/products/wp/wp-cabinet.mov" type="video/quicktime" />
-                <source src="https://xeron.co/uploads/products/wp/wp-cabinet.webm" type="video/webm" />
               </video>
               <div className="absolute bottom-0 left-0 right-0 p-4 bg-black/75 flex justify-between items-center text-[10.5px] tracking-[0.16em] uppercase font-mono text-[#c9c7c1]">
                 <span className="font-semibold text-white">{t.badge}</span>
@@ -88,9 +87,6 @@ export const OverviewSection: React.FC<OverviewSectionProps> = ({
                 alt="PXT Fine Module Detail"
                 className="w-full h-full object-cover"
                 loading="lazy"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = "https://xeron.co/uploads/products/wp/module-1.jpg";
-                }}
               />
             </div>
           </div>

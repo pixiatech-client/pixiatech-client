@@ -120,7 +120,7 @@ export const TechShowcaseSection: React.FC<TechShowcaseSectionProps> = ({
           </div>
         </div>
 
-        {/* Signature Xeron Accordion flex row */}
+        {/* Signature Accordion flex row */}
         <div
           data-reveal="true"
           className="tech-row"

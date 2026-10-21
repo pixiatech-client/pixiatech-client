@@ -199,9 +199,6 @@ export const DesignSection: React.FC<DesignSectionProps> = ({ lang = "FR" }) => 
                 alt="PXT Fine Module Back Chassis"
                 className="w-full h-full object-cover"
                 loading="lazy"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = "https://xeron.co/uploads/products/wp/module-3.jpg";
-                }}
               />
             </div>
           </div>
