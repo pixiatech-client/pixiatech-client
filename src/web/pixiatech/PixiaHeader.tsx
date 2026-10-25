@@ -220,8 +220,8 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
         anim = requestAnimationFrame(() => {
           anim = 0;
           const y = window.scrollY;
-          setScrolled(y > 40);
-          if (megaOpen && Math.abs(y - prevScrollRef.current) > 40) {
+          setScrolled(y > 12);
+          if (megaOpen && Math.abs(y - prevScrollRef.current) > 30) {
             setMegaOpen(false);
           }
           prevScrollRef.current = y;
@@ -357,7 +357,145 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
 
   const clickableCount = model.flat.filter((m) => m.clickable).length;
 
+  const [isLightMode, setIsLightMode] = useState(false);
+
+  // Dynamic theme detection on scroll (Upflow Studio style)
+  // Inspects the section directly underneath the header to toggle between light & dark contrast
+  useEffect(() => {
+    let animId = 0;
+
+    const detectTheme = () => {
+      animId = 0;
+      if (forceSolidDark || megaOpen || mobileMenuOpen) {
+        setIsLightMode(false);
+        return;
+      }
+
+      // Midpoint of the header in viewport coordinates
+      const headerH = headerRootRef.current?.offsetHeight || (scrolled ? 64 : 88);
+      const probeY = headerH / 2;
+
+      // Find all sections or major containers in the DOM
+      const sections = Array.from(
+        document.querySelectorAll<HTMLElement>(
+          'section, [data-cms-section]'
+        )
+      );
+
+      let activeSection: HTMLElement | null = null;
+      for (const sec of sections) {
+        if (headerRootRef.current && headerRootRef.current.contains(sec)) continue;
+        if (sec.closest('[data-cms-ignore]') || sec.id === 'cms-editor-root') continue;
+        if (sec.getAttribute('aria-hidden') === 'true' || sec.offsetParent === null) continue;
+
+        const rect = sec.getBoundingClientRect();
+        // Check if the section encompasses the header's vertical center
+        if (rect.top <= probeY && rect.bottom > probeY) {
+          activeSection = sec;
+          break;
+        }
+      }
+
+      let light = false;
+
+      if (activeSection) {
+        const id = (activeSection.id || activeSection.getAttribute('data-cms-section') || '').toLowerCase();
+        const className = (activeSection.className || '').toLowerCase();
+
+        // Check explicit ID rules for known PixiaTech sections
+        if (['products', 'manifesto', 'pitch', 'insights', 'fieldwork'].includes(id)) {
+          light = true;
+        } else if (['top', 'hero', 'markets', 'technology', 'projects', 'process', 'experience', 'next', 'contact'].includes(id)) {
+          light = false;
+        } else if (className.includes('theme-light') || className.includes('bg-[#f5f4f0]') || className.includes('bg-white')) {
+          light = true;
+        } else if (className.includes('theme-dark') || className.includes('bg-[#080808]') || className.includes('bg-[#0d0d0c]') || className.includes('bg-black')) {
+          light = false;
+        } else {
+          // Check inline style or computed background color
+          const style = (activeSection.getAttribute('style') || '').toLowerCase();
+          if (style.includes('#f5f4f0') || style.includes('#ffffff') || style.includes('white') || style.includes('rgb(245, 244, 240)')) {
+            light = true;
+          } else if (style.includes('#080808') || style.includes('#0d0d0c') || style.includes('#000') || style.includes('black')) {
+            light = false;
+          } else {
+            // Traverse up computed background color
+            let cur: HTMLElement | null = activeSection;
+            while (cur && cur !== document.documentElement && cur !== document.body) {
+              const bg = window.getComputedStyle(cur).backgroundColor;
+              if (bg && bg !== 'transparent' && bg !== 'rgba(0, 0, 0, 0)') {
+                const m = bg.match(/\d+/g);
+                if (m && m.length >= 3) {
+                  const r = parseInt(m[0], 10);
+                  const g = parseInt(m[1], 10);
+                  const b = parseInt(m[2], 10);
+                  const a = m[3] !== undefined ? parseFloat(m[3]) : 1;
+                  if (a > 0.4) {
+                    const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+                    light = lum > 140;
+                    break;
+                  }
+                }
+              }
+              cur = cur.parentElement;
+            }
+          }
+        }
+      } else {
+        const y = window.scrollY || 0;
+        if (y < 200) {
+          light = false;
+        }
+      }
+
+      setIsLightMode(light);
+    };
+
+    const handleScroll = () => {
+      if (!animId) {
+        animId = requestAnimationFrame(detectTheme);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('resize', handleScroll);
+    detectTheme();
+
+    return () => {
+      if (animId) cancelAnimationFrame(animId);
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleScroll);
+    };
+  }, [scrolled, megaOpen, forceSolidDark, mobileMenuOpen]);
+
+  const isLight = isLightMode && !forceSolidDark && !megaOpen;
   const isDarkBar = forceSolidDark || scrolled || megaOpen;
+
+  // True translucent frosted glass (effet verre dépoli)
+  // The translucency allows passing elements to be clearly visible and beautifully blurred underneath
+  const navBackground = isLight
+    ? scrolled
+      ? 'rgba(245, 244, 240, 0.72)'
+      : 'transparent'
+    : isDarkBar
+      ? 'rgba(8, 8, 8, 0.62)'
+      : 'transparent';
+
+  const navBorderColor = isLight
+    ? scrolled
+      ? 'rgba(17, 17, 16, 0.08)'
+      : 'transparent'
+    : isDarkBar
+      ? 'rgba(255, 255, 255, 0.1)'
+      : 'transparent';
+
+  const navBoxShadow = isLight
+    ? scrolled
+      ? '0 8px 32px 0 rgba(0, 0, 0, 0.05), inset 0 -1px 0 0 rgba(255, 255, 255, 0.6)'
+      : 'none'
+    : scrolled
+      ? '0 8px 32px 0 rgba(0, 0, 0, 0.5), inset 0 -1px 0 0 rgba(255, 255, 255, 0.08)'
+      : 'none';
 
   // Racine CMS du header : aucun wrapper ajouté, le `fixed` est intact.
   useRegisterCmsSection(headerRootRef, 'header');
@@ -374,50 +512,34 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
           left: 0,
           right: 0,
           zIndex: 200,
-          /* web.css force `a:hover { color: var(--accent) !important }`. La
-             feuille globale (shadcn) redefinit --accent sur :root : on le
-             rebranche sur le lime du site pour que le header reste coherent. */
-          '--accent': '#C3F910',
+          '--accent': isLight ? '#111110' : '#C3F910',
         } as React.CSSProperties}
       >
         <style>{`
           .pxt-nav-link {
             font-size: 11.5px;
-            letter-spacing: .17em;
+            letter-spacing: .16em;
             text-transform: uppercase;
-            font-weight: 600;
-            color: #B9B7B1;
+            font-weight: 700;
+            color: var(--pxt-nav-color, #FFFFFF) !important;
             padding: 10px 0;
-            border-bottom: 1px solid transparent;
+            border-bottom: 2px solid transparent;
             white-space: nowrap;
             transition: color .25s ease, border-color .25s ease;
             text-decoration: none;
             cursor: pointer;
           }
           .pxt-nav-link:hover {
-            color: #C3F910 !important;
-            border-bottom-color: #C3F910 !important;
+            color: var(--pxt-nav-hover, #C3F910) !important;
+            border-bottom-color: var(--pxt-nav-hover, #C3F910) !important;
           }
           .pxt-nav-link.active {
-            color: #C3F910 !important;
-            border-bottom-color: #C3F910 !important;
+            color: var(--pxt-nav-active, #C3F910) !important;
+            border-bottom-color: var(--pxt-nav-active, #C3F910) !important;
           }
           .mega-card-item:hover .mega-title {
             color: #C3F910 !important;
           }
-          /* Le conteneur .nav-desktop-links ne se comprime plus (flex: 0 0 auto) :
-             quand la fenetre devient trop etroite pour le contenu, la largeur
-             manquante se regle ici, par ordre de sacrifice, et plus par
-             compression. C'etait la cause du bug : les libelles etant en
-             white-space: nowrap, la boite se retrecissait et le texte
-             debordait SOUS le cluster FR/EN, rendant CONTACT incliquable.
-
-             Seuils MESURES sur le rendu reel (le libelle FR le plus large, donc
-             le cas le plus defavorable ; le jeu EN est ~47px plus etroit) :
-               - header complet, CTA compris  : ~1560px
-               - header sans le CTA           : ~1230px
-             Le CTA "Demarrer un projet" s'efface donc en premier -- il reste
-             disponible dans le menu burger. */
           .nav-desktop-cta { display: none !important; }
           @media (min-width: 1560px) {
             .nav-desktop-cta { display: inline-flex !important; }
@@ -437,20 +559,30 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
             gap: 'clamp(12px, 1.4vw, 28px)',
             padding: '0 clamp(16px, 2.1vw, 52px)',
             height: scrolled ? 64 : 88,
-            background: isDarkBar ? 'rgba(8,8,8,.84)' : 'transparent',
-            backdropFilter: isDarkBar ? 'blur(22px) saturate(1.3)' : 'none',
-            WebkitBackdropFilter: isDarkBar ? 'blur(22px) saturate(1.3)' : 'none',
-            borderBottom: '1px solid ' + (isDarkBar ? 'rgba(245,244,240,.09)' : 'transparent'),
+            background: navBackground,
+            backdropFilter: scrolled || isDarkBar ? 'blur(20px) saturate(180%)' : 'none',
+            WebkitBackdropFilter: scrolled || isDarkBar ? 'blur(20px) saturate(180%)' : 'none',
+            borderBottom: '1px solid ' + navBorderColor,
+            boxShadow: navBoxShadow,
             transition:
-              'background .45s ease, border-color .45s ease, height .45s cubic-bezier(.2,.8,.2,1)',
-          }}
+              'background .35s ease, border-color .35s ease, box-shadow .35s ease, height .45s cubic-bezier(.2,.8,.2,1)',
+            '--pxt-nav-color': isLight ? '#111110' : '#FFFFFF',
+            '--pxt-nav-hover': isLight ? '#000000' : '#C3F910',
+            '--pxt-nav-active': isLight ? '#000000' : '#C3F910',
+          } as React.CSSProperties}
         >
           {/* Logo / Brand Name */}
           <a
             href="https://pixiatech.com/"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-white font-tech text-2xl lg:text-3xl tracking-widest hover:opacity-80 transition-opacity"
+            className="no-acc font-tech text-2xl lg:text-3xl tracking-widest hover:opacity-75"
+            style={{
+              color: isLight ? '#111110' : '#FFFFFF',
+              fontWeight: 800,
+              transition: 'color .3s ease, opacity .2s ease',
+              textDecoration: 'none',
+            }}
           >
             PIXIATECH
           </a>
@@ -625,41 +757,60 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                 border: 0,
                 padding: 4,
                 cursor: 'pointer',
-                color: '#B9B7B1',
+                color: isLight ? '#111110' : '#FFFFFF',
                 transition: 'color .25s ease',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.color = '#C3F910';
+                e.currentTarget.style.color = isLight ? '#000000' : '#C3F910';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.color = '#B9B7B1';
+                e.currentTarget.style.color = isLight ? '#111110' : '#FFFFFF';
               }}
             >
-              <Shield size={18} strokeWidth={2} />
+              <Shield size={18} strokeWidth={2.2} />
             </button>
 
-            {/* Bouton bascule de langue (identité de l'application : icône Globe
-                + langue courante). `data-cms-ignore` : ce bouton est piloté par la
-                locale (une seule source de vérité) ; l'éditeur visuel ne doit
-                jamais réécrire son style. Un clic inverse directement FR ↔ EN,
-                sans menu. */}
+            {/* Bouton bascule de langue (pilote par la locale, design pilule Upflow) */}
             <button
               data-cms-ignore
               type="button"
               onClick={() => pickLang(activeLang === 'FR' ? 'EN' : 'FR')}
               title={activeLang === 'FR' ? 'Passer en anglais' : 'Switch to French'}
               aria-label={activeLang === 'FR' ? 'Passer en anglais' : 'Switch to French'}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[#141B1E] hover:bg-[#1C2529] border border-neutral-800 text-xs text-neutral-300 hover:text-white transition-colors cursor-pointer"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '6px 14px',
+                borderRadius: 9999,
+                background: isLight ? 'rgba(17, 17, 16, 0.06)' : 'rgba(255, 255, 255, 0.08)',
+                border: '1px solid ' + (isLight ? 'rgba(17, 17, 16, 0.2)' : 'rgba(255, 255, 255, 0.2)'),
+                color: isLight ? '#111110' : '#FFFFFF',
+                fontSize: 11.5,
+                fontWeight: 700,
+                letterSpacing: '.06em',
+                cursor: 'pointer',
+                transition: 'all .25s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = isLight ? '#111110' : '#C3F910';
+                e.currentTarget.style.color = isLight ? '#000000' : '#C3F910';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = isLight ? 'rgba(17, 17, 16, 0.2)' : 'rgba(255, 255, 255, 0.2)';
+                e.currentTarget.style.color = isLight ? '#111110' : '#FFFFFF';
+              }}
             >
-              <Globe className="w-3.5 h-3.5 text-neutral-400" />
-              <span className="font-semibold">{activeLang}</span>
+              <Globe size={13} strokeWidth={2} style={{ color: 'currentColor' }} />
+              <span>{activeLang}</span>
             </button>
 
             <div
               style={{
                 width: 1,
                 height: 18,
-                background: 'rgba(245,244,240,.16)',
+                background: isLight ? 'rgba(17, 17, 16, 0.2)' : 'rgba(255, 255, 255, 0.2)',
+                transition: 'background .35s ease',
               }}
             />
 
@@ -679,51 +830,67 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                 border: 0,
                 padding: 4,
                 cursor: 'pointer',
-                color: '#B9B7B1',
+                color: isLight ? '#111110' : '#FFFFFF',
+                transition: 'color .25s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = isLight ? '#000000' : '#C3F910';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = isLight ? '#111110' : '#FFFFFF';
               }}
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
                 <circle cx="11" cy="11" r="7" />
                 <line x1="21" y1="21" x2="16.5" y2="16.5" />
               </svg>
             </button>
 
-            {/* Start a Project CTA Button */}
+            {/* Start a Project CTA Button — Upflow Studio Pill Style */}
             <button
               type="button"
               onClick={() => {
                 setMegaOpen(false);
                 window.location.href = START_PROJECT_URL;
               }}
-              className="nav-desktop-cta"
+              className="nav-desktop-cta no-acc"
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                padding: '10px clamp(14px, 1.3vw, 20px)',
-                border: '1px solid rgba(245,244,240,.35)',
+                padding: '9px clamp(18px, 1.4vw, 24px)',
+                borderRadius: 9999,
+                border: '1.5px solid ' + (isLight ? '#111110' : 'rgba(255, 255, 255, 0.7)'),
                 background: 'transparent',
-                color: '#F5F4F0',
-                fontSize: 12,
-                letterSpacing: 'clamp(.07em, .1vw, .12em)',
-                fontWeight: 600,
+                color: isLight ? '#111110' : '#FFFFFF',
+                fontSize: 11.5,
+                letterSpacing: 'clamp(.08em, .1vw, .12em)',
+                fontWeight: 700,
                 textTransform: 'uppercase',
                 cursor: 'pointer',
-                transition: 'all .2s ease',
+                transition: 'all .25s ease',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = '#fff';
-                e.currentTarget.style.color = '#fff';
+                if (isLight) {
+                  e.currentTarget.style.backgroundColor = '#111110';
+                  e.currentTarget.style.color = '#FFFFFF';
+                  e.currentTarget.style.borderColor = '#111110';
+                } else {
+                  e.currentTarget.style.backgroundColor = '#FFFFFF';
+                  e.currentTarget.style.color = '#080808';
+                  e.currentTarget.style.borderColor = '#FFFFFF';
+                }
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = 'rgba(245,244,240,.35)';
-                e.currentTarget.style.color = '#F5F4F0';
+                e.currentTarget.style.backgroundColor = 'transparent';
+                e.currentTarget.style.color = isLight ? '#111110' : '#FFFFFF';
+                e.currentTarget.style.borderColor = isLight ? '#111110' : 'rgba(255, 255, 255, 0.7)';
               }}
             >
               {activeLang === 'FR' ? 'Démarrer un projet' : 'Start a Project'}
             </button>
 
-            {/* Mobile Hamburger Toggle Button */}
+            {/* Mobile Hamburger Toggle Button (Upflow Studio minimal style) */}
             <button
               type="button"
               aria-label="Menu"
@@ -732,22 +899,32 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                 setMobileMenuOpen((prev) => !prev);
                 setMobileSubMenu('main');
               }}
-              className="nav-burger-btn"
+              className="nav-burger-btn no-acc"
               style={{
                 display: 'none',
                 width: 40,
                 height: 40,
-                border: '1px solid rgba(245,244,240,.35)',
-                background: 'transparent',
-                color: '#F5F4F0',
+                borderRadius: 9999,
+                border: '1.5px solid ' + (isLight ? '#111110' : 'rgba(255, 255, 255, 0.7)'),
+                background: isLight ? 'rgba(17, 17, 16, 0.06)' : 'rgba(255, 255, 255, 0.08)',
+                color: isLight ? '#111110' : '#FFFFFF',
                 cursor: 'pointer',
-                fontSize: 20,
-                lineHeight: 1,
                 alignItems: 'center',
                 justifyContent: 'center',
+                flexDirection: 'column',
+                gap: 5,
+                padding: 0,
+                transition: 'all .25s ease',
               }}
             >
-              {mobileMenuOpen ? '×' : '≡'}
+              {mobileMenuOpen ? (
+                <span style={{ fontSize: 22, lineHeight: 1, color: isLight ? '#111110' : '#FFFFFF' }}>×</span>
+              ) : (
+                <>
+                  <span style={{ width: 18, height: 2, background: isLight ? '#111110' : '#FFFFFF', borderRadius: 1 }} />
+                  <span style={{ width: 18, height: 2, background: isLight ? '#111110' : '#FFFFFF', borderRadius: 1 }} />
+                </>
+              )}
             </button>
           </div>
         </nav>
