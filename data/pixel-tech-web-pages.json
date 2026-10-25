@@ -4,7 +4,7 @@
       "id": "home",
       "name": "home",
       "slug": "/home",
-      "updatedAt": "2026-10-20T20:35:48.347Z",
+      "updatedAt": "2026-10-23T16:21:32.148Z",
       "sections": {
         "pixia-web": {
           "text_1790257213042": "sdsdsdsdÉDITEUR DIRECT : CLIQUEZ SUR UN TEXTE OU UNE IMAGE",
@@ -223,7 +223,7 @@
           },
           "minHeight": 882,
           "paddingBottom": 0,
-          "slideImage1": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FInstallation_LED_immersive_dans_un_espace_commercial_haut_de_gamme_0mzdc.webp?alt=media",
+          "slideImage1": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FInstallation_d_un_mur_LED_professionnel_9rj0h.png?alt=media",
           "_elements": {
             "div:2/section:1/div:7/div:1/div:3/span:2": {
               "text": "PROJETS INTERNATIONAUX 11"
@@ -246,14 +246,24 @@
             "secondaryCta": {
               "href": "/quote",
               "target": "_self",
-              "rel": ""
+              "rel": "",
+              "borderRadius": "9999px",
+              "borderWidth": "1px",
+              "borderStyle": "solid",
+              "borderColor": "#b2e212"
             },
             "title": {
-              "fontSize": "90px"
+              "fontSize": "90px",
+              "color": "#ffffff",
+              "backgroundColor": "transparent"
             },
             "primaryCta": {
               "backgroundColor": "transparent",
-              "color": "#ffffff"
+              "color": "#ffffff",
+              "borderRadius": "9999px",
+              "borderWidth": "1px",
+              "borderStyle": "solid",
+              "borderColor": "#c5f81b"
             }
           },
           "slideImage2": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2Fconf_rence-futuriste-sous-les-lumi_res-bleues_s3bsi.webp?alt=media",
@@ -336,10 +346,6 @@
               "color": "#111111",
               "fontSize": "68px"
             },
-            "titleLine2": {
-              "color": "#111111",
-              "fontSize": "68px"
-            },
             "subtitle": {
               "fontSize": "20px"
             },
@@ -353,7 +359,7 @@
           "paddingTop": 0,
           "overlayColor": "#d50b0b",
           "overlayOpacity": 85,
-          "minHeight": 740,
+          "minHeight": 882,
           "marginBottom": 0,
           "paddingBottom": 0,
           "visible": true,
@@ -371,10 +377,10 @@
             },
             "badge": {
               "fr": {
-                "value": "01 / À PROPOS - POURQUOI PIXIATECH ",
+                "value": "01 / À PROPOS",
                 "status": "source",
-                "updatedAt": "2026-10-13T16:27:35.276Z",
-                "sourceText": "01 / À PROPOS - POURQUOI PIXIATECH "
+                "updatedAt": "2026-10-21T17:32:17.867Z",
+                "sourceText": "01 / À PROPOS"
               }
             },
             "title": {
@@ -403,7 +409,7 @@
             }
           },
           "subtitle": "PIXIATECH est une entreprise française spécialisée dans les solutions d’affichage LED sur mesure. Nous proposons la vente, la location et l’installation d’écrans LED intérieurs et extérieurs, incurvés, transparents ou à effet holographique, pour les projets d’architecture, de retail et d’événementiel.",
-          "badge": "01 / À PROPOS - POURQUOI PIXIATECH ",
+          "badge": "01 / À PROPOS",
           "title": "Des solutions d’affichage LED conçues pour vos projets\n  ",
           "titleLine2": "NOUS DONNONS VIE À ",
           "titleLine3": "VOS ESPACES"
@@ -423,8 +429,52 @@
             },
             "div:2/section:1/div:1/div:2/div:1/p:1": {
               "text": "Un pas de pixel plus fin → vision rapprochée et densité maximale. Un pas plus large → distances d'observation accrues et grands formats efficients. 11"
+            },
+            "section:1/div:1/div:2/div:1/div:3/div:2/div:1": {
+              "text_fr": "Salle de contrôle et supervision"
+            },
+            "section:1/div:1/div:2/div:1/div:3/div:2/div:2": {
+              "text_fr": "APPLICATION IDÉALE"
+            },
+            "section:1/div:1/div:2/div:2/div:3": {
+              "text_fr": "Distance indicative : le choix du pas de pixel dépend de l’environnement, du contenu affiché et de la distance de visionnage."
+            },
+            "titleLine2": {
+              "color": "#7c9c07"
+            },
+            "title": {
+              "color": "#7c9c07"
             }
-          }
+          },
+          "_i18n": {
+            "titleLine2": {
+              "fr": {
+                "value": "parfaite ?",
+                "status": "source",
+                "updatedAt": "2026-10-22T11:28:47.044Z",
+                "sourceText": "parfaite ?"
+              }
+            },
+            "title": {
+              "fr": {
+                "value": "Quelle distance pour une image ",
+                "status": "source",
+                "updatedAt": "2026-10-22T11:28:38.379Z",
+                "sourceText": "Quelle distance pour une image "
+              }
+            },
+            "description": {
+              "fr": {
+                "value": "Le pas de pixel détermine la finesse de l’image et la distance idéale de visualisation.                                                                      * Un pas réduit offre une image précise, même de près. *              * Un pas plus large est adapté aux grands écrans et aux espaces de visionnage éloignés. *",
+                "status": "source",
+                "updatedAt": "2026-10-22T11:14:00.735Z",
+                "sourceText": "Le pas de pixel détermine la finesse de l’image et la distance idéale de visualisation.                                                                      * Un pas réduit offre une image précise, même de près. *              * Un pas plus large est adapté aux grands écrans et aux espaces de visionnage éloignés. *"
+              }
+            }
+          },
+          "titleLine2": "parfaite ?",
+          "title": "Quelle distance pour une image ",
+          "description": "Le pas de pixel détermine la finesse de l’image et la distance idéale de visualisation.                                                                      * Un pas réduit offre une image précise, même de près. *              * Un pas plus large est adapté aux grands écrans et aux espaces de visionnage éloignés. *"
         },
         "projects": {
           "minHeight": 1039,
@@ -458,10 +508,22 @@
               "text_fr": "       2026"
             },
             "section:1/div:1/div:3/div:2/div:2/span:1": {
-              "text_fr": "Le centre de loisirs et de bien-être Hiwa de l’Université d’Auckland1"
+              "text_fr": ""
             },
             "section:1/div:1/div:3/div:2/div:3": {
               "text_fr": "EDUCATION1"
+            },
+            "section:1/div:1/div:3/div:1/div:2/span:2": {
+              "text_fr": "2026"
+            },
+            "section:1/div:1/div:3/div:1/div:2/span:2/span:1": {
+              "text_fr": "— 2026"
+            },
+            "section:1/div:1/div:3/div:2/div:2/span:2": {
+              "text_fr": "2024"
+            },
+            "section:1/div:1/div:3/div:1/div:2/span:1": {
+              "text_fr": ""
             }
           },
           "_i18n": {
@@ -475,7 +537,8 @@
             }
           },
           "description": "Scènes de festivals, studios de production virtuelle, façades DOOH et campus universitaires études de cas concrètes de nos déploiements.",
-          "project_1_image": "/uploads/site/market-corporate.jpg"
+          "project_1_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FChatGPT_Image_25_ao_t_2026__00_40_47_thjwz.png?alt=media",
+          "project_0_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FChatGPT_Image_1_sept._2026__12_58_12_swbl2.png?alt=media"
         },
         "showreel": {
           "_elements": {
@@ -489,14 +552,65 @@
           "_i18n": {
             "ch3TitleLine1": {
               "fr": {
-                "value": "L'écran devientA",
+                "value": "L'écran devient",
                 "status": "source",
-                "updatedAt": "2026-10-20T20:35:46.063Z",
-                "sourceText": "L'écran devientA"
+                "updatedAt": "2026-10-21T18:03:02.614Z",
+                "sourceText": "L'écran devient"
+              }
+            },
+            "eyebrow": {
+              "fr": {
+                "value": "02 / SHOWROOM — DU PIXEL À LA VILLE",
+                "status": "source",
+                "updatedAt": "2026-10-21T17:38:40.989Z",
+                "sourceText": "02 / SHOWROOM — DU PIXEL À LA VILLE"
+              }
+            },
+            "ch3TitleLine2": {
+              "fr": {
+                "value": "Une façade.",
+                "status": "source",
+                "updatedAt": "2026-10-21T18:03:10.181Z",
+                "sourceText": "Une façade."
+              }
+            },
+            "head1": {
+              "fr": {
+                "value": "DONNEZ VIE",
+                "status": "source",
+                "updatedAt": "2026-10-21T18:08:52.873Z",
+                "sourceText": "DONNEZ VIE"
+              }
+            },
+            "head2": {
+              "fr": {
+                "value": "À VOS IDÉES.",
+                "status": "source",
+                "updatedAt": "2026-10-21T18:09:11.450Z",
+                "sourceText": "À VOS IDÉES."
+              }
+            },
+            "ch4TitleLine2": {
+              "fr": {
+                "value": "à métropolitaine.",
+                "status": "source",
+                "updatedAt": "2026-10-22T09:52:59.253Z",
+                "sourceText": "à métropolitaine."
               }
             }
           },
-          "ch3TitleLine1": "L'écran devientA"
+          "ch3TitleLine1": "L'écran devient",
+          "eyebrow": "02 / SHOWROOM — DU PIXEL À LA VILLE",
+          "ch3TitleLine2": "Une façade.",
+          "head1": "DONNEZ VIE",
+          "head2": "À VOS IDÉES.",
+          "minHeight": 2000,
+          "paddingBottom": 0,
+          "ch4TitleLine2": "à métropolitaine.",
+          "visible": true,
+          "layout": {
+            "visible": true
+          }
         },
         "technology": {
           "_elements": {
@@ -550,18 +664,18 @@
           "_i18n": {
             "tech_solidskin_desc": {
               "fr": {
-                "value": "L’OLED transparent révèle des contenus lumineux et immersifs sans masquer l’espace, transformant vitrines et environnements premium en expériences visuelles.1",
+                "value": "L’OLED ",
                 "status": "source",
-                "updatedAt": "2026-10-14T18:04:49.714Z",
-                "sourceText": "L’OLED transparent révèle des contenus lumineux et immersifs sans masquer l’espace, transformant vitrines et environnements premium en expériences visuelles.1"
+                "updatedAt": "2026-10-21T23:23:32.639Z",
+                "sourceText": "L’OLED "
               }
             },
             "tech_coldled_desc": {
               "fr": {
-                "value": "La technologie ColdLED associe performance et durabilite pour les professionnels de l'affichage numerique, de l'evenementiel, du commerce et de la diffusion.",
+                "value": "La ",
                 "status": "source",
-                "updatedAt": "2026-10-13T21:51:22.799Z",
-                "sourceText": "La technologie ColdLED associe performance et durabilite pour les professionnels de l'affichage numerique, de l'evenementiel, du commerce et de la diffusion."
+                "updatedAt": "2026-10-21T23:23:22.094Z",
+                "sourceText": "La "
               }
             },
             "tech_coldled_name": {
@@ -574,18 +688,18 @@
             },
             "tech_armorled_name": {
               "fr": {
-                "value": "les LED froides.",
+                "value": "les.",
                 "status": "source",
-                "updatedAt": "2026-10-13T19:37:09.591Z",
-                "sourceText": "les LED froides."
+                "updatedAt": "2026-10-21T23:34:17.021Z",
+                "sourceText": "les."
               }
             },
             "tech_solidskin_name": {
               "fr": {
-                "value": "OLED1 transparent",
+                "value": "OLED transparent",
                 "status": "source",
-                "updatedAt": "2026-10-14T18:04:47.031Z",
-                "sourceText": "OLED1 transparent"
+                "updatedAt": "2026-10-21T23:34:20.825Z",
+                "sourceText": "OLED transparent"
               }
             },
             "tech_cbsf_name": {
@@ -598,26 +712,26 @@
             },
             "tech_cbsf_desc": {
               "fr": {
-                "value": "Les connexions de soudure renforcees multiplient la resistance\nmécanique par 3 à 5x pour des écrans plus robustes et d'une\nfiabilite totale.",
+                "value": "Les connexions",
                 "status": "source",
-                "updatedAt": "2026-10-13T19:39:09.441Z",
-                "sourceText": "Les connexions de soudure renforcees multiplient la resistance\nmécanique par 3 à 5x pour des écrans plus robustes et d'une\nfiabilite totale."
+                "updatedAt": "2026-10-21T23:23:50.738Z",
+                "sourceText": "Les connexions"
               }
             },
             "tech_armorled_desc": {
               "fr": {
-                "value": "La technologie ColdLED associe performance et durabilite pour\nles professionnels de l'affichage numerique, de l'evenementiel, du\ncommerce et de la diffusion.",
+                "value": "La technologie",
                 "status": "source",
-                "updatedAt": "2026-10-13T19:37:25.479Z",
-                "sourceText": "La technologie ColdLED associe performance et durabilite pour\nles professionnels de l'affichage numerique, de l'evenementiel, du\ncommerce et de la diffusion."
+                "updatedAt": "2026-10-21T23:23:39.383Z",
+                "sourceText": "La technologie"
               }
             },
             "tech_infinite_desc": {
               "fr": {
-                "value": "Chaque LED encapsulée protège votre écran LED, renforce sa résistance et assure une image fluide et durable pour vos installations d’affichage professionnel.",
+                "value": "Chaque ",
                 "status": "source",
-                "updatedAt": "2026-10-13T19:43:32.622Z",
-                "sourceText": "Chaque LED encapsulée protège votre écran LED, renforce sa résistance et assure une image fluide et durable pour vos installations d’affichage professionnel."
+                "updatedAt": "2026-10-21T23:23:57.942Z",
+                "sourceText": "Chaque "
               }
             },
             "tech_infinite_name": {
@@ -629,19 +743,25 @@
               }
             }
           },
-          "tech_solidskin_desc": "L’OLED transparent révèle des contenus lumineux et immersifs sans masquer l’espace, transformant vitrines et environnements premium en expériences visuelles.1",
-          "tech_coldled_desc": "La technologie ColdLED associe performance et durabilite pour les professionnels de l'affichage numerique, de l'evenementiel, du commerce et de la diffusion.",
+          "tech_solidskin_desc": "L’OLED ",
+          "tech_coldled_desc": "La ",
           "tech_coldled_name": "Les LED froides",
-          "tech_armorled_name": "les LED froides.",
-          "tech_solidskin_name": "OLED1 transparent",
+          "tech_armorled_name": "les.",
+          "tech_solidskin_name": "OLED transparent",
           "tech_cbsf_name": "LED renforcée",
-          "tech_cbsf_desc": "Les connexions de soudure renforcees multiplient la resistance\nmécanique par 3 à 5x pour des écrans plus robustes et d'une\nfiabilite totale.",
-          "tech_armorled_desc": "La technologie ColdLED associe performance et durabilite pour\nles professionnels de l'affichage numerique, de l'evenementiel, du\ncommerce et de la diffusion.",
-          "tech_infinite_desc": "Chaque LED encapsulée protège votre écran LED, renforce sa résistance et assure une image fluide et durable pour vos installations d’affichage professionnel.",
+          "tech_cbsf_desc": "Les connexions",
+          "tech_armorled_desc": "La technologie",
+          "tech_infinite_desc": "Chaque ",
           "tech_infinite_name": "LED encapsulée",
           "tech_solidskin_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FModule_LED_haute_densit__avec_structure_technique_optimis_e_70rz7.webp?alt=media",
           "tech_coldled_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FTechnologie_d__cran_LED_haute_densit____Gros_plan_sur_les_modules_lvavr.webp?alt=media",
-          "tech_armorled_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FPanneau_LED__tanche_pour_affichage_ext_rieur___Technologie_LED_outdoor_dl5ni.webp?alt=media"
+          "tech_armorled_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FPanneau_LED__tanche_pour_affichage_ext_rieur___Technologie_LED_outdoor_dl5ni.webp?alt=media",
+          "tech_infinite_image": "/uploads/products/amt/back.jpg",
+          "tech_cbsf_image": "/uploads/products/studio/back.jpg",
+          "visible": true,
+          "layout": {
+            "visible": true
+          }
         },
         "experience": {
           "image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2F_cran_LED_incurv__immersif_pour_exp_rience_visuelle_grand_format_4ap8x.webp?alt=media",
@@ -675,23 +795,31 @@
             }
           },
           "title": "Séries d’écrans.",
-          "description": "Installation fixe, location & événementiel, transparents, cinétiques et créatifs. Explorez notre catalogue complet par environnement et domaine d’application."
+          "description": "Installation fixe, location & événementiel, transparents, cinétiques et créatifs. Explorez notre catalogue complet par environnement et domaine d’application.",
+          "visible": true,
+          "layout": {
+            "visible": true
+          }
         },
         "kinetic": {
           "_elements": {
             "div:2/section:1/div:1/div:2/div:2/div:1/div:1/span:2": {
               "text": "UNITÉ DE MOUVEMENT — 248.5 MM zdsd"
             }
+          },
+          "visible": false,
+          "layout": {
+            "visible": false
           }
         }
       },
       "sectionOrder": [
         "hero",
-        "manifesto",
+        "products",
         "showreel",
+        "manifesto",
         "markets",
         "kinetic",
-        "products",
         "technology",
         "pitch",
         "projects",
@@ -1028,5 +1156,5 @@
       }
     }
   },
-  "updatedAt": "2026-10-20T21:13:08.798Z"
+  "updatedAt": "2026-10-23T16:21:33.016Z"
 }
