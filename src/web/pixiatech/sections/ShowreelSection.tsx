@@ -5,68 +5,14 @@ import { Language } from '../../pixiatech-translations';
 import { useCms } from '@/lib/site-web/cms-context';
 import { getCmsText, normalizeLang } from '@/lib/site-web/cms-i18n';
 import { useSectionStyle } from '../../cms/useSectionStyle';
-import { Sparkles, Eye, Scan, Flame, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { Eye, Grid, Flame, Play, Pause, Volume2, VolumeX, ArrowRight, Sparkles } from 'lucide-react';
 
 interface ShowreelSectionProps {
   lang?: Language;
   onOpenConsultation?: () => void;
 }
 
-type InspectorMode = 'cinema' | 'optics' | 'thermal';
-
-interface StageMeta {
-  id: number;
-  image: string;
-  tag: string;
-  scaleMetric: string;
-  pixelsCount: string;
-  pitch: string;
-  nits: string;
-  refresh: string;
-}
-
-const STAGES: StageMeta[] = [
-  {
-    id: 1,
-    image: '/assets/showreel/stage-1-micro-diode.jpg',
-    tag: 'MICROLED SMD',
-    scaleMetric: '0.9 mm',
-    pixelsCount: '3 Diodes RGB',
-    pitch: 'P0.9 Ultra-Fine',
-    nits: '1,500 nits',
-    refresh: '7,680 Hz',
-  },
-  {
-    id: 2,
-    image: '/assets/showreel/stage-2-cabinet-module.jpg',
-    tag: 'CHÂSSIS MAGNÉSIUM',
-    scaleMetric: '500 mm',
-    pixelsCount: '250,000 px',
-    pitch: 'Calibration ±0.01mm',
-    nits: '2,200 nits',
-    refresh: '7,680 Hz',
-  },
-  {
-    id: 3,
-    image: '/assets/showreel/stage-3-xr-soundstage.jpg',
-    tag: 'STUDIO XR & CINÉMA',
-    scaleMetric: '35 m',
-    pixelsCount: '38,400,000 px',
-    pitch: 'Courbure R=8m',
-    nits: '2,500 nits HDR',
-    refresh: '7,680 Hz Genlock',
-  },
-  {
-    id: 4,
-    image: '/assets/showreel/stage-4-architectural-city.jpg',
-    tag: 'MÉTROPOLE ARCHITECTURALE',
-    scaleMetric: '180 m',
-    pixelsCount: '120,000,000 px',
-    pitch: 'DOOH 10,000 nits',
-    nits: '10,000 nits',
-    refresh: '3,840 Hz',
-  },
-];
+type InspectorMode = 'realistic' | 'grid' | 'thermal';
 
 export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', onOpenConsultation }) => {
   const { pages, currentLang, isEditing } = useCms();
@@ -76,15 +22,17 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
 
   const containerRef = useRef<HTMLDivElement>(null);
   const stickyRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const [inspectorMode, setInspectorMode] = useState<InspectorMode>('cinema');
   const [scrollProgress, setScrollProgress] = useState(0);
-  const [currentStageIdx, setCurrentStageIdx] = useState(0);
+  const [inspectorMode, setInspectorMode] = useState<InspectorMode>('realistic');
+  const [isVideoPlaying, setIsVideoPlaying] = useState(true);
+  const [isMuted, setIsMuted] = useState(true);
   const [mousePos, setMousePos] = useState({ x: 0.5, y: 0.5 });
   const [cursorInSticky, setCursorInSticky] = useState(false);
 
-  // Internationalized texts with full CMS compatibility
+  // CMS Internationalized texts
   const t = useMemo(() => {
     return {
       label: getCmsText(cmsData, 'label', activeLang, 'PIXIATECH / SHOWREEL EXPÉRIENCE'),
@@ -92,78 +40,78 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
         cmsData,
         'scrollHint',
         activeLang,
-        activeLang === 'fr' ? 'FAITES DÉFILER POUR EXPLORER L’ÉCHELLE' : 'SCROLL TO EXPLORE THE SCALE'
+        activeLang === 'fr' ? 'FAITES DÉFILER — ZOOM DIRECT DANS L’ÉCRAN' : 'SCROLL TO DIVE DIRECTLY INTO THE SCREEN'
       ),
       eyebrow: getCmsText(
         cmsData,
         'eyebrow',
         activeLang,
-        activeLang === 'fr' ? '02 / SHOWREEL IMMERSIF — DE LA MATIÈRE À L’HORIZON' : '02 / IMMERSIVE SHOWREEL — FROM MATTER TO HORIZON'
+        activeLang === 'fr' ? '02 / SHOWREEL — DE LA VILLE AU CŒUR DE L’ÉCRAN' : '02 / SHOWREEL — FROM THE CITY INTO THE SCREEN'
       ),
       head1: getCmsText(
         cmsData,
         'head1',
         activeLang,
-        activeLang === 'fr' ? 'L’INGÉNIERIE' : 'ENGINEERING'
+        activeLang === 'fr' ? 'AFFICHEZ' : 'SCREEN THE'
       ),
       head2: getCmsText(
         cmsData,
         'head2',
         activeLang,
-        activeLang === 'fr' ? 'SANS LIMITE.' : 'WITHOUT LIMITS.'
+        activeLang === 'fr' ? "L'IMPOSSIBLE." : 'IMPOSSIBLE.'
       ),
       lede: getCmsText(
         cmsData,
         'lede',
         activeLang,
         activeLang === 'fr'
-          ? "De la précision nanométrique du micro-pixel jusqu’aux façades monumentales qui redéfinissent l’architecture urbaine."
-          : 'From the nanometric precision of the micro-pixel to monumental facades that redefine urban architecture.'
+          ? "Faites défiler — la caméra avance de la skyline métropolitaine jusqu’à pénétrer au cœur même de l’écran LED."
+          : 'Scroll down — the camera glides forward from the metropolitan skyline until entering the heart of the LED display.'
       ),
       chapters: [
         [
-          getCmsText(cmsData, 'ch1Eyebrow', activeLang, activeLang === 'fr' ? '01 / LA MATRICE' : '01 / THE MATRIX'),
-          getCmsText(cmsData, 'ch1TitleLine1', activeLang, activeLang === 'fr' ? 'La pureté optique' : 'Optical purity'),
-          getCmsText(cmsData, 'ch1TitleLine2', activeLang, activeLang === 'fr' ? 'au cœur du composant.' : 'at the core.'),
+          getCmsText(cmsData, 'ch1Eyebrow', activeLang, activeLang === 'fr' ? '01 / LA CITÉ' : '01 / THE METROPOLIS'),
+          getCmsText(cmsData, 'ch1TitleLine1', activeLang, activeLang === 'fr' ? 'L’Écran au Cœur' : 'The Display at the Heart'),
+          getCmsText(cmsData, 'ch1TitleLine2', activeLang, activeLang === 'fr' ? 'de la métropole.' : 'of the metropolis.'),
           getCmsText(
             cmsData,
             'ch1Desc',
             activeLang,
             activeLang === 'fr'
-              ? "Chaque micro-diode est liée sur substrat de saphir avec nano-lentilles prismatiques. Contraste infini, zéro reflet parasite, chromaticité certifiée DCI-P3 à 99.8%."
-              : 'Each micro-diode bonded to a sapphire substrate with prismatic nano-lenses. Infinite contrast, zero glare, certified 99.8% DCI-P3 color gamut.'
+              ? "Parfaitement intégré dans la façade de verre, l'écran monumental PIXIATECH captive l'espace urbain avec une luminosité calibrée de 10,000 nits."
+              : 'Seamlessly integrated into the glass architectural facade, PIXIATECH monumental display commands the city space with 10,000 nits calibrated brightness.'
           ),
         ],
         [
-          getCmsText(cmsData, 'ch2Eyebrow', activeLang, activeLang === 'fr' ? '02 / LE CHÂSSIS' : '02 / THE CHASSIS'),
-          getCmsText(cmsData, 'ch2TitleLine1', activeLang, activeLang === 'fr' ? 'Alliage magnésium' : 'Magnesium alloy'),
-          getCmsText(cmsData, 'ch2TitleLine2', activeLang, activeLang === 'fr' ? '& verrouillage laser.' : '& laser locking.'),
+          getCmsText(cmsData, 'ch2Eyebrow', activeLang, activeLang === 'fr' ? '02 / L’ATRIUM' : '02 / THE ATRIUM'),
+          getCmsText(cmsData, 'ch2TitleLine1', activeLang, activeLang === 'fr' ? 'Intégration Façade' : 'Facade Integration'),
+          getCmsText(cmsData, 'ch2TitleLine2', activeLang, activeLang === 'fr' ? '& structure de verre.' : '& glass structure.'),
           getCmsText(
             cmsData,
             'ch2Desc',
             activeLang,
             activeLang === 'fr'
-              ? "Usinage CNC au micron près. Connecteurs plaqués or flottants et verrous magnétiques pour un plan optique totalement imperceptible entre les cabinets."
-              : 'Micron-tolerance CNC machining. Floating gold-plated connectors and magnetic alignment latches for a totally seamless optical plane.'
+              ? "Usinage millimétrique et dissipation thermique passive zéro bruit. L'écran fait corps avec l'architecture sans altérer la transparence du bâtiment."
+              : 'Millimeter engineering and zero-noise passive heat dissipation. The screen becomes one with the architecture.'
           ),
         ],
         [
-          getCmsText(cmsData, 'ch3Eyebrow', activeLang, activeLang === 'fr' ? '03 / LE STUDIO XR' : '03 / THE XR STAGE'),
-          getCmsText(cmsData, 'ch3TitleLine1', activeLang, activeLang === 'fr' ? 'Production virtuelle' : 'Virtual production'),
-          getCmsText(cmsData, 'ch3TitleLine2', activeLang, activeLang === 'fr' ? 'sans compromis.' : 'without compromise.'),
+          getCmsText(cmsData, 'ch3Eyebrow', activeLang, activeLang === 'fr' ? '03 / LE MUR' : '03 / THE WALL'),
+          getCmsText(cmsData, 'ch3TitleLine1', activeLang, activeLang === 'fr' ? 'Cabinets 500 × 500 mm' : '500 × 500 mm Cabinets'),
+          getCmsText(cmsData, 'ch3TitleLine2', activeLang, activeLang === 'fr' ? 'une surface continue.' : 'one seamless surface.'),
           getCmsText(
             cmsData,
             'ch3Desc',
             activeLang,
             activeLang === 'fr'
-              ? "Volume LED courbé avec genlock instantané à 7,680Hz. Suppression absolue du moiré et du banding sous les caméras cinéma les plus exigeantes."
-              : 'Curved LED volume with 7,680Hz ultra-low latency genlock. Absolute elimination of moiré and camera banding under high-end cinema optics.'
+              ? "Alliage de magnésium, verrouillage magnétique instantané. Zéro ligne de démarcation entre les dalles, même à bout portant."
+              : 'Magnesium alloy, instant magnetic locking. Zero seam lines between panels even at close range.'
           ),
         ],
         [
-          getCmsText(cmsData, 'ch4Eyebrow', activeLang, activeLang === 'fr' ? '04 / L’ARCHITECTURE' : '04 / ARCHITECTURE'),
-          getCmsText(cmsData, 'ch4TitleLine1', activeLang, activeLang === 'fr' ? 'De l’art visuel' : 'Visual artistry'),
-          getCmsText(cmsData, 'ch4TitleLine2', activeLang, activeLang === 'fr' ? 'à l’échelle de la cité.' : 'scaled to the city.'),
+          getCmsText(cmsData, 'ch4Eyebrow', activeLang, activeLang === 'fr' ? '04 / L’IMMERSION' : '04 / IMMERSION'),
+          getCmsText(cmsData, 'ch4TitleLine1', activeLang, activeLang === 'fr' ? 'Au cœur de l’image' : 'Inside the visual'),
+          getCmsText(cmsData, 'ch4TitleLine2', activeLang, activeLang === 'fr' ? '& de la technologie.' : '& pure technology.'),
           '',
         ],
       ],
@@ -171,29 +119,29 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
         cmsData,
         'cta',
         activeLang,
-        activeLang === 'fr' ? 'Explorer nos réalisations d’envergure →' : 'Explore our flagship projects →'
+        activeLang === 'fr' ? 'Lancer un projet sur-mesure →' : 'Start a custom project →'
       ),
       steps: [
-        getCmsText(cmsData, 'step1', activeLang, '01. DIODE'),
-        getCmsText(cmsData, 'step2', activeLang, '02. MODULE'),
-        getCmsText(cmsData, 'step3', activeLang, activeLang === 'fr' ? '03. STUDIO XR' : '03. XR STAGE'),
-        getCmsText(cmsData, 'step4', activeLang, activeLang === 'fr' ? '04. ARCHITECTURE' : '04. FAÇADE'),
+        getCmsText(cmsData, 'step1', activeLang, '01. VILLE'),
+        getCmsText(cmsData, 'step2', activeLang, '02. FAÇADE'),
+        getCmsText(cmsData, 'step3', activeLang, '03. MUR LED'),
+        getCmsText(cmsData, 'step4', activeLang, activeLang === 'fr' ? '04. DANS L’ÉCRAN' : '04. INSIDE SCREEN'),
       ],
       hud: [
-        getCmsText(cmsData, 'hudDistanceLabel', activeLang, activeLang === 'fr' ? 'ÉCHELLE OPTIQUE' : 'OPTICAL SCALE'),
-        getCmsText(cmsData, 'hudPixelsLabel', activeLang, activeLang === 'fr' ? 'DÉFINITION' : 'RESOLUTION'),
-        getCmsText(cmsData, 'hudScaleLabel', activeLang, activeLang === 'fr' ? 'MODULE ACTIF' : 'ACTIVE MODULE'),
+        getCmsText(cmsData, 'hudDistanceLabel', activeLang, activeLang === 'fr' ? 'DISTANCE CAMÉRA' : 'CAMERA DISTANCE'),
+        getCmsText(cmsData, 'hudPixelsLabel', activeLang, activeLang === 'fr' ? 'DÉFINITION ÉCRAN' : 'SCREEN DEFINITION'),
+        getCmsText(cmsData, 'hudScaleLabel', activeLang, activeLang === 'fr' ? 'PLAN OPTIQUE' : 'OPTICAL PLANE'),
       ],
-      smdPixel: getCmsText(cmsData, 'smdPixelLabel', activeLang, 'MICRO-OPTIQUE P0.9'),
+      smdPixel: getCmsText(cmsData, 'smdPixelLabel', activeLang, 'DANS L’ÉCRAN'),
       modes: {
-        cinema: activeLang === 'fr' ? 'Rendu Cinématique' : 'Cinematic View',
-        optics: activeLang === 'fr' ? 'Laser & Alignement' : 'Laser & Alignment',
-        thermal: activeLang === 'fr' ? 'Luxmètre & Spectre' : 'Photometry & Spectrum',
+        realistic: activeLang === 'fr' ? 'Rendu Réaliste' : 'Realistic View',
+        grid: activeLang === 'fr' ? 'Grille Cabinets 500mm' : '500mm Cabinet Grid',
+        thermal: activeLang === 'fr' ? 'Luminance & Chaleur' : 'Luminance & Heatmap',
       },
     };
   }, [cmsData, activeLang]);
 
-  // Handle scroll detection and lerped progress
+  // Smooth scroll lerp tracking
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -213,16 +161,11 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
     };
 
     const updateLoop = () => {
-      curP += (targetP - curP) * 0.14;
-      if (Math.abs(targetP - curP) < 0.0005) {
+      curP += (targetP - curP) * 0.12;
+      if (Math.abs(targetP - curP) < 0.0004) {
         curP = targetP;
       }
       setScrollProgress(curP);
-
-      // Determine stage (0 to 3)
-      const stage = Math.min(3, Math.max(0, Math.floor(curP * 4)));
-      setCurrentStageIdx(stage);
-
       animId = requestAnimationFrame(updateLoop);
     };
 
@@ -236,7 +179,7 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
     };
   }, []);
 
-  // Ambient Canvas Effects: Volumetric light beam, cursor spotlight, laser grid
+  // Ambient canvas overlay for particles and optical laser lines
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -264,13 +207,12 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
     resize();
     window.addEventListener('resize', resize);
 
-    // Particle motes for cinema lighting
-    const particles = Array.from({ length: 45 }, () => ({
+    const particles = Array.from({ length: 30 }, () => ({
       x: Math.random(),
       y: Math.random(),
-      speed: 0.0008 + Math.random() * 0.0016,
+      speed: 0.0006 + Math.random() * 0.0014,
       size: 1 + Math.random() * 2,
-      opacity: 0.15 + Math.random() * 0.45,
+      opacity: 0.2 + Math.random() * 0.4,
     }));
 
     let frame = 0;
@@ -279,96 +221,7 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
       frame++;
       ctx.clearRect(0, 0, width, height);
 
-      // Dynamic mouse spotlight
-      const targetMouseX = mousePos.x * width;
-      const targetMouseY = mousePos.y * height;
-
-      // 1. Ambient Volumetric Glow
-      const ambientGrad = ctx.createRadialGradient(
-        targetMouseX,
-        targetMouseY,
-        20,
-        targetMouseX,
-        targetMouseY,
-        width * 0.7
-      );
-      ambientGrad.addColorStop(0, 'rgba(195, 249, 16, 0.06)');
-      ambientGrad.addColorStop(0.3, 'rgba(34, 211, 238, 0.03)');
-      ambientGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-      ctx.fillStyle = ambientGrad;
-      ctx.fillRect(0, 0, width, height);
-
-      // 2. Mode: Optics (Laser Vector Reticle & Micron Grid)
-      if (inspectorMode === 'optics') {
-        ctx.save();
-        ctx.strokeStyle = 'rgba(195, 249, 16, 0.35)';
-        ctx.lineWidth = 1;
-
-        // Crosshair on cursor
-        ctx.beginPath();
-        ctx.moveTo(0, targetMouseY);
-        ctx.lineTo(width, targetMouseY);
-        ctx.moveTo(targetMouseX, 0);
-        ctx.lineTo(targetMouseX, height);
-        ctx.stroke();
-
-        // Target reticle
-        ctx.beginPath();
-        ctx.arc(targetMouseX, targetMouseY, 28, 0, Math.PI * 2);
-        ctx.arc(targetMouseX, targetMouseY, 48, 0, Math.PI * 2);
-        ctx.stroke();
-
-        // Technical angle ticks
-        const rot = frame * 0.02;
-        ctx.beginPath();
-        ctx.arc(targetMouseX, targetMouseY, 38, rot, rot + Math.PI * 0.5);
-        ctx.arc(targetMouseX, targetMouseY, 38, rot + Math.PI, rot + Math.PI * 1.5);
-        ctx.stroke();
-
-        // Grid scan lines
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
-        const step = 80;
-        for (let x = 0; x < width; x += step) {
-          ctx.beginPath();
-          ctx.moveTo(x, 0);
-          ctx.lineTo(x, height);
-          ctx.stroke();
-        }
-        for (let y = 0; y < height; y += step) {
-          ctx.beginPath();
-          ctx.moveTo(0, y);
-          ctx.lineTo(width, y);
-          ctx.stroke();
-        }
-        ctx.restore();
-      }
-
-      // 3. Mode: Thermal / Photometry (False-color Heatmap Vignette)
-      if (inspectorMode === 'thermal') {
-        ctx.save();
-        const thermGrad = ctx.createRadialGradient(
-          width * 0.5,
-          height * 0.5,
-          50,
-          width * 0.5,
-          height * 0.5,
-          width * 0.6
-        );
-        thermGrad.addColorStop(0, 'rgba(255, 60, 0, 0.12)');
-        thermGrad.addColorStop(0.4, 'rgba(255, 180, 0, 0.08)');
-        thermGrad.addColorStop(0.7, 'rgba(0, 160, 255, 0.1)');
-        thermGrad.addColorStop(1, 'rgba(20, 0, 80, 0.25)');
-        ctx.fillStyle = thermGrad;
-        ctx.fillRect(0, 0, width, height);
-
-        // Scanline sweep
-        const scanY = (frame * 2.5) % height;
-        ctx.fillStyle = 'rgba(195, 249, 16, 0.18)';
-        ctx.fillRect(0, scanY, width, 2);
-        ctx.restore();
-      }
-
-      // 4. Subtle Cinematic Floating Light Motes
+      // Light dust particles in cinema atmosphere
       ctx.fillStyle = '#FFFFFF';
       for (const p of particles) {
         p.y -= p.speed;
@@ -380,6 +233,13 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
       }
       ctx.globalAlpha = 1;
 
+      // Laser sweep if in grid/optics mode
+      if (inspectorMode === 'grid') {
+        const sweepY = (frame * 3) % height;
+        ctx.fillStyle = 'rgba(195, 249, 16, 0.15)';
+        ctx.fillRect(0, sweepY, width, 2);
+      }
+
       animId = requestAnimationFrame(render);
     };
 
@@ -389,9 +249,8 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
       window.removeEventListener('resize', resize);
       cancelAnimationFrame(animId);
     };
-  }, [mousePos, inspectorMode]);
+  }, [inspectorMode]);
 
-  // Mouse tilt tracking for spatial parallax
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
     if (!rect.width || !rect.height) return;
@@ -400,7 +259,7 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
     setMousePos({ x, y });
   }, []);
 
-  // Jump to specific chapter smoothly
+  // Jump directly to any of the 4 zoom stages
   const scrollToStage = (stageIdx: number) => {
     const container = containerRef.current;
     if (!container) return;
@@ -412,8 +271,53 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
     window.scrollTo({ top: targetY, behavior: 'smooth' });
   };
 
-  const activeStage = STAGES[currentStageIdx] || STAGES[0];
-  const heroOpacity = Math.max(0, 1 - scrollProgress / 0.12);
+  // Continuous Zoom Mathematics:
+  // Screen center on image: x = 50.0%, y = 38.9%
+  // As scrollProgress goes 0 -> 1:
+  // scale goes 1.0 -> 5.2
+  // We also slightly offset translateY so that as we zoom, the screen moves from 38.9% to true optical center 50%
+  const zoomScale = 1.0 + Math.pow(scrollProgress, 1.25) * 4.25; // 1.0 -> 5.25
+  const verticalShift = scrollProgress * 11.1; // shifts upward to align screen center
+
+  // Subtle mouse tilt parallax
+  const tiltX = (mousePos.x - 0.5) * 12;
+  const tiltY = (mousePos.y - 0.5) * 8;
+
+  // Calculate current stage index (0 to 3)
+  const currentStageIdx = Math.min(3, Math.max(0, Math.floor(scrollProgress * 3.99)));
+
+  // Telemetry values based on continuous zoom
+  const hudDistance =
+    scrollProgress < 0.25
+      ? Math.round(280 - scrollProgress * 600) + ' m'
+      : scrollProgress < 0.6
+      ? Math.round(65 - (scrollProgress - 0.25) * 150) + ' m'
+      : scrollProgress < 0.85
+      ? (5.5 - (scrollProgress - 0.6) * 18).toFixed(1) + ' m'
+      : Math.round(150 - (scrollProgress - 0.85) * 900) + ' mm';
+
+  const hudPixels =
+    scrollProgress < 0.25
+      ? '120 M'
+      : scrollProgress < 0.6
+      ? '48 M'
+      : scrollProgress < 0.85
+      ? '8.2 M'
+      : '4K UHD (P0.9)';
+
+  const hudScale =
+    scrollProgress < 0.25
+      ? 'SKYLINE METRO'
+      : scrollProgress < 0.6
+      ? 'FAÇADE VERRE'
+      : scrollProgress < 0.85
+      ? 'MUR DE CABINETS'
+      : 'DANS L’ÉCRAN';
+
+  const heroOpacity = Math.max(0, 1 - scrollProgress / 0.14);
+
+  // When zoomed deep into the screen (scrollProgress > 0.75), transition into the screen content
+  const screenImmersionOpacity = Math.max(0, Math.min(1, (scrollProgress - 0.72) / 0.18));
 
   return (
     <div
@@ -422,9 +326,9 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
       className="sr-wrap"
       style={{
         position: 'relative',
-        backgroundColor: cms.section.backgroundColor ?? '#020305',
+        backgroundColor: cms.section.backgroundColor ?? '#020306',
         color: '#F5F4F0',
-        height: '520vh',
+        height: '540vh',
         backgroundImage: cms.section.backgroundImage,
         backgroundSize: cms.section.backgroundSize,
         backgroundPosition: cms.section.backgroundPosition,
@@ -442,63 +346,126 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
           top: 0,
           height: '100vh',
           overflow: 'hidden',
-          backgroundColor: '#030508',
+          backgroundColor: '#020306',
         }}
       >
-        {/* BACKGROUND REALISTIC PHOTOGRAPHY STAGES (3D Parallax Stack) */}
+        {/* CONTINUOUS CAMERA DOLLY ZOOM CONTAINER */}
         <div
           style={{
             position: 'absolute',
             inset: 0,
-            overflow: 'hidden',
+            transformOrigin: '50% 38.9%', // Pinned right at the center of the monumental screen!
+            transform: `scale(${zoomScale.toFixed(4)}) translateY(${verticalShift.toFixed(2)}%) translate3d(${tiltX.toFixed(1)}px, ${tiltY.toFixed(1)}px, 0)`,
+            willChange: 'transform',
+            pointerEvents: 'none',
           }}
         >
-          {STAGES.map((st, idx) => {
-            // Stage visibility window
-            // 4 stages: 0 (0-0.28), 1 (0.24-0.54), 2 (0.50-0.78), 3 (0.74-1.0)
-            const stageCenters = [0.1, 0.38, 0.64, 0.9];
-            const center = stageCenters[idx];
-            const dist = Math.abs(scrollProgress - center);
-            const opacity = Math.max(0, Math.min(1, 1 - dist / 0.22));
+          {/* THE PHOTOREALISTIC CITY SCENE (Kept consistently throughout the journey) */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/assets/showreel/flagship-city-facade.jpg"
+            alt="PIXIATECH Monumental Architectural LED Screen"
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              filter:
+                inspectorMode === 'thermal'
+                  ? 'contrast(1.5) saturate(2.2) hue-rotate(190deg)'
+                  : inspectorMode === 'grid'
+                  ? 'contrast(1.15) brightness(0.95)'
+                  : 'contrast(1.05) brightness(0.96)',
+              transition: 'filter 300ms ease',
+            }}
+          />
 
-            // Spatial Dolly Zoom: Image scales down as camera pulls back
-            const scale = 1.08 + (scrollProgress - center) * 0.15;
-            const tiltX = (mousePos.x - 0.5) * 16;
-            const tiltY = (mousePos.y - 0.5) * 12;
+          {/* DYNAMIC SCREEN CONTENT / VIDEO (Mapped right into the screen coordinate bounding box) */}
+          <div
+            style={{
+              position: 'absolute',
+              left: '39.4%',
+              top: '24.8%',
+              width: '21.2%',
+              height: '28.2%',
+              overflow: 'hidden',
+              borderRadius: 3,
+              boxShadow: '0 0 40px rgba(195, 249, 16, 0.4), inset 0 0 20px rgba(0,0,0,0.6)',
+              pointerEvents: scrollProgress > 0.65 ? 'auto' : 'none',
+            }}
+          >
+            {/* Real HTML5 Video looping inside the screen */}
+            <video
+              ref={videoRef}
+              src="/youtube-video.mp4"
+              autoPlay
+              loop
+              muted={isMuted}
+              playsInline
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                opacity: 0.92,
+              }}
+            />
 
-            return (
-              <div
-                key={st.id}
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  opacity: opacity.toFixed(3),
-                  transform: `scale(${scale.toFixed(4)}) translate3d(${tiltX.toFixed(1)}px, ${tiltY.toFixed(1)}px, 0)`,
-                  transition: 'opacity 350ms cubic-bezier(0.23, 1, 0.32, 1)',
-                  pointerEvents: 'none',
-                  willChange: 'transform, opacity',
-                }}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={st.image}
-                  alt={st.tag}
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                    filter:
-                      inspectorMode === 'thermal'
-                        ? 'contrast(1.6) saturate(2.4) hue-rotate(180deg)'
-                        : inspectorMode === 'optics'
-                        ? 'contrast(1.2) brightness(0.95)'
-                        : 'contrast(1.05) brightness(0.92)',
-                    transition: 'filter 300ms ease',
-                  }}
-                />
-              </div>
-            );
-          })}
+            {/* Seamless 500x500mm Cabinet Grid Overlay (Revealed when zooming in or in grid mode) */}
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                opacity:
+                  inspectorMode === 'grid'
+                    ? 0.75
+                    : Math.max(0, Math.min(0.45, (scrollProgress - 0.4) * 0.9)),
+                backgroundImage:
+                  'linear-gradient(to right, rgba(255,255,255,0.25) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.25) 1px, transparent 1px)',
+                backgroundSize: '25% 25%',
+                pointerEvents: 'none',
+                transition: 'opacity 200ms ease',
+              }}
+            />
+
+            {/* Scanline Sweep effect */}
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                background:
+                  'linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(195, 249, 16, 0.08) 50%, rgba(255,255,255,0) 100%)',
+                backgroundSize: '100% 40px',
+                animation: 'xr-blink 2s linear infinite',
+                pointerEvents: 'none',
+              }}
+            />
+          </div>
+
+          {/* FINAL DEEP DIVE: MicroLED Diode Micro-Structure (Fades in when deeply inside the screen) */}
+          <div
+            style={{
+              position: 'absolute',
+              left: '39.4%',
+              top: '24.8%',
+              width: '21.2%',
+              height: '28.2%',
+              opacity: screenImmersionOpacity.toFixed(3),
+              pointerEvents: 'none',
+              overflow: 'hidden',
+            }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/assets/showreel/stage-1-micro-diode.jpg"
+              alt="MicroLED Diode Structure"
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                transform: `scale(${(1.0 + (scrollProgress - 0.72) * 0.6).toFixed(3)})`,
+                filter: 'contrast(1.2) brightness(1.1)',
+              }}
+            />
+          </div>
         </div>
 
         {/* INTERACTIVE AMBIENT CANVAS OVERLAY */}
@@ -514,13 +481,13 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
           }}
         />
 
-        {/* CINEMATIC SHADOW & CONTRAST VIGNETTES */}
+        {/* CINEMATIC EDGE VIGNETTES */}
         <div
           style={{
             position: 'absolute',
             inset: 0,
             background:
-              'radial-gradient(ellipse 95% 85% at 50% 50%, rgba(2, 4, 8, 0.1) 40%, rgba(2, 4, 8, 0.85) 100%)',
+              'radial-gradient(ellipse 95% 85% at 50% 50%, rgba(2, 3, 6, 0.1) 40%, rgba(2, 3, 6, 0.85) 100%)',
             pointerEvents: 'none',
             zIndex: 11,
           }}
@@ -530,7 +497,7 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
             position: 'absolute',
             inset: 0,
             background:
-              'linear-gradient(180deg, rgba(2,4,8,0.92) 0%, rgba(2,4,8,0.2) 20%, rgba(2,4,8,0.2) 70%, rgba(2,4,8,0.95) 100%)',
+              'linear-gradient(180deg, rgba(2,3,6,0.92) 0%, rgba(2,3,6,0.1) 22%, rgba(2,3,6,0.1) 68%, rgba(2,3,6,0.95) 100%)',
             pointerEvents: 'none',
             zIndex: 12,
           }}
@@ -559,7 +526,7 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
               gap: 12,
               padding: '6px 14px',
               borderRadius: 999,
-              background: 'rgba(10, 14, 20, 0.75)',
+              background: 'rgba(6, 10, 16, 0.8)',
               border: '1px solid rgba(255, 255, 255, 0.12)',
               backdropFilter: 'blur(12px)',
             }}
@@ -588,7 +555,7 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
             </span>
           </div>
 
-          {/* INSPECTOR VIEW MODES SWITCHER */}
+          {/* INSPECTOR VIEW MODES */}
           <div
             className="hidden md:flex"
             style={{
@@ -596,14 +563,14 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
               gap: 6,
               padding: '4px 6px',
               borderRadius: 999,
-              background: 'rgba(10, 14, 20, 0.75)',
+              background: 'rgba(6, 10, 16, 0.8)',
               border: '1px solid rgba(255, 255, 255, 0.12)',
               backdropFilter: 'blur(12px)',
             }}
           >
-            {(['cinema', 'optics', 'thermal'] as InspectorMode[]).map((mode) => {
+            {(['realistic', 'grid', 'thermal'] as InspectorMode[]).map((mode) => {
               const active = inspectorMode === mode;
-              const Icon = mode === 'cinema' ? Eye : mode === 'optics' ? Scan : Flame;
+              const Icon = mode === 'realistic' ? Eye : mode === 'grid' ? Grid : Flame;
               return (
                 <button
                   key={mode}
@@ -640,13 +607,76 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
             })}
           </div>
 
+          {/* Sound / Video Controls when zoomed in */}
+          {scrollProgress > 0.6 && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '4px 8px',
+                borderRadius: 999,
+                background: 'rgba(6, 10, 16, 0.8)',
+                border: '1px solid rgba(195, 249, 16, 0.3)',
+                backdropFilter: 'blur(12px)',
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  if (videoRef.current) {
+                    if (isVideoPlaying) {
+                      videoRef.current.pause();
+                      setIsVideoPlaying(false);
+                    } else {
+                      videoRef.current.play();
+                      setIsVideoPlaying(true);
+                    }
+                  }
+                }}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#C3F910',
+                  padding: 4,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+              >
+                {isVideoPlaying ? <Pause style={{ width: 14, height: 14 }} /> : <Play style={{ width: 14, height: 14 }} />}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (videoRef.current) {
+                    videoRef.current.muted = !isMuted;
+                    setIsMuted(!isMuted);
+                  }
+                }}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#C3F910',
+                  padding: 4,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+              >
+                {isMuted ? <VolumeX style={{ width: 14, height: 14 }} /> : <Volume2 style={{ width: 14, height: 14 }} />}
+              </button>
+            </div>
+          )}
+
           {/* Scroll Hint */}
           <div
             className="hidden sm:flex"
             style={{
               padding: '6px 14px',
               borderRadius: 999,
-              background: 'rgba(10, 14, 20, 0.75)',
+              background: 'rgba(6, 10, 16, 0.8)',
               border: '1px solid rgba(255, 255, 255, 0.12)',
               backdropFilter: 'blur(12px)',
               fontSize: 10,
@@ -659,7 +689,7 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
           </div>
         </div>
 
-        {/* RIGHT TELEMETRY HUD (Glassmorphism Instrument Cluster) */}
+        {/* RIGHT TELEMETRY HUD (Instrument Cluster) */}
         <div
           className="hidden lg:flex"
           style={{
@@ -678,16 +708,16 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
             style={{
               padding: '20px 22px',
               borderRadius: 20,
-              background: 'rgba(8, 12, 18, 0.82)',
+              background: 'rgba(6, 10, 16, 0.84)',
               border: '1px solid rgba(255, 255, 255, 0.12)',
               backdropFilter: 'blur(16px)',
               boxShadow: '0 20px 40px rgba(0,0,0,0.6)',
               display: 'flex',
               flexDirection: 'column',
-              gap: 18,
+              gap: 16,
             }}
           >
-            {/* Metric 1: Optical Scale */}
+            {/* Metric 1: Distance */}
             <div>
               <div
                 style={{
@@ -709,11 +739,11 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
                   fontFamily: 'var(--font-heading, sans-serif)',
                 }}
               >
-                {activeStage.scaleMetric}
+                {hudDistance}
               </div>
             </div>
 
-            {/* Metric 2: Resolution / Pixels */}
+            {/* Metric 2: Visible Pixels / Resolution */}
             <div>
               <div
                 style={{
@@ -735,39 +765,54 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
                   fontFamily: 'var(--font-mono, monospace)',
                 }}
               >
-                {activeStage.pixelsCount}
+                {hudPixels}
               </div>
             </div>
 
-            {/* Divider */}
-            <div style={{ height: 1, background: 'rgba(255, 255, 255, 0.08)' }} />
+            {/* Metric 3: Active Stage */}
+            <div>
+              <div
+                style={{
+                  fontSize: 9.5,
+                  letterSpacing: '.24em',
+                  color: '#9CA3AF',
+                  fontFamily: 'var(--font-mono, monospace)',
+                  marginBottom: 4,
+                }}
+              >
+                {t.hud[2]}
+              </div>
+              <div
+                style={{
+                  fontSize: 13,
+                  fontWeight: 800,
+                  letterSpacing: '.08em',
+                  color: '#FFFFFF',
+                  fontFamily: 'var(--font-mono, monospace)',
+                }}
+              >
+                {hudScale}
+              </div>
+            </div>
 
-            {/* Specs Grid */}
+            {/* Specs Line */}
+            <div style={{ height: 1, background: 'rgba(255, 255, 255, 0.08)' }} />
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
               <div>
                 <div style={{ fontSize: 9, letterSpacing: '.18em', color: '#6B7280', fontFamily: 'var(--font-mono)' }}>
-                  PITCH / PRÉCISION
+                  LUMINANCE
                 </div>
                 <div style={{ fontSize: 11, fontWeight: 700, color: '#E5E7EB', marginTop: 2 }}>
-                  {activeStage.pitch}
+                  10,000 nits
                 </div>
               </div>
               <div>
                 <div style={{ fontSize: 9, letterSpacing: '.18em', color: '#6B7280', fontFamily: 'var(--font-mono)' }}>
-                  LUMINANCE HDR
+                  GENLOCK
                 </div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#E5E7EB', marginTop: 2 }}>
-                  {activeStage.nits}
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#C3F910', marginTop: 2 }}>
+                  7,680 Hz
                 </div>
-              </div>
-            </div>
-
-            <div>
-              <div style={{ fontSize: 9, letterSpacing: '.18em', color: '#6B7280', fontFamily: 'var(--font-mono)' }}>
-                FRÉQUENCE GENLOCK
-              </div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: '#C3F910', marginTop: 2 }}>
-                {activeStage.refresh}
               </div>
             </div>
           </div>
@@ -850,7 +895,7 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
           </p>
         </div>
 
-        {/* PROGRESSIVE CHAPTER OVERLAYS (One for each stage) */}
+        {/* PROGRESSIVE CHAPTER OVERLAYS (One for each zoom level) */}
         {t.chapters.map((ch, idx) => {
           const isCurrent = currentStageIdx === idx && scrollProgress > 0.12;
           const chKey = [
