@@ -23,6 +23,8 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
   const containerRef = useRef<HTMLDivElement>(null);
   const stickyRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const video1Ref = useRef<HTMLVideoElement>(null);
+  const video2Ref = useRef<HTMLVideoElement>(null);
 
   const [scrollProgress, setScrollProgress] = useState(0);
   const [inspectorMode, setInspectorMode] = useState<InspectorMode>('realistic');
@@ -32,6 +34,25 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
 
   // Configurable Video URL from CMS, fallback to /youtube-video.mp4
   const videoSrc = getCmsText(cmsData, 'videoUrl', activeLang, '/youtube-video.mp4');
+
+  // Synchronize frame playback across all video screen instances
+  useEffect(() => {
+    const master = videoRef.current;
+    if (!master) return;
+    const syncTime = () => {
+      const cur = master.currentTime;
+      if (video1Ref.current && Math.abs(video1Ref.current.currentTime - cur) > 0.1) {
+        video1Ref.current.currentTime = cur;
+      }
+      if (video2Ref.current && Math.abs(video2Ref.current.currentTime - cur) > 0.1) {
+        video2Ref.current.currentTime = cur;
+      }
+    };
+    master.addEventListener('timeupdate', syncTime);
+    return () => {
+      master.removeEventListener('timeupdate', syncTime);
+    };
+  }, []);
 
   // CMS Internationalized texts
   const t = useMemo(() => {
@@ -283,11 +304,12 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
     Math.max(0, Math.min(1, (scrollProgress - 0.21) / 0.07)),
     Math.max(0, Math.min(1, 1 - (scrollProgress - 0.46) / 0.07))
   );
+  // Layer 3 (Facade Screen): active from 0.46, stays visible under Layer 4 so the video illuminates micro-LEDs until Layer 5 reveals
   const op3 = Math.min(
     Math.max(0, Math.min(1, (scrollProgress - 0.46) / 0.07)),
-    Math.max(0, Math.min(1, 1 - (scrollProgress - 0.70) / 0.06))
+    Math.max(0, Math.min(1, 1 - (scrollProgress - 0.85) / 0.08))
   );
-  // Layer 4 (Macro LED photo): active from 0.70 to 0.92
+  // Layer 4 (Macro LED photo): active from 0.70 to 0.92, blends on top of the zoomed screen video
   const op4 = Math.min(
     Math.max(0, Math.min(1, (scrollProgress - 0.70) / 0.06)),
     Math.max(0, Math.min(1, 1 - (scrollProgress - 0.86) / 0.08))
@@ -305,9 +327,10 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
   const scale2 = 1.0 + p2 * 0.66;
   const yShift2 = p2 * 10.0;
 
-  // Layer 3 scale
+  // Layer 3 scale: zooms from 1.0 (facade view) to 2.65 (filling viewport with screen) and deeper into pixels
   const p3 = Math.max(0, Math.min(1, (scrollProgress - 0.50) / 0.22));
-  const scale3 = 1.0 + p3 * 1.95;
+  const p3Deep = Math.max(0, Math.min(1, (scrollProgress - 0.72) / 0.13));
+  const scale3 = 1.0 + p3 * 1.65 + p3Deep * 0.70;
 
   // Layer 4 (Macro LED) scale
   const p4 = Math.max(0, Math.min(1, (scrollProgress - 0.72) / 0.28));
@@ -316,46 +339,6 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
   // Layer 5 (Detailed Diode Schematic) zoom
   const p5 = Math.max(0, Math.min(1, (scrollProgress - 0.85) / 0.15));
   const scale5 = 1.0 + p5 * 0.45;
-
-  // Dynamic continuous video screen geometry across all 4 reference layers
-  let vidCx = 49.97;
-  let vidCy = 59.88;
-  let vidW = 12.74;
-  let vidH = 10.95;
-  let vidRadius = 1;
-
-  if (scrollProgress <= 0.25) {
-    const t = scrollProgress / 0.25;
-    vidCx = 49.97;
-    vidCy = 59.88 - t * 14.1;
-    vidW = 12.74 * (1 + t * 1.39);
-    vidH = 10.95 * (1 + t * 1.39);
-    vidRadius = 1;
-  } else if (scrollProgress <= 0.50) {
-    const t = (scrollProgress - 0.25) / 0.25;
-    vidCx = 49.97 - t * 0.12;
-    vidCy = 45.78 - t * 9.91;
-    vidW = 30.45 * (1 + t * 0.6558);
-    vidH = 26.17 * (1 + t * 0.5716);
-    vidRadius = 1.5;
-  } else if (scrollProgress <= 0.72) {
-    const t = (scrollProgress - 0.50) / 0.22;
-    vidCx = 49.85 + t * 0.15;
-    vidCy = 35.87 + t * 14.13;
-    vidW = 50.42 + t * (100 - 50.42);
-    vidH = 41.13 + t * (100 - 41.13);
-    vidRadius = 2 * (1 - t);
-  } else {
-    vidCx = 50;
-    vidCy = 50;
-    vidW = 100;
-    vidH = 100;
-    vidRadius = 0;
-  }
-  const vidLeft = (vidCx - vidW / 2).toFixed(2) + '%';
-  const vidTop = (vidCy - vidH / 2).toFixed(2) + '%';
-  const vidWidth = vidW.toFixed(2) + '%';
-  const vidHeight = vidH.toFixed(2) + '%';
 
   // Momentary subtle motion blur during transitions (peaks at 1.8px strictly during crossfades, 0px otherwise)
   const blurT1 = Math.max(0, 1 - Math.abs(scrollProgress - 0.25) / 0.035);
@@ -421,7 +404,7 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
                 position: 'absolute',
                 inset: 0,
                 opacity: op1.toFixed(3),
-                transformOrigin: '50% 59.88%',
+                transformOrigin: '49.97% 59.88%',
                 transform: `translate3d(0, ${-yShift1.toFixed(2)}%, 0) scale(${scale1.toFixed(3)})`,
                 willChange: 'transform, opacity',
                 backfaceVisibility: 'hidden',
@@ -440,6 +423,36 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
                   display: 'block',
                 }}
               />
+
+              {/* VIDEO ANCHORED RIGIDLY TO REF-1's SCREEN FRAME */}
+              <div
+                style={{
+                  position: 'absolute',
+                  left: '43.66%',
+                  top: '54.52%',
+                  width: '12.68%',
+                  height: '10.84%',
+                  overflow: 'hidden',
+                  borderRadius: 1,
+                  boxShadow: '0 0 15px rgba(195, 249, 16, 0.45)',
+                  pointerEvents: 'none',
+                }}
+              >
+                <video
+                  ref={video1Ref}
+                  src={videoSrc}
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    display: 'block',
+                  }}
+                />
+              </div>
             </div>
           )}
 
@@ -450,7 +463,7 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
                 position: 'absolute',
                 inset: 0,
                 opacity: op2.toFixed(3),
-                transformOrigin: '50% 46.55%',
+                transformOrigin: '49.85% 46.55%',
                 transform: `translate3d(0, ${-yShift2.toFixed(2)}%, 0) scale(${scale2.toFixed(3)})`,
                 willChange: 'transform, opacity',
                 backfaceVisibility: 'hidden',
@@ -469,6 +482,36 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
                   display: 'block',
                 }}
               />
+
+              {/* VIDEO ANCHORED RIGIDLY TO REF-2's SCREEN FRAME */}
+              <div
+                style={{
+                  position: 'absolute',
+                  left: '34.63%',
+                  top: '34.01%',
+                  width: '30.50%',
+                  height: '25.19%',
+                  overflow: 'hidden',
+                  borderRadius: 1.5,
+                  boxShadow: '0 0 25px rgba(195, 249, 16, 0.4)',
+                  pointerEvents: 'none',
+                }}
+              >
+                <video
+                  ref={video2Ref}
+                  src={videoSrc}
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    display: 'block',
+                  }}
+                />
+              </div>
             </div>
           )}
 
@@ -479,7 +522,7 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
                 position: 'absolute',
                 inset: 0,
                 opacity: op3.toFixed(3),
-                transformOrigin: '49.97% 35.87%',
+                transformOrigin: '49.94% 35.76%',
                 transform: `scale(${scale3.toFixed(3)})`,
                 willChange: 'transform, opacity',
                 backfaceVisibility: 'hidden',
@@ -498,79 +541,78 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
                   display: 'block',
                 }}
               />
+
+              {/* VIDEO ANCHORED EXACTLY TO REF-3's SCREEN FRAME (0px DRIFT, 0px GAP) */}
+              <div
+                style={{
+                  position: 'absolute',
+                  left: '24.76%',
+                  top: '15.41%',
+                  width: '50.36%',
+                  height: '40.70%',
+                  overflow: 'hidden',
+                  boxShadow:
+                    scrollProgress > 0.45 && scrollProgress < 0.72
+                      ? '0 0 45px rgba(195, 249, 16, 0.35), inset 0 0 25px rgba(0,0,0,0.6)'
+                      : undefined,
+                  pointerEvents: scrollProgress > 0.45 ? 'auto' : 'none',
+                }}
+              >
+                {/* Master HTML5 Video */}
+                <video
+                  ref={videoRef}
+                  src={videoSrc}
+                  autoPlay
+                  loop
+                  muted={isMuted}
+                  playsInline
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    display: 'block',
+                  }}
+                />
+
+                {/* Cabinet Seams (Les traits des dalles 500x500mm — apparaissent lors du rapprochement) */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    opacity: inspectorMode === 'grid' ? 0.8 : cabinetLinesOpacity.toFixed(3),
+                    backgroundImage:
+                      'linear-gradient(to right, rgba(0,0,0,0.7) 1.5px, transparent 1.5px), linear-gradient(to bottom, rgba(0,0,0,0.7) 1.5px, transparent 1.5px)',
+                    backgroundSize: '16.66% 33.33%', // 6x3 cabinet grid
+                    pointerEvents: 'none',
+                    transition: 'opacity 200ms ease',
+                  }}
+                />
+
+                {/* FLICKER-FREE INSPECTOR TINT OVERLAYS (Thermal & Grid) */}
+                {inspectorMode === 'thermal' && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      background: 'rgba(255, 70, 0, 0.22)',
+                      boxShadow: 'inset 0 0 80px rgba(0, 160, 255, 0.35)',
+                      pointerEvents: 'none',
+                    }}
+                  />
+                )}
+                {inspectorMode === 'grid' && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      background: 'rgba(195, 249, 16, 0.08)',
+                      pointerEvents: 'none',
+                    }}
+                  />
+                )}
+              </div>
             </div>
           )}
-
-          {/* CONTINUOUS ACTIVE VIDEO SCREEN (Visible on REF-1, REF-2, REF-3 & behind REF-4) */}
-          <div
-            style={{
-              position: 'absolute',
-              left: vidLeft,
-              top: vidTop,
-              width: vidWidth,
-              height: vidHeight,
-              borderRadius: vidRadius,
-              overflow: 'hidden',
-              boxShadow: scrollProgress > 0.2 && scrollProgress < 0.72 ? '0 0 35px rgba(195, 249, 16, 0.4), inset 0 0 25px rgba(0,0,0,0.6)' : undefined,
-              pointerEvents: scrollProgress > 0.45 ? 'auto' : 'none',
-              backfaceVisibility: 'hidden',
-              WebkitBackfaceVisibility: 'hidden',
-              zIndex: 4,
-            }}
-          >
-            {/* Real HTML5 Video looping inside the screen (Configurable in CMS or /youtube-video.mp4) */}
-            <video
-              ref={videoRef}
-              src={videoSrc}
-              autoPlay
-              loop
-              muted={isMuted}
-              playsInline
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-                opacity: scrollProgress > 0.72 ? 0.85 : 0.94,
-              }}
-            />
-
-            {/* Cabinet Seams (Les traits des dalles 500x500mm — apparaissent lors du rapprochement) */}
-            <div
-              style={{
-                position: 'absolute',
-                inset: 0,
-                opacity: inspectorMode === 'grid' ? 0.8 : cabinetLinesOpacity.toFixed(3),
-                backgroundImage:
-                  'linear-gradient(to right, rgba(0,0,0,0.7) 1.5px, transparent 1.5px), linear-gradient(to bottom, rgba(0,0,0,0.7) 1.5px, transparent 1.5px)',
-                backgroundSize: '16.66% 33.33%', // 6x3 cabinet grid
-                pointerEvents: 'none',
-                transition: 'opacity 200ms ease',
-              }}
-            />
-
-            {/* FLICKER-FREE INSPECTOR TINT OVERLAYS (Thermal & Grid) */}
-            {inspectorMode === 'thermal' && (
-              <div
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  background: 'rgba(255, 70, 0, 0.22)',
-                  boxShadow: 'inset 0 0 80px rgba(0, 160, 255, 0.35)',
-                  pointerEvents: 'none',
-                }}
-              />
-            )}
-            {inspectorMode === 'grid' && (
-              <div
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  background: 'rgba(195, 249, 16, 0.08)',
-                  pointerEvents: 'none',
-                }}
-              />
-            )}
-          </div>
 
           {/* LAYER 4: REF-4 (Physical RGB Micro-LED Macro Matrix) */}
           {op4 > 0.001 && (
@@ -921,69 +963,66 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
               gap: 8,
             }}
           >
-            {scrollProgress > 0.3 && (
-              <div
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '4px 10px',
+                borderRadius: 999,
+                background: 'rgba(6, 10, 16, 0.8)',
+                border: '1px solid rgba(195, 249, 16, 0.35)',
+                backdropFilter: 'blur(12px)',
+              }}
+            >
+              <button
+                type="button"
+                title={isVideoPlaying ? 'Pause vidéo' : 'Lecture vidéo'}
+                onClick={() => {
+                  const next = !isVideoPlaying;
+                  setIsVideoPlaying(next);
+                  [videoRef, video1Ref, video2Ref].forEach((r) => {
+                    if (r.current) {
+                      if (next) r.current.play().catch(() => {});
+                      else r.current.pause();
+                    }
+                  });
+                }}
                 style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#C3F910',
+                  padding: 4,
+                  cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 6,
-                  padding: '4px 10px',
-                  borderRadius: 999,
-                  background: 'rgba(6, 10, 16, 0.8)',
-                  border: '1px solid rgba(195, 249, 16, 0.35)',
-                  backdropFilter: 'blur(12px)',
                 }}
               >
-                <button
-                  type="button"
-                  title={isVideoPlaying ? 'Pause vidéo' : 'Lecture vidéo'}
-                  onClick={() => {
-                    if (videoRef.current) {
-                      if (isVideoPlaying) {
-                        videoRef.current.pause();
-                        setIsVideoPlaying(false);
-                      } else {
-                        videoRef.current.play();
-                        setIsVideoPlaying(true);
-                      }
-                    }
-                  }}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: '#C3F910',
-                    padding: 4,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                  }}
-                >
-                  {isVideoPlaying ? <Pause style={{ width: 13, height: 13 }} /> : <Play style={{ width: 13, height: 13 }} />}
-                </button>
+                {isVideoPlaying ? <Pause style={{ width: 13, height: 13 }} /> : <Play style={{ width: 13, height: 13 }} />}
+              </button>
 
-                <button
-                  type="button"
-                  title={isMuted ? 'Activer le son' : 'Couper le son'}
-                  onClick={() => {
-                    if (videoRef.current) {
-                      videoRef.current.muted = !isMuted;
-                      setIsMuted(!isMuted);
-                    }
-                  }}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: '#C3F910',
-                    padding: 4,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                  }}
-                >
-                  {isMuted ? <VolumeX style={{ width: 13, height: 13 }} /> : <Volume2 style={{ width: 13, height: 13 }} />}
-                </button>
-              </div>
-            )}
+              <button
+                type="button"
+                title={isMuted ? 'Activer le son' : 'Couper le son'}
+                onClick={() => {
+                  [videoRef, video1Ref, video2Ref].forEach((r) => {
+                    if (r.current) r.current.muted = !isMuted;
+                  });
+                  setIsMuted(!isMuted);
+                }}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#C3F910',
+                  padding: 4,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+              >
+                {isMuted ? <VolumeX style={{ width: 13, height: 13 }} /> : <Volume2 style={{ width: 13, height: 13 }} />}
+              </button>
+            </div>
 
             {/* Scroll Hint */}
             <div
