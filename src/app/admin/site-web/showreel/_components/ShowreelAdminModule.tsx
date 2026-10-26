@@ -278,9 +278,16 @@ const FIELDS_BY_TAB: Record<ShowreelTab, FieldConfig[]> = {
   ],
   billboard: [
     {
+      key: 'videoUrl',
+      label: 'Chemin ou URL de la vidéo Showreel (MP4)',
+      description: 'Chemin vers le fichier vidéo affiché dans l’écran (ex: /youtube-video.mp4, ou URL hébergée). Vous pouvez aussi remplacer le fichier public/youtube-video.mp4.',
+      defaultFr: '/youtube-video.mp4',
+      defaultEn: '/youtube-video.mp4',
+    },
+    {
       key: 'tagline',
-      label: 'Accroche sur l’écran LED 3D (Billboard Canvas)',
-      description: 'Texte typographique dessiné au cœur de l’animation 3D sur le gratte-ciel.',
+      label: 'Accroche sur l’écran LED',
+      description: 'Texte ou slogan lié à la technologie de l’écran.',
       defaultFr: 'La science derrière la LED',
       defaultEn: 'Science Behind The LED',
     },
