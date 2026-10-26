@@ -23,14 +23,12 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
   const containerRef = useRef<HTMLDivElement>(null);
   const stickyRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const [scrollProgress, setScrollProgress] = useState(0);
   const [inspectorMode, setInspectorMode] = useState<InspectorMode>('realistic');
   const [isVideoPlaying, setIsVideoPlaying] = useState(true);
   const [isMuted, setIsMuted] = useState(true);
   const [mousePos, setMousePos] = useState({ x: 0.5, y: 0.5 });
-  const [cursorInSticky, setCursorInSticky] = useState(false);
 
   // Configurable Video URL from CMS, fallback to /youtube-video.mp4
   const videoSrc = getCmsText(cmsData, 'videoUrl', activeLang, '/youtube-video.mp4');
@@ -100,28 +98,28 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
         ],
         [
           getCmsText(cmsData, 'ch3Eyebrow', activeLang, activeLang === 'fr' ? '03 / LE MUR DE CABINETS' : '03 / THE CABINET WALL'),
-          getCmsText(cmsData, 'ch3TitleLine1', activeLang, activeLang === 'fr' ? 'Cabinets 500 × 500 mm' : '500 × 500 mm Cabinets'),
+          getCmsText(cmsData, 'ch3TitleLine1', activeLang, activeLang === 'fr' ? 'Matrice de Micro-LEDs' : 'Micro-LED Matrix'),
           getCmsText(cmsData, 'ch3TitleLine2', activeLang, activeLang === 'fr' ? '& trame des sous-pixels.' : '& sub-pixel raster.'),
           getCmsText(
             cmsData,
             'ch3Desc',
             activeLang,
             activeLang === 'fr'
-              ? "Approchez-vous du mur : verrous magnétiques d'une planéité submillimétrique et alignement parfait des sous-pixels RGB sans coupure."
-              : 'Step closer to the wall: submillimeter magnetic alignment and continuous RGB sub-pixel raster with zero visible seams.'
+              ? "Approchez-vous du mur : verrous magnétiques d'une planéité submillimétrique et alignement parfait des dizaines de diodes RGB sans coupure."
+              : 'Step closer to the wall: submillimeter magnetic alignment and dense RGB diode matrix with zero visible seams.'
           ),
         ],
         [
           getCmsText(cmsData, 'ch4Eyebrow', activeLang, activeLang === 'fr' ? '04 / PLONGÉE DANS LE PIXEL' : '04 / DIVE INTO THE PIXEL'),
-          getCmsText(cmsData, 'ch4TitleLine1', activeLang, activeLang === 'fr' ? 'Au cœur des diodes' : 'Inside the diodes'),
+          getCmsText(cmsData, 'ch4TitleLine1', activeLang, activeLang === 'fr' ? 'Au cœur de la diode' : 'Inside the diode'),
           getCmsText(cmsData, 'ch4TitleLine2', activeLang, activeLang === 'fr' ? 'MicroLED P0.9.' : 'MicroLED P0.9.'),
           getCmsText(
             cmsData,
             'ch4Desc',
             activeLang,
             activeLang === 'fr'
-              ? "Vous entrez dans la matière : diodes microLED liées sur substrat saphir, pureté colorimétrique DCI-P3 99.8% et rafraîchissement cinéma 7,680Hz."
-              : 'Enter into the matter: sapphire-bonded microLED diodes, 99.8% DCI-P3 color purity and 7,680Hz cinema genlock refresh rate.'
+              ? "Vous entrez dans la matière : diodes microLED liées sur substrat saphir, liaisons or nanométriques, pureté colorimétrique DCI-P3 99.8% et 7,680Hz."
+              : 'Enter into the matter: sapphire-bonded microLED diodes, gold wire bonding, 99.8% DCI-P3 color purity and 7,680Hz genlock refresh rate.'
           ),
         ],
       ],
@@ -132,10 +130,10 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
         activeLang === 'fr' ? 'Lancer un projet sur-mesure →' : 'Start a custom project →'
       ),
       steps: [
-        getCmsText(cmsData, 'step1', activeLang, '01. VUE LOINTAINE'),
+        getCmsText(cmsData, 'step1', activeLang, '01. VUE DE LOIN'),
         getCmsText(cmsData, 'step2', activeLang, '02. FAÇADE SIÈGE'),
-        getCmsText(cmsData, 'step3', activeLang, '03. TRAME 500MM'),
-        getCmsText(cmsData, 'step4', activeLang, activeLang === 'fr' ? '04. DIODES RGB' : '04. RGB DIODES'),
+        getCmsText(cmsData, 'step3', activeLang, '03. TRAME 50+ LEDS'),
+        getCmsText(cmsData, 'step4', activeLang, activeLang === 'fr' ? '04. DIODE D’OR P0.9' : '04. GOLD DIODE P0.9'),
       ],
       hud: [
         getCmsText(cmsData, 'hudDistanceLabel', activeLang, activeLang === 'fr' ? 'DISTANCE CAMÉRA' : 'CAMERA DISTANCE'),
@@ -151,7 +149,7 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
     };
   }, [cmsData, activeLang]);
 
-  // Smooth scroll tracking
+  // Smooth scroll tracking with hardware-stable lerp
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -189,78 +187,6 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
     };
   }, []);
 
-  // Ambient canvas overlay for particles and optical laser lines
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    let animId = 0;
-    let width = 0;
-    let height = 0;
-
-    const resize = () => {
-      width = canvas.clientWidth;
-      height = canvas.clientHeight;
-      canvas.width = Math.round(width * Math.min(window.devicePixelRatio || 1, 1.5));
-      canvas.height = Math.round(height * Math.min(window.devicePixelRatio || 1, 1.5));
-      ctx.setTransform(
-        Math.min(window.devicePixelRatio || 1, 1.5),
-        0,
-        0,
-        Math.min(window.devicePixelRatio || 1, 1.5),
-        0,
-        0
-      );
-    };
-    resize();
-    window.addEventListener('resize', resize);
-
-    const particles = Array.from({ length: 30 }, () => ({
-      x: Math.random(),
-      y: Math.random(),
-      speed: 0.0005 + Math.random() * 0.0012,
-      size: 1 + Math.random() * 2,
-      opacity: 0.2 + Math.random() * 0.4,
-    }));
-
-    let frame = 0;
-
-    const render = () => {
-      frame++;
-      ctx.clearRect(0, 0, width, height);
-
-      // Light dust particles in cinema atmosphere
-      ctx.fillStyle = '#FFFFFF';
-      for (const p of particles) {
-        p.y -= p.speed;
-        if (p.y < 0) p.y = 1;
-        ctx.globalAlpha = p.opacity;
-        ctx.beginPath();
-        ctx.arc(p.x * width, p.y * height, p.size, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      ctx.globalAlpha = 1;
-
-      // Laser sweep if in grid/optics mode
-      if (inspectorMode === 'grid') {
-        const sweepY = (frame * 2.8) % height;
-        ctx.fillStyle = 'rgba(195, 249, 16, 0.16)';
-        ctx.fillRect(0, sweepY, width, 2);
-      }
-
-      animId = requestAnimationFrame(render);
-    };
-
-    animId = requestAnimationFrame(render);
-
-    return () => {
-      window.removeEventListener('resize', resize);
-      cancelAnimationFrame(animId);
-    };
-  }, [inspectorMode]);
-
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
     if (!rect.width || !rect.height) return;
@@ -277,79 +203,68 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
     const scrollTop = window.scrollY || document.documentElement.scrollTop;
     const containerTop = rect.top + scrollTop;
     const totalH = rect.height - window.innerHeight;
-    const stageFractions = [0.04, 0.35, 0.65, 0.86];
+    const stageFractions = [0.02, 0.35, 0.68, 0.88];
     const targetY = containerTop + (stageFractions[stageIdx] || 0) * totalH;
     window.scrollTo({ top: targetY, behavior: 'smooth' });
   };
 
   // =========================================================================
-  // MULTI-SCALE CAMERA JOURNEY (From kilometers to nanometer micro-diodes)
-  // Phase 1 (0.00 -> 0.22): Distant Skyline (5.2 km away)
-  // Phase 2 (0.22 -> 0.50): Flight into the Plaza and Building Entrance
-  // Phase 3 (0.50 -> 0.75): Zoom to the LED screen (filling viewport) with 500mm cabinet seams
-  // Phase 4 (0.75 -> 0.94): Full immersion inside razor-sharp RGB micro-diodes
-  // Phase 5 (0.94 -> 1.00): Smooth transition into the next website section
+  // CONTINUOUS EXPONENTIAL ZOOM PROFILE (PULLED BACK TO DISTANT VIEW AT START)
+  // At scrollProgress = 0: zoomScale = 0.72 (Seen from far away across the plaza!)
+  // At scrollProgress = 0.35: zoomScale = 1.25 (Flying into the entrance)
+  // At scrollProgress = 0.60: zoomScale = 2.85 (Screen fills viewport)
+  // At scrollProgress = 0.75: zoomScale = 5.20 (Dense 60-diode matrix)
+  // At scrollProgress = 0.88 -> 0.95: zoomScale = 8.5+ (Deep macro microLED diode photo)
   // =========================================================================
+  const zoomScale = 0.72 + Math.pow(scrollProgress, 1.45) * 8.2;
+  const verticalShift = scrollProgress * 15.2;
 
-  // Distant skyline fade (Phase 1)
-  const distantSkylineOpacity = Math.max(0, Math.min(1, 1 - (scrollProgress - 0.08) / 0.16));
-
-  // Zoom scale on the flagship building:
-  // Starts at 0.95 and accelerates smoothly up to 6.8x
-  const zoomScale =
-    scrollProgress < 0.22
-      ? 1.0 + scrollProgress * 0.6
-      : 1.13 + Math.pow((scrollProgress - 0.22) / 0.78, 1.4) * 5.6;
-
-  // Shifts vertically from 32.94% to optical center 50%
-  const verticalShift = Math.max(0, (scrollProgress - 0.22) / 0.78) * 17.06;
-
-  // Subtle mouse tilt parallax
+  // Subtle mouse tilt parallax (hardware accelerated)
   const tiltX = (mousePos.x - 0.5) * 8;
   const tiltY = (mousePos.y - 0.5) * 6;
 
   // Chapter index based on calibrated milestones
   const currentStageIdx =
-    scrollProgress < 0.24 ? 0 : scrollProgress < 0.52 ? 1 : scrollProgress < 0.75 ? 2 : 3;
+    scrollProgress < 0.26 ? 0 : scrollProgress < 0.52 ? 1 : scrollProgress < 0.76 ? 2 : 3;
 
   // Telemetry values updated continuously
   const hudDistance =
-    scrollProgress < 0.24
-      ? (5.2 - (scrollProgress / 0.24) * 4.9).toFixed(1) + ' km'
+    scrollProgress < 0.26
+      ? Math.round(520 - (scrollProgress / 0.26) * 440) + ' m'
       : scrollProgress < 0.52
-      ? Math.round(300 - ((scrollProgress - 0.24) / 0.28) * 260) + ' m'
-      : scrollProgress < 0.75
-      ? (40 - ((scrollProgress - 0.52) / 0.23) * 38).toFixed(1) + ' m'
-      : Math.round(500 - ((scrollProgress - 0.75) / 0.25) * 490) + ' mm';
+      ? Math.round(80 - ((scrollProgress - 0.26) / 0.26) * 75) + ' m'
+      : scrollProgress < 0.76
+      ? (5.0 - ((scrollProgress - 0.52) / 0.24) * 4.6).toFixed(1) + ' m'
+      : Math.round(400 - ((scrollProgress - 0.76) / 0.24) * 395) + ' mm';
 
   const hudPixels =
-    scrollProgress < 0.24
+    scrollProgress < 0.26
       ? '120 M'
       : scrollProgress < 0.52
       ? '48 M'
-      : scrollProgress < 0.75
-      ? '8.2 M (Dalles 500mm)'
-      : '3 Diodes RGB (P0.9)';
+      : scrollProgress < 0.76
+      ? '60+ Diodes RGB'
+      : 'Diode P0.9 (Or/Saphir)';
 
   const hudScale =
-    scrollProgress < 0.24
-      ? 'SKYLINE 5.2 KM'
+    scrollProgress < 0.26
+      ? 'VUE LOINTAINE'
       : scrollProgress < 0.52
       ? 'FAÇADE SIÈGE'
-      : scrollProgress < 0.75
-      ? 'MUR DE CABINETS'
-      : 'AU CŒUR DES LEDS';
+      : scrollProgress < 0.76
+      ? 'TRAME 60+ LEDS'
+      : 'DIODE D’OR P0.9';
 
   const heroOpacity = Math.max(0, 1 - scrollProgress / 0.16);
 
-  // Cabinet seams (500x500mm grid): visible as we zoom close (0.48 -> 0.76)
-  const cabinetLinesOpacity = Math.max(0, Math.min(0.65, (scrollProgress - 0.44) * 2.5));
+  // Cabinet seams (500x500mm): visible as we zoom close
+  const cabinetLinesOpacity = Math.max(0, Math.min(0.65, (scrollProgress - 0.42) * 2.5));
 
-  // RGB Sub-pixel Diode Raster (fine traits des LEDs): visible as we get very close
-  const subpixelRasterOpacity = Math.max(0, Math.min(0.6, (scrollProgress - 0.6) * 3.2));
+  // Dense 60+ Diode Matrix Opacity (Step 3A): visible from scroll 0.65 to 0.85
+  const denseDiodeGridOpacity = Math.max(0, Math.min(1, (scrollProgress - 0.62) * 3.5));
 
-  // Ultra-Crisp Vector Diode Immersion (Zero Blur!): takes over from 0.74 to 0.95
-  const diodeImmersionOpacity = Math.max(0, Math.min(1, (scrollProgress - 0.72) / 0.14));
+  // Extreme Macro Diode Photo Opacity (Step 3B): zooms in deeper from scroll 0.82 to 0.95
+  const macroDiodePhotoOpacity = Math.max(0, Math.min(1, (scrollProgress - 0.80) / 0.12));
 
   return (
     <div
@@ -358,9 +273,9 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
       className="sr-wrap"
       style={{
         position: 'relative',
-        backgroundColor: cms.section.backgroundColor ?? '#020306',
+        backgroundColor: cms.section.backgroundColor ?? '#020408',
         color: '#F5F4F0',
-        height: '780vh', // Extended scroll runway so user has plenty of time to explore inside the screen!
+        height: '780vh', // Extended scroll runway so user has plenty of time to explore!
         backgroundImage: cms.section.backgroundImage,
         backgroundSize: cms.section.backgroundSize,
         backgroundPosition: cms.section.backgroundPosition,
@@ -371,59 +286,31 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
       <div
         ref={stickyRef}
         onMouseMove={handleMouseMove}
-        onMouseEnter={() => setCursorInSticky(true)}
-        onMouseLeave={() => setCursorInSticky(false)}
         style={{
           position: 'sticky',
           top: 0,
           height: '100vh',
           overflow: 'hidden',
-          backgroundColor: '#020306',
+          backgroundColor: '#020408',
         }}
       >
         {/* ================================================================= */}
-        {/* PHASE 1: DISTANT SKYLINE METROPOLIS (Visible from kilometers away) */}
-        {/* ================================================================= */}
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            opacity: distantSkylineOpacity.toFixed(3),
-            pointerEvents: 'none',
-            zIndex: 1,
-            transform: `scale(${(1.0 + scrollProgress * 0.35).toFixed(3)}) translate3d(${(tiltX * 0.5).toFixed(1)}px, ${(tiltY * 0.5).toFixed(1)}px, 0)`,
-            transition: 'opacity 300ms ease',
-          }}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/assets/showreel/stage-4-architectural-city.jpg"
-            alt="Skyline Métropolitaine PIXIATECH à des kilomètres"
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-              filter: 'brightness(0.9) contrast(1.1)',
-            }}
-          />
-        </div>
-
-        {/* ================================================================= */}
-        {/* PHASE 2 & 3: CONTINUOUS DOLLY ZOOM ON FLAGSHIP BUILDING & SCREEN  */}
-        {/* ================================================================= */}
-        {/* Aspect-Ratio-Locked Container: EXACTLY 1376 x 768 (1.7916:1)     */}
-        {/* Ensures the video and screen casing are locked to the sub-pixel! */}
+        {/* ASPECT-RATIO-LOCKED 3D STAGE CONTAINER (1376:768 = 1.791666)     */}
+        {/* Ensures the image, video, diode matrix, and macro photo are       */}
+        {/* 100% locked to the exact sub-pixel with ZERO tearing or float!    */}
         {/* ================================================================= */}
         <div
           style={{
             position: 'absolute',
             left: '50%',
             top: '50%',
-            width: 'max(100vw, calc(100vh * 1.791666))',
-            height: 'max(100vh, calc(100vw / 1.791666))',
+            width: 'max(140vw, calc(140vh * 1.791666))',
+            height: 'max(140vh, calc(140vw / 1.791666))',
             transformOrigin: '50.36% 32.94%', // EXACT mathematical center of the physical screen!
             transform: `translate(-50%, -50%) scale(${zoomScale.toFixed(4)}) translateY(${verticalShift.toFixed(2)}%) translate3d(${tiltX.toFixed(1)}px, ${tiltY.toFixed(1)}px, 0)`,
             willChange: 'transform',
+            backfaceVisibility: 'hidden',
+            WebkitBackfaceVisibility: 'hidden',
             pointerEvents: 'none',
             zIndex: 2,
           }}
@@ -438,13 +325,6 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
               height: '100%',
               display: 'block',
               objectFit: 'fill',
-              filter:
-                inspectorMode === 'thermal'
-                  ? 'contrast(1.5) saturate(2.2) hue-rotate(190deg)'
-                  : inspectorMode === 'grid'
-                  ? 'contrast(1.15) brightness(0.95)'
-                  : 'contrast(1.05) brightness(0.96)',
-              transition: 'filter 300ms ease',
             }}
           />
 
@@ -458,8 +338,10 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
               height: '39.84%',
               overflow: 'hidden',
               borderRadius: 2,
-              boxShadow: '0 0 35px rgba(195, 249, 16, 0.45), inset 0 0 25px rgba(0,0,0,0.6)',
-              pointerEvents: scrollProgress > 0.45 ? 'auto' : 'none',
+              boxShadow: '0 0 35px rgba(195, 249, 16, 0.4), inset 0 0 25px rgba(0,0,0,0.6)',
+              pointerEvents: scrollProgress > 0.4 ? 'auto' : 'none',
+              backfaceVisibility: 'hidden',
+              WebkitBackfaceVisibility: 'hidden',
             }}
           >
             {/* Real HTML5 Video looping inside the screen (Configurable in CMS or /youtube-video.mp4) */}
@@ -492,207 +374,144 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
               }}
             />
 
-            {/* RGB Sub-pixel Diode Raster (Les traits fins des LEDs RGB) */}
+            {/* ============================================================= */}
+            {/* STEP 3A: DENSE MATRIX OF 60+ COMPACT MICRO-LEDS (Au moins 50+) */}
+            {/* 10 columns x 6 rows = 60 distinct MicroLED diodes with RGB     */}
+            {/* ============================================================= */}
             <div
               style={{
                 position: 'absolute',
                 inset: 0,
-                opacity: subpixelRasterOpacity.toFixed(3),
-                backgroundImage:
-                  'repeating-linear-gradient(90deg, rgba(255,50,50,0.35) 0px, rgba(255,50,50,0.35) 1px, rgba(50,255,50,0.35) 1px, rgba(50,255,50,0.35) 2px, rgba(50,120,255,0.35) 2px, rgba(50,120,255,0.35) 3px, transparent 3px, transparent 4px), repeating-linear-gradient(0deg, rgba(0,0,0,0.4) 0px, rgba(0,0,0,0.4) 1px, transparent 1px, transparent 4px)',
-                backgroundSize: '4px 4px',
+                opacity: denseDiodeGridOpacity.toFixed(3),
+                background: '#040609',
+                display: 'grid',
+                gridTemplateColumns: 'repeat(10, 1fr)',
+                gridTemplateRows: 'repeat(6, 1fr)',
+                gap: '4px',
+                padding: '6px',
+                boxSizing: 'border-box',
                 pointerEvents: 'none',
-              }}
-            />
-
-            {/* Dynamic Laser Scanline */}
-            <div
-              style={{
-                position: 'absolute',
-                inset: 0,
-                background:
-                  'linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(195, 249, 16, 0.1) 50%, rgba(255,255,255,0) 100%)',
-                backgroundSize: '100% 40px',
-                animation: 'xr-blink 2s linear infinite',
-                pointerEvents: 'none',
-              }}
-            />
-          </div>
-
-          {/* =============================================================== */}
-          {/* PHASE 4: IMMERSION AU CŒUR DES DIODES LED (100% VECTORIEL NET)  */}
-          {/* =============================================================== */}
-          <div
-            style={{
-              position: 'absolute',
-              left: '32.70%',
-              top: '13.02%',
-              width: '35.32%',
-              height: '39.84%',
-              opacity: diodeImmersionOpacity.toFixed(3),
-              pointerEvents: 'none',
-              overflow: 'hidden',
-              backgroundColor: '#05070B',
-              borderRadius: 2,
-            }}
-          >
-            {/* Razor-Sharp MicroLED Diode Cluster (High-Res Procedural Vector SVG) */}
-            <svg
-              viewBox="0 0 1000 600"
-              preserveAspectRatio="xMidYMid slice"
-              style={{
-                width: '100%',
-                height: '100%',
-                display: 'block',
+                transition: 'opacity 180ms ease',
               }}
             >
-              <defs>
-                {/* Red Emitter Gradient */}
-                <radialGradient id="redGlow" cx="50%" cy="50%" r="50%">
-                  <stop offset="0%" stopColor="#FFFFFF" />
-                  <stop offset="35%" stopColor="#FF3322" />
-                  <stop offset="100%" stopColor="#880000" />
-                </radialGradient>
-                {/* Green Emitter Gradient */}
-                <radialGradient id="greenGlow" cx="50%" cy="50%" r="50%">
-                  <stop offset="0%" stopColor="#FFFFFF" />
-                  <stop offset="35%" stopColor="#22E86A" />
-                  <stop offset="100%" stopColor="#006622" />
-                </radialGradient>
-                {/* Blue Emitter Gradient */}
-                <radialGradient id="blueGlow" cx="50%" cy="50%" r="50%">
-                  <stop offset="0%" stopColor="#FFFFFF" />
-                  <stop offset="35%" stopColor="#3388FF" />
-                  <stop offset="100%" stopColor="#002288" />
-                </radialGradient>
-                {/* Outer Diode Ambient Bloom */}
-                <filter id="bloomFilter" x="-50%" y="-50%" width="200%" height="200%">
-                  <feGaussianBlur stdDeviation="8" result="blur" />
-                  <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                </filter>
-              </defs>
+              {Array.from({ length: 60 }).map((_, idx) => (
+                <div
+                  key={idx}
+                  style={{
+                    background: '#080c14',
+                    borderRadius: '2px',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    boxShadow: 'inset 0 0 3px rgba(0,0,0,0.9)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-evenly',
+                    padding: '2px',
+                    position: 'relative',
+                  }}
+                >
+                  {/* Red sub-pixel */}
+                  <span
+                    style={{
+                      width: '26%',
+                      height: '76%',
+                      borderRadius: '1px',
+                      background: 'radial-gradient(circle, #ff4422 0%, #bb1100 100%)',
+                      boxShadow: '0 0 4px rgba(255, 50, 20, 0.55)',
+                      display: 'block',
+                    }}
+                  />
+                  {/* Green sub-pixel */}
+                  <span
+                    style={{
+                      width: '26%',
+                      height: '76%',
+                      borderRadius: '1px',
+                      background: 'radial-gradient(circle, #33ff66 0%, #00aa22 100%)',
+                      boxShadow: '0 0 4px rgba(34, 232, 106, 0.55)',
+                      display: 'block',
+                    }}
+                  />
+                  {/* Blue sub-pixel */}
+                  <span
+                    style={{
+                      width: '26%',
+                      height: '76%',
+                      borderRadius: '1px',
+                      background: 'radial-gradient(circle, #3388ff 0%, #0044bb 100%)',
+                      boxShadow: '0 0 4px rgba(42, 107, 255, 0.55)',
+                      display: 'block',
+                    }}
+                  />
+                  {/* Gold Bond Dot */}
+                  <span
+                    style={{
+                      position: 'absolute',
+                      top: 1,
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      width: 1.5,
+                      height: 1.5,
+                      borderRadius: '50%',
+                      background: '#c5a059',
+                      display: 'block',
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
 
-              {/* Matte Black Obsidian Substrate */}
-              <rect width="1000" height="600" fill="#040608" />
-
-              {/* Gold Circuit Nanometric Traces */}
-              <g stroke="#C5A059" strokeWidth="2.5" opacity="0.45" fill="none">
-                {/* Bus lines */}
-                <line x1="0" y1="150" x2="1000" y2="150" strokeDasharray="12 6" />
-                <line x1="0" y1="300" x2="1000" y2="300" strokeDasharray="12 6" />
-                <line x1="0" y1="450" x2="1000" y2="450" strokeDasharray="12 6" />
-                {/* Traces */}
-                <path d="M 120 0 L 120 120 L 160 160 L 160 600" />
-                <path d="M 370 0 L 370 270 L 410 310 L 410 600" />
-                <path d="M 620 0 L 620 120 L 660 160 L 660 600" />
-                <path d="M 870 0 L 870 270 L 910 310 L 910 600" />
-              </g>
-
-              {/* Diode Packages Grid (Sharp 4x2 Cluster with RGB sub-pixels) */}
-              {[0, 250, 500, 750].map((dx, colIdx) =>
-                [60, 260, 460].map((dy, rowIdx) => {
-                  const pX = dx + 45;
-                  const pY = dy + 20;
-                  return (
-                    <g key={`${colIdx}-${rowIdx}`} filter="url(#bloomFilter)">
-                      {/* Diode Chip Substrate Box */}
-                      <rect
-                        x={pX}
-                        y={pY}
-                        width="160"
-                        height="120"
-                        rx="8"
-                        fill="#0A0E14"
-                        stroke="#1C2433"
-                        strokeWidth="2"
-                      />
-                      {/* Diode Beveled Inner Cavity */}
-                      <rect
-                        x={pX + 12}
-                        y={pY + 12}
-                        width="136"
-                        height="96"
-                        rx="6"
-                        fill="#05070B"
-                        stroke="#121822"
-                        strokeWidth="1.5"
-                      />
-
-                      {/* SUB-PIXEL 1: RED */}
-                      <g>
-                        <rect
-                          x={pX + 24}
-                          y={pY + 24}
-                          width="26"
-                          height="72"
-                          rx="5"
-                          fill="url(#redGlow)"
-                        />
-                        <circle cx={pX + 37} cy={pY + 60} r="14" fill="#FF4433" opacity="0.3" />
-                      </g>
-
-                      {/* SUB-PIXEL 2: GREEN */}
-                      <g>
-                        <rect
-                          x={pX + 67}
-                          y={pY + 24}
-                          width="26"
-                          height="72"
-                          rx="5"
-                          fill="url(#greenGlow)"
-                        />
-                        <circle cx={pX + 80} cy={pY + 60} r="14" fill="#22E86A" opacity="0.3" />
-                      </g>
-
-                      {/* SUB-PIXEL 3: BLUE */}
-                      <g>
-                        <rect
-                          x={pX + 110}
-                          y={pY + 24}
-                          width="26"
-                          height="72"
-                          rx="5"
-                          fill="url(#blueGlow)"
-                        />
-                        <circle cx={pX + 123} cy={pY + 60} r="14" fill="#3388FF" opacity="0.3" />
-                      </g>
-
-                      {/* Gold Wire Bond Dots */}
-                      <circle cx={pX + 37} cy={pY + 16} r="2.5" fill="#C5A059" />
-                      <circle cx={pX + 80} cy={pY + 16} r="2.5" fill="#C5A059" />
-                      <circle cx={pX + 123} cy={pY + 16} r="2.5" fill="#C5A059" />
-                    </g>
-                  );
-                })
-              )}
-            </svg>
-
-            {/* Ambient Radial Vignette over Diodes */}
+            {/* ============================================================= */}
+            {/* STEP 3B: EXTREME MACRO PHOTO (Image #1 avec fils d'or)        */}
+            {/* Révélée en zoomant encore plus profondément dans la diode!     */}
+            {/* ============================================================= */}
             <div
               style={{
                 position: 'absolute',
                 inset: 0,
-                background:
-                  'radial-gradient(circle at 50% 50%, rgba(195, 249, 16, 0.15) 0%, rgba(2, 4, 8, 0.75) 85%)',
-                mixBlendMode: 'screen',
+                opacity: macroDiodePhotoOpacity.toFixed(3),
                 pointerEvents: 'none',
+                overflow: 'hidden',
+                transition: 'opacity 200ms ease',
               }}
-            />
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/assets/showreel/stage-1-micro-diode.jpg"
+                alt="MicroLED Diode Structure Macro"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  filter: 'contrast(1.15) brightness(1.05)',
+                  transform: `scale(${(1.0 + (scrollProgress - 0.8) * 0.4).toFixed(3)})`,
+                }}
+              />
+            </div>
+
+            {/* FLICKER-FREE INSPECTOR TINT OVERLAYS (Replaces heavy CSS filter) */}
+            {inspectorMode === 'thermal' && (
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  background: 'rgba(255, 70, 0, 0.22)',
+                  boxShadow: 'inset 0 0 80px rgba(0, 160, 255, 0.35)',
+                  pointerEvents: 'none',
+                }}
+              />
+            )}
+            {inspectorMode === 'grid' && (
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  background: 'rgba(195, 249, 16, 0.08)',
+                  pointerEvents: 'none',
+                }}
+              />
+            )}
           </div>
         </div>
-
-        {/* INTERACTIVE AMBIENT CANVAS OVERLAY */}
-        <canvas
-          ref={canvasRef}
-          style={{
-            position: 'absolute',
-            inset: 0,
-            width: '100%',
-            height: '100%',
-            pointerEvents: 'none',
-            zIndex: 10,
-          }}
-        />
 
         {/* CINEMATIC EDGE VIGNETTES */}
         <div
@@ -700,7 +519,7 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
             position: 'absolute',
             inset: 0,
             background:
-              'radial-gradient(ellipse 95% 85% at 50% 50%, rgba(2, 3, 6, 0.08) 40%, rgba(2, 3, 6, 0.88) 100%)',
+              'radial-gradient(ellipse 95% 85% at 50% 50%, rgba(2, 4, 8, 0.06) 40%, rgba(2, 4, 8, 0.88) 100%)',
             pointerEvents: 'none',
             zIndex: 11,
           }}
@@ -710,7 +529,7 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
             position: 'absolute',
             inset: 0,
             background:
-              'linear-gradient(180deg, rgba(2,3,6,0.92) 0%, rgba(2,3,6,0.08) 22%, rgba(2,3,6,0.08) 68%, rgba(2,3,6,0.95) 100%)',
+              'linear-gradient(180deg, rgba(2,4,8,0.92) 0%, rgba(2,4,8,0.06) 22%, rgba(2,4,8,0.06) 68%, rgba(2,4,8,0.95) 100%)',
             pointerEvents: 'none',
             zIndex: 12,
           }}
@@ -828,7 +647,7 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
               gap: 8,
             }}
           >
-            {scrollProgress > 0.35 && (
+            {scrollProgress > 0.3 && (
               <div
                 style={{
                   display: 'flex',
@@ -981,7 +800,7 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
               </div>
               <div
                 style={{
-                  fontSize: 17,
+                  fontSize: 16.5,
                   fontWeight: 700,
                   letterSpacing: '-.01em',
                   color: '#C3F910',
