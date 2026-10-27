@@ -1204,21 +1204,21 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
   );
 
   return (
-    <div className="fixed inset-0 z-[200] flex flex-col pointer-events-none">
+    <div className="fixed inset-0 z-[1000] flex flex-col pointer-events-none">
       <canvas
         ref={confettiCanvasRef}
-        className="absolute inset-0 w-full h-full pointer-events-none z-[250]"
+        className="absolute inset-0 w-full h-full pointer-events-none z-[1050]"
       />
       <motion.div
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
         onClick={onClose}
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm pointer-events-auto"
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm pointer-events-auto"
       />
 
       {step === STEP.SUCCESS ? (
-        <div className="absolute inset-4 md:inset-10 z-[210] pointer-events-auto bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col">
-          <button onClick={onClose} className="absolute top-4 right-4 z-[220] p-2 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors">
-            <X size={20} className="text-slate-600" />
+        <div className="absolute inset-4 md:inset-10 z-[1010] pointer-events-auto bg-[#0c0d0e] text-[#f5f4f0] border border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col">
+          <button onClick={onClose} className="absolute top-4 right-4 z-[1020] p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors">
+            <X size={20} className="text-white" />
           </button>
           <div className="flex-1 overflow-y-auto">
             <SuccessView
@@ -1234,15 +1234,15 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
       ) : (
         <>
           <motion.div
-            initial={{ x: '100%', y: '-50%', opacity: 0 }}
-            animate={{ x: 0, y: '-50%', opacity: 1 }}
-            exit={{ x: '100%', y: '-50%', opacity: 0 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 150 }}
+            initial={{ x: '100%', opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: '100%', opacity: 0 }}
+            transition={{ type: 'spring', damping: 26, stiffness: 200 }}
             onClick={(e) => e.stopPropagation()}
-            className="fixed right-0 md:right-4 top-1/2 md:top-[calc(50%-4vh)] w-full md:w-[600px] h-[100dvh] md:h-[90vh] bg-[#f8f9fb] shadow-2xl z-[210] border border-slate-200 md:rounded-[24px] overflow-hidden flex flex-col pointer-events-auto"
+            className="fixed right-0 md:right-6 top-0 bottom-0 md:top-6 md:bottom-6 w-full md:w-[600px] h-auto bg-[#0c0d0e] text-[#f5f4f0] shadow-2xl z-[1010] border border-white/10 md:rounded-[24px] overflow-hidden flex flex-col pointer-events-auto"
           >
             {/* Header */}
-            <div className="h-20 bg-[#0f766e] flex items-center justify-between px-4 md:px-6 z-10 shrink-0 shadow-md">
+            <div className="h-20 bg-[#0a0a0a] border-b border-white/10 flex items-center justify-between px-4 md:px-6 z-10 shrink-0 shadow-md">
               <div className="flex items-center gap-4">
                 <div className="shrink-0 drop-shadow-md">
                   <img src={getBotImage()} alt="Bot" className="w-[72px] h-[72px] object-contain origin-bottom" />
@@ -1305,7 +1305,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
             <div
               ref={scrollContainerRef}
               onScroll={handleScroll}
-               className={cn("flex-1 overflow-y-auto pt-4 md:pt-5 px-4 md:px-5 pb-2 space-y-4 custom-scrollbar relative min-h-0 bg-[#efeae2]", (isCalendarOpen || activeTimePicker) && "overflow-hidden")}
+               className={cn("flex-1 overflow-y-auto pt-4 md:pt-5 px-4 md:px-5 pb-2 space-y-4 custom-scrollbar relative min-h-0 bg-[#07080a]", (isCalendarOpen || activeTimePicker) && "overflow-hidden")}
             >
               {step === STEP.SUCCESS ? (
                 <SuccessView quoteId={quoteId} onNewQuote={() => window.location.reload()} initialEmail={formEmail} />
@@ -1339,7 +1339,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                               <button
                                 key={value || i}
                                 onClick={() => handleOptionSelect(value, label, imageUrl, typeof option !== 'string' ? option.translationKey : undefined, typeof option !== 'string' ? option.translationParams : undefined)}
-                                className="px-5 py-2.5 rounded-2xl font-bold text-xs bg-black text-white border border-black shadow-lg hover:bg-[#B3E140] hover:text-black hover:border-[#B3E140] active:scale-95 transition-all uppercase tracking-wider"
+                                className="px-5 py-2.5 rounded-2xl font-bold text-xs bg-white/10 text-white border border-white/15 shadow-lg hover:bg-[#C3F910] hover:text-black hover:border-[#C3F910] active:scale-95 transition-all uppercase tracking-wider"
                               >
                                 {label}
                               </button>
@@ -1348,7 +1348,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                           {msg.options.length > 5 && expandedOptions?.msgId !== msg.id && (
                             <button
                               onClick={() => setExpandedOptions({ msgId: msg.id, options: msg.options })}
-                              className="px-5 py-2.5 rounded-2xl font-bold text-xs bg-slate-200 text-slate-700 border border-slate-300 hover:bg-slate-300 active:scale-95 transition-all uppercase tracking-wider cursor-pointer"
+                              className="px-5 py-2.5 rounded-2xl font-bold text-xs bg-white/5 text-slate-300 border border-white/10 hover:bg-white/15 active:scale-95 transition-all uppercase tracking-wider cursor-pointer"
                             >
                               {t('bot.moreChoices')}
                             </button>
@@ -2342,11 +2342,11 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                     animate={{ y: 0 }}
                     exit={{ y: '100%' }}
                     transition={{ type: 'tween', ease: [0.16, 1, 0.3, 1], duration: 0.4 }}
-                    className="bg-white w-full rounded-t-[32px] p-6 pb-10 shadow-2xl flex flex-col gap-3 max-h-[70%] pointer-events-auto"
+                    className="bg-[#0c0d0e] text-[#f5f4f0] border-t border-white/10 w-full rounded-t-[32px] p-6 pb-10 shadow-2xl flex flex-col gap-3 max-h-[70%] pointer-events-auto"
                     onClick={e => e.stopPropagation()}
                   >
-                    <div className="w-12 h-1.5 bg-slate-100 rounded-full mb-2 mx-auto" />
-                    <h3 className="text-lg font-black text-slate-800 uppercase tracking-widest text-center">
+                    <div className="w-12 h-1.5 bg-white/20 rounded-full mb-2 mx-auto" />
+                    <h3 className="text-lg font-black text-white uppercase tracking-widest text-center">
                       {locale === 'en' ? 'Select an option' : 'Sélectionnez une option'}
                     </h3>
                     <div className="flex flex-col gap-2 overflow-y-auto pt-2">
@@ -2361,7 +2361,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                               handleOptionSelect(value, label, imageUrl, typeof option !== 'string' ? option.translationKey : undefined, typeof option !== 'string' ? option.translationParams : undefined);
                               setExpandedOptions(null);
                             }}
-                            className="w-full py-4 px-5 rounded-2xl font-bold text-sm bg-slate-50 hover:bg-[#B3E140] hover:text-black active:scale-[0.98] transition-all text-left border border-slate-100"
+                            className="w-full py-4 px-5 rounded-2xl font-bold text-sm bg-white/5 text-white hover:bg-[#C3F910] hover:text-black active:scale-[0.98] transition-all text-left border border-white/10"
                           >
                             {label}
                           </button>

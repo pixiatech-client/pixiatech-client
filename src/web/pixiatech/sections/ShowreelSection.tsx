@@ -35,6 +35,57 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
   // Configurable Video URL from CMS, fallback to /youtube-video.mp4
   const videoSrc = getCmsText(cmsData, 'videoUrl', activeLang, '/youtube-video.mp4');
 
+  // Configurable images from CMS (fallback to hardcoded WebP assets)
+  const img1Src = (cmsData['image1Src'] as string | undefined) || '/assets/showreel/ref-1-city-far.webp';
+  const img2Src = (cmsData['image2Src'] as string | undefined) || '/assets/showreel/ref-2-city-mid.webp';
+  const img3Src = (cmsData['image3Src'] as string | undefined) || '/assets/showreel/ref-3-facade-screen.webp';
+  const img4Src = (cmsData['image4Src'] as string | undefined) || '/assets/showreel/ref-4-led-macro.webp';
+
+  // Configurable image adjustments (position X/Y, scale, width, height)
+  const img1PosX = parseFloat((cmsData['img1PosX'] as string | undefined) || '0');
+  const img1PosY = parseFloat((cmsData['img1PosY'] as string | undefined) || '0');
+  const img1Scale = parseFloat((cmsData['img1Scale'] as string | undefined) || '1');
+  const img1Width = parseFloat((cmsData['img1Width'] as string | undefined) || '100');
+  const img1Height = parseFloat((cmsData['img1Height'] as string | undefined) || '100');
+
+  const img2PosX = parseFloat((cmsData['img2PosX'] as string | undefined) || '0');
+  const img2PosY = parseFloat((cmsData['img2PosY'] as string | undefined) || '0');
+  const img2Scale = parseFloat((cmsData['img2Scale'] as string | undefined) || '1');
+  const img2Width = parseFloat((cmsData['img2Width'] as string | undefined) || '100');
+  const img2Height = parseFloat((cmsData['img2Height'] as string | undefined) || '100');
+
+  const img3PosX = parseFloat((cmsData['img3PosX'] as string | undefined) || '0');
+  const img3PosY = parseFloat((cmsData['img3PosY'] as string | undefined) || '0');
+  const img3Scale = parseFloat((cmsData['img3Scale'] as string | undefined) || '1');
+  const img3Width = parseFloat((cmsData['img3Width'] as string | undefined) || '100');
+  const img3Height = parseFloat((cmsData['img3Height'] as string | undefined) || '100');
+
+  const img4PosX = parseFloat((cmsData['img4PosX'] as string | undefined) || '0');
+  const img4PosY = parseFloat((cmsData['img4PosY'] as string | undefined) || '0');
+  const img4Scale = parseFloat((cmsData['img4Scale'] as string | undefined) || '1');
+  const img4Width = parseFloat((cmsData['img4Width'] as string | undefined) || '100');
+  const img4Height = parseFloat((cmsData['img4Height'] as string | undefined) || '100');
+
+  // Configurable screen position on each image layer (percentage values, fallback to current hardcoded)
+  const screen1 = {
+    left: parseFloat((cmsData['screen1Left'] as string | undefined) || '43.66'),
+    top: parseFloat((cmsData['screen1Top'] as string | undefined) || '54.52'),
+    width: parseFloat((cmsData['screen1Width'] as string | undefined) || '12.68'),
+    height: parseFloat((cmsData['screen1Height'] as string | undefined) || '10.84'),
+  };
+  const screen2 = {
+    left: parseFloat((cmsData['screen2Left'] as string | undefined) || '34.63'),
+    top: parseFloat((cmsData['screen2Top'] as string | undefined) || '34.01'),
+    width: parseFloat((cmsData['screen2Width'] as string | undefined) || '30.50'),
+    height: parseFloat((cmsData['screen2Height'] as string | undefined) || '25.19'),
+  };
+  const screen3 = {
+    left: parseFloat((cmsData['screen3Left'] as string | undefined) || '24.76'),
+    top: parseFloat((cmsData['screen3Top'] as string | undefined) || '15.41'),
+    width: parseFloat((cmsData['screen3Width'] as string | undefined) || '50.36'),
+    height: parseFloat((cmsData['screen3Height'] as string | undefined) || '40.70'),
+  };
+
   // Synchronize frame playback across all video screen instances
   useEffect(() => {
     const master = videoRef.current;
@@ -208,20 +259,20 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
     };
   }, []);
 
-  // Preload all 4 reference zoom WebP images and micro-structure asset
+  // Preload all 4 reference zoom images (CMS-configurable, fallback WebP)
   useEffect(() => {
     const imagesToPreload = [
-      '/assets/showreel/ref-1-city-far.webp',
-      '/assets/showreel/ref-2-city-mid.webp',
-      '/assets/showreel/ref-3-facade-screen.webp',
-      '/assets/showreel/ref-4-led-macro.webp',
+      img1Src,
+      img2Src,
+      img3Src,
+      img4Src,
       '/assets/showreel/stage-1-micro-diode.jpg',
     ];
     imagesToPreload.forEach((src) => {
       const img = new Image();
       img.src = src;
     });
-  }, []);
+  }, [img1Src, img2Src, img3Src, img4Src]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -317,24 +368,63 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
   // Layer 5 (Detailed Diode Schematic): reveals from 0.85 to 1.00
   const op5 = Math.max(0, Math.min(1, (scrollProgress - 0.85) / 0.08));
 
-  // Layer 1 scale & pan
+  // CMS-configurable camera / scale settings with hardcoded fallbacks
+  const l1ScaleMax = parseFloat((cmsData['l1ScaleMax'] as string | undefined) || '1.39');
+  const l1OriginX = parseFloat((cmsData['l1OriginX'] as string | undefined) || '49.97');
+  const l1OriginY = parseFloat((cmsData['l1OriginY'] as string | undefined) || '59.88');
+  const l1XShift = parseFloat((cmsData['l1XShift'] as string | undefined) || '0');
+  const l1YShift = parseFloat((cmsData['l1YShift'] as string | undefined) || '14.1');
+  const l1CamPosX = parseFloat((cmsData['l1CamPosX'] as string | undefined) || '0');
+  const l1CamPosY = parseFloat((cmsData['l1CamPosY'] as string | undefined) || '0');
+
+  const l2ScaleMax = parseFloat((cmsData['l2ScaleMax'] as string | undefined) || '0.66');
+  const l2OriginX = parseFloat((cmsData['l2OriginX'] as string | undefined) || '49.85');
+  const l2OriginY = parseFloat((cmsData['l2OriginY'] as string | undefined) || '46.55');
+  const l2XShift = parseFloat((cmsData['l2XShift'] as string | undefined) || '0');
+  const l2YShift = parseFloat((cmsData['l2YShift'] as string | undefined) || '10.0');
+  const l2CamPosX = parseFloat((cmsData['l2CamPosX'] as string | undefined) || '0');
+  const l2CamPosY = parseFloat((cmsData['l2CamPosY'] as string | undefined) || '0');
+
+  const l3ScaleMax = parseFloat((cmsData['l3ScaleMax'] as string | undefined) || '1.65');
+  const l3OriginX = parseFloat((cmsData['l3OriginX'] as string | undefined) || '49.94');
+  const l3OriginY = parseFloat((cmsData['l3OriginY'] as string | undefined) || '35.76');
+  const l3XShift = parseFloat((cmsData['l3XShift'] as string | undefined) || '0');
+  const l3YShift = parseFloat((cmsData['l3YShift'] as string | undefined) || '0');
+  const l3CamPosX = parseFloat((cmsData['l3CamPosX'] as string | undefined) || '0');
+  const l3CamPosY = parseFloat((cmsData['l3CamPosY'] as string | undefined) || '0');
+
+  const l4ScaleMax = parseFloat((cmsData['l4ScaleMax'] as string | undefined) || '1.35');
+  const l4OriginX = parseFloat((cmsData['l4OriginX'] as string | undefined) || '50.0');
+  const l4OriginY = parseFloat((cmsData['l4OriginY'] as string | undefined) || '50.0');
+  const l4XShift = parseFloat((cmsData['l4XShift'] as string | undefined) || '0');
+  const l4YShift = parseFloat((cmsData['l4YShift'] as string | undefined) || '0');
+  const l4CamPosX = parseFloat((cmsData['l4CamPosX'] as string | undefined) || '0');
+  const l4CamPosY = parseFloat((cmsData['l4CamPosY'] as string | undefined) || '0');
+
+  // Layer 1 scale & camera travel
   const p1 = Math.min(1, scrollProgress / 0.25);
-  const scale1 = 1.0 + p1 * 1.39;
-  const yShift1 = p1 * 14.1;
+  const scale1 = 1.0 + p1 * l1ScaleMax;
+  const xShift1 = l1CamPosX + p1 * l1XShift;
+  const yShift1 = l1CamPosY - p1 * l1YShift;
 
-  // Layer 2 scale & pan
+  // Layer 2 scale & camera travel
   const p2 = Math.max(0, Math.min(1, (scrollProgress - 0.25) / 0.25));
-  const scale2 = 1.0 + p2 * 0.66;
-  const yShift2 = p2 * 10.0;
+  const scale2 = 1.0 + p2 * l2ScaleMax;
+  const xShift2 = l2CamPosX + p2 * l2XShift;
+  const yShift2 = l2CamPosY - p2 * l2YShift;
 
-  // Layer 3 scale: zooms from 1.0 (facade view) to 2.65 (filling viewport with screen) and deeper into pixels
+  // Layer 3 scale & camera travel: zooms from 1.0 (facade view) to 2.65 (filling viewport with screen) and deeper into pixels
   const p3 = Math.max(0, Math.min(1, (scrollProgress - 0.50) / 0.22));
   const p3Deep = Math.max(0, Math.min(1, (scrollProgress - 0.72) / 0.13));
-  const scale3 = 1.0 + p3 * 1.65 + p3Deep * 0.70;
+  const scale3 = 1.0 + p3 * l3ScaleMax + p3Deep * 0.70;
+  const xShift3 = l3CamPosX + p3 * l3XShift;
+  const yShift3 = l3CamPosY - p3 * l3YShift;
 
-  // Layer 4 (Macro LED) scale
+  // Layer 4 (Macro LED) scale & camera travel
   const p4 = Math.max(0, Math.min(1, (scrollProgress - 0.72) / 0.28));
-  const scale4 = 1.0 + p4 * 1.35;
+  const scale4 = 1.0 + p4 * l4ScaleMax;
+  const xShift4 = l4CamPosX + p4 * l4XShift;
+  const yShift4 = l4CamPosY - p4 * l4YShift;
 
   // Layer 5 (Detailed Diode Schematic) zoom
   const p5 = Math.max(0, Math.min(1, (scrollProgress - 0.85) / 0.15));
@@ -404,8 +494,8 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
                 position: 'absolute',
                 inset: 0,
                 opacity: op1.toFixed(3),
-                transformOrigin: '49.97% 59.88%',
-                transform: `translate3d(0, ${-yShift1.toFixed(2)}%, 0) scale(${scale1.toFixed(3)})`,
+                transformOrigin: `${l1OriginX}% ${l1OriginY}%`,
+                transform: `translate3d(${xShift1.toFixed(2)}%, ${yShift1.toFixed(2)}%, 0) scale(${scale1.toFixed(3)})`,
                 willChange: 'transform, opacity',
                 backfaceVisibility: 'hidden',
                 WebkitBackfaceVisibility: 'hidden',
@@ -414,13 +504,15 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/assets/showreel/ref-1-city-far.webp"
+                src={img1Src}
                 alt="PIXIATECH Skyline & Écran Architectural"
                 style={{
-                  width: '100%',
-                  height: '100%',
+                  width: `${img1Width}%`,
+                  height: `${img1Height}%`,
                   objectFit: 'cover',
                   display: 'block',
+                  backgroundColor: '#000000',
+                  transform: `translate3d(${img1PosX}%, ${img1PosY}%, 0) scale(${img1Scale})`,
                 }}
               />
 
@@ -428,10 +520,10 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
               <div
                 style={{
                   position: 'absolute',
-                  left: '43.66%',
-                  top: '54.52%',
-                  width: '12.68%',
-                  height: '10.84%',
+                  left: `${screen1.left}%`,
+                  top: `${screen1.top}%`,
+                  width: `${screen1.width}%`,
+                  height: `${screen1.height}%`,
                   overflow: 'hidden',
                   borderRadius: 1,
                   boxShadow: '0 0 15px rgba(195, 249, 16, 0.45)',
@@ -463,8 +555,8 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
                 position: 'absolute',
                 inset: 0,
                 opacity: op2.toFixed(3),
-                transformOrigin: '49.85% 46.55%',
-                transform: `translate3d(0, ${-yShift2.toFixed(2)}%, 0) scale(${scale2.toFixed(3)})`,
+                transformOrigin: `${l2OriginX}% ${l2OriginY}%`,
+                transform: `translate3d(${xShift2.toFixed(2)}%, ${yShift2.toFixed(2)}%, 0) scale(${scale2.toFixed(3)})`,
                 willChange: 'transform, opacity',
                 backfaceVisibility: 'hidden',
                 WebkitBackfaceVisibility: 'hidden',
@@ -473,13 +565,15 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/assets/showreel/ref-2-city-mid.webp"
+                src={img2Src}
                 alt="PIXIATECH Façade Bâtiment Vue Rapprochée"
                 style={{
-                  width: '100%',
-                  height: '100%',
+                  width: `${img2Width}%`,
+                  height: `${img2Height}%`,
                   objectFit: 'cover',
                   display: 'block',
+                  backgroundColor: '#000000',
+                  transform: `translate3d(${img2PosX}%, ${img2PosY}%, 0) scale(${img2Scale})`,
                 }}
               />
 
@@ -487,10 +581,10 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
               <div
                 style={{
                   position: 'absolute',
-                  left: '34.63%',
-                  top: '34.01%',
-                  width: '30.50%',
-                  height: '25.19%',
+                  left: `${screen2.left}%`,
+                  top: `${screen2.top}%`,
+                  width: `${screen2.width}%`,
+                  height: `${screen2.height}%`,
                   overflow: 'hidden',
                   borderRadius: 1.5,
                   boxShadow: '0 0 25px rgba(195, 249, 16, 0.4)',
@@ -522,8 +616,8 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
                 position: 'absolute',
                 inset: 0,
                 opacity: op3.toFixed(3),
-                transformOrigin: '49.94% 35.76%',
-                transform: `scale(${scale3.toFixed(3)})`,
+                transformOrigin: `${l3OriginX}% ${l3OriginY}%`,
+                transform: `translate3d(${xShift3.toFixed(2)}%, ${yShift3.toFixed(2)}%, 0) scale(${scale3.toFixed(3)})`,
                 willChange: 'transform, opacity',
                 backfaceVisibility: 'hidden',
                 WebkitBackfaceVisibility: 'hidden',
@@ -532,13 +626,15 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/assets/showreel/ref-3-facade-screen.webp"
+                src={img3Src}
                 alt="PIXIATECH Écran Géant Façade"
                 style={{
-                  width: '100%',
-                  height: '100%',
+                  width: `${img3Width}%`,
+                  height: `${img3Height}%`,
                   objectFit: 'cover',
                   display: 'block',
+                  backgroundColor: '#000000',
+                  transform: `translate3d(${img3PosX}%, ${img3PosY}%, 0) scale(${img3Scale})`,
                 }}
               />
 
@@ -546,10 +642,10 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
               <div
                 style={{
                   position: 'absolute',
-                  left: '24.76%',
-                  top: '15.41%',
-                  width: '50.36%',
-                  height: '40.70%',
+                  left: `${screen3.left}%`,
+                  top: `${screen3.top}%`,
+                  width: `${screen3.width}%`,
+                  height: `${screen3.height}%`,
                   overflow: 'hidden',
                   boxShadow:
                     scrollProgress > 0.45 && scrollProgress < 0.72
@@ -621,8 +717,8 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
                 position: 'absolute',
                 inset: 0,
                 opacity: op4.toFixed(3),
-                transformOrigin: '50% 50%',
-                transform: `scale(${scale4.toFixed(3)})`,
+                transformOrigin: `${l4OriginX}% ${l4OriginY}%`,
+                transform: `translate3d(${xShift4.toFixed(2)}%, ${yShift4.toFixed(2)}%, 0) scale(${scale4.toFixed(3)})`,
                 willChange: 'transform, opacity',
                 backfaceVisibility: 'hidden',
                 WebkitBackfaceVisibility: 'hidden',
@@ -632,13 +728,15 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/assets/showreel/ref-4-led-macro.webp"
+                src={img4Src}
                 alt="PIXIATECH Macro Diode Micro-LED RGB"
                 style={{
-                  width: '100%',
-                  height: '100%',
+                  width: `${img4Width}%`,
+                  height: `${img4Height}%`,
                   objectFit: 'cover',
                   display: 'block',
+                  backgroundColor: '#000000',
+                  transform: `translate3d(${img4PosX}%, ${img4PosY}%, 0) scale(${img4Scale})`,
                 }}
               />
             </div>

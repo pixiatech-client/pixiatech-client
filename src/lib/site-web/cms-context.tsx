@@ -260,17 +260,44 @@ export const CmsProvider: React.FC<{
               value.startsWith('/uploads/') ||
               value.startsWith('data:image/')));
 
-        if (isMediaField) {
-          // Les images et médias ne sont pas linguistiques : on écrit directement sur la clé racine
-          // pour que TOUTES les langues et TOUS les renderers y accèdent instantanément et de façon pérenne.
+        const isTechnicalField =
+          fieldKey.toLowerCase().includes('scale') ||
+          fieldKey.toLowerCase().includes('origin') ||
+          fieldKey.toLowerCase().includes('shift') ||
+          fieldKey.toLowerCase().includes('campos') ||
+          fieldKey.toLowerCase().includes('fov') ||
+          fieldKey.toLowerCase().includes('focal') ||
+          fieldKey.toLowerCase().includes('pan') ||
+          fieldKey.toLowerCase().includes('tilt') ||
+          fieldKey.toLowerCase().includes('left') ||
+          fieldKey.toLowerCase().includes('top') ||
+          fieldKey.toLowerCase().includes('width') ||
+          fieldKey.toLowerCase().includes('height') ||
+          fieldKey.toLowerCase().includes('color') ||
+          fieldKey.toLowerCase().includes('speed') ||
+          fieldKey.toLowerCase().includes('posx') ||
+          fieldKey.toLowerCase().includes('posy') ||
+          fieldKey.toLowerCase().includes('outline') ||
+          typeof value === 'number' ||
+          typeof value === 'boolean' ||
+          (typeof value === 'string' && !isNaN(Number(value)) && value.trim() !== '') ||
+          (typeof value === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(value.trim()));
+
+        if (isMediaField || isTechnicalField) {
+          // Les images, médias et paramètres techniques (caméra, zoom, coordonnées, couleurs)
+          // ne sont pas linguistiques : on écrit directement sur la clé racine pour que
+          // tous les renderers et composants (ex: Showreel 3D) y accèdent instantanément.
           updatedSection = { ...currentSection, [fieldKey]: value };
         } else if (typeof value === 'string') {
-          // Écrit dans la langue active uniquement : les autres langues ne sont
-          // jamais écrasées ni recopiées (indépendance FR/EN).
+          // Écrit dans la langue active, et synchronise également la clé racine si FR
+          // pour rétro-compatibilité immédiate avec les composants lisant section[fieldKey].
           updatedSection = setCmsFieldTranslation(currentSection, fieldKey, targetLang, value, {
             isManual,
             forceOverwrite: isManual,
           });
+          if (targetLang === 'fr' || !currentSection[fieldKey]) {
+            updatedSection[fieldKey] = value;
+          }
         } else {
           updatedSection = { ...currentSection, [fieldKey]: value };
         }
@@ -614,9 +641,10 @@ export const CmsProvider: React.FC<{
       setTimeout(() => setSaveStatus('idle'), 4000);
       return false;
     }
+    const targetPageId = pageOverride?.id || currentPageId;
     setSaveStatus('saving');
     try {
-      const res = await fetch(`/api/site-web/pages/${currentPageId}`, {
+      const res = await fetch(`/api/site-web/pages/${targetPageId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(activePage),
@@ -624,7 +652,7 @@ export const CmsProvider: React.FC<{
       if (res.ok) {
         const data = await res.json();
         if (data?.page) {
-          commitPages((prev) => ({ ...prev, [currentPageId]: data.page }));
+          commitPages((prev) => ({ ...prev, [targetPageId]: data.page }));
         }
         setSaveStatus('saved');
         setBackendConnected(true);

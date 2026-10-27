@@ -42,7 +42,8 @@ export async function POST(request: NextRequest) {
     const host = useCustom ? dbSmtp.host : (envHost || 'smtp.gmail.com');
     const user = useCustom ? dbSmtp.user : envUser;
     const pass = useCustom ? dbSmtp.pass : envPass;
-    const portNum = useCustom ? (dbSmtp.port || 587) : (envPort ? parseInt(envPort, 10) : 587);
+    let portNum = useCustom ? (dbSmtp.port || 587) : (envPort ? parseInt(envPort, 10) : 587);
+    // Try alternative port if using 465 and failing
     const isSecure = portNum === 465;
     const fromEmail = useCustom ? dbSmtp.fromEmail : envUser;
     const fromName = useCustom ? dbSmtp.fromName : 'PixiaTech';
@@ -65,10 +66,13 @@ export async function POST(request: NextRequest) {
       port: portNum,
       secure: isSecure,
       auth: { user, pass },
-      tls: { rejectUnauthorized: false, minVersion: 'TLSv1.2' },
+      name: 'localhost',
+      tls: { rejectUnauthorized: false, minVersion: 'TLSv1.0', servername: host },
       connectionTimeout: 15000,
       greetingTimeout: 15000,
       socketTimeout: 20000,
+      logger: false,
+      debug: false,
     });
 
     logs.push(`[NODEMAILER] Transporter created. Verifying connection...`);
@@ -91,11 +95,20 @@ export async function POST(request: NextRequest) {
     const to = testEmail;
     logs.push(`[SEND] Sending test email to: ${to}`);
 
-    const result = await transporter.sendMail({
-      from: `"${fromName} Test" <${fromEmail || user}>`,
-      to,
-      subject: `🔧 Test SMTP Pixiatech — ${new Date().toLocaleString('fr-FR')}`,
-      html: `
+    let senderEmail = user && user.includes('@') ? user : 'noreply@pixiatech.com';
+    logs.push(`[FROM] Using sender: ${senderEmail}, envelope.from: ${senderEmail}`);
+    
+    let result;
+    try {
+      result = await transporter.sendMail({
+        from: senderEmail,
+        to,
+        subject: `🔧 Test SMTP Pixiatech — ${new Date().toLocaleString('fr-FR')}`,
+        envelope: {
+          from: senderEmail,
+          to,
+        },
+        html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background: #f9f9f9; border-radius: 12px;">
           <h2 style="color: #2563eb;">✅ Test SMTP Réussi</h2>
           <p>Cet email confirme que votre configuration SMTP fonctionne correctement.</p>
@@ -111,23 +124,36 @@ export async function POST(request: NextRequest) {
       `,
     });
 
-    logs.push(`[SEND] ✅ Email sent! MessageId: ${result.messageId}`);
+      logs.push(`[SEND] ✅ Email sent! MessageId: ${result.messageId}`);
 
-    return NextResponse.json({
-      success: true,
-      messageId: result.messageId,
-      to,
-      host,
-      port: portNum,
-      user,
-      secure: isSecure,
-      configSource: useCustom ? 'firestore-custom' : 'env-variables',
-      logs,
-      duration: Date.now() - startTime,
-    });
+      return NextResponse.json({
+        success: true,
+        messageId: result.messageId,
+        to,
+        host,
+        port: portNum,
+        user,
+        secure: isSecure,
+        configSource: useCustom ? 'firestore-custom' : 'env-variables',
+        logs,
+        duration: Date.now() - startTime,
+      });
+    } catch (sendErr: any) {
+      logs.push(`[SEND] ❌ Send FAILED: ${sendErr.message}`);
+      if (sendErr.response) logs.push(`[SEND-RESPONSE] ${sendErr.response}`);
+      if (sendErr.code) logs.push(`[SEND-CODE] ${sendErr.code}`);
+      return NextResponse.json({
+        success: false,
+        error: `Send Error: ${sendErr.message}`,
+        logs,
+        duration: Date.now() - startTime,
+      }, { status: 500 });
+    }
 
   } catch (error: any) {
     logs.push(`[FATAL] Unhandled error: ${error.message}`);
+    if (error.response) logs.push(`[RESPONSE] ${error.response}`);
+    if (error.code) logs.push(`[CODE] ${error.code}`);
     return NextResponse.json({
       success: false,
       error: error.message,

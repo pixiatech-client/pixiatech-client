@@ -4,7 +4,7 @@
       "id": "home",
       "name": "home",
       "slug": "/home",
-      "updatedAt": "2026-10-23T16:21:32.148Z",
+      "updatedAt": "2026-10-27T22:44:43.898Z",
       "sections": {
         "pixia-web": {
           "text_1790257213042": "sdsdsdsdÉDITEUR DIRECT : CLIQUEZ SUR UN TEXTE OU UNE IMAGE",
@@ -597,6 +597,350 @@
                 "updatedAt": "2026-10-22T09:52:59.253Z",
                 "sourceText": "à métropolitaine."
               }
+            },
+            "ch2TitleLine1": {
+              "fr": {
+                "value": "Intégration façade",
+                "status": "source",
+                "updatedAt": "2026-10-27T11:02:18.853Z",
+                "sourceText": "Intégration façade"
+              }
+            },
+            "screen1Left": {
+              "fr": {
+                "value": "40.71",
+                "status": "source",
+                "updatedAt": "2026-10-27T21:22:37.143Z",
+                "sourceText": "40.71"
+              }
+            },
+            "screen1Top": {
+              "fr": {
+                "value": "50.18",
+                "status": "source",
+                "updatedAt": "2026-10-27T21:22:37.144Z",
+                "sourceText": "50.18"
+              }
+            },
+            "screen1Width": {
+              "fr": {
+                "value": "16.33",
+                "status": "source",
+                "updatedAt": "2026-10-27T21:22:37.144Z",
+                "sourceText": "16.33"
+              }
+            },
+            "screen1Height": {
+              "fr": {
+                "value": "15.03",
+                "status": "source",
+                "updatedAt": "2026-10-27T21:22:37.144Z",
+                "sourceText": "15.03"
+              }
+            },
+            "img1PosX": {
+              "fr": {
+                "value": "-0.4",
+                "status": "source",
+                "updatedAt": "2026-10-27T21:13:34.323Z",
+                "sourceText": "-0.4"
+              }
+            },
+            "img1Scale": {
+              "fr": {
+                "value": "1.05",
+                "status": "source",
+                "updatedAt": "2026-10-27T21:17:56.734Z",
+                "sourceText": "1.05"
+              }
+            },
+            "img1PosY": {
+              "fr": {
+                "value": "-1.1",
+                "status": "source",
+                "updatedAt": "2026-10-27T21:13:43.806Z",
+                "sourceText": "-1.1"
+              }
+            },
+            "img1Width": {
+              "fr": {
+                "value": "105",
+                "status": "source",
+                "updatedAt": "2026-10-27T21:12:54.523Z",
+                "sourceText": "105"
+              }
+            },
+            "img1Height": {
+              "fr": {
+                "value": "99",
+                "status": "source",
+                "updatedAt": "2026-10-27T21:13:03.672Z",
+                "sourceText": "99"
+              }
+            },
+            "screen2Left": {
+              "fr": {
+                "value": "28.27",
+                "status": "source",
+                "updatedAt": "2026-10-27T21:24:17.242Z",
+                "sourceText": "28.27"
+              }
+            },
+            "screen2Top": {
+              "fr": {
+                "value": "36.86",
+                "status": "source",
+                "updatedAt": "2026-10-27T21:24:17.242Z",
+                "sourceText": "36.86"
+              }
+            },
+            "screen2Width": {
+              "fr": {
+                "value": "38.42",
+                "status": "source",
+                "updatedAt": "2026-10-27T21:24:17.242Z",
+                "sourceText": "38.42"
+              }
+            },
+            "screen2Height": {
+              "fr": {
+                "value": "35.95",
+                "status": "source",
+                "updatedAt": "2026-10-27T21:24:17.243Z",
+                "sourceText": "35.95"
+              }
+            },
+            "img3Scale": {
+              "fr": {
+                "value": "1.27",
+                "status": "source",
+                "updatedAt": "2026-10-27T21:26:08.523Z",
+                "sourceText": "1.27"
+              }
+            },
+            "img3PosX": {
+              "fr": {
+                "value": "2",
+                "status": "source",
+                "updatedAt": "2026-10-27T21:26:25.105Z",
+                "sourceText": "2"
+              }
+            },
+            "img3PosY": {
+              "fr": {
+                "value": "14.8",
+                "status": "source",
+                "updatedAt": "2026-10-27T21:26:30.822Z",
+                "sourceText": "14.8"
+              }
+            },
+            "screen3Left": {
+              "fr": {
+                "value": "14.95",
+                "status": "source",
+                "updatedAt": "2026-10-27T21:27:14.137Z",
+                "sourceText": "14.95"
+              }
+            },
+            "screen3Top": {
+              "fr": {
+                "value": "30.79",
+                "status": "source",
+                "updatedAt": "2026-10-27T21:27:14.137Z",
+                "sourceText": "30.79"
+              }
+            },
+            "screen3Width": {
+              "fr": {
+                "value": "62.07",
+                "status": "source",
+                "updatedAt": "2026-10-27T21:27:14.137Z",
+                "sourceText": "62.07"
+              }
+            },
+            "screen3Height": {
+              "fr": {
+                "value": "58.17",
+                "status": "source",
+                "updatedAt": "2026-10-27T21:27:14.137Z",
+                "sourceText": "58.17"
+              }
+            },
+            "img2Scale": {
+              "fr": {
+                "value": "1.42",
+                "status": "source",
+                "updatedAt": "2026-10-27T21:21:14.612Z",
+                "sourceText": "1.42"
+              }
+            },
+            "img2PosY": {
+              "fr": {
+                "value": "5.9",
+                "status": "source",
+                "updatedAt": "2026-10-27T21:21:30.145Z",
+                "sourceText": "5.9"
+              }
+            },
+            "img2Width": {
+              "fr": {
+                "value": "97",
+                "status": "source",
+                "updatedAt": "2026-10-27T21:18:54.999Z",
+                "sourceText": "97"
+              }
+            },
+            "img2Height": {
+              "fr": {
+                "value": "101",
+                "status": "source",
+                "updatedAt": "2026-10-27T21:19:01.299Z",
+                "sourceText": "101"
+              }
+            },
+            "img2PosX": {
+              "fr": {
+                "value": "-0.9",
+                "status": "source",
+                "updatedAt": "2026-10-27T21:21:22.429Z",
+                "sourceText": "-0.9"
+              }
+            },
+            "img3Width": {
+              "fr": {
+                "value": "92",
+                "status": "source",
+                "updatedAt": "2026-10-27T21:26:12.622Z",
+                "sourceText": "92"
+              }
+            },
+            "img3Height": {
+              "fr": {
+                "value": "102",
+                "status": "source",
+                "updatedAt": "2026-10-27T21:26:20.739Z",
+                "sourceText": "102"
+              }
+            },
+            "l3ScaleMax": {
+              "fr": {
+                "value": "1.74",
+                "status": "source",
+                "updatedAt": "2026-10-27T21:58:05.796Z",
+                "sourceText": "1.74"
+              }
+            },
+            "l3OriginX": {
+              "fr": {
+                "value": "54.04",
+                "status": "source",
+                "updatedAt": "2026-10-27T21:58:06.945Z",
+                "sourceText": "54.04"
+              }
+            },
+            "l3OriginY": {
+              "fr": {
+                "value": "50",
+                "status": "source",
+                "updatedAt": "2026-10-27T21:58:08.036Z",
+                "sourceText": "50"
+              }
+            },
+            "l1ScaleMax": {
+              "fr": {
+                "value": "1.39",
+                "status": "source",
+                "updatedAt": "2026-10-27T21:58:00.004Z",
+                "sourceText": "1.39"
+              }
+            },
+            "l1OriginX": {
+              "fr": {
+                "value": "49.97",
+                "status": "source",
+                "updatedAt": "2026-10-27T21:58:00.005Z",
+                "sourceText": "49.97"
+              }
+            },
+            "l1CamPosX": {
+              "fr": {
+                "value": "1.2",
+                "status": "source",
+                "updatedAt": "2026-10-27T21:59:43.212Z",
+                "sourceText": "1.2"
+              }
+            },
+            "l1CamPosY": {
+              "fr": {
+                "value": "6.7",
+                "status": "source",
+                "updatedAt": "2026-10-27T21:59:48.694Z",
+                "sourceText": "6.7"
+              }
+            },
+            "l1XShift": {
+              "fr": {
+                "value": "0",
+                "status": "source",
+                "updatedAt": "2026-10-27T21:58:00.006Z",
+                "sourceText": "0"
+              }
+            },
+            "l1YShift": {
+              "fr": {
+                "value": "14.1",
+                "status": "source",
+                "updatedAt": "2026-10-27T21:58:00.006Z",
+                "sourceText": "14.1"
+              }
+            },
+            "l1OriginY": {
+              "fr": {
+                "value": "59.88",
+                "status": "source",
+                "updatedAt": "2026-10-27T21:58:00.006Z",
+                "sourceText": "59.88"
+              }
+            },
+            "l3CamPosX": {
+              "fr": {
+                "value": "1.3",
+                "status": "source",
+                "updatedAt": "2026-10-27T22:00:20.896Z",
+                "sourceText": "1.3"
+              }
+            },
+            "l3CamPosY": {
+              "fr": {
+                "value": "-16.2",
+                "status": "source",
+                "updatedAt": "2026-10-27T22:00:23.843Z",
+                "sourceText": "-16.2"
+              }
+            },
+            "l3XShift": {
+              "fr": {
+                "value": "12.7",
+                "status": "source",
+                "updatedAt": "2026-10-27T21:58:21.096Z",
+                "sourceText": "12.7"
+              }
+            },
+            "l2CamPosX": {
+              "fr": {
+                "value": "1",
+                "status": "source",
+                "updatedAt": "2026-10-27T21:59:18.895Z",
+                "sourceText": "1"
+              }
+            },
+            "l2CamPosY": {
+              "fr": {
+                "value": "-6.7",
+                "status": "source",
+                "updatedAt": "2026-10-27T21:59:22.245Z",
+                "sourceText": "-6.7"
+              }
             }
           },
           "ch3TitleLine1": "L'écran devient",
@@ -610,7 +954,52 @@
           "visible": true,
           "layout": {
             "visible": true
-          }
+          },
+          "ch2TitleLine1": "Intégration façade",
+          "videoOutlineColor": "#314C78",
+          "screen1Left": "40.71",
+          "screen1Top": "50.18",
+          "screen1Width": "16.33",
+          "screen1Height": "15.03",
+          "image1Src": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2Fref-1-city-far_gdjms.webp?alt=media",
+          "img1PosX": "-0.4",
+          "img1Scale": "1.05",
+          "img1PosY": "-1.1",
+          "img1Width": "105",
+          "img1Height": "99",
+          "screen2Left": "28.27",
+          "screen2Top": "36.86",
+          "screen2Width": "38.42",
+          "screen2Height": "35.95",
+          "img3Scale": "1.27",
+          "img3PosX": "2",
+          "img3PosY": "14.8",
+          "screen3Left": "14.95",
+          "screen3Top": "30.79",
+          "screen3Width": "62.07",
+          "screen3Height": "58.17",
+          "img2Scale": "1.42",
+          "img2PosY": "5.9",
+          "img2Width": "97",
+          "img2Height": "101",
+          "img2PosX": "-0.9",
+          "img3Width": "92",
+          "img3Height": "102",
+          "l3ScaleMax": "1.74",
+          "l3OriginX": "54.04",
+          "l3OriginY": "50",
+          "l1ScaleMax": "1.39",
+          "l1OriginX": "49.97",
+          "l1CamPosX": "1.2",
+          "l1CamPosY": "6.7",
+          "l1XShift": "0",
+          "l1YShift": "14.1",
+          "l1OriginY": "59.88",
+          "l3CamPosX": "1.3",
+          "l3CamPosY": "-16.2",
+          "l3XShift": "12.7",
+          "l2CamPosX": "1",
+          "l2CamPosY": "-6.7"
         },
         "technology": {
           "_elements": {
@@ -1156,5 +1545,5 @@
       }
     }
   },
-  "updatedAt": "2026-10-23T16:21:33.016Z"
+  "updatedAt": "2026-10-27T22:44:44.013Z"
 }

@@ -1,8 +1,8 @@
 import ShowreelAdminModule from './_components/ShowreelAdminModule';
 
 export const metadata = {
-  title: 'Gestion des textes Showreel 3D | PixiaTech Admin',
-  description: 'Édition multilingue et personnalisation de tous les textes de la section Showreel 3D PixiaTech.',
+  title: 'Showreel 3D Studio | PixiaTech Admin',
+  description: 'Studio de gestion du Showreel 3D : vidéo, positionnement écran, images de référence, animation et textes multilingues.',
 };
 
 export default function ShowreelAdminPage() {

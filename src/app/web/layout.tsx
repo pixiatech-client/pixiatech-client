@@ -12,6 +12,9 @@ import {
 import { cookies } from 'next/headers';
 import type { Metadata } from 'next';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 // Valeurs de repli : utilisées tant qu'aucun titre/description SEO global
 // n'a été enregistré depuis l'administration (PixiaTech Web > Paramètres
 // généraux > « Identité & SEO »). Source unique : `src/lib/site-identity.ts`.

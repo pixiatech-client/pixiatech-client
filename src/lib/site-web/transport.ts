@@ -13,8 +13,13 @@ export function getTransporter(config: SmtpConfig) {
       user: config.user,
       pass: config.pass || '',
     },
+    name: 'localhost',
     tls: {
       rejectUnauthorized: false,
+      servername: config.host,
     },
+    connectionTimeout: 15000,
+    greetingTimeout: 15000,
+    socketTimeout: 20000,
   });
 }

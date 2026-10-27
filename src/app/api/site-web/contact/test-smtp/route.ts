@@ -31,9 +31,11 @@ export async function POST(request: NextRequest) {
       await transporter.verify();
       const contactInfo = await getContactInfo();
       const targetEmail = testRecipient || configToTest.recipientEmail || contactInfo.primaryEmail;
+      const fromAddr = configToTest.user || 'noreply@pixiatech.com';
       const sendResult = await transporter.sendMail({
-        from: configToTest.fromEmail || `PIXIATECH <${configToTest.user}>`,
+        from: fromAddr,
         to: targetEmail,
+        envelope: { from: fromAddr, to: targetEmail },
         subject: 'PIXIATECH - Test de connexion SMTP réussi',
         text: `Bonjour,\n\nCeci est un email de test confirmant que la passerelle SMTP de PIXIATECH (${configToTest.host}:${configToTest.port}) est correctement configurée et fonctionnelle.\n\nDate: ${new Date().toLocaleString('fr-FR')}`,
         html: `
