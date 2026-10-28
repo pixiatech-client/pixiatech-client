@@ -87,11 +87,11 @@ export async function getSmtpTransport(customConfig?: SmtpSettings) {
     secure: isSecure,
     auth: user && pass ? { user, pass } : undefined,
     name: 'localhost',
-    tls: { rejectUnauthorized: false, minVersion: 'TLSv1.0', servername: host || 'smtp.gmail.com' },
+    tls: { rejectUnauthorized: false, servername: host || 'smtp.gmail.com' },
     connectionTimeout: 10000,
     greetingTimeout: 10000,
     socketTimeout: 15000,
-  });
+  } as any);
 
   const fromEmail = isCustom ? config.fromEmail : (process.env.SMTP_USER || 'noreply@pixiatech.com');
   const fromName = isCustom ? config.fromName : 'PixiaTech';

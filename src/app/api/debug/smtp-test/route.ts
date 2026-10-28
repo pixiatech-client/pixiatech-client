@@ -67,13 +67,11 @@ export async function POST(request: NextRequest) {
       secure: isSecure,
       auth: { user, pass },
       name: 'localhost',
-      tls: { rejectUnauthorized: false, minVersion: 'TLSv1.0', servername: host },
+      tls: { rejectUnauthorized: false, servername: host },
       connectionTimeout: 15000,
       greetingTimeout: 15000,
       socketTimeout: 20000,
-      logger: false,
-      debug: false,
-    });
+    } as any);
 
     logs.push(`[NODEMAILER] Transporter created. Verifying connection...`);
 
