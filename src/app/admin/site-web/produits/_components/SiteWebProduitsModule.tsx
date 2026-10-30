@@ -1966,13 +1966,32 @@ function ProductForm({
         applicationCategoryIds,
         categoryIds,
       };
-      if (pdfReanalysis) Object.assign(body, pdfReanalysis);
+      if (pdfReanalysis) {
+        Object.assign(body, pdfReanalysis);
+        // Si une réanalyse PDF existe, les variantes locales modifiées manuellement
+        // doivent rester prioritaires (ajouts/suppressions/renommages).
+        body.specs = {
+          ...(pdfReanalysis.specs || existing?.specs || {}),
+          models,
+        };
+      } else {
+        // Sans réanalyse PDF, persister l'état final des variantes tel qu'affiché
+        // dans l'éditeur (source de vérité). Inclure même un tableau vide pour
+        // autoriser la suppression de toutes les variantes.
+        body.specs = {
+          ...(existing?.specs || {}),
+          models,
+        };
+      }
       // La galerie est l'état local de référence. La réanalyse a été construite
       // sur le produit tel qu'il était À L'OUVERTURE de l'éditeur : sans cette
       // ligne, enregistrer une réanalyse annulait silencieusement les photos
       // ajoutées, remplacées ou promues depuis.
       if (pdfReanalysis && existing) {
         body.media = { ...pdfReanalysis.media, photos: mediaPhotos };
+      } else if (existing) {
+        // Sans réanalyse, préserver aussi la galerie locale
+        body.media = { ...(existing.media || {}), photos: mediaPhotos };
       }
       // Liens boutique : racine du produit, donc hors du `specs` reconstruit
       // par la réanalyse. Seules les URL valides sont persistées — une saisie
