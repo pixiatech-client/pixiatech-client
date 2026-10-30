@@ -489,11 +489,17 @@ export async function buildProductFromMasterTemplate(
     (m) => isRealValue(m.name) && !isPlaceholder(m.name)
   );
 
+  const isMasterSystem =
+    master.slug === MASTER_TEMPLATE_SLUG ||
+    master.name?.toLowerCase().includes('template maître') ||
+    master.name?.toLowerCase().includes('modèle de base');
+
   if (overlayModels.length > 0) {
     // Les variantes du PDF deviennent les colonnes produit
     finalModels = overlayModels.map(toModel);
-  } else if (master.specs?.models && master.specs.models.length > 0) {
-    // Sinon modèles du master filtrés de tout placeholder [Modele X]
+  } else if (master.specs?.models && master.specs.models.length > 0 && !isMasterSystem) {
+    // Sinon modèles du master (uniquement si ce n'est pas le template maître système,
+    // afin de ne pas injecter 9 variantes parasites quand le PDF n'en a pas détecté)
     finalModels = master.specs.models.filter((m) => !isPlaceholder(m.name)).map(toModel);
   }
 
@@ -548,6 +554,7 @@ export async function buildProductFromMasterTemplate(
   // --- Assemblage du produit complet ---
   const result: Product = {
     ...baseMerged,
+    ...(isMasterSystem ? { variants: overlay.variants ?? [] } : {}),
     name,
     ...(series ? { series } : {}),
     ...(company ? { company } : {}),

@@ -62,7 +62,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     text(series);
 
   // Lecture CMS prioritaire avec support multilingue FR/EN
-  const title = getCmsText(cmsHero, 'title', activeLang, text(data?.title) ?? initialTitle ?? '');
+  const title = getCmsText(cmsHero, 'title', activeLang, initialTitle || text(data?.title) || '');
   const subtitle = getCmsText(cmsHero, 'subtitle', activeLang, text(data?.subtitle) ?? '');
   const quoteCta = getCmsText(
     cmsHero,

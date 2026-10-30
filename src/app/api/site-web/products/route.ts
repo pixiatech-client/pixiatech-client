@@ -4,12 +4,22 @@ import { listProducts, saveProduct, getProductBySlug } from '@/lib/products/prod
 import { isValidSlug } from '@/lib/products/types';
 import type { Product } from '@/lib/products/types';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET(request: NextRequest) {
   const auth = await requireAdmin(request);
   if (auth instanceof NextResponse) return auth;
   try {
     const products = await listProducts();
-    return NextResponse.json({ success: true, products });
+    return NextResponse.json(
+      { success: true, products },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        },
+      }
+    );
   } catch (err: unknown) {
     console.error('GET /api/site-web/products', err);
     return NextResponse.json(

@@ -37,7 +37,7 @@ import {
   uploadProductHoverImage,
   deleteProductMedia,
 } from '@/lib/products/products-service';
-import { slugify, groupDisplayName, productCategoryIds, MAX_PRODUCT_NAME_LENGTH, isValidShopUrl, normalizeShopUrl, sanitizeShopLinks, normalizeShopLinkTypes, sanitizeShopLinkTypes, shopLinkTypeForVariant } from '@/lib/products/types';
+import { slugify, groupDisplayName, productCategoryIds, MAX_PRODUCT_NAME_LENGTH, isValidShopUrl, normalizeShopUrl, sanitizeShopLinks, normalizeShopLinkTypes, sanitizeShopLinkTypes, shopLinkTypeForVariant, type ProductSpecModel, type ProductSpecs } from '@/lib/products/types';
 import {
   SYSTEM_TEMPLATE_LABEL,
   SYSTEM_TEMPLATE_PROTECTED_MESSAGE,
@@ -1392,6 +1392,29 @@ function ProductForm({
   );
   const [busyPhotoIndex, setBusyPhotoIndex] = useState<number | null>(null);
 
+  // Modèles / Variantes de la matrice comparative
+  const [models, setModels] = useState<ProductSpecModel[]>(() =>
+    isNew
+      ? (pdfAnalysis?.specs?.models ?? [])
+      : (pdfReanalysis?.specs?.models ?? existing?.specs?.models ?? [])
+  );
+  const [showAddVariantModal, setShowAddVariantModal] = useState(false);
+  const [newVariantName, setNewVariantName] = useState('');
+
+  // Synchronisation avec existing lors d'une sauvegarde ou d'un changement de produit
+  useEffect(() => {
+    if (existing) {
+      setName(existing.name ?? '');
+      setStatus(existing.status ?? 'draft');
+      setMediaPhotos(existing.media?.photos ?? []);
+      setShopLinks(existing.shopLinks ?? {});
+      setShopLinkTypes(normalizeShopLinkTypes(existing.shopLinkTypes));
+      if (existing.specs?.models) {
+        setModels(existing.specs.models);
+      }
+    }
+  }, [existing]);
+
   /** Persiste la galerie et la répercute immédiatement à l'écran. */
   const persistPhotos = async (next: ProductMediaItem[], message: string) => {
     setMediaPhotos(next);
@@ -1641,12 +1664,45 @@ function ProductForm({
    * Une réanalyse peut supprimer une variante ; son lien devient orphelin et
    * n'est simplement jamais lu par `SpecsSection`.
    */
-  const variantNames: string[] = (isNew
-    ? (pdfAnalysis?.specs?.models ?? [])
-    : (pdfReanalysis?.specs?.models ?? existing?.specs?.models ?? [])
-  )
+  const variantNames: string[] = models
     .map((model) => model.name)
     .filter((modelName) => typeof modelName === 'string' && modelName.trim() !== '');
+
+  const deleteVariant = (variantName: string) => {
+    setModels((prev) => prev.filter((m) => m.name !== variantName));
+    setShopLinks((prev) => {
+      const copy = { ...prev };
+      delete copy[variantName];
+      return copy;
+    });
+    setShopLinkTypes((prev) => {
+      const copy = { ...prev };
+      delete copy[variantName];
+      return copy;
+    });
+    toast.success(`Variante « ${variantName} » supprimée.`);
+  };
+
+  const addVariant = () => {
+    const clean = newVariantName.trim();
+    if (!clean) {
+      toast.error('Veuillez saisir un nom pour la variante.');
+      return;
+    }
+    if (models.some((m) => m.name.toLowerCase() === clean.toLowerCase())) {
+      toast.error(`Une variante « ${clean} » existe déjà.`);
+      return;
+    }
+    const newModel: ProductSpecModel = {
+      name: clean,
+      tag: 'DATASHEET',
+      specs: {},
+    };
+    setModels((prev) => [...prev, newModel]);
+    setNewVariantName('');
+    setShowAddVariantModal(false);
+    toast.success(`Variante « ${clean} » ajoutée.`);
+  };
 
   // Clés saisies qui ne correspondent à aucune variante affichée : le lien
   // serait impossible à nettoyer depuis l'admin, puisque aucun champ ne le
@@ -1800,8 +1856,14 @@ function ProductForm({
 
       if (existing) {
         setPdfReanalysis(built);
+        if (built.specs?.models && built.specs.models.length > 0) {
+          setModels(built.specs.models);
+        }
       } else {
         setPdfAnalysis(built);
+        if (built.specs?.models && built.specs.models.length > 0) {
+          setModels(built.specs.models);
+        }
         // Le nom pré-rempli vient du PDF, PAS du produit construit. `built`
         // fusionne le template maître, et sa ligne 239 fait
         // `overlay.name || master.name` : quand le parser n'a rien lu, c'est
@@ -2495,9 +2557,10 @@ function ProductForm({
               historique, pour les produits antérieurs à ce champ.
 
               « Masqué publiquement » ne signifie pas « inexistant dans le CMS ». */}
-          {!isNew && variantNames.length > 0 && (
-            <section>
-              <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+          {/* ── Liens boutique par variante (gestion dynamique des variantes) ── */}
+          <section>
+            <div className="flex items-center justify-between gap-3 mb-1.5 flex-wrap">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h2 className="text-sm font-bold text-neutral-900 dark:text-white">
                   Liens boutique par variante
                 </h2>
@@ -2505,24 +2568,40 @@ function ProductForm({
                   {variantNames.length} variante{variantNames.length > 1 ? 's' : ''}
                 </span>
               </div>
-              <p className="text-[11px] text-neutral-400 mb-3">
-                Une colonne par variante, comme la matrice du site. Chaque
-                contrôle est rattaché à sa colonne et alimente le bouton de
-                cette seule variante. Le champ reste vide tant qu
-                &apos;aucun lien n&apos;est saisi, et le bouton n&apos;apparaît
-                alors pas. Renseignez une URL pour l&apos;afficher, videz-la
-                pour le retirer, et choisissez le type de transaction
-                (vente, location ou sur commande) qui en détermine le libellé.
-              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setNewVariantName('');
+                  setShowAddVariantModal(true);
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#38E044] hover:bg-[#2fcb3c] text-black text-xs font-extrabold transition-all cursor-pointer shadow-sm active:scale-95"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Ajouter une variante</span>
+              </button>
+            </div>
+            <p className="text-[11px] text-neutral-400 mb-3">
+              Une colonne par variante. Vous pouvez ajouter une variante, en supprimer une via l'icône corbeille, ou renseigner son lien boutique. Renseignez une URL pour afficher le bouton sur la fiche produit, et choisissez son type de transaction.
+            </p>
 
-              {/* Une colonne par variante, comme la matrice publique.
-                  La colonne est rendue par `variantNames.map`, donc le contrôle
-                  vit DANS la colonne de son propre nom : impossible qu'il soit
-                  lu comme appartenant à la variante voisine. Une variante = un
-                  contrôle, il n'y a pas de second rendu global plus bas.
-                  Débordement horizontal + largeur fixe : les colonnes restent
-                  alignées quand la liste défile, et la colonne d'en-tête de
-                  gauche reste visible (sticky) pour situer la ligne. */}
+            {variantNames.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-neutral-300 dark:border-white/10 p-6 text-center bg-neutral-50/50 dark:bg-white/[0.02]">
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-3">
+                  Aucune variante configurée pour ce produit.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNewVariantName('');
+                    setShowAddVariantModal(true);
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#38E044] hover:bg-[#2fcb3c] text-black text-xs font-extrabold transition-all cursor-pointer shadow-sm active:scale-95"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Ajouter une variante</span>
+                </button>
+              </div>
+            ) : (
               <div className="overflow-x-auto rounded-2xl border border-neutral-300 dark:border-white/10">
                 <div className="flex min-w-max">
                   {/* Colonne de tête : elle nomme la ligne, pas une variante. */}
@@ -2543,19 +2622,31 @@ function ProductForm({
                     return (
                       <div
                         key={variantName}
-                        className="shrink-0 w-[300px] p-3 border-l border-neutral-300 dark:border-white/10"
+                        className="shrink-0 w-[300px] p-3 border-l border-neutral-300 dark:border-white/10 relative group"
                       >
-                        {/* En-tête de colonne : le nom EXACT de la variante,
-                            repris tel quel de la matrice. */}
-                        <p
-                          className="text-[12px] font-bold text-neutral-900 dark:text-white break-words"
-                          title={variantName}
-                        >
-                          {variantName}
-                        </p>
-                        <p className="mt-0.5 mb-2 text-[10px] font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
-                          {SHOP_TRANSACTION_PUBLIC_LABEL[shopLinkTypeForVariant(shopLinkTypes, variantName)]}
-                        </p>
+                        {/* En-tête de colonne avec bouton de suppression de la variante */}
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <div className="min-w-0 flex-1">
+                            <p
+                              className="text-[12px] font-bold text-neutral-900 dark:text-white break-words"
+                              title={variantName}
+                            >
+                              {variantName}
+                            </p>
+                            <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+                              {SHOP_TRANSACTION_PUBLIC_LABEL[shopLinkTypeForVariant(shopLinkTypes, variantName)]}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => deleteVariant(variantName)}
+                            title={`Supprimer la variante « ${variantName} »`}
+                            aria-label={`Supprimer la variante ${variantName}`}
+                            className="shrink-0 w-7 h-7 rounded-lg inline-flex items-center justify-center border border-neutral-200 dark:border-white/10 text-neutral-400 hover:text-rose-500 hover:border-rose-500/50 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
 
                         <div className="flex items-center gap-2">
                           <input
@@ -2637,6 +2728,7 @@ function ProductForm({
                   })}
                 </div>
               </div>
+            )}
 
               {orphanShopLinkKeys.length > 0 && (
                 <div className="mt-4 rounded-2xl border border-amber-300/60 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/5 p-3">
@@ -2674,7 +2766,72 @@ function ProductForm({
                 </div>
               )}
             </section>
-          )}
+
+            {/* Modal d'ajout de variante */}
+            {showAddVariantModal && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                <div className="w-full max-w-md bg-white dark:bg-zinc-900 border border-neutral-200 dark:border-white/10 rounded-3xl p-6 shadow-2xl space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-base font-bold text-neutral-900 dark:text-white">
+                      Ajouter une variante
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowAddVariantModal(false);
+                        setNewVariantName('');
+                      }}
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-neutral-400 hover:text-neutral-600 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed">
+                    Saisissez le nom ou la référence de la nouvelle variante (ex. <code className="font-mono text-[11px] px-1 py-0.5 rounded bg-neutral-100 dark:bg-white/10">IL-FISS-IRWP1.2 Lite</code>).
+                  </p>
+                  <div>
+                    <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1.5">
+                      Nom de la variante
+                    </label>
+                    <input
+                      type="text"
+                      value={newVariantName}
+                      onChange={(e) => setNewVariantName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          addVariant();
+                        }
+                      }}
+                      placeholder="ex. IL-FISS-IRWP1.2 Lite"
+                      autoFocus
+                      className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-neutral-50 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white outline-none focus:ring-2 focus:ring-[#38E044]/50 transition-all"
+                    />
+                  </div>
+                  <div className="flex items-center justify-end gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowAddVariantModal(false);
+                        setNewVariantName('');
+                      }}
+                      className="px-4 py-2 rounded-xl text-xs font-semibold text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                    >
+                      Annuler
+                    </button>
+                    <button
+                      type="button"
+                      onClick={addVariant}
+                      disabled={!newVariantName.trim()}
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-extrabold bg-[#38E044] hover:bg-[#2fcb3c] text-black transition-all cursor-pointer shadow-[0_0_12px_rgba(56,224,68,0.3)] disabled:opacity-50 disabled:pointer-events-none"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Ajouter la variante</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
           {/* ── Catégories (taxonomie CMS) ── */}
           <section>

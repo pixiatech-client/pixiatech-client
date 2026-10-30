@@ -8,6 +8,9 @@ import {
 } from '@/lib/products/system-template';
 import type { Product } from '@/lib/products/types';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 interface RouteContext {
   params: Promise<{ slug: string }>;
 }
@@ -24,7 +27,14 @@ export async function GET(request: NextRequest, context: RouteContext) {
         { status: 404 }
       );
     }
-    return NextResponse.json({ success: true, product });
+    return NextResponse.json(
+      { success: true, product },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        },
+      }
+    );
   } catch (err: unknown) {
     console.error('GET /api/site-web/products/[slug]', err);
     return NextResponse.json(
