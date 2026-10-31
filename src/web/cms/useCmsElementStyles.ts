@@ -24,6 +24,15 @@ import { fluidFontSize } from './fluid-font-size';
  * refresh. C'est le pendant DOM du travail de `updateSectionField`.
  */
 
+export type ElementVisualState = {
+  color?: string;
+  backgroundColor?: string;
+  borderColor?: string;
+  borderWidth?: string;
+  borderStyle?: string;
+  borderRadius?: string;
+};
+
 export type ElementStyle = {
   fontSize?: string;
   color?: string;
@@ -46,6 +55,8 @@ export type ElementStyle = {
   actionType?: string;
   offsetX?: number;
   offsetY?: number;
+  hover?: ElementVisualState;
+  active?: ElementVisualState;
 };
 
 /** Marque les transform posés par l'éditeur, pour ne toucher qu'aux nôtres. */
@@ -77,8 +88,152 @@ export function readElementStyle(
   return (bag && bag[elementKey]) || EMPTY_ELEMENT_STYLE;
 }
 
+
+export function makeElementStyledId(sectionKey: string, elementKey: string): string {
+  return `cms_${sectionKey}_${elementKey}`.replace(/[^a-zA-Z0-9_-]/g, '_');
+}
+
+const dynamicRulesMap = new Map<string, string>();
+
+/**
+ * Génère un sélecteur CSS à très haute spécificité en répétant l'attribut
+ * `data-cms-styled-id`. Ceci permet aux règles dynamiques du CMS (normal /
+ * hover / active, toutes en `!important`) de l'emporter sur les règles
+ * `!important` globales du site public, par exemple :
+ *   `a:not(.btn):not(.no-acc):hover { color: var(--accent) !important; }`
+ * qui a une spécificité (0,3,1) et surclasserait un simple
+ * `[data-cms-styled-id="x"]:hover` (0,2,0).
+ *
+ * Avec 4 répétitions de l'attribut + pseudo-classe : spécificité (0,5,1),
+ * qui surclasse toute règle globale raisonnable.
+ */
+function highSpecSelector(styledId: string, pseudo?: string): string {
+  const attr = `[data-cms-styled-id="${styledId}"]`;
+  return `${attr}${attr}${attr}${attr}${pseudo ?? ''}`;
+}
+
+function updateDynamicStylesheet(): void {
+  if (typeof document === 'undefined') return;
+  let styleTag = document.getElementById('cms-element-dynamic-styles') as HTMLStyleElement | null;
+  if (!styleTag) {
+    styleTag = document.createElement('style');
+    styleTag.id = 'cms-element-dynamic-styles';
+    document.head.appendChild(styleTag);
+  }
+  let css = '';
+  dynamicRulesMap.forEach((rule) => {
+    css += rule + '\n';
+  });
+  styleTag.textContent = css;
+}
+
+export function registerElementDynamicStyles(styledId: string, style: ElementStyle): void {
+  if (typeof document === 'undefined') return;
+
+  const hasHover = Boolean(style.hover && Object.keys(style.hover).length > 0);
+  const hasActive = Boolean(style.active && Object.keys(style.active).length > 0);
+
+  // Propriétés de l'état Normal qui doivent passer par le stylesheet (pas inline)
+  // afin que hover/active puissent les écraser via CSS.
+  // RÈGLE CRITIQUE : les styles inline ont une spécificité supérieure à toute
+  // règle stylesheet même avec !important, donc on déplace ces 4 propriétés
+  // dans le stylesheet dès qu'un styledId existe.
+  const hasNormalColor = Boolean(style.color);
+  const hasNormalBg = Boolean(style.backgroundColor);
+  const hasNormalBorderColor = Boolean(style.borderColor);
+  const hasNormalBorderRadius = Boolean(style.borderRadius);
+  const hasNormalBorderWidth = Boolean(style.borderWidth);
+
+  const hasNormalOverridable = hasNormalColor || hasNormalBg || hasNormalBorderColor || hasNormalBorderRadius || hasNormalBorderWidth;
+
+  if (!hasHover && !hasActive && !hasNormalOverridable) {
+    if (dynamicRulesMap.has(styledId)) {
+      dynamicRulesMap.delete(styledId);
+      updateDynamicStylesheet();
+    }
+    return;
+  }
+
+  let rules = '';
+
+  // Sélecteurs à haute spécificité pour surclasser les règles !important
+  // globales du site public (ex: a:hover !important).
+  const base = highSpecSelector(styledId);
+  const baseHover = highSpecSelector(styledId, ':hover');
+  const baseActive = highSpecSelector(styledId, ':active');
+  const baseHoverStar = highSpecSelector(styledId, ':hover *');
+  const baseActiveStar = highSpecSelector(styledId, ':active *');
+  const previewHover = highSpecSelector(styledId, '[data-cms-preview-state="hover"]');
+  const previewActive = highSpecSelector(styledId, '[data-cms-preview-state="active"]');
+  const previewHoverStar = highSpecSelector(styledId, '[data-cms-preview-state="hover"] *');
+  const previewActiveStar = highSpecSelector(styledId, '[data-cms-preview-state="active"] *');
+
+  // ── État Normal : injecté dans le stylesheet pour permettre l'override hover/active ──
+  if (hasNormalOverridable || hasHover || hasActive) {
+    rules += `${base} {\n`;
+    if (hasNormalColor) rules += `  color: ${style.color} !important;\n`;
+    if (hasNormalBg) rules += `  background-color: ${style.backgroundColor} !important;\n`;
+    if (hasNormalBorderColor) rules += `  border-color: ${style.borderColor} !important;\n`;
+    if (hasNormalBorderWidth) {
+      rules += `  border-width: ${style.borderWidth} !important;\n`;
+      rules += `  border-style: ${style.borderStyle || 'solid'} !important;\n`;
+    }
+    if (hasNormalBorderRadius) rules += `  border-radius: ${style.borderRadius} !important;\n`;
+    if (hasHover || hasActive) rules += `  transition: color 0.18s ease-in-out, background-color 0.18s ease-in-out, border-color 0.18s ease-in-out, border-radius 0.18s ease-in-out !important;\n`;
+    rules += `}\n`;
+  }
+
+  // ── État Hover ──
+  if (hasHover && style.hover) {
+    const h = style.hover;
+    rules += `${baseHover}, ${previewHover} {\n`;
+    if (h.color) rules += `  color: ${h.color} !important;\n`;
+    if (h.backgroundColor) rules += `  background-color: ${h.backgroundColor} !important;\n`;
+    if (h.borderColor) rules += `  border-color: ${h.borderColor} !important;\n`;
+    if (h.borderWidth) {
+      rules += `  border-width: ${h.borderWidth} !important;\n`;
+      rules += `  border-style: ${h.borderStyle || 'solid'} !important;\n`;
+    }
+    if (h.borderRadius) rules += `  border-radius: ${h.borderRadius} !important;\n`;
+    rules += `}\n`;
+    // Propagation aux enfants textuels (span, strong, em, a, p, etc.)
+    if (h.color) {
+      rules += `${baseHoverStar}, ${previewHoverStar} { color: inherit !important; }\n`;
+    }
+  }
+
+  // ── État Active (Clic) ──
+  if (hasActive && style.active) {
+    const a = style.active;
+    rules += `${baseActive}, ${previewActive} {\n`;
+    if (a.color) rules += `  color: ${a.color} !important;\n`;
+    if (a.backgroundColor) rules += `  background-color: ${a.backgroundColor} !important;\n`;
+    if (a.borderColor) rules += `  border-color: ${a.borderColor} !important;\n`;
+    if (a.borderWidth) {
+      rules += `  border-width: ${a.borderWidth} !important;\n`;
+      rules += `  border-style: ${a.borderStyle || 'solid'} !important;\n`;
+    }
+    if (a.borderRadius) rules += `  border-radius: ${a.borderRadius} !important;\n`;
+    rules += `}\n`;
+    // Propagation aux enfants textuels
+    if (a.color) {
+      rules += `${baseActiveStar}, ${previewActiveStar} { color: inherit !important; }\n`;
+    }
+  }
+
+  dynamicRulesMap.set(styledId, rules);
+  updateDynamicStylesheet();
+}
+
+export function removeElementDynamicStyles(styledId: string): void {
+  if (dynamicRulesMap.has(styledId)) {
+    dynamicRulesMap.delete(styledId);
+    updateDynamicStylesheet();
+  }
+}
+
 /** Applique un style d'élément sur le nœud DOM correspondant. */
-export function applyElementStyle(el: HTMLElement, style: ElementStyle, lang?: string): void {
+export function applyElementStyle(el: HTMLElement, style: ElementStyle, lang?: string, elementStyledId?: string): void {
   const resolvedText = resolveElementText(style, lang || CMS_SOURCE_LANG);
   if (resolvedText !== undefined && el.textContent !== resolvedText) {
     el.textContent = resolvedText;
@@ -93,19 +248,51 @@ export function applyElementStyle(el: HTMLElement, style: ElementStyle, lang?: s
   // La donnée enregistrée (px) reste la référence desktop ; on la rend fluide
   // à l'affichage via `--cms-text-scale` (1 en desktop, réduite en mobile).
   if (style.fontSize !== undefined) el.style.fontSize = fluidFontSize(style.fontSize);
-  if (style.color !== undefined) el.style.color = style.color;
   if (style.fontWeight !== undefined) el.style.fontWeight = style.fontWeight;
   if (style.fontStyle !== undefined) el.style.fontStyle = style.fontStyle;
   if (style.textDecoration !== undefined) el.style.textDecoration = style.textDecoration;
   if (style.textAlign !== undefined) el.style.textAlign = style.textAlign;
-  if (style.backgroundColor !== undefined) el.style.backgroundColor = style.backgroundColor;
-  if (style.borderRadius !== undefined) el.style.borderRadius = style.borderRadius;
-  if (style.borderColor !== undefined) el.style.borderColor = style.borderColor;
-  if (style.borderWidth !== undefined) {
-    el.style.borderWidth = style.borderWidth;
-    el.style.borderStyle = style.borderStyle || 'solid';
-  }
   if (style.padding !== undefined) el.style.padding = style.padding;
+
+  // Propriétés qui peuvent être surchargées par hover/active :
+  // on les applique en inline SEULEMENT s'il n'y a pas de hover ni de active
+  // (pas de conflit de spécificité). Sinon, elles passent dans le stylesheet
+  // via registerElementDynamicStyles() plus bas dans cette fonction.
+  const hasStateOverrides = Boolean(style.hover || style.active);
+  const resolvedStyledId = elementStyledId || el.getAttribute('data-cms-styled-id') || '';
+  const useStylesheet = hasStateOverrides || Boolean(resolvedStyledId);
+
+  if (!useStylesheet) {
+    // Pas de hover/active → inline direct (comportement historique préservé)
+    if (style.color !== undefined) el.style.color = style.color;
+    if (style.backgroundColor !== undefined) el.style.backgroundColor = style.backgroundColor;
+    if (style.borderRadius !== undefined) el.style.borderRadius = style.borderRadius;
+    if (style.borderColor !== undefined) el.style.borderColor = style.borderColor;
+    if (style.borderWidth !== undefined) {
+      el.style.borderWidth = style.borderWidth;
+      el.style.borderStyle = style.borderStyle || 'solid';
+    }
+  } else {
+    // Hover/active présents → on RETIRE les styles inline conflictuels
+    // (ils seront portés par le stylesheet, voir registerElementDynamicStyles)
+    el.style.removeProperty('color');
+    el.style.removeProperty('background-color');
+    el.style.removeProperty('border-color');
+    el.style.removeProperty('border-radius');
+    // NB: borderWidth/borderStyle ne sont pas override-ables par pseudo-class
+    // dans le même sélecteur, donc on les laisse inline si aucun hover override.
+    const hoverHasBorder = Boolean(style.hover?.borderWidth);
+    const activeHasBorder = Boolean(style.active?.borderWidth);
+    if (!hoverHasBorder && !activeHasBorder) {
+      if (style.borderWidth !== undefined) {
+        el.style.borderWidth = style.borderWidth;
+        el.style.borderStyle = style.borderStyle || 'solid';
+      }
+    } else {
+      el.style.removeProperty('border-width');
+      el.style.removeProperty('border-style');
+    }
+  }
 
   // Gestion universelle des liens & boutons
   const anchor = el.tagName === 'A' ? (el as HTMLAnchorElement) : (el.closest('a') as HTMLAnchorElement | null);
@@ -161,6 +348,25 @@ export function applyElementStyle(el: HTMLElement, style: ElementStyle, lang?: s
     el.style.removeProperty('transform');
     el.removeAttribute(OFFSET_MARK);
   }
+
+  // Gestion des styles dynamiques (états Normal/Hover/Active dans le stylesheet)
+  const styledId = elementStyledId || el.getAttribute('data-cms-styled-id');
+  const hasOverridableNormal = Boolean(style.color || style.backgroundColor || style.borderColor || style.borderRadius || style.borderWidth);
+  const shouldRegister = Boolean(style.hover || style.active) || hasOverridableNormal;
+
+  // Ne pas appeler registerElementDynamicStyles quand le style passé ne contient
+  // aucune propriété à enregistrer (pas de hover/active, pas de propriété
+  // overridable). Cela éviterait d'effacer par erreur des règles hover/active
+  // déjà présentes (cas de VisualInPlaceEditor qui appelle applyElementStyle
+  // avec un style partiel contenant uniquement du texte ou un src d'image).
+  if (styledId && shouldRegister) {
+    el.setAttribute('data-cms-styled-id', styledId);
+    registerElementDynamicStyles(styledId, style);
+  } else if (shouldRegister && !styledId) {
+    const autoId = `cms_el_${Math.random().toString(36).slice(2, 9)}`;
+    el.setAttribute('data-cms-styled-id', autoId);
+    registerElementDynamicStyles(autoId, style);
+  }
 }
 
 /**
@@ -190,7 +396,10 @@ export function useCmsElementStyles(): void {
 
         forEachElementInSection(node, (el, key) => {
           const style = bag[key];
-          if (style) applyElementStyle(el, style, currentLang);
+          if (style) {
+            const styledId = makeElementStyledId(sectionKey, key);
+            applyElementStyle(el, style, currentLang, styledId);
+          }
         });
       }
     }

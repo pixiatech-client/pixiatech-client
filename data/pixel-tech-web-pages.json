@@ -4,7 +4,7 @@
       "id": "home",
       "name": "home",
       "slug": "/home",
-      "updatedAt": "2026-10-27T22:44:43.898Z",
+      "updatedAt": "2026-10-31T18:42:44.167Z",
       "sections": {
         "pixia-web": {
           "text_1790257213042": "sdsdsdsdÉDITEUR DIRECT : CLIQUEZ SUR UN TEXTE OU UNE IMAGE",
@@ -258,12 +258,16 @@
               "backgroundColor": "transparent"
             },
             "primaryCta": {
-              "backgroundColor": "transparent",
-              "color": "#ffffff",
               "borderRadius": "9999px",
-              "borderWidth": "1px",
-              "borderStyle": "solid",
-              "borderColor": "#c5f81b"
+              "color": "#ffffff",
+              "backgroundColor": "#000000",
+              "hover": {
+                "color": "#b9f005",
+                "borderRadius": "12px"
+              },
+              "active": {
+                "color": "#eb0f0f"
+              }
             }
           },
           "slideImage2": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2Fconf_rence-futuriste-sous-les-lumi_res-bleues_s3bsi.webp?alt=media",
@@ -999,7 +1003,8 @@
           "l3CamPosY": "-16.2",
           "l3XShift": "12.7",
           "l2CamPosX": "1",
-          "l2CamPosY": "-6.7"
+          "l2CamPosY": "-6.7",
+          "videoUrl": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fshowreel%2Fvideos%2FWhatsApp_Video_2026-07-31_at_09.29.08_o7ypsi.mp4?alt=media"
         },
         "technology": {
           "_elements": {
@@ -1199,6 +1204,13 @@
           "visible": false,
           "layout": {
             "visible": false
+          }
+        },
+        "footer": {
+          "_elements": {
+            "footer_col1_link_1": {
+              "text_fr": "dfsdfsdfsdfsdf"
+            }
           }
         }
       },
@@ -1545,5 +1557,5 @@
       }
     }
   },
-  "updatedAt": "2026-10-27T22:44:44.013Z"
+  "updatedAt": "2026-10-31T18:42:45.131Z"
 }

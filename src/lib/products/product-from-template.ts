@@ -449,6 +449,28 @@ export async function buildProductFromMasterTemplate(
     }));
   }
 
+  // Intégrer les groupes et caractéristiques découverts dans le PDF
+  if (overlay.specs?.groups && overlay.specs.groups.length > 0) {
+    for (const ovGroup of overlay.specs.groups) {
+      const existingGroup = finalGroups.find(
+        (g) => g.id === ovGroup.id || g.label.toLowerCase() === ovGroup.label.toLowerCase()
+      );
+      if (existingGroup) {
+        for (const ovRow of ovGroup.rows) {
+          if (!existingGroup.rows.some((r) => r.key === ovRow.key)) {
+            existingGroup.rows.push({ key: ovRow.key, label: ovRow.label });
+          }
+        }
+      } else {
+        finalGroups.push({
+          id: ovGroup.id,
+          label: ovGroup.label,
+          rows: ovGroup.rows.map((r) => ({ key: r.key, label: r.label })),
+        });
+      }
+    }
+  }
+
   // `finalGroups` est désormais la structure FINALE, et elle ne vient que du
   // master : les catégories, les lignes, leur ordre et leurs libellés. Le PDF
   // n'y apporte plus rien. Il ne reste qu'à y ranger les VALEURS, et une valeur
@@ -495,11 +517,10 @@ export async function buildProductFromMasterTemplate(
     master.name?.toLowerCase().includes('modèle de base');
 
   if (overlayModels.length > 0) {
-    // Les variantes du PDF deviennent les colonnes produit
+    // Le nombre de variantes du produit final est déterminé EXCLUSIVEMENT par le PDF
     finalModels = overlayModels.map(toModel);
-  } else if (master.specs?.models && master.specs.models.length > 0 && !isMasterSystem) {
-    // Sinon modèles du master (uniquement si ce n'est pas le template maître système,
-    // afin de ne pas injecter 9 variantes parasites quand le PDF n'en a pas détecté)
+  } else if (master.specs?.models && master.specs.models.length > 0 && !isMasterSystem && !overlay.specs) {
+    // Uniquement si aucun PDF de specs n'a été fourni et que ce n'est pas le template maître système
     finalModels = master.specs.models.filter((m) => !isPlaceholder(m.name)).map(toModel);
   }
 
@@ -552,9 +573,18 @@ export async function buildProductFromMasterTemplate(
     '';
 
   // --- Assemblage du produit complet ---
+  const computedVariants =
+    finalModels.length > 0
+      ? finalModels.map((m) => ({
+          name: m.name,
+          value: m.specs['pitch'] || m.specs['pixelpitch'] || m.name,
+          reference: m.name,
+        }))
+      : (overlay.variants ?? (isMasterSystem ? [] : (master.variants ?? [])));
+
   const result: Product = {
     ...baseMerged,
-    ...(isMasterSystem ? { variants: overlay.variants ?? [] } : {}),
+    variants: computedVariants,
     name,
     ...(series ? { series } : {}),
     ...(company ? { company } : {}),

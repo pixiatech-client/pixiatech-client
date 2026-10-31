@@ -1856,14 +1856,10 @@ function ProductForm({
 
       if (existing) {
         setPdfReanalysis(built);
-        if (built.specs?.models && built.specs.models.length > 0) {
-          setModels(built.specs.models);
-        }
+        setModels(built.specs?.models ?? []);
       } else {
         setPdfAnalysis(built);
-        if (built.specs?.models && built.specs.models.length > 0) {
-          setModels(built.specs.models);
-        }
+        setModels(built.specs?.models ?? []);
         // Le nom pré-rempli vient du PDF, PAS du produit construit. `built`
         // fusionne le template maître, et sa ligne 239 fait
         // `overlay.name || master.name` : quand le parser n'a rien lu, c'est
@@ -1887,6 +1883,11 @@ function ProductForm({
     }
     setSaving(true);
     try {
+      const nextSpecs: ProductSpecs = {
+        ...(pdfAnalysis?.specs ?? {}),
+        groups: pdfAnalysis?.specs?.groups ?? [],
+        models,
+      };
       const product = await createProduct({
         ...(pdfAnalysis ?? {}),
         name: cleanName,
@@ -1896,6 +1897,12 @@ function ProductForm({
         environmentCategoryIds,
         applicationCategoryIds,
         categoryIds,
+        specs: nextSpecs,
+        variants: models.map((m) => ({
+          name: m.name,
+          value: m.specs['pitch'] || m.specs['pixelpitch'] || m.name,
+          reference: m.name,
+        })),
       });
 
       // On enchaîne sur la version la plus récente du document à chaque étape.
@@ -1983,6 +1990,11 @@ function ProductForm({
           models,
         };
       }
+      body.variants = models.map((m) => ({
+        name: m.name,
+        value: m.specs['pitch'] || m.specs['pixelpitch'] || m.name,
+        reference: m.name,
+      }));
       // La galerie est l'état local de référence. La réanalyse a été construite
       // sur le produit tel qu'il était À L'OUVERTURE de l'éditeur : sans cette
       // ligne, enregistrer une réanalyse annulait silencieusement les photos

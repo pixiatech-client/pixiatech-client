@@ -38,7 +38,14 @@ import {
   subscribeSelectedElement,
   type SelectedElement,
 } from './section-registry';
-import { applyElementStyle, readElementStyle, type ElementStyle } from './useCmsElementStyles';
+import {
+  applyElementStyle,
+  readElementStyle,
+  makeElementStyledId,
+  removeElementDynamicStyles,
+  type ElementStyle,
+  type ElementVisualState,
+} from './useCmsElementStyles';
 import { normalizeLang } from '@/lib/site-web/cms-i18n';
 
 const NUDGE = 4;
@@ -77,8 +84,8 @@ export const FloatingElementToolbar: React.FC<{
 
   const [selected, setSelected] = useState<SelectedElement | null>(getSelectedElement());
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
-  const [showColors, setShowColors] = useState(false);
-  const [showBoxStyles, setShowBoxStyles] = useState(false);
+  const [showPalettePanel, setShowPalettePanel] = useState(false);
+  const [paletteStateTab, setPaletteStateTab] = useState<'normal' | 'hover' | 'active'>('normal');
   const [showLinkEditor, setShowLinkEditor] = useState(false);
   const [coords, setCoords] = useState<{ top: number; left: number; placeBelow: boolean } | null>(null);
   const [dragPosition, setDragPosition] = useState<{ top: number; left: number } | null>(null);
@@ -91,6 +98,11 @@ export const FloatingElementToolbar: React.FC<{
   // Réinitialise la position personnalisée lorsqu'un nouvel élément est sélectionné
   useEffect(() => {
     setDragPosition(null);
+    setPaletteStateTab('normal');
+    return () => {
+      if (selected?.el) selected.el.removeAttribute('data-cms-preview-state');
+      if (selected?.clickableEl) selected.clickableEl.removeAttribute('data-cms-preview-state');
+    };
   }, [selected?.elementKey, selected?.sectionKey]);
 
   const handleDragStart = useCallback(
@@ -238,10 +250,14 @@ export const FloatingElementToolbar: React.FC<{
         nextBag[clickableElementKey] = { ...currentBag[clickableElementKey], ...patch };
       }
 
-      // Rendu immédiat dans le DOM
-      applyElementStyle(selected.el, nextStyle, normalizeLang(currentLang));
+      // Rendu immédiat dans le DOM avec identifiant de style dynamique
+      const styledId = makeElementStyledId(sectionKey, elementKey);
+      applyElementStyle(selected.el, nextStyle, normalizeLang(currentLang), styledId);
       if (selected.clickableEl) {
-        applyElementStyle(selected.clickableEl, nextStyle, normalizeLang(currentLang));
+        const clickStyledId = clickableElementKey
+          ? makeElementStyledId(sectionKey, clickableElementKey)
+          : styledId;
+        applyElementStyle(selected.clickableEl, nextStyle, normalizeLang(currentLang), clickStyledId);
       }
 
       updateSectionField(sectionKey, '_elements', nextBag);
@@ -257,6 +273,54 @@ export const FloatingElementToolbar: React.FC<{
     },
     [selected, currentPageData, currentLang, updateSectionField, saveCurrentPage]
   );
+
+  const switchPaletteStateTab = useCallback(
+    (nextTab: 'normal' | 'hover' | 'active') => {
+      setPaletteStateTab(nextTab);
+      const targets = [selected?.el, selected?.clickableEl].filter(Boolean) as HTMLElement[];
+      for (const target of targets) {
+        if (nextTab === 'normal') {
+          target.removeAttribute('data-cms-preview-state');
+        } else {
+          target.setAttribute('data-cms-preview-state', nextTab);
+        }
+      }
+    },
+    [selected]
+  );
+
+  const commitVisualProperty = useCallback(
+    (prop: keyof ElementVisualState, val: string | undefined) => {
+      if (paletteStateTab === 'normal') {
+        commit({ [prop]: val } as Partial<ElementStyle>);
+      } else if (paletteStateTab === 'hover') {
+        const curHover = { ...(style.hover || {}) };
+        if (val === undefined || val === '') {
+          delete curHover[prop];
+        } else {
+          curHover[prop] = val;
+        }
+        commit({ hover: Object.keys(curHover).length > 0 ? curHover : undefined });
+      } else if (paletteStateTab === 'active') {
+        const curActive = { ...(style.active || {}) };
+        if (val === undefined || val === '') {
+          delete curActive[prop];
+        } else {
+          curActive[prop] = val;
+        }
+        commit({ active: Object.keys(curActive).length > 0 ? curActive : undefined });
+      }
+    },
+    [paletteStateTab, commit, style.hover, style.active]
+  );
+
+  const clearStateOverrides = useCallback(() => {
+    if (paletteStateTab === 'hover') {
+      commit({ hover: undefined });
+    } else if (paletteStateTab === 'active') {
+      commit({ active: undefined });
+    }
+  }, [paletteStateTab, commit]);
 
   const nudge = useCallback(
     (dx: number, dy: number) => {
@@ -322,6 +386,12 @@ export const FloatingElementToolbar: React.FC<{
       target.style.borderStyle = '';
       target.style.padding = '';
       target.style.transform = '';
+      target.removeAttribute('data-cms-preview-state');
+      const sId = target.getAttribute('data-cms-styled-id');
+      if (sId) {
+        removeElementDynamicStyles(sId);
+        target.removeAttribute('data-cms-styled-id');
+      }
     }
 
     updateSectionField(sectionKey, '_elements', currentBag);
@@ -334,6 +404,26 @@ export const FloatingElementToolbar: React.FC<{
       });
     }, SAVE_DEBOUNCE_MS);
   }, [selected, currentPageData, updateSectionField, saveCurrentPage]);
+
+  const currentVisualState: ElementVisualState = useMemo(() => {
+    if (paletteStateTab === 'hover') return style.hover || {};
+    if (paletteStateTab === 'active') return style.active || {};
+    return {
+      color: style.color,
+      backgroundColor: style.backgroundColor,
+      borderColor: style.borderColor,
+      borderWidth: style.borderWidth,
+      borderStyle: style.borderStyle,
+      borderRadius: style.borderRadius,
+    };
+  }, [paletteStateTab, style]);
+
+  const hasHoverStyles = Boolean(
+    style.hover && Object.values(style.hover).some((v) => v !== undefined && v !== '')
+  );
+  const hasActiveStyles = Boolean(
+    style.active && Object.values(style.active).some((v) => v !== undefined && v !== '')
+  );
 
   if (!isEditing || !isAdmin || !selected || !coords) return null;
 
@@ -499,115 +589,19 @@ export const FloatingElementToolbar: React.FC<{
               ))}
             </div>
 
-            {/* Couleurs texte et fond */}
+            {/* Palette complète : Normal, Survol, Clic (Couleur, Fond, Bordures, Arrondis) */}
             <div className="flex items-center gap-1 px-1 border-l border-[#2b2b28]">
               <button
                 type="button"
-                onClick={() => setShowColors((v) => !v)}
-                className={`${iconBtn} ${showColors ? on : off}`}
-                title="Palette de couleurs (texte & fond)"
+                onClick={() => setShowPalettePanel((v) => !v)}
+                className={`${iconBtn} ${showPalettePanel ? on : off}`}
+                title="Palette & Styles visuels (Couleurs, Fond, Bordures, Arrondis — Normal, Survol, Clic)"
               >
                 <Palette className="w-3.5 h-3.5" />
+                {(hasHoverStyles || hasActiveStyles || Boolean(style.backgroundColor || style.borderColor || style.borderRadius)) && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#C3F910] ml-0.5" />
+                )}
               </button>
-              {showColors && (
-                <div className="flex items-center gap-1.5 bg-[#181816] p-1 rounded-lg border border-[#333]">
-                  <label
-                    className="relative w-5 h-5 rounded overflow-hidden border border-[#444] cursor-pointer flex items-center justify-center"
-                    title="Couleur du texte"
-                    style={{ background: style.color || '#ffffff' }}
-                  >
-                    <Type className="w-3 h-3 text-black mix-blend-difference" />
-                    <input
-                      type="color"
-                      value={style.color || '#ffffff'}
-                      onChange={(e) => commit({ color: e.target.value })}
-                      className="absolute inset-0 opacity-0 cursor-pointer"
-                    />
-                  </label>
-                  <label
-                    className="relative w-5 h-5 rounded overflow-hidden border border-[#444] cursor-pointer flex items-center justify-center"
-                    title="Couleur de fond"
-                    style={{ background: style.backgroundColor || 'transparent' }}
-                  >
-                    <span className="w-3 h-2 rounded-[1px] border border-white/80" />
-                    <input
-                      type="color"
-                      value={
-                        style.backgroundColor && style.backgroundColor.startsWith('#')
-                          ? style.backgroundColor
-                          : '#111111'
-                      }
-                      onChange={(e) => commit({ backgroundColor: e.target.value })}
-                      className="absolute inset-0 opacity-0 cursor-pointer"
-                    />
-                  </label>
-
-                  {/* Bouton pour revenir directement au fond transparent */}
-                  <button
-                    type="button"
-                    onClick={() => commit({ backgroundColor: 'transparent' })}
-                    className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-[#242422] hover:bg-[#333330] text-[#E0DFDA] hover:text-[#C3F910] border border-[#3A3A36] transition-colors cursor-pointer"
-                    title="Rétablir un fond transparent"
-                  >
-                    <Ban className="w-3 h-3 text-[#ff5555]" />
-                    <span>Fond transparent</span>
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Style Boîte (Arrondis, Bordures, Padding) */}
-            <div className="flex items-center gap-1 px-1 border-l border-[#2b2b28]">
-              <button
-                type="button"
-                onClick={() => setShowBoxStyles((v) => !v)}
-                className={`${iconBtn} ${showBoxStyles ? on : off}`}
-                title="Bordures, Coins arrondis & Espacements"
-              >
-                <Sliders className="w-3.5 h-3.5" />
-              </button>
-              {showBoxStyles && (
-                <div className="flex items-center gap-1.5 bg-[#181816] p-1 rounded-lg border border-[#333] text-[11px] font-mono">
-                  {/* Arrondi */}
-                  <select
-                    value={style.borderRadius || '0px'}
-                    onChange={(e) => commit({ borderRadius: e.target.value })}
-                    className="bg-[#111] border border-[#444] rounded px-1.5 py-0.5 text-white"
-                    title="Rayon des coins"
-                  >
-                    <option value="0px">Coins droits</option>
-                    <option value="4px">Arrondi 4px</option>
-                    <option value="8px">Arrondi 8px</option>
-                    <option value="12px">Arrondi 12px</option>
-                    <option value="9999px">Pilule (Rond)</option>
-                  </select>
-                  {/* Bordure */}
-                  <select
-                    value={style.borderWidth || '0px'}
-                    onChange={(e) => commit({ borderWidth: e.target.value, borderStyle: 'solid' })}
-                    className="bg-[#111] border border-[#444] rounded px-1.5 py-0.5 text-white"
-                    title="Bordure"
-                  >
-                    <option value="0px">Sans bordure</option>
-                    <option value="1px">Bordure 1px</option>
-                    <option value="2px">Bordure 2px</option>
-                  </select>
-                  {style.borderWidth && style.borderWidth !== '0px' && (
-                    <label
-                      className="relative w-5 h-5 rounded overflow-hidden border border-[#444] cursor-pointer"
-                      title="Couleur de bordure"
-                      style={{ background: style.borderColor || '#C3F910' }}
-                    >
-                      <input
-                        type="color"
-                        value={style.borderColor || '#C3F910'}
-                        onChange={(e) => commit({ borderColor: e.target.value })}
-                        className="absolute inset-0 opacity-0 cursor-pointer"
-                      />
-                    </label>
-                  )}
-                </div>
-              )}
             </div>
           </>
         )}
@@ -735,6 +729,241 @@ export const FloatingElementToolbar: React.FC<{
           </button>
         </div>
       </div>
+
+      {/* ── Ligne 2 (Conditionnelle) : Panneau Complet Palette & Styles Visuels (Normal, Survol, Clic) ── */}
+      {showPalettePanel && (
+        <div className="flex flex-col gap-2.5 pt-2 border-t border-[#2b2b28] bg-[#141412] p-3 rounded-lg animate-in slide-in-from-top-1 text-xs">
+          {/* 1. Sélecteur d'état : Normal | Survol (Hover) | Clic (Active) */}
+          <div className="flex items-center justify-between gap-2 flex-wrap border-b border-[#2b2b28] pb-2">
+            <div className="flex items-center gap-1 bg-[#0a0a09] p-0.5 rounded-lg border border-[#2b2b28]">
+              <button
+                type="button"
+                onClick={() => switchPaletteStateTab('normal')}
+                className={`px-2.5 py-1 rounded-md font-mono text-[11px] font-bold transition-all cursor-pointer ${
+                  paletteStateTab === 'normal'
+                    ? 'bg-[#C3F910] text-[#080808] shadow-sm'
+                    : 'text-[#aaa] hover:text-white hover:bg-[#1a1a17]'
+                }`}
+              >
+                Normal
+              </button>
+              <button
+                type="button"
+                onClick={() => switchPaletteStateTab('hover')}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md font-mono text-[11px] font-bold transition-all cursor-pointer ${
+                  paletteStateTab === 'hover'
+                    ? 'bg-[#C3F910] text-[#080808] shadow-sm'
+                    : 'text-[#aaa] hover:text-white hover:bg-[#1a1a17]'
+                }`}
+              >
+                <span>Survol (Hover)</span>
+                {hasHoverStyles && (
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full ${
+                      paletteStateTab === 'hover' ? 'bg-[#080808]' : 'bg-[#C3F910]'
+                    }`}
+                    title="Styles de survol personnalisés définis"
+                  />
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => switchPaletteStateTab('active')}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md font-mono text-[11px] font-bold transition-all cursor-pointer ${
+                  paletteStateTab === 'active'
+                    ? 'bg-[#C3F910] text-[#080808] shadow-sm'
+                    : 'text-[#aaa] hover:text-white hover:bg-[#1a1a17]'
+                }`}
+              >
+                <span>Clic (Active)</span>
+                {hasActiveStyles && (
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full ${
+                      paletteStateTab === 'active' ? 'bg-[#080808]' : 'bg-[#C3F910]'
+                    }`}
+                    title="Styles de clic personnalisés définis"
+                  />
+                )}
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-[10px] text-[#888]">
+                {paletteStateTab === 'normal'
+                  ? '• État par défaut'
+                  : paletteStateTab === 'hover'
+                  ? '👁 Prévisualisation active : SURVOL'
+                  : '👁 Prévisualisation active : CLIC'}
+              </span>
+              {paletteStateTab !== 'normal' && (
+                <button
+                  type="button"
+                  onClick={clearStateOverrides}
+                  className="text-[10px] font-mono text-[#ff7777] hover:text-[#ffaaaa] hover:underline cursor-pointer"
+                  title="Effacer les styles personnalisés de cet état et réhériter de l'état normal"
+                >
+                  Effacer cet état
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* 2. Contrôles de style pour l'état sélectionné */}
+          <div className="flex items-center gap-3 flex-wrap">
+            {/* Groupe Couleurs */}
+            <div className="flex items-center gap-2 bg-[#0a0a09] px-2.5 py-1.5 rounded border border-[#262624]">
+              {/* Couleur Texte */}
+              <div className="flex items-center gap-1.5" title="Couleur du texte">
+                <span className="font-mono text-[10px] text-[#888] uppercase">Texte</span>
+                <label
+                  className="relative w-5 h-5 rounded overflow-hidden border border-[#444] cursor-pointer flex items-center justify-center shrink-0"
+                  style={{ background: currentVisualState.color || style.color || '#ffffff' }}
+                >
+                  <Type className="w-3 h-3 text-black mix-blend-difference" />
+                  <input
+                    type="color"
+                    value={
+                      currentVisualState.color && currentVisualState.color.startsWith('#')
+                        ? currentVisualState.color
+                        : style.color && style.color.startsWith('#')
+                        ? style.color
+                        : '#ffffff'
+                    }
+                    onChange={(e) => commitVisualProperty('color', e.target.value)}
+                    className="absolute inset-0 opacity-0 cursor-pointer"
+                  />
+                </label>
+              </div>
+
+              <div className="w-[1px] h-4 bg-[#262624]" />
+
+              {/* Couleur Fond */}
+              <div className="flex items-center gap-1.5" title="Couleur de fond">
+                <span className="font-mono text-[10px] text-[#888] uppercase">Fond</span>
+                <label
+                  className="relative w-5 h-5 rounded overflow-hidden border border-[#444] cursor-pointer flex items-center justify-center shrink-0"
+                  style={{
+                    background:
+                      currentVisualState.backgroundColor || style.backgroundColor || 'transparent',
+                  }}
+                >
+                  <span className="w-3 h-2 rounded-[1px] border border-white/80" />
+                  <input
+                    type="color"
+                    value={
+                      currentVisualState.backgroundColor &&
+                      currentVisualState.backgroundColor.startsWith('#')
+                        ? currentVisualState.backgroundColor
+                        : style.backgroundColor && style.backgroundColor.startsWith('#')
+                        ? style.backgroundColor
+                        : '#111111'
+                    }
+                    onChange={(e) => commitVisualProperty('backgroundColor', e.target.value)}
+                    className="absolute inset-0 opacity-0 cursor-pointer"
+                  />
+                </label>
+                <button
+                  type="button"
+                  onClick={() => commitVisualProperty('backgroundColor', 'transparent')}
+                  className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-[#1c1c1a] hover:bg-[#2b2b28] text-[#d0cfca] hover:text-[#C3F910] border border-[#333] transition-colors cursor-pointer"
+                  title="Fond transparent"
+                >
+                  <Ban className="w-2.5 h-2.5 text-[#ff5555]" />
+                  <span>Transparent</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Groupe Bordure & Arrondi */}
+            <div className="flex items-center gap-2 bg-[#0a0a09] px-2.5 py-1.5 rounded border border-[#262624]">
+              {/* Arrondi */}
+              <div className="flex items-center gap-1.5" title="Rayon des coins (Arrondi)">
+                <span className="font-mono text-[10px] text-[#888] uppercase">Arrondi</span>
+                <select
+                  value={currentVisualState.borderRadius || (paletteStateTab === 'normal' ? '0px' : '')}
+                  onChange={(e) => commitVisualProperty('borderRadius', e.target.value)}
+                  className="bg-[#181816] border border-[#333] rounded px-1.5 py-0.5 text-white font-mono text-[11px] cursor-pointer"
+                >
+                  {paletteStateTab !== 'normal' && <option value="">Hérité (Défaut)</option>}
+                  <option value="0px">Coins droits (0px)</option>
+                  <option value="4px">Arrondi 4px</option>
+                  <option value="8px">Arrondi 8px</option>
+                  <option value="12px">Arrondi 12px</option>
+                  <option value="16px">Arrondi 16px</option>
+                  <option value="9999px">Pilule (Rond)</option>
+                </select>
+              </div>
+
+              <div className="w-[1px] h-4 bg-[#262624]" />
+
+              {/* Bordure Épaisseur */}
+              <div className="flex items-center gap-1.5" title="Épaisseur de bordure">
+                <span className="font-mono text-[10px] text-[#888] uppercase">Bordure</span>
+                <select
+                  value={currentVisualState.borderWidth || (paletteStateTab === 'normal' ? '0px' : '')}
+                  onChange={(e) => {
+                    const width = e.target.value;
+                    commitVisualProperty('borderWidth', width);
+                    if (width && width !== '0px' && !currentVisualState.borderStyle) {
+                      commitVisualProperty('borderStyle', 'solid');
+                    }
+                  }}
+                  className="bg-[#181816] border border-[#333] rounded px-1.5 py-0.5 text-white font-mono text-[11px] cursor-pointer"
+                >
+                  {paletteStateTab !== 'normal' && <option value="">Héritée</option>}
+                  <option value="0px">Sans bordure</option>
+                  <option value="1px">1px</option>
+                  <option value="2px">2px</option>
+                  <option value="3px">3px</option>
+                  <option value="4px">4px</option>
+                </select>
+              </div>
+
+              {/* Bordure Style & Couleur si épaisseur > 0 */}
+              {Boolean(
+                currentVisualState.borderWidth &&
+                  currentVisualState.borderWidth !== '0px'
+              ) && (
+                <>
+                  <select
+                    value={currentVisualState.borderStyle || 'solid'}
+                    onChange={(e) => commitVisualProperty('borderStyle', e.target.value)}
+                    className="bg-[#181816] border border-[#333] rounded px-1.5 py-0.5 text-white font-mono text-[11px] cursor-pointer"
+                    title="Style de la bordure"
+                  >
+                    <option value="solid">Plein</option>
+                    <option value="dashed">Tirets</option>
+                    <option value="dotted">Pointillés</option>
+                  </select>
+
+                  <label
+                    className="relative w-5 h-5 rounded overflow-hidden border border-[#444] cursor-pointer shrink-0"
+                    title="Couleur de bordure"
+                    style={{
+                      background:
+                        currentVisualState.borderColor || style.borderColor || '#C3F910',
+                    }}
+                  >
+                    <input
+                      type="color"
+                      value={
+                        currentVisualState.borderColor &&
+                        currentVisualState.borderColor.startsWith('#')
+                          ? currentVisualState.borderColor
+                          : style.borderColor && style.borderColor.startsWith('#')
+                          ? style.borderColor
+                          : '#C3F910'
+                      }
+                      onChange={(e) => commitVisualProperty('borderColor', e.target.value)}
+                      className="absolute inset-0 opacity-0 cursor-pointer"
+                    />
+                  </label>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Ligne 2 (Conditionnelle) : Panneau Complet d'Édition du Bouton / Lien ── */}
       {showLinkEditor && (

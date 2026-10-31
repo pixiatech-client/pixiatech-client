@@ -471,7 +471,19 @@ const STATIC_TEXTS = new Set(
 
 /** Le gabarit marque-t-il cette page comme documentation (et non produit) ? */
 function isDocumentationPage(lines: PdfLine[]): boolean {
-  return lines.some((l) => normLabel(l.text).startsWith('STRUCTURE DE REFERENCE'));
+  const hasRefDoc = lines.some((l) => normLabel(l.text).startsWith('STRUCTURE DE REFERENCE'));
+  if (!hasRefDoc) return false;
+  // Ne pas rejeter la page si elle contient de vraies données (nom de modèle ou caractéristiques)
+  const hasRealData = lines.some((l) => {
+    const t = l.text.trim();
+    if (!t) return false;
+    return (
+      /(?:PXT|LED|P\d|mm|nits|W|Hz|IP\d|V|px|\d+\s*[x×]\s*\d+)/i.test(t) &&
+      !isStaticText(t) &&
+      isFilledSlot(t)
+    );
+  });
+  return !hasRealData;
 }
 
 /** Pied de page récurrent. */
@@ -602,11 +614,50 @@ function segmentBySections(pages: ParsedPage[]): Map<SectionKey, PdfLine[]> {
  * exactement à un titre connu du gabarit.
  */
 function matchSectionTitle(line: PdfLine): SectionKey | null {
-  if (line.items.length !== 1) return null;
-  const item = line.items[0];
-  if (item.x < HOOK_MIN_X || item.x > HOOK_MAX_X) return null;
   const n = normLabel(line.text);
-  return SECTION_TITLES.find((s) => s.match === n)?.key ?? null;
+  const clean = n.replace(/^(?:SECTION\s*)?(?:0?[1-9]\s*[-|:]?\s*)+/, '').trim();
+
+  // 1. Correspondance exacte avec les ancres du gabarit
+  for (const s of SECTION_TITLES) {
+    if (clean === s.match || clean.startsWith(s.match)) {
+      return s.key;
+    }
+  }
+
+  // 2. Variantes courantes pour la section 04 (spécifications / matrice)
+  if (
+    clean.startsWith('CARACTERISTIQUES TECHNIQUES') ||
+    clean.startsWith('SPECIFICATIONS TECHNIQUES') ||
+    clean === 'SPECIFICATIONS' ||
+    clean.startsWith('SPECIFICATIONS') ||
+    clean === 'CARACTERISTIQUES' ||
+    clean.startsWith('CARACTERISTIQUES') ||
+    clean === 'MATRICE TECHNIQUE' ||
+    clean === 'MATRICE DES CARACTERISTIQUES' ||
+    clean === 'TABLEAU TECHNIQUE' ||
+    clean.includes('CARACTERISTIQUES TECHNIQUES') ||
+    clean.includes('SPECIFICATIONS TECHNIQUES')
+  ) {
+    if (!clean.includes('EXACTEMENT') && !clean.includes('RECOMMAND') && !clean.includes('CONFIRME')) {
+      return 'specs';
+    }
+  }
+
+  // 3. Variantes courantes pour les autres sections
+  if (clean === 'APERCU' || clean.startsWith('APERCU PRODUIT') || clean === 'OVERVIEW' || clean.includes('APERCU PRODUIT')) return 'overview';
+  if (clean === 'CONCEPTION' || clean.startsWith('CONCEPTION FORMAT') || clean === 'DESIGN' || clean.includes('CONCEPTION FORMAT')) return 'design';
+  if (clean.startsWith('POINTS FORTS') || clean === 'FEATURES' || clean.includes('POINTS FORTS TECHNIQUES')) return 'features';
+  if (clean.startsWith('REFERENCES') || clean.startsWith('REALISATIONS') || clean.startsWith('PROJETS') || clean === 'FIELDWORK' || clean.includes('REFERENCES TERRAIN')) return 'fieldwork';
+
+  // Repli strict sur item unique et coordonnées géométriques (gabarit officiel)
+  if (line.items.length === 1) {
+    const item = line.items[0];
+    if (item.x >= HOOK_MIN_X && item.x <= HOOK_MAX_X) {
+      return SECTION_TITLES.find((s) => s.match === n)?.key ?? null;
+    }
+  }
+
+  return null;
 }
 
 // ===========================================================================
@@ -1424,33 +1475,45 @@ function isGroupHeaderLine(line: PdfLine): boolean {
  * la mauvaise variante.
  */
 /** Une ligne dont tous les items sont dans la zone des colonnes de la matrice. */
+function isSpecLabelItem(str: string): boolean {
+  const n = normLabel(str);
+  if (!n) return true;
+  return (
+    n === 'SPEC' ||
+    n === 'SPECS' ||
+    n === 'MODELE' ||
+    n === 'MODELES' ||
+    n === 'REFERENCE' ||
+    n === 'REFERENCES' ||
+    n === 'GAMME' ||
+    n === 'GAMMES' ||
+    n === 'PRODUIT' ||
+    n === 'TYPE' ||
+    n === 'CARACTERISTIQUE' ||
+    n === 'CARACTERISTIQUES' ||
+    n === 'PARAMETRE' ||
+    n === 'PARAMETRES' ||
+    n.startsWith('TABLEAU') ||
+    n.startsWith('SPECIFICATION')
+  );
+}
+
 function isHeaderZoneLine(line: PdfLine): boolean {
   return line.items.length > 0 && line.items.every((i) => i.x >= SPEC_COL_MIN_X);
 }
 
-/** Libellé statique « SPEC » posé à gauche de la zone colonnes. */
 function isSpecLabelLine(line: PdfLine): boolean {
-  return line.items.length === 1 && normLabel(line.text) === 'SPEC';
+  return line.items.length === 1 && isSpecLabelItem(line.text);
 }
 
-/** Items d'une ligne appartenant réellement à la zone colonnes. */
 function headerZoneItems(line: PdfLine): PdfTextItem[] {
   return line.items.filter((i) => i.x >= SPEC_COL_MIN_X);
 }
 
-/**
- * Une ligne appartient à l'en-tête si chacun de ses items est soit dans la zone
- * colonnes, soit le libellé statique « SPEC » posé à gauche.
- *
- * Dans le gabarit officiel, « SPEC » (x=70.3) partage la ligne basse des noms de
- * variante (y=729) avec les seconds fragments `[ Modele` / `1 ]`. Filtrer cette
- * ligne sur le seul critère « tous les items en zone colonnes » la faisait
- * rejeter : une référence qui déborde, comme « PXT-P1.25 » coupée en
- * « [ PXT-P1 » / « .25 ] », perdait son « .25 » et devenait « PXT-P1 ».
- */
 function isHeaderLine(line: PdfLine): boolean {
-  if (headerZoneItems(line).length === 0) return false;
-  return line.items.every((i) => i.x >= SPEC_COL_MIN_X || normLabel(i.str) === 'SPEC');
+  const colItems = headerZoneItems(line);
+  if (colItems.length === 0) return false;
+  return line.items.every((i) => i.x >= SPEC_COL_MIN_X || isSpecLabelItem(i.str));
 }
 
 /**
@@ -1484,7 +1547,7 @@ function parseSingleSpecTable(
   //    mais le décrochement d'en-tête (`[ Modele` puis `1 ]`) est conservé —
   //    y compris quand `SPEC` partage la ligne basse des fragments.
   let start = 0;
-  while (start < lines.length && !isHeaderZoneLine(lines[start]) && !isSpecLabelLine(lines[start])) {
+  while (start < lines.length && !isHeaderZoneLine(lines[start]) && !isSpecLabelLine(lines[start]) && !isHeaderLine(lines[start])) {
     start++;
   }
   const headerItems: PdfTextItem[] = [];
