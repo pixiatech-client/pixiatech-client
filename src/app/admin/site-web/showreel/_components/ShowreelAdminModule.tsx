@@ -61,8 +61,8 @@ interface CameraSettings {
 }
 
 interface LayerImage {
-  key: 'image1Src' | 'image2Src' | 'image3Src' | 'image4Src';
-  prefix: 'img1' | 'img2' | 'img3' | 'img4';
+  key: 'image1Src' | 'image2Src' | 'image3Src' | 'image4Src' | 'image5Src';
+  prefix: 'img1' | 'img2' | 'img3' | 'img4' | 'img5';
   screenKey: 'screen1' | 'screen2' | 'screen3' | null;
   label: string;
   sublabel: string;
@@ -105,6 +105,15 @@ const LAYERS: LayerImage[] = [
     label: '04 — Macro LED RGB',
     sublabel: 'Diodes micro-LED (blend screen)',
     defaultSrc: '/assets/showreel/ref-4-led-macro.webp',
+    defaultScreen: null,
+  },
+  {
+    key: 'image5Src',
+    prefix: 'img5',
+    screenKey: null,
+    label: '05 — Diode MicroLED',
+    sublabel: 'Schéma nanométrique / photo macro',
+    defaultSrc: '/assets/showreel/stage-1-micro-diode.jpg',
     defaultScreen: null,
   },
 ];
@@ -624,7 +633,7 @@ function SingleImageEditor({
         <div style={{ fontSize: 11, color: '#6B7280', marginBottom: 12, lineHeight: 1.5 }}>
           Choisissez une étape pour afficher et régler exclusivement sa photographie de référence.
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 6 }}>
           {layers.map((l, idx) => {
             const isSelected = selectedImageIndex === idx;
             return (
@@ -1571,7 +1580,7 @@ export default function ShowreelAdminModule() {
   });
 
   const imageAdjustments: ImageAdjustment[] = useMemo(() => {
-    return [1, 2, 3, 4].map((num) => {
+    return [1, 2, 3, 4, 5].map((num) => {
       const p = `img${num}`;
       return {
         posX: parseFloat((cmsData[`${p}PosX`] as string | undefined) || '0'),
@@ -1584,6 +1593,8 @@ export default function ShowreelAdminModule() {
   }, [cmsData]);
 
   const markUnsaved = () => setHasUnsaved(true);
+
+  const showCodeLeds = cmsData['showCodeLeds'] !== false && cmsData['showCodeLeds'] !== 'false';
 
   const handleVideoChange = useCallback(
     (url: string) => {
@@ -2052,16 +2063,70 @@ export default function ShowreelAdminModule() {
 
             {/* ── IMAGES TAB ── */}
             {activeTab === 'images' && (
-              <SingleImageEditor
-                layers={LAYERS}
-                imageSrcs={imageSrcs}
-                imageAdjustments={imageAdjustments}
-                selectedImageIndex={selectedImageIndex}
-                onSelectImage={setSelectedImageIndex}
-                onImageChange={handleImageChange}
-                onAdjustmentChange={handleImageAdjustmentChange}
-                onResetAdjustment={handleResetImageAdjustment}
-              />
+              <>
+                <SingleImageEditor
+                  layers={LAYERS}
+                  imageSrcs={imageSrcs}
+                  imageAdjustments={imageAdjustments}
+                  selectedImageIndex={selectedImageIndex}
+                  onSelectImage={setSelectedImageIndex}
+                  onImageChange={handleImageChange}
+                  onAdjustmentChange={handleImageAdjustmentChange}
+                  onResetAdjustment={handleResetImageAdjustment}
+                />
+
+                {/* Option : LED générées par le code */}
+                <div style={{
+                  marginTop: 16,
+                  padding: '14px 16px',
+                  background: 'rgba(255,255,255,0.03)',
+                  border: `1px solid ${showCodeLeds ? 'rgba(195,249,16,0.3)' : 'rgba(255,255,255,0.08)'}`,
+                  borderRadius: 12,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 12,
+                }}>
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: '#D1D5DB', marginBottom: 2 }}>
+                      LED générées par le code
+                    </div>
+                    <div style={{ fontSize: 11, color: '#6B7280', lineHeight: 1.4 }}>
+                      Superposition vectorielle SVG (diodes RGB rouges, vertes, bleues + traces dorées).
+                      Désactivez pour afficher uniquement la photographie de l'étape 5.
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      updateSectionField('showreel', 'showCodeLeds', !showCodeLeds);
+                      markUnsaved();
+                    }}
+                    style={{
+                      flexShrink: 0,
+                      width: 44,
+                      height: 24,
+                      borderRadius: 12,
+                      border: 'none',
+                      cursor: 'pointer',
+                      background: showCodeLeds ? '#C3F910' : 'rgba(255,255,255,0.15)',
+                      position: 'relative',
+                      transition: 'background 200ms ease',
+                    }}
+                  >
+                    <span style={{
+                      position: 'absolute',
+                      top: 3,
+                      left: showCodeLeds ? 23 : 3,
+                      width: 18,
+                      height: 18,
+                      borderRadius: '50%',
+                      background: showCodeLeds ? '#05070B' : '#6B7280',
+                      transition: 'left 200ms ease',
+                    }} />
+                  </button>
+                </div>
+              </>
             )}
 
             {/* ── CAMERA TAB ── */}

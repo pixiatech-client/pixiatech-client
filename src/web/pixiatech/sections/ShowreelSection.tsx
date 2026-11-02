@@ -40,6 +40,7 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
   const img2Src = (cmsData['image2Src'] as string | undefined) || '/assets/showreel/ref-2-city-mid.webp';
   const img3Src = (cmsData['image3Src'] as string | undefined) || '/assets/showreel/ref-3-facade-screen.webp';
   const img4Src = (cmsData['image4Src'] as string | undefined) || '/assets/showreel/ref-4-led-macro.webp';
+  const img5Src = (cmsData['image5Src'] as string | undefined) || '/assets/showreel/stage-1-micro-diode.jpg';
 
   // Configurable image adjustments (position X/Y, scale, width, height)
   const img1PosX = parseFloat((cmsData['img1PosX'] as string | undefined) || '0');
@@ -65,6 +66,15 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
   const img4Scale = parseFloat((cmsData['img4Scale'] as string | undefined) || '1');
   const img4Width = parseFloat((cmsData['img4Width'] as string | undefined) || '100');
   const img4Height = parseFloat((cmsData['img4Height'] as string | undefined) || '100');
+
+  const img5PosX = parseFloat((cmsData['img5PosX'] as string | undefined) || '0');
+  const img5PosY = parseFloat((cmsData['img5PosY'] as string | undefined) || '0');
+  const img5Scale = parseFloat((cmsData['img5Scale'] as string | undefined) || '1');
+  const img5Width = parseFloat((cmsData['img5Width'] as string | undefined) || '100');
+  const img5Height = parseFloat((cmsData['img5Height'] as string | undefined) || '100');
+
+  // Option ON/OFF : afficher ou masquer les LED générées par le code (superposition procédurale)
+  const showCodeLeds = cmsData['showCodeLeds'] !== false && cmsData['showCodeLeds'] !== 'false';
 
   // Configurable screen position on each image layer (percentage values, fallback to current hardcoded)
   const screen1 = {
@@ -758,171 +768,179 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
                 backgroundColor: '#040608',
               }}
             >
-              {/* Razor-Sharp MicroLED Diode Cluster (High-Res Procedural Vector SVG) */}
-              <svg
-                viewBox="0 0 1000 600"
-                preserveAspectRatio="xMidYMid slice"
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  display: 'block',
-                }}
-              >
-                <defs>
-                  {/* Red Emitter Gradient */}
-                  <radialGradient id="redGlow" cx="50%" cy="50%" r="50%">
-                    <stop offset="0%" stopColor="#FFFFFF" />
-                    <stop offset="35%" stopColor="#FF3322" />
-                    <stop offset="100%" stopColor="#880000" />
-                  </radialGradient>
-                  {/* Green Emitter Gradient */}
-                  <radialGradient id="greenGlow" cx="50%" cy="50%" r="50%">
-                    <stop offset="0%" stopColor="#FFFFFF" />
-                    <stop offset="35%" stopColor="#22E86A" />
-                    <stop offset="100%" stopColor="#006622" />
-                  </radialGradient>
-                  {/* Blue Emitter Gradient */}
-                  <radialGradient id="blueGlow" cx="50%" cy="50%" r="50%">
-                    <stop offset="0%" stopColor="#FFFFFF" />
-                    <stop offset="35%" stopColor="#3388FF" />
-                    <stop offset="100%" stopColor="#002288" />
-                  </radialGradient>
-                  {/* Outer Diode Ambient Bloom */}
-                  <filter id="bloomFilter" x="-50%" y="-50%" width="200%" height="200%">
-                    <feGaussianBlur stdDeviation="8" result="blur" />
-                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                  </filter>
-                </defs>
+              {/* Razor-Sharp MicroLED Diode Cluster (High-Res Procedural Vector SVG - activé via showCodeLeds) */}
+              {showCodeLeds && (
+                <svg
+                  viewBox="0 0 1000 600"
+                  preserveAspectRatio="xMidYMid slice"
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    display: 'block',
+                  }}
+                >
+                  <defs>
+                    {/* Red Emitter Gradient */}
+                    <radialGradient id="redGlow" cx="50%" cy="50%" r="50%">
+                      <stop offset="0%" stopColor="#FFFFFF" />
+                      <stop offset="35%" stopColor="#FF3322" />
+                      <stop offset="100%" stopColor="#880000" />
+                    </radialGradient>
+                    {/* Green Emitter Gradient */}
+                    <radialGradient id="greenGlow" cx="50%" cy="50%" r="50%">
+                      <stop offset="0%" stopColor="#FFFFFF" />
+                      <stop offset="35%" stopColor="#22E86A" />
+                      <stop offset="100%" stopColor="#006622" />
+                    </radialGradient>
+                    {/* Blue Emitter Gradient */}
+                    <radialGradient id="blueGlow" cx="50%" cy="50%" r="50%">
+                      <stop offset="0%" stopColor="#FFFFFF" />
+                      <stop offset="35%" stopColor="#3388FF" />
+                      <stop offset="100%" stopColor="#002288" />
+                    </radialGradient>
+                    {/* Outer Diode Ambient Bloom */}
+                    <filter id="bloomFilter" x="-50%" y="-50%" width="200%" height="200%">
+                      <feGaussianBlur stdDeviation="8" result="blur" />
+                      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                    </filter>
+                  </defs>
 
-                {/* Matte Black Obsidian Substrate */}
-                <rect width="1000" height="600" fill="#040608" />
+                  {/* Matte Black Obsidian Substrate */}
+                  <rect width="1000" height="600" fill="#040608" />
 
-                {/* Gold Circuit Nanometric Traces */}
-                <g stroke="#C5A059" strokeWidth="2.5" opacity="0.45" fill="none">
-                  {/* Bus lines */}
-                  <line x1="0" y1="150" x2="1000" y2="150" strokeDasharray="12 6" />
-                  <line x1="0" y1="300" x2="1000" y2="300" strokeDasharray="12 6" />
-                  <line x1="0" y1="450" x2="1000" y2="450" strokeDasharray="12 6" />
-                  {/* Traces */}
-                  <path d="M 120 0 L 120 120 L 160 160 L 160 600" />
-                  <path d="M 370 0 L 370 270 L 410 310 L 410 600" />
-                  <path d="M 620 0 L 620 120 L 660 160 L 660 600" />
-                  <path d="M 870 0 L 870 270 L 910 310 L 910 600" />
-                </g>
+                  {/* Gold Circuit Nanometric Traces */}
+                  <g stroke="#C5A059" strokeWidth="2.5" opacity="0.45" fill="none">
+                    {/* Bus lines */}
+                    <line x1="0" y1="150" x2="1000" y2="150" strokeDasharray="12 6" />
+                    <line x1="0" y1="300" x2="1000" y2="300" strokeDasharray="12 6" />
+                    <line x1="0" y1="450" x2="1000" y2="450" strokeDasharray="12 6" />
+                    {/* Traces */}
+                    <path d="M 120 0 L 120 120 L 160 160 L 160 600" />
+                    <path d="M 370 0 L 370 270 L 410 310 L 410 600" />
+                    <path d="M 620 0 L 620 120 L 660 160 L 660 600" />
+                    <path d="M 870 0 L 870 270 L 910 310 L 910 600" />
+                  </g>
 
-                {/* Diode Packages Grid (Sharp 4x2 Cluster with RGB sub-pixels) */}
-                {[0, 250, 500, 750].map((dx, colIdx) =>
-                  [60, 260, 460].map((dy, rowIdx) => {
-                    const pX = dx + 45;
-                    const pY = dy + 20;
-                    return (
-                      <g key={`${colIdx}-${rowIdx}`} filter="url(#bloomFilter)">
-                        {/* Diode Chip Substrate Box */}
-                        <rect
-                          x={pX}
-                          y={pY}
-                          width="160"
-                          height="120"
-                          rx="8"
-                          fill="#0A0E14"
-                          stroke="#1C2433"
-                          strokeWidth="2"
-                        />
-                        {/* Diode Beveled Inner Cavity */}
-                        <rect
-                          x={pX + 12}
-                          y={pY + 12}
-                          width="136"
-                          height="96"
-                          rx="6"
-                          fill="#05070B"
-                          stroke="#121822"
-                          strokeWidth="1.5"
-                        />
-
-                        {/* SUB-PIXEL 1: RED */}
-                        <g>
+                  {/* Diode Packages Grid (Sharp 4x2 Cluster with RGB sub-pixels) */}
+                  {[0, 250, 500, 750].map((dx, colIdx) =>
+                    [60, 260, 460].map((dy, rowIdx) => {
+                      const pX = dx + 45;
+                      const pY = dy + 20;
+                      return (
+                        <g key={`${colIdx}-${rowIdx}`} filter="url(#bloomFilter)">
+                          {/* Diode Chip Substrate Box */}
                           <rect
-                            x={pX + 24}
-                            y={pY + 24}
-                            width="26"
-                            height="72"
-                            rx="5"
-                            fill="url(#redGlow)"
+                            x={pX}
+                            y={pY}
+                            width="160"
+                            height="120"
+                            rx="8"
+                            fill="#0A0E14"
+                            stroke="#1C2433"
+                            strokeWidth="2"
                           />
-                          <circle cx={pX + 37} cy={pY + 60} r="14" fill="#FF4433" opacity="0.3" />
-                        </g>
-
-                        {/* SUB-PIXEL 2: GREEN */}
-                        <g>
+                          {/* Diode Beveled Inner Cavity */}
                           <rect
-                            x={pX + 67}
-                            y={pY + 24}
-                            width="26"
-                            height="72"
-                            rx="5"
-                            fill="url(#greenGlow)"
+                            x={pX + 12}
+                            y={pY + 12}
+                            width="136"
+                            height="96"
+                            rx="6"
+                            fill="#05070B"
+                            stroke="#121822"
+                            strokeWidth="1.5"
                           />
-                          <circle cx={pX + 80} cy={pY + 60} r="14" fill="#22E86A" opacity="0.3" />
-                        </g>
 
-                        {/* SUB-PIXEL 3: BLUE */}
-                        <g>
-                          <rect
-                            x={pX + 110}
-                            y={pY + 24}
-                            width="26"
-                            height="72"
-                            rx="5"
-                            fill="url(#blueGlow)"
-                          />
-                          <circle cx={pX + 123} cy={pY + 60} r="14" fill="#3388FF" opacity="0.3" />
-                        </g>
+                          {/* SUB-PIXEL 1: RED */}
+                          <g>
+                            <rect
+                              x={pX + 24}
+                              y={pY + 24}
+                              width="26"
+                              height="72"
+                              rx="5"
+                              fill="url(#redGlow)"
+                            />
+                            <circle cx={pX + 37} cy={pY + 60} r="14" fill="#FF4433" opacity="0.3" />
+                          </g>
 
-                        {/* Gold Wire Bond Dots */}
-                        <circle cx={pX + 37} cy={pY + 16} r="2.5" fill="#C5A059" />
-                        <circle cx={pX + 80} cy={pY + 16} r="2.5" fill="#C5A059" />
-                        <circle cx={pX + 123} cy={pY + 16} r="2.5" fill="#C5A059" />
-                      </g>
-                    );
-                  })
-                )}
-              </svg>
+                          {/* SUB-PIXEL 2: GREEN */}
+                          <g>
+                            <rect
+                              x={pX + 67}
+                              y={pY + 24}
+                              width="26"
+                              height="72"
+                              rx="5"
+                              fill="url(#greenGlow)"
+                            />
+                            <circle cx={pX + 80} cy={pY + 60} r="14" fill="#22E86A" opacity="0.3" />
+                          </g>
+
+                          {/* SUB-PIXEL 3: BLUE */}
+                          <g>
+                            <rect
+                              x={pX + 110}
+                              y={pY + 24}
+                              width="26"
+                              height="72"
+                              rx="5"
+                              fill="url(#blueGlow)"
+                            />
+                            <circle cx={pX + 123} cy={pY + 60} r="14" fill="#3388FF" opacity="0.3" />
+                          </g>
+
+                          {/* Gold Wire Bond Dots */}
+                          <circle cx={pX + 37} cy={pY + 16} r="2.5" fill="#C5A059" />
+                          <circle cx={pX + 80} cy={pY + 16} r="2.5" fill="#C5A059" />
+                          <circle cx={pX + 123} cy={pY + 16} r="2.5" fill="#C5A059" />
+                        </g>
+                      );
+                    })
+                  )}
+                </svg>
+              )}
 
               {/* Real MicroLED Diode Structure Macro Photo Overlay */}
               <div
                 style={{
                   position: 'absolute',
                   inset: 0,
-                  opacity: Math.max(0, Math.min(0.65, (scrollProgress - 0.90) / 0.08)),
-                  mixBlendMode: 'screen',
+                  opacity: showCodeLeds
+                    ? Math.max(0, Math.min(0.65, (scrollProgress - 0.90) / 0.08))
+                    : Math.max(0, Math.min(1, (scrollProgress - 0.85) / 0.08)),
+                  mixBlendMode: showCodeLeds ? 'screen' : 'normal',
                   pointerEvents: 'none',
                 }}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src="/assets/showreel/stage-1-micro-diode.jpg"
+                  src={img5Src}
                   alt="MicroLED Diode Structure Macro"
                   style={{
-                    width: '100%',
-                    height: '100%',
+                    width: `${img5Width}%`,
+                    height: `${img5Height}%`,
                     objectFit: 'cover',
-                    filter: 'contrast(1.2) brightness(1.1)',
+                    display: 'block',
+                    filter: showCodeLeds ? 'contrast(1.2) brightness(1.1)' : 'contrast(1.05)',
+                    transform: `translate3d(${img5PosX}%, ${img5PosY}%, 0) scale(${img5Scale})`,
                   }}
                 />
               </div>
 
-              {/* Ambient Radial Vignette over Diodes */}
-              <div
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  background:
-                    'radial-gradient(circle at 50% 50%, rgba(195, 249, 16, 0.15) 0%, rgba(2, 4, 8, 0.75) 85%)',
-                  mixBlendMode: 'screen',
-                  pointerEvents: 'none',
-                }}
-              />
+              {/* Ambient Radial Vignette over Diodes (uniquement si les LED procédurales sont actives) */}
+              {showCodeLeds && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    background:
+                      'radial-gradient(circle at 50% 50%, rgba(195, 249, 16, 0.15) 0%, rgba(2, 4, 8, 0.75) 85%)',
+                    mixBlendMode: 'screen',
+                    pointerEvents: 'none',
+                  }}
+                />
+              )}
             </div>
           )}
         </div>
