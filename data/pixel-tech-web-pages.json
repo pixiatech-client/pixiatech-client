@@ -4,7 +4,7 @@
       "id": "home",
       "name": "home",
       "slug": "/home",
-      "updatedAt": "2026-11-02T11:04:04.449Z",
+      "updatedAt": "2026-11-02T12:07:14.948Z",
       "sections": {
         "pixia-web": {
           "text_1790257213042": "sdsdsdsdÉDITEUR DIRECT : CLIQUEZ SUR UN TEXTE OU UNE IMAGE",
@@ -640,7 +640,7 @@
               "text_fr": "RETRANSMISSION SPORTIVE — LE SPORT EN GRAND, L’ÉMOTION ENSEMBLE."
             },
             "project_1_image": {
-              "src": "/youtube-video.mp4",
+              "src": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/uploads%2F1786788310401-WhatsApp%20Video%202026-07-31%20at%2009.37.39_%C3%A8-.mp4?alt=media",
               "mediaType": "video"
             },
             "project_0_image": {
@@ -659,7 +659,7 @@
             }
           },
           "description": "Un espace à transformer, un message à faire rayonner, une expérience à créer. Découvrez comment nos solutions visuelles prennent vie à travers des projets pensés pour chaque lieu, chaque usage et chaque ambition.",
-          "project_1_image": "/youtube-video.mp4",
+          "project_1_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/uploads%2F1786788310401-WhatsApp%20Video%202026-07-31%20at%2009.37.39_%C3%A8-.mp4?alt=media",
           "project_0_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/uploads%2F1787607624269-158384-816637349_small.mp4?alt=media",
           "visible": true,
           "layout": {
@@ -1948,5 +1948,5 @@
       }
     }
   },
-  "updatedAt": "2026-11-02T11:04:05.229Z"
+  "updatedAt": "2026-11-02T12:07:15.093Z"
 }
