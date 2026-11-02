@@ -4,7 +4,7 @@
       "id": "home",
       "name": "home",
       "slug": "/home",
-      "updatedAt": "2026-10-31T18:42:44.167Z",
+      "updatedAt": "2026-11-02T11:04:04.449Z",
       "sections": {
         "pixia-web": {
           "text_1790257213042": "sdsdsdsdÉDITEUR DIRECT : CLIQUEZ SUR UN TEXTE OU UNE IMAGE",
@@ -48,7 +48,48 @@
           "text_1790511327180": "SUPPORTQSZS",
           "text_1790511351723": "SUPPORT 2026",
           "minHeight": 1394,
-          "paddingBottom": 40
+          "paddingBottom": 40,
+          "_elements": {
+            "section:1/div:1/div:2/div:3/span:2": {
+              "text_fr": "CONFIGURATION",
+              "fontSize": "28px"
+            },
+            "section:1/div:1/div:2/div:3/span:3": {
+              "text_fr": "Configurez votre écran selon vos dimensions, votre usage et les options souhaitées. Obtenez une estimation instantanée et gratuite pour préparer votre budget, avant de faire affiner votre projet par notre équipe."
+            },
+            "section:1/div:1/div:2/div:4/span:2": {
+              "text_fr": "CONSEIL"
+            },
+            "section:1/div:1/div:2/div:4/span:3": {
+              "text_fr": "Nous échangeons sur vos objectifs, votre environnement et votre budget pour vous aider à choisir la solution la plus adaptée à votre projet."
+            },
+            "section:1/div:1/div:2/div:5/span:2": {
+              "text_fr": "ÉTUDE"
+            },
+            "section:1/div:1/div:2/div:5/span:3": {
+              "text_fr": "Dimensions, distance de visionnage, luminosité et contraintes d’installation : nous analysons les paramètres essentiels pour valider votre configuration et établir un devis détaillé."
+            },
+            "section:1/div:1/div:2/div:6/span:2": {
+              "text_fr": "CONCEPTION"
+            },
+            "section:1/div:1/div:2/div:6/span:3": {
+              "text_fr": "Nous préparons l’intégration de votre écran dans son environnement : format, structure, fixations et raccordements sont définis selon les besoins de votre installation."
+            },
+            "section:1/div:1/div:2/div:7/span:3": {
+              "text_fr": "Nous organisons la mise en place des équipements et leur raccordement sur site, en tenant compte des accès, des contraintes du lieu et du planning convenu."
+            },
+            "section:1/div:1/div:2/div:8/span:2": {
+              "text_fr": "MISE EN SERVICE",
+              "fontSize": "26px"
+            },
+            "section:1/div:1/div:2/div:9/span:2": {
+              "text_fr": "SUIVI",
+              "fontSize": "30px"
+            },
+            "section:1/div:1/div:2/div:9/span:3": {
+              "text_fr": "Nous restons à vos côtés après l’installation pour répondre à vos questions, vous aider dans l’utilisation de votre solution et organiser les interventions nécessaires selon les conditions convenues."
+            }
+          }
         },
         "insights": {
           "minHeight": 931,
@@ -102,10 +143,10 @@
             },
             "slider3.title": {
               "fr": {
-                "value": "Caissons dynamiques.  ",
+                "value": "Caissons lumineux dynamiques.",
                 "status": "source",
-                "updatedAt": "2026-10-19T18:02:35.725Z",
-                "sourceText": "Caissons dynamiques.  "
+                "updatedAt": "2026-11-01T18:40:11.985Z",
+                "sourceText": "Caissons lumineux dynamiques."
               }
             },
             "slider2.title": {
@@ -126,34 +167,34 @@
             },
             "slider2.description": {
               "fr": {
-                "value": "Louez des écrans LED géants à Paris ou en Île-de-France pour vos événements privés ou professionnels, avec une prestation technique clé en main et un accompagnement.",
+                "value": "Pour vos salons, conférences et événements privés, choisissez un écran LED intérieur ou extérieur adapté à votre espace et à votre budget. Plat, incurvé ou à 360°, votre écran vous attend à Paris et en Île-de-France.",
                 "status": "source",
-                "updatedAt": "2026-10-13T22:52:36.135Z",
-                "sourceText": "Louez des écrans LED géants à Paris ou en Île-de-France pour vos événements privés ou professionnels, avec une prestation technique clé en main et un accompagnement."
+                "updatedAt": "2026-11-01T18:38:22.557Z",
+                "sourceText": "Pour vos salons, conférences et événements privés, choisissez un écran LED intérieur ou extérieur adapté à votre espace et à votre budget. Plat, incurvé ou à 360°, votre écran vous attend à Paris et en Île-de-France."
               }
             },
             "slider1.description": {
               "fr": {
-                "value": "PIXIATECH conçoit des écrans LED sur mesure pour l’architecture, le retail et l’événementiel, avec conseil expert, installation et SAV partout en France.",
+                "value": "Pour vos boutiques, entreprises et projets architecturaux, choisissez un écran LED intérieur ou extérieur adapté à votre espace et à votre budget. PixiaTech vous accompagne du choix de la solution à l’installation, partout en France.",
                 "status": "source",
-                "updatedAt": "2026-10-13T22:43:42.423Z",
-                "sourceText": "PIXIATECH conçoit des écrans LED sur mesure pour l’architecture, le retail et l’événementiel, avec conseil expert, installation et SAV partout en France."
+                "updatedAt": "2026-11-01T18:33:37.543Z",
+                "sourceText": "Pour vos boutiques, entreprises et projets architecturaux, choisissez un écran LED intérieur ou extérieur adapté à votre espace et à votre budget. PixiaTech vous accompagne du choix de la solution à l’installation, partout en France."
               }
             },
             "slider2.tagline": {
               "fr": {
-                "value": "Événements privés et professionnels .",
+                "value": "Donnez une nouvelle dimension à vos événements.",
                 "status": "source",
-                "updatedAt": "2026-10-13T22:49:43.608Z",
-                "sourceText": "Événements privés et professionnels ."
+                "updatedAt": "2026-11-01T18:38:14.733Z",
+                "sourceText": "Donnez une nouvelle dimension à vos événements."
               }
             },
             "slider1.title": {
               "fr": {
-                "value": "Mur et écrans LED  ",
+                "value": "Écrans LED sur mesure.  ",
                 "status": "source",
-                "updatedAt": "2026-10-13T21:23:59.203Z",
-                "sourceText": "Mur et écrans LED  "
+                "updatedAt": "2026-11-01T18:33:30.030Z",
+                "sourceText": "Écrans LED sur mesure.  "
               }
             },
             "slider1.tagline": {
@@ -166,10 +207,10 @@
             },
             "slider3.tagline": {
               "fr": {
-                "value": "Chaque image mérite sa propre animation .",
+                "value": "Donnez une nouvelle dimension à vos visuels.",
                 "status": "source",
-                "updatedAt": "2026-10-17T11:31:52.400Z",
-                "sourceText": "Chaque image mérite sa propre animation ."
+                "updatedAt": "2026-11-01T18:40:59.347Z",
+                "sourceText": "Donnez une nouvelle dimension à vos visuels."
               }
             },
             "slider1.badge": {
@@ -198,32 +239,62 @@
             },
             "slider2.secondaryCta": {
               "fr": {
-                "value": "Estimation gratuite →",
+                "value": "Estimer mon projet →",
                 "status": "source",
-                "updatedAt": "2026-10-13T22:07:16.959Z",
-                "sourceText": "Estimation gratuite →"
+                "updatedAt": "2026-11-01T18:39:26.551Z",
+                "sourceText": "Estimer mon projet →"
               }
             },
             "slider1.secondaryCta": {
               "fr": {
-                "value": "Estimation gratuite →",
+                "value": "Estimer mon projet →",
                 "status": "source",
-                "updatedAt": "2026-10-13T22:05:03.596Z",
-                "sourceText": "Estimation gratuite →"
+                "updatedAt": "2026-11-01T18:38:56.119Z",
+                "sourceText": "Estimer mon projet →"
               }
             },
             "slider3.secondaryCta": {
               "fr": {
-                "value": "Estimation gratuite →",
+                "value": "Estimer mon projet →",
                 "status": "source",
-                "updatedAt": "2026-10-13T22:07:39.776Z",
-                "sourceText": "Estimation gratuite →"
+                "updatedAt": "2026-11-01T18:42:29.988Z",
+                "sourceText": "Estimer mon projet →"
+              }
+            },
+            "slider1.primaryCta": {
+              "fr": {
+                "value": "Découvrir nos écrans LED → →",
+                "status": "source",
+                "updatedAt": "2026-11-01T18:34:18.424Z",
+                "sourceText": "Découvrir nos écrans LED → →"
+              },
+              "en": {
+                "value": "Découvrir nos écrans LED → ",
+                "status": "manual",
+                "updatedAt": "2026-11-01T22:02:01.131Z",
+                "sourceText": "Découvrir nos écrans LED → →"
+              }
+            },
+            "slider2.primaryCta": {
+              "fr": {
+                "value": "Découvrir nos écrans à louer →",
+                "status": "source",
+                "updatedAt": "2026-11-01T18:39:48.760Z",
+                "sourceText": "Découvrir nos écrans à louer →"
+              }
+            },
+            "slider3.primaryCta": {
+              "fr": {
+                "value": "Découvrir nos caissons dynamiques →",
+                "status": "source",
+                "updatedAt": "2026-11-01T18:43:08.806Z",
+                "sourceText": "Découvrir nos caissons dynamiques →"
               }
             }
           },
           "minHeight": 882,
           "paddingBottom": 0,
-          "slideImage1": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FInstallation_d_un_mur_LED_professionnel_9rj0h.png?alt=media",
+          "slideImage1": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2Fecran_led_sur_mesure_6nfpw.webp?alt=media",
           "_elements": {
             "div:2/section:1/div:7/div:1/div:3/span:2": {
               "text": "PROJETS INTERNATIONAUX 11"
@@ -232,16 +303,19 @@
               "text": "PARIS · MONDE 11"
             },
             "tagline": {
-              "fontSize": "56px",
-              "offsetX": 4,
-              "offsetY": 0,
+              "fontSize": "36px",
+              "offsetX": 0,
+              "offsetY": 8,
               "backgroundColor": "transparent",
-              "color": "#ffffff"
+              "color": "#ffffff",
+              "fontWeight": "700"
             },
             "description": {
               "fontSize": "16px",
               "color": "#ebeaea",
-              "backgroundColor": "transparent"
+              "backgroundColor": "transparent",
+              "offsetX": 0,
+              "offsetY": 0
             },
             "secondaryCta": {
               "href": "/quote",
@@ -250,12 +324,16 @@
               "borderRadius": "9999px",
               "borderWidth": "1px",
               "borderStyle": "solid",
-              "borderColor": "#b2e212"
+              "borderColor": "#b2e212",
+              "offsetX": 0,
+              "offsetY": 0
             },
             "title": {
-              "fontSize": "90px",
+              "fontSize": "60px",
               "color": "#ffffff",
-              "backgroundColor": "transparent"
+              "backgroundColor": "transparent",
+              "offsetX": -4,
+              "offsetY": -12
             },
             "primaryCta": {
               "borderRadius": "9999px",
@@ -267,11 +345,27 @@
               },
               "active": {
                 "color": "#eb0f0f"
-              }
+              },
+              "offsetX": 0,
+              "offsetY": 0
+            },
+            "section:1/div:5/div:1/div:3/span:1": {
+              "text_fr": "INSTALLATION PARTOUT EN FRANCE"
+            },
+            "section:1/div:5/div:1/div:3/span:3": {
+              "text_fr": "ÉCRANS LED SUR MESURE"
+            },
+            "section:1/div:5/div:1/div:3/span:3/div:1/div:1/table:1/tbody:1/tr:1/td:1": {
+              "borderStyle": "solid",
+              "text_fr": "LED SUR MESURE"
+            },
+            "badge": {
+              "offsetX": 4,
+              "offsetY": -20
             }
           },
-          "slideImage2": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2Fconf_rence-futuriste-sous-les-lumi_res-bleues_s3bsi.webp?alt=media",
-          "slideImage3": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fhero%2Fhero-slide-3-1792491704490-9kco9d.png?alt=media",
+          "slideImage2": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2Fecran_de_location_pgjf5.webp?alt=media",
+          "slideImage3": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FLIGHT_BOX_DYNAMIQUE_przvi.webp?alt=media",
           "title": "TECHNOLOGIES03 D’AFFICHAGE 01",
           "badge": "PIXIATECH / VISUAL TECHNOLOGY ",
           "description": "Spécialisée dans la vente d’écrans professionnels et de technologies d’affichage LED, Micro LED et OLED, pour les entreprises, les commerces, l’architecture et l’événementiel",
@@ -282,21 +376,24 @@
           "layout": {
             "visible": true
           },
-          "slider3.title": "Caissons dynamiques.  ",
+          "slider3.title": "Caissons lumineux dynamiques.",
           "slider2.title": "Location d’écrans LED ",
           "slider3.description": "Valorisez vos vitrines avec des caissons lumineux LED fixes ou portables, conçus sur mesure. Leur animation s’adapte à chaque image pour un rendu unique et dynamique.",
-          "slider2.description": "Louez des écrans LED géants à Paris ou en Île-de-France pour vos événements privés ou professionnels, avec une prestation technique clé en main et un accompagnement.",
-          "slider1.description": "PIXIATECH conçoit des écrans LED sur mesure pour l’architecture, le retail et l’événementiel, avec conseil expert, installation et SAV partout en France.",
-          "slider2.tagline": "Événements privés et professionnels .",
-          "slider1.title": "Mur et écrans LED  ",
+          "slider2.description": "Pour vos salons, conférences et événements privés, choisissez un écran LED intérieur ou extérieur adapté à votre espace et à votre budget. Plat, incurvé ou à 360°, votre écran vous attend à Paris et en Île-de-France.",
+          "slider1.description": "Pour vos boutiques, entreprises et projets architecturaux, choisissez un écran LED intérieur ou extérieur adapté à votre espace et à votre budget. PixiaTech vous accompagne du choix de la solution à l’installation, partout en France.",
+          "slider2.tagline": "Donnez une nouvelle dimension à vos événements.",
+          "slider1.title": "Écrans LED sur mesure.  ",
           "slider1.tagline": "Donnez vie à vos espaces .",
-          "slider3.tagline": "Chaque image mérite sa propre animation .",
+          "slider3.tagline": "Donnez une nouvelle dimension à vos visuels.",
           "slider1.badge": "PIXIATECH / TECHNOLOGIE VISUELLE",
           "slider2.badge": "PIXIATECH / TECHNOLOGIE VISUELLE",
           "slider3.badge": "PIXIATECH / TECHNOLOGIE VISUELLE ",
-          "slider2.secondaryCta": "Estimation gratuite →",
-          "slider1.secondaryCta": "Estimation gratuite →",
-          "slider3.secondaryCta": "Estimation gratuite →"
+          "slider2.secondaryCta": "Estimer mon projet →",
+          "slider1.secondaryCta": "Estimer mon projet →",
+          "slider3.secondaryCta": "Estimer mon projet →",
+          "slider1.primaryCta": "Découvrir nos écrans LED → →",
+          "slider2.primaryCta": "Découvrir nos écrans à louer →",
+          "slider3.primaryCta": "Découvrir nos caissons dynamiques →"
         },
         "markets": {
           "_elements": {
@@ -347,23 +444,27 @@
               "color": "#e60505"
             },
             "titleLine3": {
-              "color": "#111111",
-              "fontSize": "68px"
-            },
-            "subtitle": {
-              "fontSize": "20px"
+              "color": "#e9683d",
+              "fontSize": "68px",
+              "backgroundColor": "transparent"
             },
             "badge": {
               "color": "#050505"
             },
-            "title": {
-              "color": "#7c9c07"
+            "subtitle": {
+              "fontWeight": "700",
+              "fontSize": "16px",
+              "fontStyle": "normal",
+              "textDecoration": "none"
+            },
+            "titleLine2": {
+              "color": "#e9683d"
             }
           },
           "paddingTop": 0,
           "overlayColor": "#d50b0b",
           "overlayOpacity": 85,
-          "minHeight": 882,
+          "minHeight": 738,
           "marginBottom": 0,
           "paddingBottom": 0,
           "visible": true,
@@ -373,10 +474,10 @@
           "_i18n": {
             "subtitle": {
               "fr": {
-                "value": "PIXIATECH est une entreprise française spécialisée dans les solutions d’affichage LED sur mesure. Nous proposons la vente, la location et l’installation d’écrans LED intérieurs et extérieurs, incurvés, transparents ou à effet holographique, pour les projets d’architecture, de retail et d’événementiel.",
+                "value": "PIXIATECH est une entreprise française spécialisée dans les solutions visuelles sur mesure. Nous aidons les entreprises à dynamiser leur communication, à valoriser leurs espaces et à capter l’attention de leurs publics. Écrans LED, affichages transparents et caissons lumineux dynamiques : nous adaptons chaque solution à votre message, à votre environnement et à vos objectifs.",
                 "status": "source",
-                "updatedAt": "2026-10-17T11:19:23.933Z",
-                "sourceText": "PIXIATECH est une entreprise française spécialisée dans les solutions d’affichage LED sur mesure. Nous proposons la vente, la location et l’installation d’écrans LED intérieurs et extérieurs, incurvés, transparents ou à effet holographique, pour les projets d’architecture, de retail et d’événementiel."
+                "updatedAt": "2026-11-01T18:55:50.106Z",
+                "sourceText": "PIXIATECH est une entreprise française spécialisée dans les solutions visuelles sur mesure. Nous aidons les entreprises à dynamiser leur communication, à valoriser leurs espaces et à capter l’attention de leurs publics. Écrans LED, affichages transparents et caissons lumineux dynamiques : nous adaptons chaque solution à votre message, à votre environnement et à vos objectifs."
               }
             },
             "badge": {
@@ -397,26 +498,26 @@
             },
             "titleLine2": {
               "fr": {
-                "value": "NOUS DONNONS VIE À ",
+                "value": "NOUS DONNONS VIE À VOS ",
                 "status": "source",
-                "updatedAt": "2026-10-17T11:23:13.771Z",
-                "sourceText": "NOUS DONNONS VIE À "
+                "updatedAt": "2026-11-01T22:47:45.998Z",
+                "sourceText": "NOUS DONNONS VIE À VOS "
               }
             },
             "titleLine3": {
               "fr": {
-                "value": "VOS ESPACES",
+                "value": "ESPACES",
                 "status": "source",
-                "updatedAt": "2026-10-17T11:23:26.413Z",
-                "sourceText": "VOS ESPACES"
+                "updatedAt": "2026-11-01T22:47:50.767Z",
+                "sourceText": "ESPACES"
               }
             }
           },
-          "subtitle": "PIXIATECH est une entreprise française spécialisée dans les solutions d’affichage LED sur mesure. Nous proposons la vente, la location et l’installation d’écrans LED intérieurs et extérieurs, incurvés, transparents ou à effet holographique, pour les projets d’architecture, de retail et d’événementiel.",
+          "subtitle": "PIXIATECH est une entreprise française spécialisée dans les solutions visuelles sur mesure. Nous aidons les entreprises à dynamiser leur communication, à valoriser leurs espaces et à capter l’attention de leurs publics. Écrans LED, affichages transparents et caissons lumineux dynamiques : nous adaptons chaque solution à votre message, à votre environnement et à vos objectifs.",
           "badge": "01 / À PROPOS",
           "title": "Des solutions d’affichage LED conçues pour vos projets\n  ",
-          "titleLine2": "NOUS DONNONS VIE À ",
-          "titleLine3": "VOS ESPACES"
+          "titleLine2": "NOUS DONNONS VIE À VOS ",
+          "titleLine3": "ESPACES"
         },
         "pitch": {
           "paddingTop": 16,
@@ -435,7 +536,8 @@
               "text": "Un pas de pixel plus fin → vision rapprochée et densité maximale. Un pas plus large → distances d'observation accrues et grands formats efficients. 11"
             },
             "section:1/div:1/div:2/div:1/div:3/div:2/div:1": {
-              "text_fr": "Salle de contrôle et supervision"
+              "text_fr": "Hall / lobby d'entreprise",
+              "fontSize": "22px"
             },
             "section:1/div:1/div:2/div:1/div:3/div:2/div:2": {
               "text_fr": "APPLICATION IDÉALE"
@@ -444,41 +546,46 @@
               "text_fr": "Distance indicative : le choix du pas de pixel dépend de l’environnement, du contenu affiché et de la distance de visionnage."
             },
             "titleLine2": {
-              "color": "#7c9c07"
+              "color": "#1f1f1e",
+              "fontSize": "48px"
             },
             "title": {
-              "color": "#7c9c07"
+              "color": "#e9683d",
+              "fontSize": "60px"
+            },
+            "section:1/div:1/div:2/div:2/div:2/div:3/div:2/div:1": {
+              "text_fr": "DISTANCE MIN. DE VISION  *"
             }
           },
           "_i18n": {
             "titleLine2": {
               "fr": {
-                "value": "parfaite ?",
+                "value": "Où vous placer face à l’écran ?",
                 "status": "source",
-                "updatedAt": "2026-10-22T11:28:47.044Z",
-                "sourceText": "parfaite ?"
+                "updatedAt": "2026-11-01T22:58:02.822Z",
+                "sourceText": "Où vous placer face à l’écran ?"
               }
             },
             "title": {
               "fr": {
-                "value": "Quelle distance pour une image ",
+                "value": "À quelle distance pour une image parfaites ?",
                 "status": "source",
-                "updatedAt": "2026-10-22T11:28:38.379Z",
-                "sourceText": "Quelle distance pour une image "
+                "updatedAt": "2026-11-01T22:56:22.317Z",
+                "sourceText": "À quelle distance pour une image parfaites ?"
               }
             },
             "description": {
               "fr": {
-                "value": "Le pas de pixel détermine la finesse de l’image et la distance idéale de visualisation.                                                                      * Un pas réduit offre une image précise, même de près. *              * Un pas plus large est adapté aux grands écrans et aux espaces de visionnage éloignés. *",
+                "value": "Le pas de pixel est l’espace entre deux pixels, mesuré en millimètres. Plus il est petit, plus l’image est détaillée à courte distance. Lorsque le public est plus éloigné, un pas plus large peut suffire. Le bon choix dépend de la distance de visionnage et des contenus à afficher",
                 "status": "source",
-                "updatedAt": "2026-10-22T11:14:00.735Z",
-                "sourceText": "Le pas de pixel détermine la finesse de l’image et la distance idéale de visualisation.                                                                      * Un pas réduit offre une image précise, même de près. *              * Un pas plus large est adapté aux grands écrans et aux espaces de visionnage éloignés. *"
+                "updatedAt": "2026-11-01T20:21:11.431Z",
+                "sourceText": "Le pas de pixel est l’espace entre deux pixels, mesuré en millimètres. Plus il est petit, plus l’image est détaillée à courte distance. Lorsque le public est plus éloigné, un pas plus large peut suffire. Le bon choix dépend de la distance de visionnage et des contenus à afficher"
               }
             }
           },
-          "titleLine2": "parfaite ?",
-          "title": "Quelle distance pour une image ",
-          "description": "Le pas de pixel détermine la finesse de l’image et la distance idéale de visualisation.                                                                      * Un pas réduit offre une image précise, même de près. *              * Un pas plus large est adapté aux grands écrans et aux espaces de visionnage éloignés. *"
+          "titleLine2": "Où vous placer face à l’écran ?",
+          "title": "À quelle distance pour une image parfaites ?",
+          "description": "Le pas de pixel est l’espace entre deux pixels, mesuré en millimètres. Plus il est petit, plus l’image est détaillée à courte distance. Lorsque le public est plus éloigné, un pas plus large peut suffire. Le bon choix dépend de la distance de visionnage et des contenus à afficher"
         },
         "projects": {
           "minHeight": 1039,
@@ -515,7 +622,7 @@
               "text_fr": ""
             },
             "section:1/div:1/div:3/div:2/div:3": {
-              "text_fr": "EDUCATION1"
+              "text_fr": "CONFÉRENCE —UNE SCÈNE POUR VOS IDÉES. UN ÉCRAN POUR LEUR DONNER DE L’IMPACT."
             },
             "section:1/div:1/div:3/div:1/div:2/span:2": {
               "text_fr": "2026"
@@ -528,21 +635,36 @@
             },
             "section:1/div:1/div:3/div:1/div:2/span:1": {
               "text_fr": ""
+            },
+            "section:1/div:1/div:3/div:1/div:3": {
+              "text_fr": "RETRANSMISSION SPORTIVE — LE SPORT EN GRAND, L’ÉMOTION ENSEMBLE."
+            },
+            "project_1_image": {
+              "src": "/youtube-video.mp4",
+              "mediaType": "video"
+            },
+            "project_0_image": {
+              "src": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/uploads%2F1787607624269-158384-816637349_small.mp4?alt=media",
+              "mediaType": "video"
             }
           },
           "_i18n": {
             "description": {
               "fr": {
-                "value": "Scènes de festivals, studios de production virtuelle, façades DOOH et campus universitaires études de cas concrètes de nos déploiements.",
+                "value": "Un espace à transformer, un message à faire rayonner, une expérience à créer. Découvrez comment nos solutions visuelles prennent vie à travers des projets pensés pour chaque lieu, chaque usage et chaque ambition.",
                 "status": "source",
-                "updatedAt": "2026-10-14T11:37:33.161Z",
-                "sourceText": "Scènes de festivals, studios de production virtuelle, façades DOOH et campus universitaires études de cas concrètes de nos déploiements."
+                "updatedAt": "2026-11-01T22:15:51.617Z",
+                "sourceText": "Un espace à transformer, un message à faire rayonner, une expérience à créer. Découvrez comment nos solutions visuelles prennent vie à travers des projets pensés pour chaque lieu, chaque usage et chaque ambition."
               }
             }
           },
-          "description": "Scènes de festivals, studios de production virtuelle, façades DOOH et campus universitaires études de cas concrètes de nos déploiements.",
-          "project_1_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FChatGPT_Image_25_ao_t_2026__00_40_47_thjwz.png?alt=media",
-          "project_0_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FChatGPT_Image_1_sept._2026__12_58_12_swbl2.png?alt=media"
+          "description": "Un espace à transformer, un message à faire rayonner, une expérience à créer. Découvrez comment nos solutions visuelles prennent vie à travers des projets pensés pour chaque lieu, chaque usage et chaque ambition.",
+          "project_1_image": "/youtube-video.mp4",
+          "project_0_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/uploads%2F1787607624269-158384-816637349_small.mp4?alt=media",
+          "visible": true,
+          "layout": {
+            "visible": true
+          }
         },
         "showreel": {
           "_elements": {
@@ -551,6 +673,30 @@
             },
             "div:1/div:1/div:1/div:5/div:1": {
               "text_fr": "02 / FILM DE PRÉSENTATION — DU PIXEL À LA VILLE"
+            },
+            "ch1TitleLine1": {
+              "fontSize": "54px"
+            },
+            "ch1TitleLine2": {
+              "fontSize": "50px"
+            },
+            "ch2TitleLine1": {
+              "fontSize": "54px"
+            },
+            "ch2TitleLine2": {
+              "fontSize": "50px"
+            },
+            "ch3TitleLine1": {
+              "fontSize": "54px"
+            },
+            "ch3TitleLine2": {
+              "fontSize": "50px"
+            },
+            "ch4TitleLine1": {
+              "fontSize": "52px"
+            },
+            "ch4TitleLine2": {
+              "fontSize": "48px"
             }
           },
           "_i18n": {
@@ -568,6 +714,12 @@
                 "status": "source",
                 "updatedAt": "2026-10-21T17:38:40.989Z",
                 "sourceText": "02 / SHOWROOM — DU PIXEL À LA VILLE"
+              },
+              "en": {
+                "value": "02 / SHOWROOM — FROM PIXEL TO CITY",
+                "status": "manual",
+                "updatedAt": "2026-11-01T11:54:56.072Z",
+                "sourceText": "02 / SHOWROOM — DU PIXEL À LA VILLE"
               }
             },
             "ch3TitleLine2": {
@@ -584,6 +736,12 @@
                 "status": "source",
                 "updatedAt": "2026-10-21T18:08:52.873Z",
                 "sourceText": "DONNEZ VIE"
+              },
+              "en": {
+                "value": "BRING YOUR",
+                "status": "manual",
+                "updatedAt": "2026-11-01T11:55:02.842Z",
+                "sourceText": "DONNEZ VIE"
               }
             },
             "head2": {
@@ -592,13 +750,25 @@
                 "status": "source",
                 "updatedAt": "2026-10-21T18:09:11.450Z",
                 "sourceText": "À VOS IDÉES."
+              },
+              "en": {
+                "value": "IDEAS TO LIFE.",
+                "status": "manual",
+                "updatedAt": "2026-11-01T11:55:09.917Z",
+                "sourceText": "À VOS IDÉES."
               }
             },
             "ch4TitleLine2": {
               "fr": {
-                "value": "à métropolitaine.",
+                "value": "la précision à l’échelle du pixel.",
                 "status": "source",
-                "updatedAt": "2026-10-22T09:52:59.253Z",
+                "updatedAt": "2026-11-01T12:41:35.814Z",
+                "sourceText": "la précision à l’échelle du pixel."
+              },
+              "en": {
+                "value": "precision at pixel level.",
+                "status": "manual",
+                "updatedAt": "2026-11-01T12:40:40.824Z",
                 "sourceText": "à métropolitaine."
               }
             },
@@ -945,6 +1115,140 @@
                 "updatedAt": "2026-10-27T21:59:22.245Z",
                 "sourceText": "-6.7"
               }
+            },
+            "label": {
+              "fr": {
+                "value": "PIXIATECH / FILM DE PRÉSENTATION",
+                "status": "source",
+                "updatedAt": "2026-11-01T11:53:29.398Z",
+                "sourceText": "PIXIATECH / FILM DE PRÉSENTATION"
+              },
+              "en": {
+                "value": "PIXIATECH / PRESENTATION FILM",
+                "status": "manual",
+                "updatedAt": "2026-11-01T11:54:38.179Z",
+                "sourceText": "PIXIATECH / FILM DE PRÉSENTATION"
+              }
+            },
+            "scrollHint": {
+              "fr": {
+                "value": "FAITES DÉFILER — DU LOIN AU CŒUR DES LED",
+                "status": "source",
+                "updatedAt": "2026-11-01T11:53:38.900Z",
+                "sourceText": "FAITES DÉFILER — DU LOIN AU CŒUR DES LED"
+              },
+              "en": {
+                "value": "SCROLL DOWN — FROM AFAR TO THE HEART OF LEDS",
+                "status": "manual",
+                "updatedAt": "2026-11-01T11:54:48.963Z",
+                "sourceText": "FAITES DÉFILER — DU LOIN AU CŒUR DES LED"
+              }
+            },
+            "lede": {
+              "fr": {
+                "value": "Faites défiler la caméra avance de la métropole jusqu’à plonger au cœur des micro-diodes LED.",
+                "status": "source",
+                "updatedAt": "2026-11-01T11:54:11.561Z",
+                "sourceText": "Faites défiler la caméra avance de la métropole jusqu’à plonger au cœur des micro-diodes LED."
+              },
+              "en": {
+                "value": "Scroll down  the camera moves from the metropolis into the heart of LED micro-diodes.",
+                "status": "manual",
+                "updatedAt": "2026-11-01T11:55:19.493Z",
+                "sourceText": "Faites défiler la caméra avance de la métropole jusqu’à plonger au cœur des micro-diodes LED."
+              }
+            },
+            "ch1Eyebrow": {
+              "fr": {
+                "value": "01 / LA MÉTROPOLE",
+                "status": "source",
+                "updatedAt": "2026-11-01T12:08:30.063Z",
+                "sourceText": "01 / LA MÉTROPOLE"
+              },
+              "en": {
+                "value": "01 / THE METROPOLIS",
+                "status": "manual",
+                "updatedAt": "2026-11-01T12:17:07.033Z",
+                "sourceText": "01 / LA MÉTROPOLE"
+              }
+            },
+            "ch1TitleLine1": {
+              "fr": {
+                "value": "Écrans LED",
+                "status": "source",
+                "updatedAt": "2026-11-01T12:08:37.577Z",
+                "sourceText": "Écrans LED"
+              },
+              "en": {
+                "value": "LED Screens",
+                "status": "manual",
+                "updatedAt": "2026-11-01T12:17:11.879Z",
+                "sourceText": "Écrans LED"
+              }
+            },
+            "ch1TitleLine2": {
+              "fr": {
+                "value": "à l’échelle de la ville.",
+                "status": "source",
+                "updatedAt": "2026-11-01T12:08:46.592Z",
+                "sourceText": "à l’échelle de la ville."
+              },
+              "en": {
+                "value": "city scale.",
+                "status": "manual",
+                "updatedAt": "2026-11-01T12:17:20.151Z",
+                "sourceText": "à l’échelle de la ville."
+              }
+            },
+            "ch1Desc": {
+              "fr": {
+                "value": "Visible à des kilomètres dans la nuit urbaine, la technologie d’affichage monumentale PIXIATECH rayonne avec une luminosité crête de 10,000 nits.",
+                "status": "source",
+                "updatedAt": "2026-11-01T12:16:13.693Z",
+                "sourceText": "Visible à des kilomètres dans la nuit urbaine, la technologie d’affichage monumentale PIXIATECH rayonne avec une luminosité crête de 10,000 nits."
+              },
+              "en": {
+                "value": "Visible for miles in the urban night, PIXIATECH’s monumental display technology shines with a peak brightness of 10,000 nits.",
+                "status": "manual",
+                "updatedAt": "2026-11-01T12:17:25.385Z",
+                "sourceText": "Visible à des kilomètres dans la nuit urbaine, la technologie d’affichage monumentale PIXIATECH rayonne avec une luminosité crête de 10,000 nits."
+              }
+            },
+            "ch4Desc": {
+              "en": {
+                "value": "SMD, GOB, COB and MicroLED: PIXIATECH works with the leading LED display architectures, including transparent, holographic and cool-white LED solutions. Each technology is selected to deliver precise images, accurate colors and brightness adapted to every environment.",
+                "status": "manual",
+                "updatedAt": "2026-11-01T12:39:18.308Z",
+                "sourceText": "SMD, GOB, COB et MicroLED : PIXIATECH maîtrise les principales architectures d’affichage LED, ainsi que les solutions transparentes, holographiques et blanc froid. Chaque technologie est sélectionnée pour garantir une image précise, des couleurs fidèles et une luminosité adaptée à chaque environnement."
+              }
+            },
+            "ch4Eyebrow": {
+              "en": {
+                "value": "04 / INSIDE THE PIXEL",
+                "status": "manual",
+                "updatedAt": "2026-11-01T12:40:18.393Z",
+                "sourceText": ""
+              },
+              "fr": {
+                "value": "04 / PLONGÉE DANS LE PIXEL",
+                "status": "source",
+                "updatedAt": "2026-11-01T12:41:22.953Z",
+                "sourceText": "04 / PLONGÉE DANS LE PIXEL"
+              }
+            },
+            "ch4TitleLine1": {
+              "en": {
+                "value": "At the heart of LED technology",
+                "status": "manual",
+                "updatedAt": "2026-11-01T12:40:33.376Z",
+                "sourceText": ""
+              },
+              "fr": {
+                "value": "Au cœur de la technologie LED",
+                "status": "source",
+                "updatedAt": "2026-11-01T12:41:27.654Z",
+                "sourceText": "Au cœur de la technologie LED"
+              }
             }
           },
           "ch3TitleLine1": "L'écran devient",
@@ -954,34 +1258,34 @@
           "head2": "À VOS IDÉES.",
           "minHeight": 2000,
           "paddingBottom": 0,
-          "ch4TitleLine2": "à métropolitaine.",
+          "ch4TitleLine2": "la précision à l’échelle du pixel.",
           "visible": true,
           "layout": {
             "visible": true
           },
           "ch2TitleLine1": "Intégration façade",
-          "videoOutlineColor": "#314C78",
-          "screen1Left": "40.71",
-          "screen1Top": "50.18",
-          "screen1Width": "16.33",
-          "screen1Height": "15.03",
+          "videoOutlineColor": "#000000",
+          "screen1Left": "41.49",
+          "screen1Top": "52.08",
+          "screen1Width": "14.84",
+          "screen1Height": "11.85",
           "image1Src": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2Fref-1-city-far_gdjms.webp?alt=media",
           "img1PosX": "-0.4",
           "img1Scale": "1.05",
           "img1PosY": "-1.1",
-          "img1Width": "105",
+          "img1Width": "109",
           "img1Height": "99",
-          "screen2Left": "28.27",
-          "screen2Top": "36.86",
-          "screen2Width": "38.42",
-          "screen2Height": "35.95",
+          "screen2Left": "30.86",
+          "screen2Top": "40",
+          "screen2Width": "33.62",
+          "screen2Height": "29.14",
           "img3Scale": "1.27",
           "img3PosX": "2",
           "img3PosY": "14.8",
-          "screen3Left": "14.95",
-          "screen3Top": "30.79",
-          "screen3Width": "62.07",
-          "screen3Height": "58.17",
+          "screen3Left": "19.39",
+          "screen3Top": "35.8",
+          "screen3Width": "54.22",
+          "screen3Height": "42.67",
           "img2Scale": "1.42",
           "img2PosY": "5.9",
           "img2Width": "97",
@@ -989,22 +1293,42 @@
           "img2PosX": "-0.9",
           "img3Width": "92",
           "img3Height": "102",
-          "l3ScaleMax": "1.74",
-          "l3OriginX": "54.04",
-          "l3OriginY": "50",
-          "l1ScaleMax": "1.39",
-          "l1OriginX": "49.97",
-          "l1CamPosX": "1.2",
-          "l1CamPosY": "6.7",
+          "l3ScaleMax": "1.6",
+          "l3OriginX": "46.71",
+          "l3OriginY": "48.77",
+          "l1ScaleMax": "1.6",
+          "l1OriginX": "48.77",
+          "l1CamPosX": "0",
+          "l1CamPosY": "-0.4",
           "l1XShift": "0",
-          "l1YShift": "14.1",
-          "l1OriginY": "59.88",
+          "l1YShift": "4.1",
+          "l1OriginY": "61.95",
           "l3CamPosX": "1.3",
-          "l3CamPosY": "-16.2",
-          "l3XShift": "12.7",
-          "l2CamPosX": "1",
-          "l2CamPosY": "-6.7",
-          "videoUrl": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fshowreel%2Fvideos%2FWhatsApp_Video_2026-07-31_at_09.29.08_o7ypsi.mp4?alt=media"
+          "l3CamPosY": "-11.1",
+          "l3XShift": "4.9",
+          "l2CamPosX": "0.9",
+          "l2CamPosY": "-5.8",
+          "videoUrl": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fshowreel%2Fvideos%2FWhatsApp_Video_2026-07-31_at_09.29.08_nhrywa.mp4?alt=media",
+          "img4PosY": "1.2",
+          "l2OriginX": "45.47",
+          "l2ScaleMax": "1.6",
+          "l2OriginY": "47.12",
+          "l3YShift": "-4.9",
+          "l4XShift": "-6.6",
+          "l4CamPosY": "5.4",
+          "l4CamPosX": "-3.3",
+          "l4ScaleMax": "1.6",
+          "image4Src": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FDIODE_LED_ECRAN_GEANT_ufu1w.webp?alt=media",
+          "label": "PIXIATECH / FILM DE PRÉSENTATION",
+          "scrollHint": "FAITES DÉFILER — DU LOIN AU CŒUR DES LED",
+          "lede": "Faites défiler la caméra avance de la métropole jusqu’à plonger au cœur des micro-diodes LED.",
+          "ch1Eyebrow": "01 / LA MÉTROPOLE",
+          "ch1TitleLine1": "Écrans LED",
+          "ch1TitleLine2": "à l’échelle de la ville.",
+          "ch1Desc": "Visible à des kilomètres dans la nuit urbaine, la technologie d’affichage monumentale PIXIATECH rayonne avec une luminosité crête de 10,000 nits.",
+          "ch4Desc": "SMD, GOB, COB et MicroLED : PIXIATECH maîtrise les principales architectures d’affichage LED, ainsi que les solutions transparentes, holographiques et blanc froid. Chaque technologie est sélectionnée pour garantir une image précise, des couleurs fidèles et une luminosité adaptée à chaque environnement.",
+          "ch4Eyebrow": "04 / PLONGÉE DANS LE PIXEL",
+          "ch4TitleLine1": "Au cœur de la technologie LED"
         },
         "technology": {
           "_elements": {
@@ -1053,109 +1377,130 @@
             "div:1/section:1/div:1/div:2/div:5/div:1/img:1": {
               "src": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FPanneau_LED__tanche_pour_affichage_ext_rieur___Technologie_LED_outdoor_2dlav.webp?alt=media",
               "alt": "INFINITE COLORS"
+            },
+            "description": {
+              "fontSize": "18px"
             }
           },
           "_i18n": {
             "tech_solidskin_desc": {
               "fr": {
-                "value": "L’OLED ",
+                "value": "Des micro-LED pilotées par une matrice active composent l’image sur une dalle transparente. Chaque pixel est contrôlé électroniquement pour moduler sa luminosité, tandis que la dalle laisse apparaître les objets et l’espace situés derrière elle.",
                 "status": "source",
-                "updatedAt": "2026-10-21T23:23:32.639Z",
-                "sourceText": "L’OLED "
+                "updatedAt": "2026-11-01T19:21:19.534Z",
+                "sourceText": "Des micro-LED pilotées par une matrice active composent l’image sur une dalle transparente. Chaque pixel est contrôlé électroniquement pour moduler sa luminosité, tandis que la dalle laisse apparaître les objets et l’espace situés derrière elle."
               }
             },
             "tech_coldled_desc": {
               "fr": {
-                "value": "La ",
+                "value": "Chaque pixel associe des LED rouges, vertes et bleues dont l’intensité est pilotée pour composer l’image. Les modules s’assemblent pour former l’écran, tandis que l’espacement des pixels détermine la finesse des détails à une distance donnée",
                 "status": "source",
-                "updatedAt": "2026-10-21T23:23:22.094Z",
-                "sourceText": "La "
+                "updatedAt": "2026-11-01T19:19:42.620Z",
+                "sourceText": "Chaque pixel associe des LED rouges, vertes et bleues dont l’intensité est pilotée pour composer l’image. Les modules s’assemblent pour former l’écran, tandis que l’espacement des pixels détermine la finesse des détails à une distance donnée"
               }
             },
             "tech_coldled_name": {
               "fr": {
-                "value": "Les LED froides",
+                "value": "LED modulaire",
                 "status": "source",
-                "updatedAt": "2026-10-13T21:51:12.518Z",
-                "sourceText": "Les LED froides"
+                "updatedAt": "2026-11-01T19:19:24.883Z",
+                "sourceText": "LED modulaire"
               }
             },
             "tech_armorled_name": {
               "fr": {
-                "value": "les.",
+                "value": "OLED transparente",
                 "status": "source",
-                "updatedAt": "2026-10-21T23:34:17.021Z",
-                "sourceText": "les."
+                "updatedAt": "2026-11-01T19:21:38.750Z",
+                "sourceText": "OLED transparente"
               }
             },
             "tech_solidskin_name": {
               "fr": {
-                "value": "OLED transparent",
+                "value": "MicroLED transparente",
                 "status": "source",
-                "updatedAt": "2026-10-21T23:34:20.825Z",
-                "sourceText": "OLED transparent"
+                "updatedAt": "2026-11-01T19:21:09.382Z",
+                "sourceText": "MicroLED transparente"
               }
             },
             "tech_cbsf_name": {
               "fr": {
-                "value": "LED renforcée",
+                "value": "Écran holographique transparent",
                 "status": "source",
-                "updatedAt": "2026-10-13T19:38:48.857Z",
-                "sourceText": "LED renforcée"
+                "updatedAt": "2026-11-01T19:26:36.485Z",
+                "sourceText": "Écran holographique transparent"
               }
             },
             "tech_cbsf_desc": {
               "fr": {
-                "value": "Les connexions",
+                "value": "De minuscules LED forment une image sur un support presque invisible. Leur espacement laisse passer la lumière et permet de voir à travers l’écran. Les contenus semblent ainsi flotter devant le décor, sans masquer entièrement ce qui se trouve derrière.",
                 "status": "source",
-                "updatedAt": "2026-10-21T23:23:50.738Z",
-                "sourceText": "Les connexions"
+                "updatedAt": "2026-11-01T19:26:43.871Z",
+                "sourceText": "De minuscules LED forment une image sur un support presque invisible. Leur espacement laisse passer la lumière et permet de voir à travers l’écran. Les contenus semblent ainsi flotter devant le décor, sans masquer entièrement ce qui se trouve derrière."
               }
             },
             "tech_armorled_desc": {
               "fr": {
-                "value": "La technologie",
+                "value": "Des diodes organiques émettent leur propre lumière, sans rétroéclairage. Chaque pixel s’allume ou s’éteint individuellement pour former l’image et ses contrastes. La dalle transparente laisse voir les objets placés derrière l’écran.",
                 "status": "source",
-                "updatedAt": "2026-10-21T23:23:39.383Z",
-                "sourceText": "La technologie"
+                "updatedAt": "2026-11-01T19:21:48.743Z",
+                "sourceText": "Des diodes organiques émettent leur propre lumière, sans rétroéclairage. Chaque pixel s’allume ou s’éteint individuellement pour former l’image et ses contrastes. La dalle transparente laisse voir les objets placés derrière l’écran."
               }
             },
             "tech_infinite_desc": {
               "fr": {
-                "value": "Chaque ",
+                "value": "Des panneaux LED placés derrière un visuel imprimé font varier la lumière pour en animer certaines zones. Selon la version, ils utilisent le blanc ou la couleur pour créer des effets de mouvement. L’image reste fixe : c’est la lumière qui lui donne vie",
                 "status": "source",
-                "updatedAt": "2026-10-21T23:23:57.942Z",
-                "sourceText": "Chaque "
+                "updatedAt": "2026-11-01T19:28:55.217Z",
+                "sourceText": "Des panneaux LED placés derrière un visuel imprimé font varier la lumière pour en animer certaines zones. Selon la version, ils utilisent le blanc ou la couleur pour créer des effets de mouvement. L’image reste fixe : c’est la lumière qui lui donne vie"
               }
             },
             "tech_infinite_name": {
               "fr": {
-                "value": "LED encapsulée",
+                "value": "Rétroéclairage LED dynamique",
                 "status": "source",
-                "updatedAt": "2026-10-13T19:40:29.754Z",
-                "sourceText": "LED encapsulée"
+                "updatedAt": "2026-11-01T19:29:06.843Z",
+                "sourceText": "Rétroéclairage LED dynamique"
+              }
+            },
+            "title": {
+              "fr": {
+                "value": "La technologie au service de votre impact visuel.",
+                "status": "source",
+                "updatedAt": "2026-11-01T19:10:45.854Z",
+                "sourceText": "La technologie au service de votre impact visuel."
+              }
+            },
+            "description": {
+              "fr": {
+                "value": "De la précision de l’image à la transparence des écrans, découvrez cinq approches technologiques pour donner une nouvelle dimension à vos projets et mettre vos contenus en lumière.",
+                "status": "source",
+                "updatedAt": "2026-11-01T19:10:55.912Z",
+                "sourceText": "De la précision de l’image à la transparence des écrans, découvrez cinq approches technologiques pour donner une nouvelle dimension à vos projets et mettre vos contenus en lumière."
               }
             }
           },
-          "tech_solidskin_desc": "L’OLED ",
-          "tech_coldled_desc": "La ",
-          "tech_coldled_name": "Les LED froides",
-          "tech_armorled_name": "les.",
-          "tech_solidskin_name": "OLED transparent",
-          "tech_cbsf_name": "LED renforcée",
-          "tech_cbsf_desc": "Les connexions",
-          "tech_armorled_desc": "La technologie",
-          "tech_infinite_desc": "Chaque ",
-          "tech_infinite_name": "LED encapsulée",
-          "tech_solidskin_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FModule_LED_haute_densit__avec_structure_technique_optimis_e_70rz7.webp?alt=media",
-          "tech_coldled_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FTechnologie_d__cran_LED_haute_densit____Gros_plan_sur_les_modules_lvavr.webp?alt=media",
-          "tech_armorled_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FPanneau_LED__tanche_pour_affichage_ext_rieur___Technologie_LED_outdoor_dl5ni.webp?alt=media",
-          "tech_infinite_image": "/uploads/products/amt/back.jpg",
-          "tech_cbsf_image": "/uploads/products/studio/back.jpg",
+          "tech_solidskin_desc": "Des micro-LED pilotées par une matrice active composent l’image sur une dalle transparente. Chaque pixel est contrôlé électroniquement pour moduler sa luminosité, tandis que la dalle laisse apparaître les objets et l’espace situés derrière elle.",
+          "tech_coldled_desc": "Chaque pixel associe des LED rouges, vertes et bleues dont l’intensité est pilotée pour composer l’image. Les modules s’assemblent pour former l’écran, tandis que l’espacement des pixels détermine la finesse des détails à une distance donnée",
+          "tech_coldled_name": "LED modulaire",
+          "tech_armorled_name": "OLED transparente",
+          "tech_solidskin_name": "MicroLED transparente",
+          "tech_cbsf_name": "Écran holographique transparent",
+          "tech_cbsf_desc": "De minuscules LED forment une image sur un support presque invisible. Leur espacement laisse passer la lumière et permet de voir à travers l’écran. Les contenus semblent ainsi flotter devant le décor, sans masquer entièrement ce qui se trouve derrière.",
+          "tech_armorled_desc": "Des diodes organiques émettent leur propre lumière, sans rétroéclairage. Chaque pixel s’allume ou s’éteint individuellement pour former l’image et ses contrastes. La dalle transparente laisse voir les objets placés derrière l’écran.",
+          "tech_infinite_desc": "Des panneaux LED placés derrière un visuel imprimé font varier la lumière pour en animer certaines zones. Selon la version, ils utilisent le blanc ou la couleur pour créer des effets de mouvement. L’image reste fixe : c’est la lumière qui lui donne vie",
+          "tech_infinite_name": "Rétroéclairage LED dynamique",
+          "tech_solidskin_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FMICRO_LED_b10x0.webp?alt=media",
+          "tech_coldled_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FECRAN_LED_1d7qw.webp?alt=media",
+          "tech_armorled_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FOLED_yygx4.webp?alt=media",
+          "tech_infinite_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2Fphoto_4k_amelioree2-copie_gwdo4.png?alt=media",
+          "tech_cbsf_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FECRAN_LED_HOLOGRAPHIQUE_11ypz.webp?alt=media",
           "visible": true,
           "layout": {
             "visible": true
-          }
+          },
+          "title": "La technologie au service de votre impact visuel.",
+          "description": "De la précision de l’image à la transparence des écrans, découvrez cinq approches technologiques pour donner une nouvelle dimension à vos projets et mettre vos contenus en lumière."
         },
         "experience": {
           "image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2F_cran_LED_incurv__immersif_pour_exp_rience_visuelle_grand_format_4ap8x.webp?alt=media",
@@ -1173,27 +1518,44 @@
           "_i18n": {
             "title": {
               "fr": {
-                "value": "Séries d’écrans.",
+                "value": "Des solutions visuelles.",
                 "status": "source",
-                "updatedAt": "2026-10-14T09:41:04.693Z",
-                "sourceText": "Séries d’écrans."
+                "updatedAt": "2026-11-01T18:47:00.637Z",
+                "sourceText": "Des solutions visuelles."
+              },
+              "en": {
+                "value": "display series.",
+                "status": "manual",
+                "updatedAt": "2026-11-01T23:59:09.612Z",
+                "sourceText": "Des solutions visuelles."
               }
             },
             "description": {
               "fr": {
-                "value": "Installation fixe, location & événementiel, transparents, cinétiques et créatifs. Explorez notre catalogue complet par environnement et domaine d’application.",
+                "value": "Écrans LED, OLED et Micro LED, écrans holographiques, ventilateurs 3D et caissons lumineux dynamiques. Découvrez nos gammes et trouvez la solution adaptée à votre projet.",
                 "status": "source",
-                "updatedAt": "2026-10-14T09:41:29.515Z",
-                "sourceText": "Installation fixe, location & événementiel, transparents, cinétiques et créatifs. Explorez notre catalogue complet par environnement et domaine d’application."
+                "updatedAt": "2026-11-01T18:47:18.107Z",
+                "sourceText": "Écrans LED, OLED et Micro LED, écrans holographiques, ventilateurs 3D et caissons lumineux dynamiques. Découvrez nos gammes et trouvez la solution adaptée à votre projet."
+              }
+            },
+            "primaryCta": {
+              "fr": {
+                "value": "EXPLORER LE CATALOGUE →",
+                "status": "source",
+                "updatedAt": "2026-11-01T18:47:31.088Z",
+                "sourceText": "EXPLORER LE CATALOGUE →"
               }
             }
           },
-          "title": "Séries d’écrans.",
-          "description": "Installation fixe, location & événementiel, transparents, cinétiques et créatifs. Explorez notre catalogue complet par environnement et domaine d’application.",
+          "title": "Des solutions visuelles.",
+          "description": "Écrans LED, OLED et Micro LED, écrans holographiques, ventilateurs 3D et caissons lumineux dynamiques. Découvrez nos gammes et trouvez la solution adaptée à votre projet.",
           "visible": true,
           "layout": {
             "visible": true
-          }
+          },
+          "primaryCta": "EXPLORER LE CATALOGUE →",
+          "minHeight": 542,
+          "paddingBottom": 151
         },
         "kinetic": {
           "_elements": {
@@ -1201,33 +1563,62 @@
               "text": "UNITÉ DE MOUVEMENT — 248.5 MM zdsd"
             }
           },
-          "visible": false,
+          "visible": true,
           "layout": {
-            "visible": false
-          }
+            "visible": true
+          },
+          "minHeight": 1566,
+          "paddingBottom": 113
         },
         "footer": {
           "_elements": {
             "footer_col1_link_1": {
-              "text_fr": "dfsdfsdfsdfsdf"
+              "text_fr": "Écran LED intérieur"
+            },
+            "footer_col1_link_2": {
+              "text_fr": "Écran LED extérieur"
+            },
+            "footer_col1_link_3": {
+              "text_fr": "Écran LED transparent"
+            },
+            "footer_col1_link_4": {
+              "text_fr": "Écran LED Rental"
+            },
+            "footer_col4_address": {
+              "text_fr": "20–24 avenue Henri Barbusse, 93000 Bobigny, France "
+            }
+          }
+        },
+        "contact": {
+          "_elements": {
+            "div:1/section:1/div:1/div:1/a:1/div:2": {
+              "text_fr": "Écran LED intérieur"
+            },
+            "div:1/section:1/div:1/div:1/a:2/div:2": {
+              "text_fr": "Écran LED extérieur"
+            },
+            "div:1/section:1/div:1/div:1/a:2/div:3": {
+              "text_fr": "Écran LED fin pitch d'extérieur"
             }
           }
         }
       },
       "sectionOrder": [
         "hero",
-        "products",
-        "showreel",
         "manifesto",
+        "showreel",
+        "products",
         "markets",
-        "kinetic",
-        "technology",
         "pitch",
+        "technology",
+        "kinetic",
         "projects",
         "process",
-        "experience",
         "insights",
-        "contact"
+        "experience",
+        "contact",
+        "header",
+        "footer"
       ]
     },
     "product_wp": {
@@ -1557,5 +1948,5 @@
       }
     }
   },
-  "updatedAt": "2026-10-31T18:42:45.131Z"
+  "updatedAt": "2026-11-02T11:04:05.229Z"
 }

@@ -1523,8 +1523,37 @@ export default function ShowreelAdminModule() {
     [pages]
   );
 
-  // Derived values from CMS
-  const videoSrc = (cmsData['videoUrl'] as string | undefined) || '/youtube-video.mp4';
+  // Multilingual video support
+  const videoFr = useMemo(
+    () => getCmsText(cmsData, 'videoUrl', 'fr', (cmsData['videoUrl'] as string | undefined) || '/youtube-video.mp4'),
+    [cmsData]
+  );
+
+  const videoEnRaw = useMemo(
+    () => ((cmsData._i18n as Record<string, Record<string, { value?: string }>> | undefined)?.['videoUrl']?.['en']?.value as string | undefined) || '',
+    [cmsData]
+  );
+
+  const [videoLangMode, setVideoLangMode] = useState<'shared' | 'independent'>(() => {
+    const saved = cmsData['videoLangMode'] as string | undefined;
+    if (saved === 'shared' || saved === 'independent') return saved;
+    return videoEnRaw && videoEnRaw !== videoFr ? 'independent' : 'shared';
+  });
+
+  const [selectedVideoLang, setSelectedVideoLang] = useState<'fr' | 'en'>('fr');
+
+  const activeVideoUrl = useMemo(() => {
+    if (videoLangMode === 'shared') {
+      return videoFr;
+    }
+    if (selectedVideoLang === 'en') {
+      return videoEnRaw || videoFr;
+    }
+    return videoFr;
+  }, [videoLangMode, selectedVideoLang, videoFr, videoEnRaw]);
+
+  // Derived values from CMS (active video based on language/mode)
+  const videoSrc = activeVideoUrl;
 
   const imageSrcs = LAYERS.map(
     (l) => (cmsData[l.key] as string | undefined) || l.defaultSrc
@@ -1558,11 +1587,46 @@ export default function ShowreelAdminModule() {
 
   const handleVideoChange = useCallback(
     (url: string) => {
-      updateSectionField('showreel', 'videoUrl', url);
+      if (videoLangMode === 'shared') {
+        updateSectionFieldLocalized('showreel', 'videoUrl', url, 'fr', true);
+        updateSectionFieldLocalized('showreel', 'videoUrl', url, 'en', true);
+        updateSectionField('showreel', 'videoUrl', url);
+        updateSectionField('showreel', 'videoLangMode', 'shared');
+      } else {
+        updateSectionFieldLocalized('showreel', 'videoUrl', url, selectedVideoLang, true);
+        if (selectedVideoLang === 'fr') {
+          updateSectionField('showreel', 'videoUrl', url);
+        }
+        updateSectionField('showreel', 'videoLangMode', 'independent');
+      }
       markUnsaved();
     },
-    [updateSectionField]
+    [videoLangMode, selectedVideoLang, updateSectionFieldLocalized, updateSectionField]
   );
+
+  const handleSetVideoLangMode = useCallback(
+    (mode: 'shared' | 'independent') => {
+      setVideoLangMode(mode);
+      updateSectionField('showreel', 'videoLangMode', mode);
+      if (mode === 'shared') {
+        const urlToShare = activeVideoUrl;
+        updateSectionFieldLocalized('showreel', 'videoUrl', urlToShare, 'fr', true);
+        updateSectionFieldLocalized('showreel', 'videoUrl', urlToShare, 'en', true);
+        updateSectionField('showreel', 'videoUrl', urlToShare);
+      }
+      markUnsaved();
+    },
+    [activeVideoUrl, updateSectionFieldLocalized, updateSectionField]
+  );
+
+  const handleDuplicateFrToEn = useCallback(() => {
+    updateSectionFieldLocalized('showreel', 'videoUrl', videoFr, 'en', true);
+    updateSectionField('showreel', 'videoLangMode', 'independent');
+    setVideoLangMode('independent');
+    setSelectedVideoLang('en');
+    markUnsaved();
+    toast.success('Vidéo française dupliquée vers la version anglaise.');
+  }, [videoFr, updateSectionFieldLocalized, updateSectionField]);
 
   const handleImageChange = useCallback(
     (key: string, url: string) => {
@@ -1792,10 +1856,108 @@ export default function ShowreelAdminModule() {
             {activeTab === 'media' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#F5F4F0', marginBottom: 4 }}>Vidéo du Showreel</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#F5F4F0', marginBottom: 4 }}>Vidéo du Showreel 3D</div>
                   <div style={{ fontSize: 11, color: '#6B7280', marginBottom: 16, lineHeight: 1.5 }}>
-                    La vidéo sera intégrée à l'intérieur de l'écran LED sur chaque image de la démonstration. Formats pris en charge : MP4, WebM.
+                    La vidéo sera intégrée dans l'écran LED sur chaque étape de la démonstration. Formats pris en charge : MP4, WebM.
                   </div>
+
+                  {/* Mode de synchronisation linguistique */}
+                  <div style={{ padding: 14, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, marginBottom: 16 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      Gestion multilingue de la vidéo
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
+                      <button
+                        type="button"
+                        onClick={() => handleSetVideoLangMode('shared')}
+                        style={{
+                          padding: '7px 14px', borderRadius: 8, cursor: 'pointer',
+                          background: videoLangMode === 'shared' ? '#C3F910' : 'rgba(255,255,255,0.06)',
+                          color: videoLangMode === 'shared' ? '#05070B' : '#9CA3AF',
+                          border: videoLangMode === 'shared' ? '1px solid #C3F910' : '1px solid rgba(255,255,255,0.1)',
+                          fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6,
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        <Globe style={{ width: 13, height: 13 }} />
+                        🌐 Vidéo commune aux deux langues
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleSetVideoLangMode('independent')}
+                        style={{
+                          padding: '7px 14px', borderRadius: 8, cursor: 'pointer',
+                          background: videoLangMode === 'independent' ? '#C3F910' : 'rgba(255,255,255,0.06)',
+                          color: videoLangMode === 'independent' ? '#05070B' : '#9CA3AF',
+                          border: videoLangMode === 'independent' ? '1px solid #C3F910' : '1px solid rgba(255,255,255,0.1)',
+                          fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6,
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        <Film style={{ width: 13, height: 13 }} />
+                        🌍 Vidéos différentes (FR &amp; EN)
+                      </button>
+                    </div>
+
+                    {videoLangMode === 'shared' ? (
+                      <div style={{ fontSize: 11, color: '#10B981', display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10B981', display: 'inline-block' }} />
+                        Mode unifié actif : la vidéo ci-dessous s'applique automatiquement sur le site en français et en anglais.
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 10 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                          <span style={{ fontSize: 11, color: '#9CA3AF' }}>Édition active :</span>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedVideoLang('fr')}
+                            style={{
+                              padding: '5px 12px', borderRadius: 7, cursor: 'pointer',
+                              background: selectedVideoLang === 'fr' ? '#3B82F6' : 'rgba(255,255,255,0.06)',
+                              color: '#FFFFFF',
+                              border: selectedVideoLang === 'fr' ? '1px solid #60A5FA' : '1px solid rgba(255,255,255,0.1)',
+                              fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6,
+                            }}
+                          >
+                            🇫🇷 Version Française {videoFr ? '✓' : ''}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedVideoLang('en')}
+                            style={{
+                              padding: '5px 12px', borderRadius: 7, cursor: 'pointer',
+                              background: selectedVideoLang === 'en' ? '#8B5CF6' : 'rgba(255,255,255,0.06)',
+                              color: '#FFFFFF',
+                              border: selectedVideoLang === 'en' ? '1px solid #A78BFA' : '1px solid rgba(255,255,255,0.1)',
+                              fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6,
+                            }}
+                          >
+                            🇬🇧 Version Anglaise {videoEnRaw ? '✓' : '(identique FR)'}
+                          </button>
+                        </div>
+
+                        {selectedVideoLang === 'en' && !videoEnRaw && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.3)', borderRadius: 8 }}>
+                            <span style={{ fontSize: 10, color: '#C4B5FD', flex: 1 }}>
+                              Aucune vidéo anglaise dédiée : la vidéo française est utilisée comme repli automatique.
+                            </span>
+                            <button
+                              type="button"
+                              onClick={handleDuplicateFrToEn}
+                              style={{
+                                padding: '4px 10px', borderRadius: 6, cursor: 'pointer',
+                                background: '#8B5CF6', color: '#FFFFFF', border: 'none',
+                                fontSize: 10, fontWeight: 700,
+                              }}
+                            >
+                              Dupliquer FR vers EN
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
                   <VideoUploadPanel
                     currentVideoUrl={videoSrc}
                     onVideoChange={handleVideoChange}
@@ -1804,7 +1966,22 @@ export default function ShowreelAdminModule() {
 
                 {/* URL directe */}
                 <div style={{ paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.07)' }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: '#9CA3AF', marginBottom: 8 }}>Ou entrer une URL directe</div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: '#9CA3AF', marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>
+                      URL directe {videoLangMode === 'independent' ? (selectedVideoLang === 'fr' ? '(Français)' : '(Anglais)') : '(Commune)'}
+                    </span>
+                    {videoLangMode === 'independent' && (
+                      <button
+                        type="button"
+                        onClick={() => handleSetVideoLangMode('shared')}
+                        style={{
+                          fontSize: 10, color: '#C3F910', background: 'transparent', border: 'none', cursor: 'pointer', textDecoration: 'underline'
+                        }}
+                      >
+                        Unifier comme vidéo commune
+                      </button>
+                    )}
+                  </div>
                   <input
                     type="text"
                     value={videoSrc}

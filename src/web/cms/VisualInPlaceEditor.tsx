@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { useCms } from '@/lib/site-web/cms-context';
-import { Image as ImageIcon, Upload, Check, X, Sparkles, Link as LinkIcon, Loader2 } from 'lucide-react';
+import { Image as ImageIcon, Film, Upload, Check, X, Sparkles, Link as LinkIcon, Loader2, Trash2, Play, Lock, AlertTriangle } from 'lucide-react';
 import { findSectionKey, getSectionNode, resolveElementKey, setSelectedElement } from './section-registry';
 
 import { FloatingElementToolbar } from './FloatingElementToolbar';
@@ -10,6 +10,7 @@ import { applyElementStyle, elementTextKey, type ElementStyle } from './useCmsEl
 import { normalizeLang } from '@/lib/site-web/cms-i18n';
 import { closestExplicitKeyElement, isInsideCmsUi, isMediaElement, isSimpleTextElement } from './section-registry';
 import { saveContactField } from './contact-edit';
+import { isMediaVideo, looksLikeMediaUrl } from './media-utils';
 
 type MediaKind = 'image' | 'video';
 
@@ -25,6 +26,7 @@ interface MediaLibraryItem {
   url: string;
   name: string;
   source: 'static' | 'storage';
+  type?: 'image' | 'video';
 }
 
 /**
@@ -34,6 +36,8 @@ interface MediaLibraryItem {
  * historiques pour que le sélecteur reste utilisable.
  */
 const FALLBACK_LIBRARY_IMAGES: MediaLibraryItem[] = [
+  { name: 'Showreel PixiaTech (Vidéo Démo)', url: '/youtube-video.mp4', source: 'static', type: 'video' },
+  { name: 'Cabinet LED WP (Vidéo)', url: '/uploads/products/wp/wp-cabinet.webm', source: 'static', type: 'video' },
   { name: 'Hero 1 — Hall Architectural', url: '/uploads/site/hero-1.jpg', source: 'static' },
   { name: 'Hero 2 — Atrium Immersif', url: '/uploads/site/hero-2.jpg', source: 'static' },
   { name: 'Hero 3 — Mur Courbé Panoramique', url: '/uploads/site/hero-3.jpg', source: 'static' },
@@ -54,10 +58,7 @@ const FALLBACK_LIBRARY_IMAGES: MediaLibraryItem[] = [
 
 /** Une valeur texte ressemble-t-elle à une URL d'image (pour le filtre « utilisées ») ? */
 function looksLikeImageUrl(value: string): boolean {
-  if (value.startsWith('data:image')) return true;
-  if (value.startsWith('/uploads/')) return true;
-  if (value.includes('firebasestorage.googleapis.com')) return true;
-  return /^https?:\/\//.test(value) && /\.(jpg|jpeg|png|webp|gif|svg|avif|bmp)(\?|#|$)/i.test(value);
+  return looksLikeMediaUrl(value);
 }
 
 export const VisualInPlaceEditor: React.FC = () => {
@@ -86,7 +87,7 @@ export const VisualInPlaceEditor: React.FC = () => {
   const [libraryLoading, setLibraryLoading] = useState<boolean>(false);
   const [libraryError, setLibraryError] = useState<string | null>(null);
   const [libraryQuery, setLibraryQuery] = useState<string>('');
-  const [libraryFilter, setLibraryFilter] = useState<'all' | 'used'>('all');
+  const [libraryFilter, setLibraryFilter] = useState<'all' | 'image' | 'video' | 'used'>('all');
 
   // Éléments de survol pour l'inspection
   const hoveredElementRef = useRef<HTMLElement | null>(null);
@@ -160,12 +161,23 @@ export const VisualInPlaceEditor: React.FC = () => {
     if (activeImageTarget) void loadLibrary();
   }, [activeImageTarget, loadLibrary]);
 
-  // Ensemble des URLs d'images déjà utilisées dans les pages CMS (filtre).
-  const usedImageUrls = useMemo(() => {
-    const set = new Set<string>();
+  // Suppression de média
+  const [deletingUrl, setDeletingUrl] = useState<string | null>(null);
+  const [confirmDeleteModal, setConfirmDeleteModal] = useState<{ url: string; name: string } | null>(null);
+
+  // Ensemble normalisé des URLs de médias déjà utilisées dans les pages CMS (images & vidéos)
+  const usedMediaUrls = useMemo(() => {
+    const rawSet = new Set<string>();
+    const normSet = new Set<string>();
+
+    const normalizeUrl = (u: string) => u.split('?')[0].split('#')[0].trim().toLowerCase();
+
     const visit = (value: unknown): void => {
       if (typeof value === 'string') {
-        if (looksLikeImageUrl(value)) set.add(value);
+        if (looksLikeImageUrl(value)) {
+          rawSet.add(value);
+          normSet.add(normalizeUrl(value));
+        }
         return;
       }
       if (Array.isArray(value)) {
@@ -177,19 +189,58 @@ export const VisualInPlaceEditor: React.FC = () => {
       }
     };
     visit(pages);
-    return set;
+    return { rawSet, normSet };
   }, [pages]);
 
-  // Liste affichée : recherche par nom/URL + filtre « toutes / utilisées ».
+  const isMediaUsed = useCallback((url: string): boolean => {
+    if (!url) return false;
+    if (usedMediaUrls.rawSet.has(url)) return true;
+    const norm = url.split('?')[0].split('#')[0].trim().toLowerCase();
+    return usedMediaUrls.normSet.has(norm);
+  }, [usedMediaUrls]);
+
+  // Liste affichée : recherche par nom/URL + filtre strict « TOUS / IMAGES / VIDÉOS / UTILISÉS ».
   const filteredLibrary = useMemo(() => {
     const items = libraryItems || [];
     const q = libraryQuery.trim().toLowerCase();
     return items.filter((item) => {
-      if (libraryFilter === 'used' && !usedImageUrls.has(item.url)) return false;
+      const isVid = isMediaVideo(item.url) || item.type === 'video';
+      if (libraryFilter === 'video' && !isVid) return false;
+      if (libraryFilter === 'image' && isVid) return false;
+      if (libraryFilter === 'used' && !isMediaUsed(item.url)) return false;
       if (!q) return true;
       return item.name.toLowerCase().includes(q) || item.url.toLowerCase().includes(q);
     });
-  }, [libraryItems, libraryQuery, libraryFilter, usedImageUrls]);
+  }, [libraryItems, libraryQuery, libraryFilter, isMediaUsed]);
+
+  const handleDeleteMedia = async (url: string) => {
+    if (isMediaUsed(url)) {
+      showToast('Ce média est actuellement utilisé sur le site et ne peut pas être supprimé.', 'error');
+      return;
+    }
+    setDeletingUrl(url);
+    try {
+      const res = await fetch('/api/site-web/media-library', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Erreur lors de la suppression');
+      }
+      showToast('Média supprimé avec succès');
+      setConfirmDeleteModal(null);
+      if (newImageSrc === url) {
+        setNewImageSrc('');
+      }
+      await loadLibrary();
+    } catch (err: unknown) {
+      showToast((err as Error).message || 'Échec de la suppression', 'error');
+    } finally {
+      setDeletingUrl(null);
+    }
+  };
 
   useEffect(() => {
     if (!isEditing || !isAdmin) {
@@ -570,43 +621,47 @@ export const VisualInPlaceEditor: React.FC = () => {
     };
   }, [isEditing, isAdmin, currentLang, uploadMedia, updateSectionField, updateElementStyle, setSelectedBlockId, persist, openImageModalForElement, showToast]);
 
-  // Appliquer le remplacement de l'image
+  // Appliquer le remplacement de l'image ou de la vidéo
   const handleApplyImage = async (srcToApply?: string) => {
     const finalSrc = srcToApply || newImageSrc;
     if (!activeImageTarget || !finalSrc) return;
 
-    const el = activeImageTarget.element;
-    el.setAttribute('src', finalSrc);
-    if (activeImageTarget.kind === 'image') {
-      (el as HTMLImageElement).src = finalSrc;
+    const targetEl = activeImageTarget.element;
+    const isTargetVideo = isMediaVideo(finalSrc);
+    const effectiveEl = targetEl;
+
+    // Mise à jour de l'attribut src si le type de balise correspond déjà (sinon React re-rendra déclarativement)
+    if ((isTargetVideo && targetEl.tagName === 'VIDEO') || (!isTargetVideo && targetEl.tagName === 'IMG')) {
+      effectiveEl.setAttribute('src', finalSrc);
+      if (effectiveEl.tagName === 'IMG') {
+        (effectiveEl as HTMLImageElement).src = finalSrc;
+      } else if (effectiveEl.tagName === 'VIDEO') {
+        (effectiveEl as HTMLVideoElement).src = finalSrc;
+        try { (effectiveEl as HTMLVideoElement).play().catch(() => {}); } catch {}
+      }
     }
 
-    const sectionKey = findSectionKey(el);
+    const sectionKey = findSectionKey(effectiveEl);
     if (!sectionKey) {
       showToast('✕ Section non reconnue — modification non sauvegardée', 'error');
       return;
     }
 
     const sectionRoot = getSectionNode(sectionKey);
-    const elementKey = resolveElementKey(el, sectionRoot);
-    const explicitKey = el.getAttribute('data-image-key') || el.getAttribute('data-media-key');
+    const elementKey = resolveElementKey(effectiveEl, sectionRoot);
+    const explicitKey = effectiveEl.getAttribute('data-image-key') || effectiveEl.getAttribute('data-media-key');
 
     if (explicitKey) {
       // Clé déclarée par le composant : le champ existe réellement, on l'écrit.
       updateSectionField(sectionKey, explicitKey, finalSrc);
-      // Nettoie tout ancien style dans _elements pour ne pas masquer la nouvelle URL
-      updateElementStyle(sectionKey, elementKey, { src: undefined });
+      updateElementStyle(sectionKey, elementKey, { src: finalSrc, mediaType: isTargetVideo ? 'video' : 'image' });
     } else {
-      // Pas de clé déclarée : on n'écrit plus dans `image`/`heroImage`/
-      // `primaryImage`/`billboardImage`. Ces champs ne sont lus que par la
-      // section hero, donc sur toute autre section l'image était enregistrée
-      // dans le vide puis disparaissait au refresh. On passe par le sac
-      // d'éléments, réappliqué au chargement par `useCmsElementStyles`.
       const next = updateElementStyle(sectionKey, elementKey, {
         src: finalSrc,
-        alt: (el as HTMLImageElement).alt || undefined,
+        mediaType: isTargetVideo ? 'video' : 'image',
+        alt: (effectiveEl as HTMLImageElement).alt || undefined,
       });
-      applyElementStyle(el, next as ElementStyle, normalizeLang(currentLang));
+      applyElementStyle(effectiveEl, next as ElementStyle, normalizeLang(currentLang));
     }
     setSelectedBlockId(sectionKey);
 
@@ -621,14 +676,15 @@ export const VisualInPlaceEditor: React.FC = () => {
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    const isVid = file.type.startsWith('video/') || /\.(mp4|webm|mov|avi)$/i.test(file.name);
     try {
       setIsUploading(true);
+      showToast(isVid ? 'Téléversement de la vidéo en cours…' : 'Téléversement de l\’image en cours…', 'pending');
       const url = await uploadMedia(file);
       setNewImageSrc(url);
       await handleApplyImage(url);
-      // La nouvelle image doit être disponible dans la bibliothèque sans
-      // rechargement de la page.
       void loadLibrary();
+      showToast(isVid ? '✓ Vidéo insérée et sauvegardée' : '✓ Image insérée et sauvegardée', 'ok');
     } catch (err) {
       console.error('Upload failed:', err);
       showToast('✕ Erreur lors du téléversement', 'error');
@@ -678,14 +734,21 @@ export const VisualInPlaceEditor: React.FC = () => {
             <div className="flex items-center justify-between pb-4 border-b border-[#222220] mb-5">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-lg bg-[#C3F910]/15 text-[#C3F910] flex items-center justify-center">
-                  <ImageIcon className="w-4 h-4" />
+                  {isMediaVideo(newImageSrc || activeImageTarget.currentSrc) ? (
+                    <Film className="w-4 h-4" />
+                  ) : (
+                    <ImageIcon className="w-4 h-4" />
+                  )}
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-white m-0">
-                    Modifier / Remplacer cette image
+                  <h3 className="text-base font-bold text-white m-0 flex items-center gap-2">
+                    <span>Modifier / Remplacer ce média</span>
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-[#C3F910]/20 text-[#C3F910]">
+                      {isMediaVideo(newImageSrc || activeImageTarget.currentSrc) ? 'VIDÉO' : 'IMAGE'}
+                    </span>
                   </h3>
                   <p className="text-[11px] font-mono text-[#7a7a76] m-0">
-                    {activeImageTarget.currentSrc.split('/').pop() || 'Image active'}
+                    Sélectionnez un média dans la bibliothèque ou téléversez un nouveau fichier.
                   </p>
                 </div>
               </div>
@@ -701,31 +764,63 @@ export const VisualInPlaceEditor: React.FC = () => {
             {/* Current & Preview Side by Side */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
               <div>
-                <label className="block text-[11px] font-mono text-[#8a8880] uppercase mb-2">
-                  Image actuelle
+                <label className="block text-[11px] font-mono text-[#8a8880] uppercase mb-2 flex items-center justify-between">
+                  <span>Média actuel</span>
+                  <span className="text-[10px] font-mono text-[#666]">
+                    {isMediaVideo(activeImageTarget.currentSrc) ? 'Vidéo' : 'Image'}
+                  </span>
                 </label>
                 <div className="h-44 rounded-xl overflow-hidden border border-[#222] bg-[#141414] flex items-center justify-center">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={activeImageTarget.currentSrc}
-                    alt="Actuelle"
-                    className="w-full h-full object-contain"
-                  />
+                  {isMediaVideo(activeImageTarget.currentSrc) ? (
+                    <video
+                      src={activeImageTarget.currentSrc}
+                      controls
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                      className="w-full h-full object-contain bg-black"
+                    />
+                  ) : (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={activeImageTarget.currentSrc}
+                      alt="Actuelle"
+                      className="w-full h-full object-contain"
+                    />
+                  )}
                 </div>
               </div>
 
               <div>
-                <label className="block text-[11px] font-mono text-[#8a8880] uppercase mb-2">
-                  Nouvelle sélection
+                <label className="block text-[11px] font-mono text-[#8a8880] uppercase mb-2 flex items-center justify-between">
+                  <span>Nouvelle sélection</span>
+                  {newImageSrc && (
+                    <span className="text-[10px] font-mono text-[#C3F910]">
+                      {isMediaVideo(newImageSrc) ? 'Vidéo détectée' : 'Image détectée'}
+                    </span>
+                  )}
                 </label>
                 <div className="h-44 rounded-xl overflow-hidden border border-[#C3F910]/40 bg-[#141414] flex items-center justify-center">
                   {newImageSrc ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={newImageSrc}
-                      alt="Nouvelle"
-                      className="w-full h-full object-contain"
-                    />
+                    isMediaVideo(newImageSrc) ? (
+                      <video
+                        src={newImageSrc}
+                        controls
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
+                        className="w-full h-full object-contain bg-black"
+                      />
+                    ) : (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={newImageSrc}
+                        alt="Nouvelle"
+                        className="w-full h-full object-contain"
+                      />
+                    )
                   ) : (
                     <span className="text-xs text-[#555] font-mono">Aucun aperçu</span>
                   )}
@@ -737,14 +832,14 @@ export const VisualInPlaceEditor: React.FC = () => {
             <div className="mb-5">
               <label className="block text-[11px] font-mono text-[#8a8880] uppercase mb-2 flex items-center gap-1.5">
                 <LinkIcon className="w-3.5 h-3.5 text-[#C3F910]" />
-                <span>URL ou chemin de l&apos;image</span>
+                <span>URL ou chemin du média (Image ou Vidéo)</span>
               </label>
               <div className="flex gap-2">
                 <input
                   type="text"
                   value={newImageSrc}
                   onChange={(e) => setNewImageSrc(e.target.value)}
-                  placeholder="/uploads/site/... ou https://..."
+                  placeholder="/uploads/... ou /youtube-video.mp4 ou https://..."
                   className="flex-1 bg-[#171715] border border-[#2b2b28] rounded-xl px-3.5 py-2.5 text-xs text-white font-mono focus:border-[#C3F910] focus:outline-none"
                 />
                 <button
@@ -760,17 +855,20 @@ export const VisualInPlaceEditor: React.FC = () => {
                   type="file"
                   ref={fileInputRef}
                   onChange={handleFileUpload}
-                  accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                  accept="image/png,image/jpeg,image/webp,image/svg+xml,video/mp4,video/webm,video/quicktime"
                   className="hidden"
                 />
               </div>
+              <p className="text-[10.5px] font-mono text-[#666] mt-1.5 mb-0">
+                Formats acceptés : Images (PNG, JPG, WebP, SVG) ou Vidéos (MP4, WebM, MOV jusqu’à 512 Mo).
+              </p>
             </div>
 
-            {/* Bibliothèque d'images réelle (démo + uploads admin) */}
+            {/* Bibliothèque de médias réelle (démo + uploads admin) */}
             <div className="mb-6">
               <label className="block text-[11px] font-mono text-[#8a8880] uppercase mb-2.5 flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5 text-[#C3F910]" />
-                <span>Bibliothèque d&apos;images du site</span>
+                <span>Bibliothèque de médias du site</span>
                 {libraryItems && (
                   <span className="text-[#555] normal-case">
                     ({filteredLibrary.length}
@@ -779,37 +877,59 @@ export const VisualInPlaceEditor: React.FC = () => {
                 )}
               </label>
 
-              {/* Recherche + filtre toutes / utilisées */}
-              <div className="flex items-center gap-2 mb-2.5">
+              {/* Recherche + filtres (Toutes / Images / Vidéos / Utilisées) */}
+              <div className="flex items-center gap-2 mb-2.5 flex-wrap">
                 <input
                   type="text"
                   value={libraryQuery}
                   onChange={(e) => setLibraryQuery(e.target.value)}
-                  placeholder="Rechercher une image par nom…"
-                  className="flex-1 bg-[#171715] border border-[#2b2b28] rounded-lg px-3 py-2 text-xs text-white font-mono focus:border-[#C3F910] focus:outline-none"
+                  placeholder="Rechercher par nom ou extension…"
+                  className="flex-1 min-w-[200px] bg-[#171715] border border-[#2b2b28] rounded-lg px-3 py-2 text-xs text-white font-mono focus:border-[#C3F910] focus:outline-none"
                 />
                 <div className="flex rounded-lg overflow-hidden border border-[#2b2b28]">
                   <button
                     type="button"
                     onClick={() => setLibraryFilter('all')}
-                    className={`px-3 py-2 text-[11px] font-mono cursor-pointer transition-colors ${
+                    className={`px-2.5 py-2 text-[10.5px] font-mono cursor-pointer transition-colors ${
                       libraryFilter === 'all'
                         ? 'bg-[#C3F910] text-[#080808] font-bold'
                         : 'bg-[#171715] text-[#8a8880] hover:text-white'
                     }`}
                   >
-                    TOUTES
+                    TOUS
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLibraryFilter('image')}
+                    className={`px-2.5 py-2 text-[10.5px] font-mono cursor-pointer transition-colors ${
+                      libraryFilter === 'image'
+                        ? 'bg-[#C3F910] text-[#080808] font-bold'
+                        : 'bg-[#171715] text-[#8a8880] hover:text-white'
+                    }`}
+                  >
+                    IMAGES
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLibraryFilter('video')}
+                    className={`px-2.5 py-2 text-[10.5px] font-mono cursor-pointer transition-colors ${
+                      libraryFilter === 'video'
+                        ? 'bg-[#C3F910] text-[#080808] font-bold'
+                        : 'bg-[#171715] text-[#8a8880] hover:text-white'
+                    }`}
+                  >
+                    VIDÉOS
                   </button>
                   <button
                     type="button"
                     onClick={() => setLibraryFilter('used')}
-                    className={`px-3 py-2 text-[11px] font-mono cursor-pointer transition-colors ${
+                    className={`px-2.5 py-2 text-[10.5px] font-mono cursor-pointer transition-colors ${
                       libraryFilter === 'used'
                         ? 'bg-[#C3F910] text-[#080808] font-bold'
                         : 'bg-[#171715] text-[#8a8880] hover:text-white'
                     }`}
                   >
-                    UTILISÉES
+                    UTILISÉS
                   </button>
                 </div>
               </div>
@@ -825,46 +945,148 @@ export const VisualInPlaceEditor: React.FC = () => {
                 {!libraryLoading && filteredLibrary.length === 0 && (
                   <div className="col-span-3 sm:col-span-6 flex items-center justify-center py-8 text-xs text-[#555] font-mono text-center px-4">
                     {libraryFilter === 'used'
-                      ? 'Aucune image utilisée ne correspond à la recherche.'
-                      : 'Aucune image dans la bibliothèque.'}
+                      ? 'Aucun média utilisé ne correspond à la recherche.'
+                      : libraryFilter === 'video'
+                      ? 'Aucune vidéo ne correspond au filtre.'
+                      : 'Aucun média dans la bibliothèque.'}
                   </div>
                 )}
 
                 {!libraryLoading &&
-                  filteredLibrary.map((img) => (
-                    <button
-                      key={img.url}
-                      type="button"
-                      onClick={() => setNewImageSrc(img.url)}
-                      className={`relative rounded-lg overflow-hidden h-16 border transition-all cursor-pointer group ${
-                        newImageSrc === img.url
-                          ? 'border-[#C3F910] ring-2 ring-[#C3F910]/40'
-                          : 'border-[#222] hover:border-[#555]'
-                      }`}
-                      title={
-                        usedImageUrls.has(img.url) ? `${img.name} (utilisée)` : img.name
-                      }
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={img.url}
-                        alt={img.name}
-                        loading="lazy"
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform"
-                      />
-                      {usedImageUrls.has(img.url) && (
-                        <span className="absolute top-1 left-1 w-2 h-2 rounded-full bg-[#C3F910] shadow" />
-                      )}
-                    </button>
-                  ))}
+                  filteredLibrary.map((img) => {
+                    const isVid = isMediaVideo(img.url) || img.type === 'video';
+                    const used = isMediaUsed(img.url);
+                    return (
+                      <div
+                        key={img.url}
+                        onClick={() => setNewImageSrc(img.url)}
+                        className={`relative rounded-xl overflow-hidden h-20 border transition-all cursor-pointer group bg-[#111] select-none ${
+                          newImageSrc === img.url
+                            ? 'border-[#C3F910] ring-2 ring-[#C3F910]/50'
+                            : 'border-[#222] hover:border-[#444]'
+                        }`}
+                        title={used ? 'Média actuellement utilisé sur le site' : 'Média disponible (non utilisé)'}
+                      >
+                        {isVid ? (
+                          <div className="relative w-full h-full bg-[#0a0a09] overflow-hidden flex items-center justify-center">
+                            <video
+                              src={`${img.url}#t=0.5`}
+                              preload="metadata"
+                              muted
+                              playsInline
+                              className="w-full h-full object-cover pointer-events-none group-hover:scale-105 transition-transform duration-300"
+                            />
+                            {/* Overlay sombre discret + icône play */}
+                            <div className="absolute inset-0 bg-black/25 group-hover:bg-black/10 transition-colors flex items-center justify-center pointer-events-none">
+                              <div className="w-5 h-5 rounded-full bg-black/60 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white/90 shadow">
+                                <Play className="w-2.5 h-2.5 fill-current ml-0.5 text-[#C3F910]" />
+                              </div>
+                            </div>
+                            {/* Badge VIDÉO discret en haut à droite */}
+                            <span className="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded bg-black/75 backdrop-blur-sm border border-[#C3F910]/40 text-[#C3F910] text-[7.5px] font-mono font-bold tracking-wider">
+                              VIDÉO
+                            </span>
+                          </div>
+                        ) : (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={img.url}
+                            alt=""
+                            loading="lazy"
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                        )}
+
+                        {/* Indicateur de statut : UTILISÉ ou NON UTILISÉ */}
+                        {used ? (
+                          <div
+                            className="absolute top-1.5 left-1.5 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-black/80 backdrop-blur-sm border border-emerald-500/50 text-emerald-400 text-[8px] font-mono font-bold shadow z-10"
+                            title="Ce média est utilisé sur le site (suppression protégée)"
+                          >
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                            <span>UTILISÉ</span>
+                          </div>
+                        ) : (
+                          <div
+                            className="absolute top-1.5 left-1.5 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-black/60 backdrop-blur-sm border border-white/10 text-zinc-400 text-[8px] font-mono opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                            title="Média non référencé sur le site"
+                          >
+                            <span>LIBRE</span>
+                          </div>
+                        )}
+
+                        {/* Corbeille pour supprimer le fichier (avec protection si utilisé) */}
+                        {used ? (
+                          <div
+                            className="absolute bottom-1.5 right-1.5 p-1 rounded-md bg-black/80 backdrop-blur-sm text-zinc-500 border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity z-10 cursor-not-allowed"
+                            title="Média actuellement utilisé sur le site : suppression protégée"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              showToast('Ce média est utilisé dans une section. Remplacez-le avant de pouvoir le supprimer.', 'error');
+                            }}
+                          >
+                            <Lock className="w-3 h-3 text-zinc-400" />
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setConfirmDeleteModal({ url: img.url, name: img.name });
+                            }}
+                            className="absolute bottom-1.5 right-1.5 p-1 rounded-md bg-black/80 hover:bg-red-950/80 text-zinc-400 hover:text-red-400 border border-white/10 hover:border-red-500/50 opacity-0 group-hover:opacity-100 transition-all z-10 cursor-pointer shadow"
+                            title="Supprimer définitivement ce fichier"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
               </div>
 
               {libraryError && (
                 <p className="mt-2 text-[10.5px] font-mono text-[#ff8a8a]">
-                  Bibliothèque serveur indisponible ({libraryError}) — images de démonstration affichées.
+                  Bibliothèque serveur indisponible ({libraryError}) — médias de démonstration affichés.
                 </p>
               )}
             </div>
+
+            {/* Dialogue de confirmation de suppression */}
+            {confirmDeleteModal && (
+              <div
+                className="fixed inset-0 z-[500] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="bg-[#141413] border border-[#2b2b28] rounded-xl p-5 max-w-sm w-full text-white shadow-2xl font-mono text-xs">
+                  <div className="flex items-center gap-2 text-red-400 font-bold mb-2">
+                    <AlertTriangle className="w-4 h-4" />
+                    <span>Confirmer la suppression</span>
+                  </div>
+                  <p className="text-[#a0a09a] mb-4 leading-relaxed">
+                    Voulez-vous supprimer définitivement ce média du stockage ? Cette action est irréversible.
+                  </p>
+                  <div className="flex items-center justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setConfirmDeleteModal(null)}
+                      className="px-3 py-1.5 rounded-lg border border-[#333] hover:bg-[#222] text-[#888] hover:text-white transition-colors cursor-pointer"
+                    >
+                      Annuler
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteMedia(confirmDeleteModal.url)}
+                      disabled={deletingUrl === confirmDeleteModal.url}
+                      className="px-3.5 py-1.5 rounded-lg bg-red-600 hover:bg-red-500 text-white font-bold transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                    >
+                      {deletingUrl === confirmDeleteModal.url ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                      <span>Supprimer</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Actions */}
             <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#222220]">
@@ -882,7 +1104,13 @@ export const VisualInPlaceEditor: React.FC = () => {
                 className="flex items-center gap-2 bg-[#C3F910] hover:bg-[#b0e20e] disabled:opacity-60 text-[#080808] font-mono font-bold text-xs px-5 py-2.5 rounded-xl transition-all cursor-pointer shadow-[0_0_15px_rgba(195,249,16,0.25)]"
               >
                 {isApplying ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                <span>{isApplying ? 'SAUVEGARDE…' : 'APPLIQUER CETTE IMAGE'}</span>
+                <span>
+                  {isApplying
+                    ? 'SAUVEGARDE…'
+                    : isMediaVideo(newImageSrc)
+                    ? 'APPLIQUER CETTE VIDÉO'
+                    : 'APPLIQUER CE MÉDIA'}
+                </span>
               </button>
             </div>
           </div>

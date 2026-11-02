@@ -23,17 +23,20 @@ export const dynamic = 'force-dynamic';
 
 /** Extensions d'images prises en charge par le sélecteur. */
 const IMAGE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif', '.svg', '.avif', '.bmp']);
+const VIDEO_EXTENSIONS = new Set(['.mp4', '.webm', '.mov', '.avi']);
+const MEDIA_EXTENSIONS = new Set(Array.from(IMAGE_EXTENSIONS).concat(Array.from(VIDEO_EXTENSIONS)));
 
 /** Racine des fichiers statiques servis publiquement. */
 const PUBLIC_UPLOADS_DIR = path.join(process.cwd(), 'public', 'uploads');
 
 /** Préfixes Firebase Storage contenant des images du site. */
-const STORAGE_PREFIXES = ['site/cms/', 'site/hero/', 'uploads/'];
+const STORAGE_PREFIXES = ['site/cms/', 'site/hero/', 'site/showreel/', 'uploads/'];
 
 interface MediaLibraryItem {
   url: string;
   name: string;
   source: 'static' | 'storage';
+  type: 'image' | 'video';
 }
 
 /** Type du bucket Firebase Storage dérivé de `getStorage()` (évite un import transitoire). */
@@ -64,13 +67,13 @@ function walkStaticDir(dir: string, baseDir: string, out: MediaLibraryItem[]): v
     }
     if (!entry.isFile()) continue;
     const ext = path.extname(entry.name).toLowerCase();
-    if (!IMAGE_EXTENSIONS.has(ext)) continue;
-    // Chemin relatif avec des séparateurs URL.
+    if (!MEDIA_EXTENSIONS.has(ext)) continue;
     const rel = path.relative(baseDir, full).split(path.sep).join('/');
     out.push({
       url: `/uploads/${rel}`,
       name: toLabel(entry.name),
       source: 'static',
+      type: VIDEO_EXTENSIONS.has(ext) ? 'video' : 'image',
     });
   }
 }
@@ -84,7 +87,7 @@ async function listStoragePrefix(
   const [files] = await bucket.getFiles({ prefix });
   for (const file of files) {
     const ext = path.extname(file.name).toLowerCase();
-    if (!IMAGE_EXTENSIONS.has(ext)) continue;
+    if (!MEDIA_EXTENSIONS.has(ext)) continue;
     const publicUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(
       file.name
     )}?alt=media`;
@@ -92,6 +95,7 @@ async function listStoragePrefix(
       url: publicUrl,
       name: toLabel(file.name),
       source: 'storage',
+      type: VIDEO_EXTENSIONS.has(ext) ? 'video' : 'image',
     });
   }
 }
@@ -102,8 +106,17 @@ export async function GET(request: NextRequest) {
 
   const items: MediaLibraryItem[] = [];
 
-  // 1. Fichiers statiques `public/uploads/**`.
+  // 1. Fichiers statiques public/uploads/** et vidéos statiques racine
   walkStaticDir(PUBLIC_UPLOADS_DIR, PUBLIC_UPLOADS_DIR, items);
+  const rootVideo = path.join(process.cwd(), 'public', 'youtube-video.mp4');
+  if (fs.existsSync(rootVideo)) {
+    items.push({
+      url: '/youtube-video.mp4',
+      name: 'Showreel PixiaTech (Vidéo Démo)',
+      source: 'static',
+      type: 'video',
+    });
+  }
 
   // 2. Firebase Storage (best-effort : ne doit jamais faire échouer le listing
   //    statique si Admin Storage est indisponible).
@@ -132,4 +145,64 @@ export async function GET(request: NextRequest) {
     { success: true, count: sorted.length, items: sorted },
     { headers: { 'Cache-Control': 'no-store' } }
   );
+}
+
+export async function DELETE(request: NextRequest) {
+  const auth = await requireAdmin(request);
+  if (auth instanceof NextResponse) return auth;
+
+  try {
+    const body = await request.json();
+    const url = typeof body?.url === 'string' ? body.url.trim() : '';
+
+    if (!url) {
+      return NextResponse.json({ error: 'URL manquante' }, { status: 400 });
+    }
+
+    // Protection des médias système indispensables
+    if (url === '/youtube-video.mp4') {
+      return NextResponse.json({ error: 'Ce média système ne peut pas être supprimé' }, { status: 403 });
+    }
+
+    // 1. Firebase Storage
+    if (url.includes('firebasestorage.googleapis.com')) {
+      try {
+        const parts = url.split('/o/');
+        if (parts.length > 1) {
+          const rawPath = parts[1].split('?')[0];
+          const storagePath = decodeURIComponent(rawPath);
+          const { app } = getFirebaseAdmin();
+          const bucket = getStorage(app).bucket();
+          const file = bucket.file(storagePath);
+          const [exists] = await file.exists();
+          if (exists) {
+            await file.delete();
+            return NextResponse.json({ success: true, message: 'Fichier supprimé de Firebase Storage' });
+          }
+        }
+      } catch (storageErr) {
+        console.error('[media-library/DELETE] Firebase deletion failed:', storageErr);
+        return NextResponse.json({ error: 'Échec de la suppression sur Firebase Storage' }, { status: 500 });
+      }
+    }
+
+    // 2. Fichiers statiques public/uploads/**
+    if (url.startsWith('/uploads/')) {
+      const cleanRel = url.replace(/^\/uploads\//, '').replace(/\.\./g, '');
+      const fullPath = path.join(PUBLIC_UPLOADS_DIR, cleanRel);
+      if (fs.existsSync(fullPath)) {
+        try {
+          fs.unlinkSync(fullPath);
+          return NextResponse.json({ success: true, message: 'Fichier local supprimé' });
+        } catch (unlinkErr) {
+          console.error('[media-library/DELETE] Local deletion failed:', unlinkErr);
+        }
+      }
+    }
+
+    return NextResponse.json({ success: true, message: 'Média retiré' });
+  } catch (err: unknown) {
+    console.error('[media-library/DELETE] Erreur:', err);
+    return NextResponse.json({ error: 'Erreur serveur lors de la suppression' }, { status: 500 });
+  }
 }

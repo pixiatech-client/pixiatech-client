@@ -5,6 +5,7 @@ import { useCms } from '@/lib/site-web/cms-context';
 import { CMS_SOURCE_LANG, normalizeLang } from '@/lib/site-web/cms-i18n';
 import { forEachElementInSection, getRegisteredSections, subscribeSections } from './section-registry';
 import { fluidFontSize } from './fluid-font-size';
+import { isMediaVideo } from './media-utils';
 
 /**
  * Styles d'élément persistés par la barre contextuelle.
@@ -48,6 +49,7 @@ export type ElementStyle = {
   padding?: string;
   text?: string;
   src?: string;
+  mediaType?: 'image' | 'video';
   alt?: string;
   href?: string;
   target?: string;
@@ -242,6 +244,11 @@ export function applyElementStyle(el: HTMLElement, style: ElementStyle, lang?: s
     el.setAttribute('src', style.src);
     if (el.tagName === 'IMG') {
       (el as HTMLImageElement).src = style.src;
+    } else if (el.tagName === 'VIDEO') {
+      (el as HTMLVideoElement).src = style.src;
+      try {
+        (el as HTMLVideoElement).play().catch(() => {});
+      } catch {}
     }
   }
   if (style.alt !== undefined) el.setAttribute('alt', style.alt);
@@ -401,6 +408,8 @@ export function useCmsElementStyles(): void {
             applyElementStyle(el, style, currentLang, styledId);
           }
         });
+
+
       }
     }
 

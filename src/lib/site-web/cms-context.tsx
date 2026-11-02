@@ -248,8 +248,11 @@ export const CmsProvider: React.FC<{
         const currentSection = (active.sections?.[sectionKey] as Record<string, unknown> | undefined) || {};
         let updatedSection: Record<string, unknown>;
 
+        const isLocalizedMedia = fieldKey === 'videoUrl';
+
         const isMediaField =
-          fieldKey.toLowerCase().includes('image') ||
+          !isLocalizedMedia &&
+          (fieldKey.toLowerCase().includes('image') ||
           fieldKey.toLowerCase().includes('src') ||
           fieldKey.toLowerCase().includes('photo') ||
           fieldKey.toLowerCase().includes('video') ||
@@ -258,7 +261,7 @@ export const CmsProvider: React.FC<{
             (value.startsWith('http://') ||
               value.startsWith('https://') ||
               value.startsWith('/uploads/') ||
-              value.startsWith('data:image/')));
+              value.startsWith('data:image/'))));
 
         const isTechnicalField =
           fieldKey.toLowerCase().includes('scale') ||
@@ -727,6 +730,23 @@ export const CmsProvider: React.FC<{
   };
 
   const uploadMedia = async (file: File): Promise<string> => {
+    // Si c'est une vidéo, téléverser via l'API dédiée multipart /api/site-web/upload-video
+    if (file.type.startsWith('video/') || /\.(mp4|webm|mov|avi)$/i.test(file.name)) {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('/api/site-web/upload-video', {
+        method: 'POST',
+        body: formData,
+      });
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.message || 'Échec du téléversement de la vidéo.');
+      }
+      const data = await res.json();
+      if (data.url) return data.url;
+      throw new Error('Réponse invalide du serveur pour la vidéo.');
+    }
+
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = async () => {

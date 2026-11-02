@@ -7,6 +7,7 @@ import { Language } from '../../pixiatech-translations';
 import { useCms } from '@/lib/site-web/cms-context';
 import { getCmsText, normalizeLang } from '@/lib/site-web/cms-i18n';
 import { useSectionStyle } from '../../cms/useSectionStyle';
+import { isMediaVideo } from '../../cms/media-utils';
 
 const stripArticles = PIXIA_INSIGHTS.filter((a) => !a.featured).slice(0, 3);
 
@@ -212,25 +213,45 @@ export const ProjectsSection: React.FC<SectionCommonProps> = ({
                   background: '#0d0d0c',
                 }}
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  className="slot-img"
-                  data-image-key={`project_${idx}_image`}
-                  src={projectImg}
-                  alt={projectTitle(p, lang)}
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                    transition: 'transform .7s cubic-bezier(.2,.8,.2,1)',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'scale(1.05)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'scale(1)';
-                  }}
-                />
+                {isMediaVideo(projectImg) ? (
+                  <video
+                    className="slot-img"
+                    data-image-key={`project_${idx}_image`}
+                    src={projectImg}
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      display: 'block',
+                      transition: 'transform .7s cubic-bezier(.2,.8,.2,1)',
+                    }}
+                  />
+                ) : (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    className="slot-img"
+                    data-image-key={`project_${idx}_image`}
+                    src={projectImg}
+                    alt={projectTitle(p, lang)}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      display: 'block',
+                      transition: 'transform .7s cubic-bezier(.2,.8,.2,1)',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'scale(1.05)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'scale(1)';
+                    }}
+                  />
+                )}
               </div>
 
               <div
@@ -605,14 +626,27 @@ export const ExperienceSection: React.FC<SectionCommonProps> = ({
       }}
     >
       <div style={{ position: 'absolute', inset: 0 }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          className="slot-img"
-          data-image-key="image"
-          src={bgImage}
-          alt="PixiaTech Experience Center"
-          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-        />
+        {isMediaVideo(bgImage) ? (
+          <video
+            className="slot-img"
+            data-image-key="image"
+            src={bgImage}
+            autoPlay
+            loop
+            muted
+            playsInline
+            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+          />
+        ) : (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            className="slot-img"
+            data-image-key="image"
+            src={bgImage}
+            alt="PixiaTech Experience Center"
+            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+          />
+        )}
       </div>
       <div
         style={{
@@ -885,19 +919,39 @@ export const InsightsSection: React.FC<SectionCommonProps> = ({
                 }}
               >
                 <div className="art-img" style={{ position: 'absolute', inset: 0 }}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    className="slot-img"
-                    data-image-key={`insight_${idx}_image`}
-                    src={cardImg}
-                    alt={insightTitle(a, lang)}
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover',
-                      transition: 'transform .6s ease',
-                    }}
-                  />
+                  {isMediaVideo(cardImg) ? (
+                    <video
+                      className="slot-img"
+                      data-image-key={`insight_${idx}_image`}
+                      src={cardImg}
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        display: 'block',
+                        transition: 'transform .6s ease',
+                      }}
+                    />
+                  ) : (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      className="slot-img"
+                      data-image-key={`insight_${idx}_image`}
+                      src={cardImg}
+                      alt={insightTitle(a, lang)}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        display: 'block',
+                        transition: 'transform .6s ease',
+                      }}
+                    />
+                  )}
                 </div>
               </div>
               <div

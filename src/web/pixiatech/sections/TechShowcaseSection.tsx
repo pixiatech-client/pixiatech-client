@@ -5,6 +5,7 @@ import { Language } from '../../pixiatech-translations';
 import { useCms } from '@/lib/site-web/cms-context';
 import { getCmsText, normalizeLang } from '@/lib/site-web/cms-i18n';
 import { useSectionStyle } from '../../cms/useSectionStyle';
+import { isMediaVideo } from '../../cms/media-utils';
 
 interface TechShowcaseSectionProps {
   lang?: Language;
@@ -220,19 +221,39 @@ export const TechShowcaseSection: React.FC<TechShowcaseSectionProps> = ({ lang =
               >
                 {/* Background image */}
                 <div style={{ position: 'absolute', inset: 0 }}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={imgSrc}
-                    alt={tech.name}
-                    data-image-key={`tech_${tech.id}_image`}
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover',
-                      transition: 'transform .8s ease',
-                      transform: isSelected ? 'scale(1.04)' : 'scale(1)',
-                    }}
-                  />
+                  {isMediaVideo(imgSrc) ? (
+                    <video
+                      src={imgSrc}
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                      data-image-key={`tech_${tech.id}_image`}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        display: 'block',
+                        transition: 'transform .8s ease',
+                        transform: isSelected ? 'scale(1.04)' : 'scale(1)',
+                      }}
+                    />
+                  ) : (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={imgSrc}
+                      alt={tech.name}
+                      data-image-key={`tech_${tech.id}_image`}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        display: 'block',
+                        transition: 'transform .8s ease',
+                        transform: isSelected ? 'scale(1.04)' : 'scale(1)',
+                      }}
+                    />
+                  )}
                 </div>
 
                 {/* Gradient overlay */}

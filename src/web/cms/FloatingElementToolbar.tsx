@@ -20,6 +20,7 @@ import {
   Type,
   Move,
   Image as ImageIcon,
+  Film,
   ExternalLink,
   X,
   Square,
@@ -47,6 +48,7 @@ import {
   type ElementVisualState,
 } from './useCmsElementStyles';
 import { normalizeLang } from '@/lib/site-web/cms-i18n';
+import { isMediaVideo } from './media-utils';
 
 const NUDGE = 4;
 const FONT_STEP = 2;
@@ -494,7 +496,7 @@ export const FloatingElementToolbar: React.FC<{
           title={`${selected.sectionKey} → ${selected.elementKey}`}
         >
           {isMedia
-            ? 'IMAGE'
+            ? (isMediaVideo(selected.el.getAttribute('src')) ? 'VIDÉO' : 'IMAGE')
             : isAnchor
             ? 'LIEN'
             : isButton

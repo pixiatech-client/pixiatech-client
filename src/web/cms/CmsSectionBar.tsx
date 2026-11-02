@@ -7,6 +7,7 @@ import { getRegisteredSections, subscribeSections, getSectionLabel } from './sec
 import { getSectionDragController } from './SectionDragDropManager';
 import { stylePanelStore, heroSlideStore, useStoreValue } from './editor-ui-store';
 import { computeValidHeroSlides } from '@/web/pixiatech/sections/hero-slides';
+import { SectionReorderDrawer } from './SectionReorderDrawer';
 
 /** Libellés pour les blocs qui ne passent pas par `EditableWrapper`. */
 const STATIC_LABELS: Record<string, string> = {
@@ -186,6 +187,7 @@ export const CmsSectionBar: React.FC = () => {
 
   const activeHeroSlide = heroSlides.length ? heroSlide % heroSlides.length : 0;
   const styleOpen = stylePanelKey === activeKey;
+  const [reorderDrawerOpen, setReorderDrawerOpen] = useState(false);
 
   useEffect(() => {
     if (!isVisible && activeKey) {
@@ -196,6 +198,7 @@ export const CmsSectionBar: React.FC = () => {
   if (!isEditing) return null;
 
   return (
+    <>
     <div
       id="cms-section-bar"
       ref={barRef}
@@ -235,12 +238,12 @@ export const CmsSectionBar: React.FC = () => {
               <span>{isVisible ? 'Visible' : 'Masquée'}</span>
             </button>
 
-            {dragController && keys.length > 1 && (
+            {keys.length > 1 && (
               <button
                 type="button"
-                onClick={(e) => dragController.startDrag(activeKey, e)}
-                className="flex items-center gap-1 px-2 py-0.5 rounded border border-[#2B2B28] text-[#9A9A94] hover:text-[#C3F910] hover:border-[#C3F910]/50 cursor-grab active:cursor-grabbing transition-colors"
-                title="Déplacer cette section : maintenez et glissez vers le haut ou le bas de la page"
+                onClick={() => setReorderDrawerOpen(true)}
+                className="flex items-center gap-1 px-2 py-0.5 rounded border border-[#2B2B28] text-[#9A9A94] hover:text-[#C3F910] hover:border-[#C3F910]/50 transition-colors cursor-pointer"
+                title="Déplacer / réorganiser les sections de la page"
               >
                 <GripVertical className="w-3.5 h-3.5" />
                 Déplacer
@@ -309,6 +312,8 @@ export const CmsSectionBar: React.FC = () => {
         )}
       </div>
     </div>
+    <SectionReorderDrawer open={reorderDrawerOpen} onClose={() => setReorderDrawerOpen(false)} />
+    </>
   );
 };
 

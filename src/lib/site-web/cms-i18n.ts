@@ -89,7 +89,7 @@ export function getCmsText(
   if (normLang !== CMS_SOURCE_LANG) {
     const sourceTrans = getCmsFieldTranslation(section, fieldKey, CMS_SOURCE_LANG);
     if (sourceTrans.value && sourceTrans.value.trim().length > 0) {
-      return fallback !== undefined ? fallback : sourceTrans.value;
+      return sourceTrans.value;
     }
   }
 

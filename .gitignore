@@ -61,6 +61,7 @@ dev-server-err.log
 diff*.txt
 full_diff.txt
 test-results.html
+test-results/
 tsc_errors.txt
 *.tsbuildinfo
 

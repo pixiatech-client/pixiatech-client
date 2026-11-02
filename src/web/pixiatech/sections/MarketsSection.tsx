@@ -5,6 +5,7 @@ import { Language } from '../../pixiatech-translations';
 import { useCms } from '@/lib/site-web/cms-context';
 import { getCmsText, normalizeLang } from '@/lib/site-web/cms-i18n';
 import { useSectionStyle } from '../../cms/useSectionStyle';
+import { isMediaVideo } from '../../cms/media-utils';
 
 interface MarketsSectionProps {
   lang?: Language;
@@ -232,23 +233,44 @@ export const MarketsSection: React.FC<MarketsSectionProps> = ({ lang = 'FR', onO
           transition: 'transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease, box-shadow 0.45s ease',
         }}
       >
-        {/* Market Image with hover zoom */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          {...(!isDuplicate ? { 'data-image-key': `market_${m.id}_image` } : {})}
-          src={imgSrc}
-          alt={`${m.name} — PIXIATECH`}
-          className="mkt-showcase-img"
-          style={{
-            position: 'absolute',
-            inset: 0,
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            display: 'block',
-            transition: 'transform 0.7s cubic-bezier(0.16, 1, 0.3, 1)',
-          }}
-        />
+        {/* Market Media (Image or Video) with hover zoom */}
+        {isMediaVideo(imgSrc) ? (
+          <video
+            {...(!isDuplicate ? { 'data-image-key': `market_${m.id}_image` } : {})}
+            src={imgSrc}
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="mkt-showcase-img"
+            style={{
+              position: 'absolute',
+              inset: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              display: 'block',
+              transition: 'transform 0.7s cubic-bezier(0.16, 1, 0.3, 1)',
+            }}
+          />
+        ) : (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            {...(!isDuplicate ? { 'data-image-key': `market_${m.id}_image` } : {})}
+            src={imgSrc}
+            alt={`${m.name} — PIXIATECH`}
+            className="mkt-showcase-img"
+            style={{
+              position: 'absolute',
+              inset: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              display: 'block',
+              transition: 'transform 0.7s cubic-bezier(0.16, 1, 0.3, 1)',
+            }}
+          />
+        )}
 
         {/* Floating Top Pill Badge */}
         <div

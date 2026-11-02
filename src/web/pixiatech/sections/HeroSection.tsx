@@ -8,6 +8,7 @@ import { getCmsText, normalizeLang } from '@/lib/site-web/cms-i18n';
 import { useSectionStyle } from '../../cms/useSectionStyle';
 import { heroSlideStore, useStoreValue } from '../../cms/editor-ui-store';
 import { computeValidHeroSlides } from './hero-slides';
+import { isMediaVideo } from '../../cms/media-utils';
 
 // Transition cinématique du Hero : fondu croisé + zoom Ken Burns continu.
 const HERO_FADE_MS = 1300; // fondu croisé (1–1,4 s)
@@ -191,13 +192,26 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ lang = 'FR', onOpenCon
               pointerEvents: isActive ? 'auto' : 'none',
             }}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={s.img}
-              alt={s.alt}
-              className="slot-img"
-              data-image-key={s.imageKey}
-            />
+            {isMediaVideo(s.img) ? (
+              <video
+                src={s.img}
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="slot-img"
+                data-image-key={s.imageKey}
+                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+              />
+            ) : (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src={s.img}
+                alt={s.alt}
+                className="slot-img"
+                data-image-key={s.imageKey}
+              />
+            )}
           </div>
         );
       })}
