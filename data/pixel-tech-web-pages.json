@@ -1266,10 +1266,10 @@
             },
             "cameraKeyframes": {
               "fr": {
-                "value": "[{\"id\":\"kf-1\",\"name\":\"Clé 01\",\"time\":0,\"zoom\":1,\"x\":0.6,\"y\":0.8,\"originX\":49.97,\"originY\":56.3,\"easing\":\"easeIn\"},{\"id\":\"kf-2\",\"name\":\"Clé 02\",\"time\":0.296,\"zoom\":1.65,\"x\":3.2,\"y\":-9.4,\"originX\":52.7,\"originY\":52.3,\"easing\":\"linear\"},{\"id\":\"kf-4\",\"name\":\"Clé 04\",\"time\":1,\"zoom\":10,\"x\":6,\"y\":-23.5,\"originX\":49.97,\"originY\":57.2,\"easing\":\"easeOut\"}]",
+                "value": "[{\"id\":\"kf-1\",\"name\":\"Cléé 01\",\"time\":0,\"zoom\":1,\"x\":0.6,\"y\":0.8,\"originX\":49.97,\"originY\":56.3,\"easing\":\"easeIn\"},{\"id\":\"kf-2\",\"name\":\"Cléé 02\",\"time\":0.296,\"zoom\":1.65,\"x\":3.2,\"y\":-9.4,\"originX\":52.7,\"originY\":52.3,\"easing\":\"linear\"},{\"id\":\"kf-4\",\"name\":\"Cléé 04\",\"time\":1,\"zoom\":10,\"x\":6,\"y\":-23.5,\"originX\":49.97,\"originY\":57.2,\"easing\":\"easeOut\"}]",
                 "status": "source",
                 "updatedAt": "2026-11-03T14:44:29.653Z",
-                "sourceText": "[{\"id\":\"kf-1\",\"name\":\"Clé 01\",\"time\":0,\"zoom\":1,\"x\":0.6,\"y\":0.8,\"originX\":49.97,\"originY\":56.3,\"easing\":\"easeIn\"},{\"id\":\"kf-2\",\"name\":\"Clé 02\",\"time\":0.296,\"zoom\":1.65,\"x\":3.2,\"y\":-9.4,\"originX\":52.7,\"originY\":52.3,\"easing\":\"linear\"},{\"id\":\"kf-4\",\"name\":\"Clé 04\",\"time\":1,\"zoom\":10,\"x\":6,\"y\":-23.5,\"originX\":49.97,\"originY\":57.2,\"easing\":\"easeOut\"}]"
+                "sourceText": "[{\"id\":\"kf-1\",\"name\":\"Cléé 01\",\"time\":0,\"zoom\":1,\"x\":0.6,\"y\":0.8,\"originX\":49.97,\"originY\":56.3,\"easing\":\"easeIn\"},{\"id\":\"kf-2\",\"name\":\"Cléé 02\",\"time\":0.296,\"zoom\":1.65,\"x\":3.2,\"y\":-9.4,\"originX\":52.7,\"originY\":52.3,\"easing\":\"linear\"},{\"id\":\"kf-4\",\"name\":\"Cléé 04\",\"time\":1,\"zoom\":10,\"x\":6,\"y\":-23.5,\"originX\":49.97,\"originY\":57.2,\"easing\":\"easeOut\"}]"
               }
             }
           },
@@ -1374,7 +1374,7 @@
           "videoScreenTop": "53.34",
           "videoScreenWidth": "14.36",
           "videoScreenHeight": "11.56",
-          "cameraKeyframes": "[{\"id\":\"kf-1\",\"name\":\"Clé 01\",\"time\":0,\"zoom\":1,\"x\":0.6,\"y\":0.8,\"originX\":49.97,\"originY\":56.3,\"easing\":\"easeIn\"},{\"id\":\"kf-2\",\"name\":\"Clé 02\",\"time\":0.296,\"zoom\":1.65,\"x\":3.2,\"y\":-9.4,\"originX\":52.7,\"originY\":52.3,\"easing\":\"linear\"},{\"id\":\"kf-4\",\"name\":\"Clé 04\",\"time\":1,\"zoom\":10,\"x\":6,\"y\":-23.5,\"originX\":49.97,\"originY\":57.2,\"easing\":\"easeOut\"}]"
+          "cameraKeyframes": "[{\"id\":\"kf-1\",\"name\":\"Cléé 01\",\"time\":0,\"zoom\":1,\"x\":0.6,\"y\":0.8,\"originX\":49.97,\"originY\":56.3,\"easing\":\"easeIn\"},{\"id\":\"kf-2\",\"name\":\"Cléé 02\",\"time\":0.296,\"zoom\":1.65,\"x\":3.2,\"y\":-9.4,\"originX\":52.7,\"originY\":52.3,\"easing\":\"linear\"},{\"id\":\"kf-4\",\"name\":\"Cléé 04\",\"time\":1,\"zoom\":10,\"x\":6,\"y\":-23.5,\"originX\":49.97,\"originY\":57.2,\"easing\":\"easeOut\"}]"
         },
         "technology": {
           "_elements": {

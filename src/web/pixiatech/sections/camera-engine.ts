@@ -159,6 +159,16 @@ export function evaluateCamera(
   };
 }
 
+export function sanitizeKeyframeName(name: string, fallbackIndex = 1): string {
+  if (!name) return `Clé ${String(fallbackIndex).padStart(2, '0')}`;
+  return name
+    .replace(/ClÃ©/g, 'Clé')
+    .replace(/ClÃ©/g, 'Clé')
+    .replace(/Cl\xc3\xa9/g, 'Clé')
+    .replace(/Cl/g, 'Clé')
+    .trim();
+}
+
 /**
  * Lecture sécurisée des keyframes depuis les données CMS (avec rétrocompatibilité)
  */
@@ -166,7 +176,7 @@ export function parseKeyframesFromCms(raw: unknown): CameraKeyframe[] {
   if (Array.isArray(raw) && raw.length > 0) {
     return raw.map((k, i) => ({
       id: String(k.id || `kf-${i + 1}`),
-      name: String(k.name || `Clé 0${i + 1}`),
+      name: sanitizeKeyframeName(String(k.name || ''), i + 1),
       time: typeof k.time === 'number' ? Math.max(0, Math.min(1, k.time)) : i / Math.max(1, raw.length - 1),
       zoom: typeof k.zoom === 'number' ? k.zoom : 1.0,
       x: typeof k.x === 'number' ? k.x : 0,

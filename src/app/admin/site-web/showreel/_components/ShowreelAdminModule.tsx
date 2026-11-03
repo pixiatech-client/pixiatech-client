@@ -2588,9 +2588,23 @@ export default function ShowreelAdminModule() {
     (atTime: number) => {
       pushToHistory(keyframes);
       const cam = evaluateCamera(keyframes, atTime);
+
+      // Trouver le plus petit numéro de clé disponible (ex: si 01, 02, 04 existent -> crée 03)
+      const existingNums = new Set(
+        keyframes.map((k) => {
+          const m = k.name.match(/\d+/);
+          return m ? parseInt(m[0], 10) : 0;
+        })
+      );
+      let nextNum = 1;
+      while (existingNums.has(nextNum)) {
+        nextNum++;
+      }
+      const newName = `Clé ${String(nextNum).padStart(2, '0')}`;
+
       const newKf: CameraKeyframe = {
         id: `kf-${Date.now()}`,
-        name: `Cl\xc3\xa9 ${String(keyframes.length + 1).padStart(2, '0')}`,
+        name: newName,
         time: parseFloat(atTime.toFixed(3)),
         zoom: cam.zoom,
         x: cam.x,
@@ -2603,7 +2617,7 @@ export default function ShowreelAdminModule() {
       updateSectionField('showreel', 'cameraKeyframes', JSON.stringify(updated));
       setSelectedKeyId(newKf.id);
       markUnsaved();
-      toast.success(`Cl\xc3\xa9 "${newKf.name}" ajout\xc3\xa9e \xc3\xa0 ${(atTime * 100).toFixed(1)}%.`);
+      toast.success(`Clé "${newKf.name}" ajoutée à ${(atTime * 100).toFixed(1)}%.`);
     },
     [keyframes, updateSectionField, pushToHistory, markUnsaved]
   );
@@ -2611,7 +2625,7 @@ export default function ShowreelAdminModule() {
   const handleDeleteKeyframe = useCallback(
     (id: string) => {
       if (keyframes.length <= 1) {
-        toast.error('Vous devez conserver au moins une image cl\xc3\xa9.');
+        toast.error('Vous devez conserver au moins une image clé.');
         return;
       }
       pushToHistory(keyframes);
@@ -2620,7 +2634,7 @@ export default function ShowreelAdminModule() {
       updateSectionField('showreel', 'cameraKeyframes', JSON.stringify(updated));
       setSelectedKeyId(updated[0]?.id || null);
       markUnsaved();
-      toast.success(`Image cl\xc3\xa9 "${deletedKf?.name || 'Cl\xc3\xa9'}" supprim\xc3\xa9e. Appuyez sur Ctrl+Z pour annuler.`);
+      toast.success(`Image clé "${deletedKf?.name || 'Clé'}" supprimée. Appuyez sur Ctrl+Z pour annuler.`);
     },
     [keyframes, updateSectionField, pushToHistory, markUnsaved]
   );
