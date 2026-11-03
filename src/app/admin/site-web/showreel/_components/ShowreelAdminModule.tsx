@@ -751,6 +751,9 @@ function VirtualCameraStudioCanvas({
   canRedo = false,
   onUndo,
   onRedo,
+  ledCustomImageSrc = '',
+  onLedCustomImageChange,
+  onRestoreDefaultLed,
 }: {
   masterImageSrc: string;
   videoSrc: string;
@@ -775,7 +778,13 @@ function VirtualCameraStudioCanvas({
   canRedo?: boolean;
   onUndo?: () => void;
   onRedo?: () => void;
+  ledCustomImageSrc?: string;
+  onLedCustomImageChange?: (url: string) => void;
+  onRestoreDefaultLed?: () => void;
 }) {
+  const ledFileInputRef = React.useRef<HTMLInputElement>(null);
+  const [uploadingLedImage, setUploadingLedImage] = React.useState(false);
+  const { uploadMedia } = useCms();
   const [keyToDelete, setKeyToDelete] = React.useState<CameraKeyframe | null>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
@@ -1004,6 +1013,46 @@ function VirtualCameraStudioCanvas({
           </button>
         </div>
 
+        {/* Boutons Historique : Retour en arrière / en avant (Toujours visibles dans tous les modes) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <button
+            type="button"
+            onClick={onUndo}
+            disabled={!canUndo}
+            title="Retour en arrière (Ctrl+Z)"
+            style={{
+              display: 'flex', alignItems: 'center', gap: 5, padding: '7px 11px', borderRadius: 8,
+              background: canUndo ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.03)',
+              border: canUndo ? '1px solid rgba(255,255,255,0.18)' : '1px solid rgba(255,255,255,0.06)',
+              color: canUndo ? '#F5F4F0' : '#4B5563',
+              fontSize: 11, fontWeight: 700, cursor: canUndo ? 'pointer' : 'not-allowed',
+              opacity: canUndo ? 1 : 0.4,
+              transition: 'all 120ms ease',
+            }}
+          >
+            <Undo2 style={{ width: 13, height: 13 }} />
+            <span>Retour (Ctrl+Z)</span>
+          </button>
+          <button
+            type="button"
+            onClick={onRedo}
+            disabled={!canRedo}
+            title="Retour en avant (Ctrl+Y)"
+            style={{
+              display: 'flex', alignItems: 'center', gap: 5, padding: '7px 11px', borderRadius: 8,
+              background: canRedo ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.03)',
+              border: canRedo ? '1px solid rgba(255,255,255,0.18)' : '1px solid rgba(255,255,255,0.06)',
+              color: canRedo ? '#F5F4F0' : '#4B5563',
+              fontSize: 11, fontWeight: 700, cursor: canRedo ? 'pointer' : 'not-allowed',
+              opacity: canRedo ? 1 : 0.4,
+              transition: 'all 120ms ease',
+            }}
+          >
+            <Redo2 style={{ width: 13, height: 13 }} />
+            <span>Avancer (Ctrl+Y)</span>
+          </button>
+        </div>
+
         {/* Keyframe pills */}
         <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
           {sorted.map((kf) => (
@@ -1087,69 +1136,158 @@ function VirtualCameraStudioCanvas({
                   transition: 'opacity 200ms ease',
                 }}
               />
-              {/* MacroLedScene strictement recadrée dans le cadre de l'écran lorsque la caméra entre dans l'écran */}
-              <MacroLedScene
-                opacity={simProgress > 0.90 ? Math.min(1, (simProgress - 0.90) / 0.08) : 0}
-                showCabinetGrid={simProgress > 0.93}
-                style={{ position: 'absolute', inset: 0, zIndex: 3 }}
-              />
+              {/* MacroLedScene ou photo personnalisée strictement recadrée dans le cadre de l'écran */}
+              {ledCustomImageSrc ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={ledCustomImageSrc}
+                  alt="Structure LED"
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    opacity: simProgress > 0.90 ? Math.min(1, (simProgress - 0.90) / 0.08) : 0,
+                    zIndex: 3,
+                    transition: 'opacity 200ms ease',
+                  }}
+                />
+              ) : (
+                <MacroLedScene
+                  opacity={simProgress > 0.90 ? Math.min(1, (simProgress - 0.90) / 0.08) : 0}
+                  showCabinetGrid={simProgress > 0.93}
+                  style={{ position: 'absolute', inset: 0, zIndex: 3 }}
+                />
+              )}
             </div>
           )}
 
-          {/* Mode LED Direct (pour inspecter et calibrer directement la structure de 32 modules en plein écran) */}
+          {/* Mode LED Direct : Photo personnalisée si présente, sinon création vectorielle 32 modules */}
           {studioMode === 'led' && (
-            <MacroLedScene
-              opacity={1}
-              showCabinetGrid={true}
-              style={{ position: 'absolute', inset: 0, zIndex: 5 }}
-            />
+            ledCustomImageSrc ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={ledCustomImageSrc}
+                alt="Structure LED personnalisée"
+                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 5 }}
+              />
+            ) : (
+              <MacroLedScene
+                opacity={1}
+                showCabinetGrid={true}
+                style={{ position: 'absolute', inset: 0, zIndex: 5 }}
+              />
+            )
           )}
 
-          {/* Screen calibration handles (only in screen mode) */}
-          {studioMode === 'screen' && (
-            <div
-              onPointerDown={(e) => handlePointerDown(e, 'move')}
-              style={{
-                position: 'absolute',
-                left: `${screen.left}%`,
-                top: `${screen.top}%`,
-                width: `${screen.width}%`,
-                height: `${screen.height}%`,
-                border: `2px solid ${HANDLE_COLOR}`,
-                boxSizing: 'border-box',
-                cursor: 'move',
-                zIndex: 20,
-                boxShadow: `0 0 0 1px rgba(0,0,0,0.4)`,
-              }}
-            >
-              {/* Info badge */}
-              <div style={{
-                position: 'absolute', top: -22, left: 0, whiteSpace: 'nowrap',
-                background: 'rgba(0,0,0,0.8)', color: HANDLE_COLOR,
-                fontSize: 9, fontWeight: 700, fontFamily: 'monospace',
-                padding: '2px 6px', borderRadius: 4, pointerEvents: 'none',
-              }}>
-                {screen.width.toFixed(1)}% × {screen.height.toFixed(1)}%
-              </div>
-
-              {/* Corner handles */}
-              {([['nw', -5, -5, 'nwse-resize'], ['ne', undefined, -5, 'nesw-resize'], ['sw', -5, undefined, 'nesw-resize'], ['se', undefined, undefined, 'nwse-resize']] as [string, number|undefined, number|undefined, string][]).map(([dir, l, t, cur]) => (
-                <div key={dir} onPointerDown={(e) => handlePointerDown(e, dir as typeof dragMode)} style={{
+          {/* Screen calibration handles (only in screen mode) — COMPENSÉS PAR LE ZOOM POUR RESTER FINS ET ÉLÉGANTS */}
+          {studioMode === 'screen' && (() => {
+            const z = Math.max(0.4, cam.zoom);
+            const invZ = 1 / z;
+            return (
+              <div
+                onPointerDown={(e) => handlePointerDown(e, 'move')}
+                style={{
                   position: 'absolute',
-                  ...(l !== undefined ? { left: l } : { right: -5 }),
-                  ...(t !== undefined ? { top: t } : { bottom: -5 }),
-                  width: HANDLE_SIZE+4, height: HANDLE_SIZE+4, borderRadius: 2,
-                  background: HANDLE_COLOR, border: '1.5px solid #000', cursor: cur, zIndex: 22,
-                }} />
-              ))}
+                  left: `${screen.left}%`,
+                  top: `${screen.top}%`,
+                  width: `${screen.width}%`,
+                  height: `${screen.height}%`,
+                  border: `${Math.max(1, 1.25 * invZ)}px solid #C3F910`,
+                  outline: `${Math.max(1, 1 * invZ)}px solid rgba(0,0,0,0.75)`,
+                  outlineOffset: -1,
+                  boxSizing: 'border-box',
+                  cursor: 'move',
+                  zIndex: 20,
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
+                }}
+              >
+                {/* Info badge : reste parfaitement proportionné et net */}
+                <div style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  transform: `translate(0, calc(-100% - ${6 * invZ}px)) scale(${invZ})`,
+                  transformOrigin: 'bottom left',
+                  whiteSpace: 'nowrap',
+                  background: 'rgba(9, 11, 17, 0.92)',
+                  backdropFilter: 'blur(8px)',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  boxShadow: '0 4px 16px rgba(0,0,0,0.6)',
+                  color: '#C3F910',
+                  fontSize: 10,
+                  fontWeight: 700,
+                  fontFamily: 'var(--font-mono, monospace)',
+                  padding: '3px 8px',
+                  borderRadius: 6,
+                  pointerEvents: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                }}>
+                  <span style={{ color: '#9CA3AF', fontSize: 9 }}>ÉCRAN</span>
+                  <span>{screen.width.toFixed(1)}% × {screen.height.toFixed(1)}%</span>
+                </div>
 
-              {/* Edge handles */}
-              <div onPointerDown={(e) => handlePointerDown(e, 'n')} style={{ position: 'absolute', top: -5, left: '50%', transform: 'translateX(-50%)', width: 18, height: HANDLE_SIZE, borderRadius: 2, background: HANDLE_COLOR, border: '1.5px solid #000', cursor: 'ns-resize', zIndex: 21 }} />
-              <div onPointerDown={(e) => handlePointerDown(e, 's')} style={{ position: 'absolute', bottom: -5, left: '50%', transform: 'translateX(-50%)', width: 18, height: HANDLE_SIZE, borderRadius: 2, background: HANDLE_COLOR, border: '1.5px solid #000', cursor: 'ns-resize', zIndex: 21 }} />
-              <div onPointerDown={(e) => handlePointerDown(e, 'w')} style={{ position: 'absolute', top: '50%', left: -5, transform: 'translateY(-50%)', width: HANDLE_SIZE, height: 18, borderRadius: 2, background: HANDLE_COLOR, border: '1.5px solid #000', cursor: 'ew-resize', zIndex: 21 }} />
-              <div onPointerDown={(e) => handlePointerDown(e, 'e')} style={{ position: 'absolute', top: '50%', right: -5, transform: 'translateY(-50%)', width: HANDLE_SIZE, height: 18, borderRadius: 2, background: HANDLE_COLOR, border: '1.5px solid #000', cursor: 'ew-resize', zIndex: 21 }} />
-            </div>
-          )}
+                {/* Corner handles : 10px nets avec bordure noire (style Figma / Premiere) */}
+                {([
+                  ['nw', '0%', '0%', 'nwse-resize'],
+                  ['ne', '100%', '0%', 'nesw-resize'],
+                  ['sw', '0%', '100%', 'nesw-resize'],
+                  ['se', '100%', '100%', 'nwse-resize'],
+                ] as const).map(([dir, l, t, cur]) => (
+                  <div
+                    key={dir}
+                    onPointerDown={(e) => handlePointerDown(e, dir as typeof dragMode)}
+                    style={{
+                      position: 'absolute',
+                      left: l,
+                      top: t,
+                      transform: `translate(-50%, -50%) scale(${invZ})`,
+                      transformOrigin: 'center center',
+                      width: 10,
+                      height: 10,
+                      borderRadius: 2,
+                      backgroundColor: '#FFFFFF',
+                      border: '1.5px solid #05070B',
+                      boxShadow: '0 2px 6px rgba(0,0,0,0.7)',
+                      cursor: cur,
+                      zIndex: 22,
+                    }}
+                  />
+                ))}
+
+                {/* Edge handles : pilules fines 14x5px centrées */}
+                {([
+                  ['n', '50%', '0%', 'ns-resize', 14, 5],
+                  ['s', '50%', '100%', 'ns-resize', 14, 5],
+                  ['w', '0%', '50%', 'ew-resize', 5, 14],
+                  ['e', '100%', '50%', 'ew-resize', 5, 14],
+                ] as const).map(([dir, l, t, cur, w, h]) => (
+                  <div
+                    key={dir}
+                    onPointerDown={(e) => handlePointerDown(e, dir as typeof dragMode)}
+                    style={{
+                      position: 'absolute',
+                      left: l,
+                      top: t,
+                      transform: `translate(-50%, -50%) scale(${invZ})`,
+                      transformOrigin: 'center center',
+                      width: w,
+                      height: h,
+                      borderRadius: 999,
+                      backgroundColor: '#FFFFFF',
+                      border: '1.5px solid #05070B',
+                      boxShadow: '0 2px 6px rgba(0,0,0,0.7)',
+                      cursor: cur,
+                      zIndex: 21,
+                    }}
+                  />
+                ))}
+              </div>
+            );
+          })()}
         </div>
 
         {/* HUD overlays (outside world scene) */}
@@ -1296,6 +1434,106 @@ function VirtualCameraStudioCanvas({
             <span style={{ color: '#9CA3AF' }}>DIST: <strong style={{ color: '#FFFFFF' }}>{simProgress >= 0.70 && simProgress <= 0.88 ? '239 mm' : `${(5.5 - simProgress * 5).toFixed(1)} m`}</strong></span>
             <span style={{ color: '#C3F910', fontWeight: 700 }}>3 Diodes RGB (P0.9)</span>
             <span style={{ color: '#9CA3AF' }}>AU CŒUR DES LEDS</span>
+          </div>
+        )}
+
+        {/* Barre de contrôle du mode Structure LED (Changer photo / Restaurer code) */}
+        {studioMode === 'led' && (
+          <div style={{
+            position: 'absolute',
+            bottom: 12,
+            left: 12,
+            right: 12,
+            background: 'rgba(9, 11, 17, 0.90)',
+            backdropFilter: 'blur(14px)',
+            border: '1px solid rgba(255, 255, 255, 0.12)',
+            borderRadius: 12,
+            padding: '10px 16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+            flexWrap: 'wrap',
+            zIndex: 35,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.8)',
+          }}>
+            <input
+              ref={ledFileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              style={{ display: 'none' }}
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file || !onLedCustomImageChange) return;
+                setUploadingLedImage(true);
+                try {
+                  const url = await uploadMedia(file);
+                  onLedCustomImageChange(url);
+                  toast.success('Photo personnalisée pour les LEDs appliquée.');
+                } catch {
+                  toast.error('Échec du téléversement de la photo.');
+                } finally {
+                  setUploadingLedImage(false);
+                }
+              }}
+            />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{
+                width: 32,
+                height: 32,
+                borderRadius: 8,
+                background: ledCustomImageSrc ? 'rgba(59,130,246,0.15)' : 'rgba(195,249,16,0.15)',
+                border: `1px solid ${ledCustomImageSrc ? '#3B82F6' : '#C3F910'}`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: ledCustomImageSrc ? '#3B82F6' : '#C3F910',
+              }}>
+                <Sparkles style={{ width: 16, height: 16 }} />
+              </div>
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 800, color: '#F5F4F0' }}>
+                  {ledCustomImageSrc ? 'Photo personnalisée active' : 'Création procédurale active (Code 32 modules)'}
+                </div>
+                <div style={{ fontSize: 10, color: '#9CA3AF' }}>
+                  {ledCustomImageSrc
+                    ? 'Cette photo remplace les LEDs dans le zoom à partir de 90%.'
+                    : 'Rendu vectoriel haute précision par défaut (Image 2 historique).'}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <button
+                type="button"
+                onClick={() => ledFileInputRef.current?.click()}
+                disabled={uploadingLedImage}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px',
+                  borderRadius: 8, background: '#C3F910', color: '#05070B',
+                  fontSize: 11, fontWeight: 800, border: 'none', cursor: 'pointer',
+                  boxShadow: '0 0 15px rgba(195,249,16,0.3)',
+                }}
+              >
+                <Upload style={{ width: 12, height: 12 }} />
+                <span>{uploadingLedImage ? 'Téléversement...' : ledCustomImageSrc ? 'Changer la photo' : 'Remplacer par une photo'}</span>
+              </button>
+
+              {ledCustomImageSrc && (
+                <button
+                  type="button"
+                  onClick={onRestoreDefaultLed}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px',
+                    borderRadius: 8, background: 'rgba(255,255,255,0.06)', color: '#F5F4F0',
+                    fontSize: 11, fontWeight: 700, border: '1px solid rgba(255,255,255,0.15)', cursor: 'pointer',
+                  }}
+                >
+                  <RotateCcw style={{ width: 12, height: 12 }} />
+                  <span>Restaurer le rendu par défaut (Code)</span>
+                </button>
+              )}
+            </div>
           </div>
         )}
 
@@ -2257,6 +2495,23 @@ export default function ShowreelAdminModule() {
     toast.success(next ? 'Contour de l\'écran activé' : 'Contour désactivé');
   }, [showVideoOutline, updateSectionField, markUnsaved]);
 
+  const ledCustomImageSrc = (cmsData['ledCustomImageSrc'] as string | undefined) || '';
+
+  const handleLedCustomImageChange = useCallback(
+    (url: string) => {
+      updateSectionField('showreel', 'ledCustomImageSrc', url);
+      markUnsaved();
+      toast.success('Photo personnalisée pour les LEDs appliquée.');
+    },
+    [updateSectionField, markUnsaved]
+  );
+
+  const handleRestoreDefaultLed = useCallback(() => {
+    updateSectionField('showreel', 'ledCustomImageSrc', '');
+    markUnsaved();
+    toast.success('Rendu vectoriel des LEDs par défaut restauré.');
+  }, [updateSectionField, markUnsaved]);
+
 
   // ── Pile d'historique Undo / Redo (Ctrl+Z / Ctrl+Y) ───────────────────────
   const [undoStack, setUndoStack] = React.useState<CameraKeyframe[][]>([]);
@@ -2751,6 +3006,9 @@ export default function ShowreelAdminModule() {
             canRedo={redoStack.length > 0}
             onUndo={handleUndo}
             onRedo={handleRedo}
+            ledCustomImageSrc={ledCustomImageSrc}
+            onLedCustomImageChange={handleLedCustomImageChange}
+            onRestoreDefaultLed={handleRestoreDefaultLed}
           />
         </div>
 

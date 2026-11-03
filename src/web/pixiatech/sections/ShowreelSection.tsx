@@ -48,6 +48,9 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
     (cmsData['image1Src'] as string | undefined) ||
     DEFAULT_MASTER_IMAGE;
 
+  // Image personnalisée pour la structure LED (optionnelle, défaut: MacroLedScene procédurale)
+  const ledCustomImageSrc = (cmsData['ledCustomImageSrc'] as string | undefined) || '';
+
   // Contour personnalisé de l'écran vidéo
   const showVideoOutline = cmsData['showVideoOutline'] !== false && cmsData['showVideoOutline'] !== 'false';
   const videoOutlineColor = (cmsData['videoOutlineColor'] as string | undefined) || '#000000';
@@ -453,17 +456,35 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
                   }}
                 />
 
-                {/* SCÈNE VECTORIELLE HAUTE PRÉCISION MACRO-LED RECADRÉE STRICTEMENT DANS L'ÉCRAN */}
+                {/* STRUCTURE LED : Photo personnalisée si configurée, sinon création vectorielle de précision par défaut */}
                 {showCodeLeds && (
-                  <MacroLedScene
-                    opacity={scrollProgress > 0.90 ? Math.min(1, (scrollProgress - 0.90) / 0.08) : 0}
-                    showCabinetGrid={scrollProgress > 0.93}
-                    style={{
-                      position: 'absolute',
-                      inset: 0,
-                      zIndex: 3,
-                    }}
-                  />
+                  ledCustomImageSrc ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={ledCustomImageSrc}
+                      alt="Structure LED PIXIATECH"
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        opacity: scrollProgress > 0.90 ? Math.min(1, (scrollProgress - 0.90) / 0.08) : 0,
+                        zIndex: 3,
+                        transition: 'opacity 200ms ease',
+                      }}
+                    />
+                  ) : (
+                    <MacroLedScene
+                      opacity={scrollProgress > 0.90 ? Math.min(1, (scrollProgress - 0.90) / 0.08) : 0}
+                      showCabinetGrid={scrollProgress > 0.93}
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        zIndex: 3,
+                      }}
+                    />
+                  )
                 )}
               </div>
           </div>
