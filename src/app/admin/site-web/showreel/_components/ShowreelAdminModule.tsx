@@ -19,6 +19,8 @@ import {
   Play,
   Pause,
   RotateCcw,
+  Undo2,
+  Redo2,
   AlertCircle,
   Eye,
   ChevronRight,
@@ -29,10 +31,30 @@ import {
   X,
   Globe,
   Square,
+  Sparkles,
+  Lock,
+  Unlock,
+  Crosshair,
+  ArrowUp,
+  ArrowDown,
+  ArrowLeft,
+  ArrowRight,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCms } from '@/lib/site-web/cms-context';
 import { getCmsText } from '@/lib/site-web/cms-i18n';
+import {
+  CameraKeyframe,
+  KeyframeEasing,
+  ScreenCoords as CameraScreenCoords,
+  evaluateCamera,
+  parseKeyframesFromCms,
+  DEFAULT_KEYFRAMES,
+  DEFAULT_SCREEN_COORDS,
+  DEFAULT_MASTER_IMAGE,
+  applyEasing,
+} from '@/web/pixiatech/sections/camera-engine';
+import { MacroLedScene } from '@/web/pixiatech/sections/MacroLedScene';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -568,34 +590,22 @@ function VideoUploadPanel({
 
 // ─── Single Image Editor (Sélection 1 seule image à la fois + Remplacement + Ajustements) ──
 
-function SingleImageEditor({
-  layers,
-  imageSrcs,
-  imageAdjustments,
-  selectedImageIndex,
-  onSelectImage,
-  onImageChange,
-  onAdjustmentChange,
-  onResetAdjustment,
-}: {
-  layers: LayerImage[];
-  imageSrcs: string[];
-  imageAdjustments: ImageAdjustment[];
-  selectedImageIndex: number;
-  onSelectImage: (index: number) => void;
-  onImageChange: (key: string, url: string) => void;
-  onAdjustmentChange: (prefix: string, key: 'posX' | 'posY' | 'scale' | 'width' | 'height', value: number) => void;
-  onResetAdjustment: (prefix: string) => void;
-}) {
-  const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const { uploadMedia } = useCms();
 
-  const currentLayer = layers[selectedImageIndex];
-  const currentSrc = imageSrcs[selectedImageIndex];
-  const currentAdj = imageAdjustments[selectedImageIndex];
-  const prefix = currentLayer.prefix;
+// ═══════════════════════════════════════════════════════════════════════════
+// MasterImagePanel – Upload de l'image maître unique
+// ═══════════════════════════════════════════════════════════════════════════
+
+function MasterImagePanel({
+  currentSrc,
+  onImageChange,
+}: {
+  currentSrc: string;
+  onImageChange: (url: string) => void;
+}) {
+  const [uploading, setUploading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const { uploadMedia } = useCms();
 
   const handleFile = async (file: File) => {
     setError(null);
@@ -604,15 +614,15 @@ function SingleImageEditor({
       setError('Format non pris en charge. Utilisez JPEG, PNG ou WebP.');
       return;
     }
-    if (file.size > 30 * 1024 * 1024) {
-      setError(`Image trop volumineuse (${formatBytes(file.size)}). Maximum : 30 Mo.`);
+    if (file.size > 40 * 1024 * 1024) {
+      setError(`Image trop volumineuse (${formatBytes(file.size)}). Maximum : 40 Mo.`);
       return;
     }
     setUploading(true);
     try {
       const url = await uploadMedia(file);
-      onImageChange(currentLayer.key, url);
-      toast.success(`Photo ${selectedImageIndex + 1} (${currentLayer.label}) remplacée avec succès.`);
+      onImageChange(url);
+      toast.success('Image maître remplacée avec succès.');
     } catch {
       setError('Échec du téléversement. Réessayez.');
       toast.error('Échec du téléversement de la photo.');
@@ -621,495 +631,180 @@ function SingleImageEditor({
     }
   };
 
-  const isCustom = currentSrc !== currentLayer.defaultSrc;
+  const isDefault = currentSrc === DEFAULT_MASTER_IMAGE;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      {/* 4 Boutons de sélection : 1 seule image active à la fois */}
       <div>
         <div style={{ fontSize: 13, fontWeight: 700, color: '#F5F4F0', marginBottom: 4 }}>
-          Images du Showreel
+          Image Maître du Showreel
         </div>
-        <div style={{ fontSize: 11, color: '#6B7280', marginBottom: 12, lineHeight: 1.5 }}>
-          Choisissez une étape pour afficher et régler exclusivement sa photographie de référence.
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 6 }}>
-          {layers.map((l, idx) => {
-            const isSelected = selectedImageIndex === idx;
-            return (
-              <button
-                key={l.key}
-                type="button"
-                onClick={() => onSelectImage(idx)}
-                style={{
-                  padding: '10px 4px',
-                  borderRadius: 10,
-                  border: `1px solid ${isSelected ? '#C3F910' : 'rgba(255,255,255,0.08)'}`,
-                  background: isSelected ? 'rgba(195,249,16,0.14)' : 'rgba(255,255,255,0.03)',
-                  color: isSelected ? '#C3F910' : '#9CA3AF',
-                  fontSize: 11,
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                  textAlign: 'center',
-                  transition: 'all 180ms ease',
-                }}
-              >
-                Image {idx + 1}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Zone de travail : UNE SEULE image affichée */}
-      <div
-        style={{
-          position: 'relative',
-          width: '100%',
-          aspectRatio: '16/9',
-          borderRadius: 12,
-          overflow: 'hidden',
-          backgroundColor: '#000000',
-          border: '1px solid rgba(255,255,255,0.1)',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.6)',
-        }}
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={currentSrc}
-          alt={currentLayer.label}
-          style={{
-            width: `${currentAdj.width}%`,
-            height: `${currentAdj.height}%`,
-            objectFit: 'cover',
-            display: 'block',
-            backgroundColor: '#000000',
-            transform: `translate3d(${currentAdj.posX}%, ${currentAdj.posY}%, 0) scale(${currentAdj.scale})`,
-            transformOrigin: 'center center',
-            transition: 'transform 100ms ease, width 100ms ease, height 100ms ease',
-          }}
-        />
-
-        {/* Badge étape */}
-        <div
-          style={{
-            position: 'absolute',
-            top: 8,
-            left: 8,
-            background: 'rgba(0,0,0,0.8)',
-            backdropFilter: 'blur(8px)',
-            padding: '4px 9px',
-            borderRadius: 6,
-            fontSize: 10,
-            fontWeight: 700,
-            color: '#C3F910',
-            fontFamily: 'monospace',
-            border: '1px solid rgba(195,249,16,0.3)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-          }}
-        >
-          <span>IMAGE 0{selectedImageIndex + 1}</span>
-          <span style={{ color: '#6B7280' }}>·</span>
-          <span style={{ color: '#D1D5DB' }}>{currentLayer.label}</span>
+        <div style={{ fontSize: 11, color: '#6B7280', marginBottom: 16, lineHeight: 1.5 }}>
+          Unique image haute résolution source de toutes les transitions de caméra. La vidéo est positionnée directement sur cette image.
         </div>
 
-        {isCustom && (
-          <div
-            style={{
-              position: 'absolute',
-              top: 8,
-              right: 8,
-              background: '#C3F910',
-              color: '#05070B',
-              fontSize: 9,
-              fontWeight: 800,
-              padding: '2px 7px',
-              borderRadius: 99,
-              fontFamily: 'monospace',
-            }}
-          >
-            PERSONNALISÉE
+        {/* Aperçu */}
+        {currentSrc && (
+          <div style={{ borderRadius: 12, overflow: 'hidden', background: '#05070B', border: '1px solid rgba(255,255,255,0.08)', marginBottom: 16, position: 'relative' }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={currentSrc}
+              alt=""
+              style={{ width: '100%', maxHeight: 200, objectFit: 'cover', display: 'block' }}
+            />
+            {!isDefault && (
+              <div style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(195,249,16,0.9)', color: '#05070B', fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 99, fontFamily: 'monospace' }}>
+                PERSONNALISÉE
+              </div>
+            )}
           </div>
         )}
-      </div>
 
-      {error && (
-        <div style={{ fontSize: 11, color: '#FCA5A5', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', padding: '8px 12px', borderRadius: 8 }}>
-          {error}
-        </div>
-      )}
-
-      {/* Bouton Remplacer la photo */}
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        <button
-          type="button"
+        {/* Drop zone */}
+        <div
           onClick={() => fileInputRef.current?.click()}
-          disabled={uploading}
           style={{
-            flex: 1,
-            minWidth: 160,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 8,
-            padding: '10px 16px',
-            borderRadius: 10,
-            background: '#C3F910',
-            color: '#05070B',
-            border: 'none',
-            fontSize: 12,
-            fontWeight: 800,
-            cursor: uploading ? 'not-allowed' : 'pointer',
-            boxShadow: '0 4px 16px rgba(195,249,16,0.25)',
+            border: '2px dashed rgba(255,255,255,0.15)',
+            borderRadius: 12,
+            padding: '20px 16px',
+            textAlign: 'center',
+            cursor: 'pointer',
+            transition: 'all 200ms ease',
           }}
         >
-          {uploading ? (
-            <><Loader2 style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} /> Téléversement…</>
-          ) : (
-            <><Upload style={{ width: 14, height: 14 }} /> Remplacer la photo</>
-          )}
-        </button>
+          <Upload style={{ width: 22, height: 22, color: '#6B7280', margin: '0 auto 8px' }} />
+          <div style={{ fontSize: 13, fontWeight: 600, color: '#D1D5DB' }}>Remplacer l'image maître</div>
+          <div style={{ fontSize: 11, color: '#6B7280', marginTop: 4 }}>JPEG, PNG, WebP · max 40 Mo</div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/jpg,image/png,image/webp"
+            style={{ display: 'none' }}
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
+          />
+        </div>
 
-        {isCustom && (
+        {uploading && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: 'rgba(195,249,16,0.08)', borderRadius: 10, marginTop: 12 }}>
+            <Loader2 style={{ width: 14, height: 14, color: '#C3F910', animation: 'spin 1s linear infinite' }} />
+            <span style={{ fontSize: 12, color: '#C3F910', fontWeight: 600 }}>Téléversement en cours…</span>
+          </div>
+        )}
+
+        {error && (
+          <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 10, padding: '10px 14px', display: 'flex', gap: 8, alignItems: 'flex-start', marginTop: 12 }}>
+            <AlertCircle style={{ width: 14, height: 14, color: '#EF4444', flexShrink: 0, marginTop: 1 }} />
+            <span style={{ fontSize: 11, color: '#FCA5A5' }}>{error}</span>
+          </div>
+        )}
+
+        {!isDefault && (
           <button
             type="button"
             onClick={() => {
-              if (confirm(`Restaurer l'image d'origine pour l'Image ${selectedImageIndex + 1} ?`)) {
-                onImageChange(currentLayer.key, currentLayer.defaultSrc);
+              if (confirm('Restaurer l\'image maître par défaut ?')) {
+                onImageChange(DEFAULT_MASTER_IMAGE);
               }
             }}
-            title="Restaurer l'image d'origine de cette étape"
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              padding: '10px 14px',
-              borderRadius: 10,
-              background: 'transparent',
-              border: '1px solid rgba(255,255,255,0.1)',
-              color: '#9CA3AF',
-              fontSize: 11,
-              fontWeight: 600,
-              cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10,
+              background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: '#9CA3AF',
+              fontSize: 11, fontWeight: 600, cursor: 'pointer', marginTop: 12,
             }}
           >
             <RotateCcw style={{ width: 12, height: 12 }} />
-            Par défaut
+            Restaurer l'image par défaut
           </button>
         )}
-
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/jpeg,image/jpg,image/png,image/webp"
-          style={{ display: 'none' }}
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            if (f) handleFile(f);
-            e.target.value = '';
-          }}
-        />
-      </div>
-
-      {/* Réglages d'ajustement indépendants de l'image sélectionnée */}
-      <div
-        style={{
-          background: 'rgba(255,255,255,0.03)',
-          border: '1px solid rgba(255,255,255,0.07)',
-          borderRadius: 12,
-          padding: '14px 16px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 14,
-        }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: 12, fontWeight: 700, color: '#D1D5DB' }}>
-            Ajustements · Image {selectedImageIndex + 1}
-          </span>
-          <button
-            type="button"
-            onClick={() => onResetAdjustment(prefix)}
-            title="Réinitialiser la position et l'échelle de cette image"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 4,
-              background: 'transparent',
-              border: 'none',
-              color: '#6B7280',
-              fontSize: 10,
-              cursor: 'pointer',
-              padding: 4,
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = '#F5F4F0')}
-            onMouseLeave={(e) => (e.currentTarget.style.color = '#6B7280')}
-          >
-            <RotateCcw style={{ width: 10, height: 10 }} />
-            Réinitialiser
-          </button>
-        </div>
-
-        <SliderField
-          label="Position horizontale X"
-          value={currentAdj.posX}
-          min={-50}
-          max={50}
-          step={0.1}
-          unit="%"
-          onChange={(v) => onAdjustmentChange(prefix, 'posX', v)}
-          onReset={() => onAdjustmentChange(prefix, 'posX', 0)}
-          defaultVal={0}
-        />
-        <SliderField
-          label="Position verticale Y"
-          value={currentAdj.posY}
-          min={-50}
-          max={50}
-          step={0.1}
-          unit="%"
-          onChange={(v) => onAdjustmentChange(prefix, 'posY', v)}
-          onReset={() => onAdjustmentChange(prefix, 'posY', 0)}
-          defaultVal={0}
-        />
-        <SliderField
-          label="Échelle ou zoom"
-          value={currentAdj.scale}
-          min={0.5}
-          max={2.5}
-          step={0.01}
-          onChange={(v) => onAdjustmentChange(prefix, 'scale', v)}
-          onReset={() => onAdjustmentChange(prefix, 'scale', 1)}
-          defaultVal={1}
-        />
-        <SliderField
-          label="Largeur (%)"
-          value={currentAdj.width}
-          min={50}
-          max={150}
-          step={1}
-          unit="%"
-          onChange={(v) => onAdjustmentChange(prefix, 'width', v)}
-          onReset={() => onAdjustmentChange(prefix, 'width', 100)}
-          defaultVal={100}
-        />
-        <SliderField
-          label="Hauteur (%)"
-          value={currentAdj.height}
-          min={50}
-          max={150}
-          step={1}
-          unit="%"
-          onChange={(v) => onAdjustmentChange(prefix, 'height', v)}
-          onReset={() => onAdjustmentChange(prefix, 'height', 100)}
-          defaultVal={100}
-        />
       </div>
     </div>
   );
 }
 
-// ─── Screen Position Editor ────────────────────────────────────────────────────
 
-function ScreenPositionEditor({
-  layerIndex,
+// ═══════════════════════════════════════════════════════════════════════════
+// VirtualCameraStudioCanvas – Studio caméra virtuelle à images clés
+// Architecture : 1 image source · 1 vidéo calée · caméra interpolée
+// ═══════════════════════════════════════════════════════════════════════════
+
+function VirtualCameraStudioCanvas({
+  masterImageSrc,
+  videoSrc,
   screen,
-  imageSrc,
-  videoSrc,
+  keyframes,
+  selectedKeyId,
+  onSelectKey,
+  onKeyframeChange,
+  onAddKeyframe,
+  onDeleteKeyframe,
+  onScreenChange,
+  onSave,
+  isSaving,
+  hasUnsaved,
   showVideoOutline,
   videoOutlineColor,
   onToggleVideoOutline,
   onChangeVideoOutlineColor,
-  onChange,
+  lockAspect,
+  onToggleLockAspect,
+  canUndo = false,
+  canRedo = false,
+  onUndo,
+  onRedo,
 }: {
-  layerIndex: number;
-  screen: ScreenCoords;
-  imageSrc: string;
+  masterImageSrc: string;
   videoSrc: string;
+  screen: CameraScreenCoords;
+  keyframes: CameraKeyframe[];
+  selectedKeyId: string | null;
+  onSelectKey: (id: string) => void;
+  onKeyframeChange: (id: string, patch: Partial<CameraKeyframe>) => void;
+  onAddKeyframe: (atTime: number) => void;
+  onDeleteKeyframe: (id: string) => void;
+  onScreenChange: (sc: CameraScreenCoords) => void;
+  onSave: () => void;
+  isSaving: boolean;
+  hasUnsaved: boolean;
   showVideoOutline: boolean;
   videoOutlineColor: string;
   onToggleVideoOutline: () => void;
-  onChangeVideoOutlineColor: (color: string) => void;
-  onChange: (sc: ScreenCoords) => void;
+  onChangeVideoOutlineColor: (c: string) => void;
+  lockAspect: boolean;
+  onToggleLockAspect: () => void;
+  canUndo?: boolean;
+  canRedo?: boolean;
+  onUndo?: () => void;
+  onRedo?: () => void;
 }) {
-  const defaultScreen = LAYERS[layerIndex].defaultScreen;
+  const [keyToDelete, setKeyToDelete] = React.useState<CameraKeyframe | null>(null);
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const timelineRef = useRef<HTMLDivElement>(null);
 
-  const sl = (key: keyof ScreenCoords, label: string, min: number, max: number) => (
-    <SliderField
-      label={label}
-      value={screen[key]}
-      min={min}
-      max={max}
-      step={0.01}
-      unit="%"
-      onChange={(v) => onChange({ ...screen, [key]: v })}
-      onReset={() => onChange({ ...screen, [key]: defaultScreen?.[key] ?? 0 })}
-      defaultVal={defaultScreen?.[key]}
-    />
-  );
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      {/* En-tête avec bouton d'activation du contour et personnalisation couleur */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: '#F5F4F0' }}>
-          Position de l'écran · {LAYERS[layerIndex].label}
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          <button
-            type="button"
-            onClick={onToggleVideoOutline}
-            title="Afficher ou masquer le contour de réglage autour de la vidéo"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              padding: '6px 12px',
-              borderRadius: 8,
-              border: `1px solid ${showVideoOutline ? videoOutlineColor : 'rgba(255,255,255,0.12)'}`,
-              background: showVideoOutline ? hexToRgba(videoOutlineColor, 0.15) : 'rgba(255,255,255,0.04)',
-              color: showVideoOutline ? videoOutlineColor : '#9CA3AF',
-              fontSize: 11,
-              fontWeight: 700,
-              cursor: 'pointer',
-              transition: 'all 180ms ease',
-            }}
-          >
-            <Square style={{ width: 12, height: 12 }} />
-            Contour : {showVideoOutline ? 'Activé' : 'Désactivé'}
-          </button>
-          {showVideoOutline && (
-            <VideoOutlineColorControl
-              color={videoOutlineColor}
-              onChangeColor={onChangeVideoOutlineColor}
-            />
-          )}
-        </div>
-      </div>
-
-      {/* Live preview canvas uniforme noir */}
-      <div
-        style={{
-          borderRadius: 12,
-          overflow: 'hidden',
-          backgroundColor: '#000000',
-          border: '1px solid rgba(255,255,255,0.1)',
-          position: 'relative',
-          aspectRatio: '16/9',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.6)',
-        }}
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={imageSrc}
-          alt={LAYERS[layerIndex].label}
-          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', backgroundColor: '#000000' }}
-        />
-
-        {/* Video Surface anchored inside the screen bounds */}
-        <div
-          style={{
-            position: 'absolute',
-            left: `${screen.left}%`,
-            top: `${screen.top}%`,
-            width: `${screen.width}%`,
-            height: `${screen.height}%`,
-            overflow: 'hidden',
-            borderRadius: 1.5,
-            backgroundColor: '#000000',
-            outline: showVideoOutline ? `2px solid ${videoOutlineColor}` : 'none',
-            boxShadow: showVideoOutline ? `0 0 16px ${hexToRgba(videoOutlineColor, 0.85)}, inset 0 0 12px ${hexToRgba(videoOutlineColor, 0.3)}` : 'none',
-            transition: 'outline 150ms ease, box-shadow 150ms ease',
-          }}
-        >
-          <video
-            src={videoSrc}
-            autoPlay
-            loop
-            muted
-            playsInline
-            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', backgroundColor: '#000000' }}
-          />
-
-        </div>
-
-        <div style={{ position: 'absolute', top: 6, left: 6, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)', padding: '4px 10px', borderRadius: 99, fontSize: 10, color: '#C3F910', fontFamily: 'monospace', fontWeight: 700 }}>
-          POSITIONNEMENT ÉCRAN · {LAYERS[layerIndex].label}
-        </div>
-      </div>
-
-      {/* Sliders */}
-      <div style={{ display: 'grid', gap: 14 }}>
-        {sl('left', 'Position X (gauche)', 0, 90)}
-        {sl('top', 'Position Y (haut)', 0, 90)}
-        {sl('width', 'Largeur', 1, 80)}
-        {sl('height', 'Hauteur', 1, 80)}
-      </div>
-
-      <button
-        type="button"
-        onClick={() => defaultScreen && onChange(defaultScreen)}
-        style={{
-          display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10,
-          background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: '#6B7280',
-          fontSize: 11, fontWeight: 600, cursor: 'pointer', alignSelf: 'flex-start',
-        }}
-      >
-        <RotateCcw style={{ width: 11, height: 11 }} />
-        Réinitialiser la position
-      </button>
-    </div>
-  );
-}
-
-// ─── Live Preview Panel (Fond uniformément noir + Contour vidéo activable) ─────
-
-function LivePreviewPanel({
-  videoSrc,
-  imageSrcs,
-  screens,
-  imageAdjustments,
-  cmsData,
-  showVideoOutline,
-  videoOutlineColor,
-  onToggleVideoOutline,
-  onChangeVideoOutlineColor,
-  targetStep,
-}: {
-  videoSrc: string;
-  imageSrcs: string[];
-  screens: (ScreenCoords | null)[];
-  imageAdjustments: ImageAdjustment[];
-  cmsData: Record<string, unknown>;
-  showVideoOutline: boolean;
-  videoOutlineColor: string;
-  onToggleVideoOutline: () => void;
-  onChangeVideoOutlineColor: (color: string) => void;
-  targetStep?: 1 | 2 | 3 | 4 | null;
-}) {
-  const [simProgress, setSimProgress] = useState(0);
-  const [playing, setPlaying] = useState(true);
+  // ── Playback state ─────────────────────────────────────────────────────────
+  const [simProgress, setSimProgress] = React.useState(0);
+  const [playing, setPlaying] = React.useState(false);
   const animRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Jump immediately to the active stage keyframe and pause playback so slider updates are visible
-  useEffect(() => {
-    if (targetStep === 1) {
-      setSimProgress(0.08);
-      setPlaying(false);
-    } else if (targetStep === 2) {
-      setSimProgress(0.35);
-      setPlaying(false);
-    } else if (targetStep === 3) {
-      setSimProgress(0.60);
-      setPlaying(false);
-    } else if (targetStep === 4) {
-      setSimProgress(0.85);
-      setPlaying(false);
-    }
-  }, [targetStep]);
+  // ── Interaction mode ───────────────────────────────────────────────────────
+  // 'camera' = manipulate camera framing rect  |  'screen' = calibrate video screen rect
+  const [studioMode, setStudioMode] = React.useState<'camera' | 'led' | 'screen'>('camera');
 
+  // ── Screen rect drag state ─────────────────────────────────────────────────
+  const [dragMode, setDragMode] = React.useState<
+    'move' | 'nw' | 'ne' | 'se' | 'sw' | 'n' | 'e' | 's' | 'w' | null
+  >(null);
+  const [dragStart, setDragStart] = React.useState<{
+    x: number;
+    y: number;
+    initial: CameraScreenCoords;
+  } | null>(null);
+
+  // ── Dragging keyframe diamond on timeline ──────────────────────────────────
+  const [draggingKfId, setDraggingKfId] = React.useState<string | null>(null);
+  const [dragKfStartX, setDragKfStartX] = React.useState(0);
+  const [dragKfStartTime, setDragKfStartTime] = React.useState(0);
+
+  // ── Animation loop ─────────────────────────────────────────────────────────
   useEffect(() => {
     if (playing) {
       animRef.current = setInterval(() => {
@@ -1124,348 +819,1244 @@ function LivePreviewPanel({
     return () => { if (animRef.current) clearInterval(animRef.current); };
   }, [playing]);
 
-  // Mirror ShowreelSection crossfade math
-  const sp = simProgress;
-  const op1 = Math.max(0, Math.min(1, 1 - (sp - 0.21) / 0.07));
-  const op2 = Math.min(Math.max(0, Math.min(1, (sp - 0.21) / 0.07)), Math.max(0, Math.min(1, 1 - (sp - 0.46) / 0.07)));
-  const op3 = Math.min(Math.max(0, Math.min(1, (sp - 0.46) / 0.07)), Math.max(0, Math.min(1, 1 - (sp - 0.85) / 0.08)));
-  const op4 = Math.min(Math.max(0, Math.min(1, (sp - 0.70) / 0.06)), Math.max(0, Math.min(1, 1 - (sp - 0.86) / 0.08)));
+  // ── Evaluate camera at current simProgress ────────────────────────────────
+  const cam = React.useMemo(
+    () => evaluateCamera(keyframes, simProgress),
+    [keyframes, simProgress]
+  );
 
-  // Récupération dynamique des paramètres de caméra depuis cmsData
-  const l1ScaleMax = parseFloat((cmsData['l1ScaleMax'] as string | undefined) || '1.39');
-  const l1OriginX = parseFloat((cmsData['l1OriginX'] as string | undefined) || '49.97');
-  const l1OriginY = parseFloat((cmsData['l1OriginY'] as string | undefined) || '59.88');
-  const l1XShift = parseFloat((cmsData['l1XShift'] as string | undefined) || '0');
-  const l1YShift = parseFloat((cmsData['l1YShift'] as string | undefined) || '14.1');
-  const l1CamPosX = parseFloat((cmsData['l1CamPosX'] as string | undefined) || '0');
-  const l1CamPosY = parseFloat((cmsData['l1CamPosY'] as string | undefined) || '0');
+  // ── Jump to keyframe when selected ────────────────────────────────────────
+  useEffect(() => {
+    const kf = keyframes.find((k) => k.id === selectedKeyId);
+    if (kf) {
+      setSimProgress(kf.time);
+      setPlaying(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedKeyId]);
 
-  const l2ScaleMax = parseFloat((cmsData['l2ScaleMax'] as string | undefined) || '0.66');
-  const l2OriginX = parseFloat((cmsData['l2OriginX'] as string | undefined) || '49.85');
-  const l2OriginY = parseFloat((cmsData['l2OriginY'] as string | undefined) || '46.55');
-  const l2XShift = parseFloat((cmsData['l2XShift'] as string | undefined) || '0');
-  const l2YShift = parseFloat((cmsData['l2YShift'] as string | undefined) || '10.0');
-  const l2CamPosX = parseFloat((cmsData['l2CamPosX'] as string | undefined) || '0');
-  const l2CamPosY = parseFloat((cmsData['l2CamPosY'] as string | undefined) || '0');
+  const selectedKf = keyframes.find((k) => k.id === selectedKeyId) || null;
+  const sorted = [...keyframes].sort((a, b) => a.time - b.time);
 
-  const l3ScaleMax = parseFloat((cmsData['l3ScaleMax'] as string | undefined) || '1.65');
-  const l3OriginX = parseFloat((cmsData['l3OriginX'] as string | undefined) || '49.94');
-  const l3OriginY = parseFloat((cmsData['l3OriginY'] as string | undefined) || '35.76');
-  const l3XShift = parseFloat((cmsData['l3XShift'] as string | undefined) || '0');
-  const l3YShift = parseFloat((cmsData['l3YShift'] as string | undefined) || '0');
-  const l3CamPosX = parseFloat((cmsData['l3CamPosX'] as string | undefined) || '0');
-  const l3CamPosY = parseFloat((cmsData['l3CamPosY'] as string | undefined) || '0');
+  // ── Screen drag handlers ───────────────────────────────────────────────────
+  const handlePointerDown = (e: React.PointerEvent, mode: typeof dragMode) => {
+    if (studioMode !== 'screen') return;
+    e.stopPropagation();
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    setDragMode(mode);
+    setDragStart({
+      x: (e.clientX - rect.left) / rect.width * 100,
+      y: (e.clientY - rect.top) / rect.height * 100,
+      initial: { ...screen },
+    });
+  };
 
-  const l4ScaleMax = parseFloat((cmsData['l4ScaleMax'] as string | undefined) || '1.35');
-  const l4OriginX = parseFloat((cmsData['l4OriginX'] as string | undefined) || '50.0');
-  const l4OriginY = parseFloat((cmsData['l4OriginY'] as string | undefined) || '50.0');
-  const l4XShift = parseFloat((cmsData['l4XShift'] as string | undefined) || '0');
-  const l4YShift = parseFloat((cmsData['l4YShift'] as string | undefined) || '0');
-  const l4CamPosX = parseFloat((cmsData['l4CamPosX'] as string | undefined) || '0');
-  const l4CamPosY = parseFloat((cmsData['l4CamPosY'] as string | undefined) || '0');
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (studioMode === 'screen' && dragMode && dragStart) {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      const mx = (e.clientX - rect.left) / rect.width * 100;
+      const my = (e.clientY - rect.top) / rect.height * 100;
+      const dx = mx - dragStart.x;
+      const dy = my - dragStart.y;
+      const s = { ...dragStart.initial };
 
-  // Trajectoire et zoom scroll-driven de la caméra
-  const p1 = Math.min(1, sp / 0.25);
-  const scale1 = 1 + p1 * l1ScaleMax;
-  const xShift1 = l1CamPosX + p1 * l1XShift;
-  const yShift1 = l1CamPosY - p1 * l1YShift;
+      let newL = s.left, newT = s.top, newW = s.width, newH = s.height;
+      const minSize = 2;
+      const aspect = s.width / Math.max(s.height, 0.01);
 
-  const p2 = Math.max(0, Math.min(1, (sp - 0.25) / 0.25));
-  const scale2 = 1 + p2 * l2ScaleMax;
-  const xShift2 = l2CamPosX + p2 * l2XShift;
-  const yShift2 = l2CamPosY - p2 * l2YShift;
+      if (dragMode === 'move') {
+        newL = Math.max(0, Math.min(100 - s.width, s.left + dx));
+        newT = Math.max(0, Math.min(100 - s.height, s.top + dy));
+      } else if (dragMode === 'e') {
+        newW = Math.max(minSize, s.width + dx);
+        if (lockAspect) newH = newW / aspect;
+      } else if (dragMode === 'w') {
+        const dw = Math.max(minSize, s.width - dx);
+        newL = s.left + s.width - dw;
+        newW = dw;
+        if (lockAspect) newH = newW / aspect;
+      } else if (dragMode === 's') {
+        newH = Math.max(minSize, s.height + dy);
+        if (lockAspect) newW = newH * aspect;
+      } else if (dragMode === 'n') {
+        const dh = Math.max(minSize, s.height - dy);
+        newT = s.top + s.height - dh;
+        newH = dh;
+        if (lockAspect) newW = newH * aspect;
+      } else if (dragMode === 'se') {
+        newW = Math.max(minSize, s.width + dx);
+        newH = lockAspect ? newW / aspect : Math.max(minSize, s.height + dy);
+      } else if (dragMode === 'sw') {
+        const dw = Math.max(minSize, s.width - dx);
+        newL = s.left + s.width - dw;
+        newW = dw;
+        newH = lockAspect ? newW / aspect : Math.max(minSize, s.height + dy);
+      } else if (dragMode === 'ne') {
+        newW = Math.max(minSize, s.width + dx);
+        const dh = lockAspect ? newW / aspect : Math.max(minSize, s.height - dy);
+        newT = s.top + s.height - dh;
+        newH = dh;
+      } else if (dragMode === 'nw') {
+        const dw = Math.max(minSize, s.width - dx);
+        newL = s.left + s.width - dw;
+        newW = dw;
+        const dh = lockAspect ? newW / aspect : Math.max(minSize, s.height - dy);
+        newT = s.top + s.height - dh;
+        newH = dh;
+      }
 
-  const p3 = Math.max(0, Math.min(1, (sp - 0.50) / 0.22));
-  const p3Deep = Math.max(0, Math.min(1, (sp - 0.72) / 0.13));
-  const scale3 = 1 + p3 * l3ScaleMax + p3Deep * 0.70;
-  const xShift3 = l3CamPosX + p3 * l3XShift;
-  const yShift3 = l3CamPosY - p3 * l3YShift;
+      onScreenChange({
+        left: parseFloat(newL.toFixed(3)),
+        top: parseFloat(newT.toFixed(3)),
+        width: parseFloat(newW.toFixed(3)),
+        height: parseFloat(newH.toFixed(3)),
+      });
+    }
 
-  const p4 = Math.max(0, Math.min(1, (sp - 0.72) / 0.28));
-  const scale4 = 1 + p4 * l4ScaleMax;
-  const xShift4 = l4CamPosX + p4 * l4XShift;
-  const yShift4 = l4CamPosY - p4 * l4YShift;
+    // Timeline KF drag
+    if (draggingKfId && timelineRef.current) {
+      const tRect = timelineRef.current.getBoundingClientRect();
+      const rawT = (e.clientX - tRect.left) / tRect.width;
+      const clampedT = Math.max(0, Math.min(1, rawT));
+      onKeyframeChange(draggingKfId, { time: parseFloat(clampedT.toFixed(3)) });
+      setSimProgress(clampedT);
+    }
+  };
 
-  const currentStage = sp < 0.25 ? 0 : sp < 0.50 ? 1 : sp < 0.74 ? 2 : 3;
+  const handlePointerUp = () => {
+    setDragMode(null);
+    setDragStart(null);
+    setDraggingKfId(null);
+  };
 
-  const stageNames = ['01 — Ville lointaine', '02 — Vue intermédiaire', '03 — Façade écran', '04 — Macro LED'];
+  // ── Scrub timeline ─────────────────────────────────────────────────────────
+  const handleTimelineClick = (e: React.MouseEvent) => {
+    if (draggingKfId) return;
+    const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
+    const t = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    setSimProgress(t);
+    setPlaying(false);
+  };
 
+  // ── Nudge keyframe params ──────────────────────────────────────────────────
+  const nudge = (key: keyof CameraKeyframe, delta: number) => {
+    if (!selectedKf) return;
+    const current = selectedKf[key] as number;
+    onKeyframeChange(selectedKf.id, { [key]: parseFloat((current + delta).toFixed(3)) });
+  };
+
+  const HANDLE_COLOR = '#C3F910';
+  const HANDLE_SIZE = 9;
+
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%' }}>
-      {/* Viewport : Fond noir uniforme absolu sans aucune bande */}
+    <div
+      style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%' }}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+    >
+      {/* ── Mode bar ─────────────────────────────────────────────────────── */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: 6 }}>
+          <button
+            type="button"
+            onClick={() => setStudioMode('camera')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', borderRadius: 8,
+              border: studioMode === 'camera' ? '1px solid #C3F910' : '1px solid rgba(255,255,255,0.1)',
+              background: studioMode === 'camera' ? 'rgba(195,249,16,0.15)' : 'rgba(255,255,255,0.05)',
+              color: studioMode === 'camera' ? '#C3F910' : '#9CA3AF',
+              fontSize: 11, fontWeight: 700, cursor: 'pointer', transition: 'all 150ms',
+            }}
+          >
+            <Camera style={{ width: 13, height: 13 }} /> Caméra Globale
+          </button>
+          <button
+            type="button"
+            onClick={() => setStudioMode('led')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', borderRadius: 8,
+              border: studioMode === 'led' ? '1px solid #C3F910' : '1px solid rgba(255,255,255,0.1)',
+              background: studioMode === 'led' ? 'rgba(195,249,16,0.15)' : 'rgba(255,255,255,0.05)',
+              color: studioMode === 'led' ? '#C3F910' : '#9CA3AF',
+              fontSize: 11, fontWeight: 700, cursor: 'pointer', transition: 'all 150ms',
+            }}
+          >
+            <Sparkles style={{ width: 13, height: 13 }} /> Structure LED (Image 2)
+          </button>
+          <button
+            type="button"
+            onClick={() => setStudioMode('screen')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', borderRadius: 8,
+              border: studioMode === 'screen' ? '1px solid #C3F910' : '1px solid rgba(255,255,255,0.1)',
+              background: studioMode === 'screen' ? 'rgba(195,249,16,0.15)' : 'rgba(255,255,255,0.05)',
+              color: studioMode === 'screen' ? '#C3F910' : '#9CA3AF',
+              fontSize: 11, fontWeight: 700, cursor: 'pointer', transition: 'all 150ms',
+            }}
+          >
+            <Monitor style={{ width: 13, height: 13 }} /> Écran Vidéo
+          </button>
+        </div>
+
+        {/* Keyframe pills */}
+        <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+          {sorted.map((kf) => (
+            <button
+              key={kf.id}
+              type="button"
+              onClick={() => { onSelectKey(kf.id); setSimProgress(kf.time); setPlaying(false); }}
+              style={{
+                padding: '4px 10px', borderRadius: 6, fontSize: 10, fontWeight: 700, cursor: 'pointer',
+                border: selectedKeyId === kf.id ? '1px solid #C3F910' : '1px solid rgba(255,255,255,0.1)',
+                background: selectedKeyId === kf.id ? '#C3F910' : 'rgba(255,255,255,0.05)',
+                color: selectedKeyId === kf.id ? '#05070B' : '#9CA3AF',
+                transition: 'all 120ms',
+              }}
+            >
+              {kf.name}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Viewport ────────────────────────────────────────────────────── */}
       <div
+        ref={canvasRef}
         style={{
-          position: 'relative',
-          aspectRatio: '16/9',
-          width: '100%',
-          borderRadius: 12,
-          overflow: 'hidden',
+          position: 'relative', aspectRatio: '16/9', width: '100%',
+          borderRadius: 12, overflow: 'hidden',
           backgroundColor: '#000000',
           border: '1px solid rgba(255,255,255,0.1)',
           boxShadow: '0 8px 32px rgba(0,0,0,0.8)',
+          userSelect: 'none', touchAction: 'none',
         }}
       >
-        {/* Layer 1 */}
-        {op1 > 0.001 && (
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              opacity: op1,
-              transform: `translate3d(${xShift1.toFixed(2)}%, ${yShift1.toFixed(2)}%, 0) scale(${scale1.toFixed(3)})`,
-              transformOrigin: `${l1OriginX}% ${l1OriginY}%`,
-              zIndex: 1,
-              backgroundColor: '#000000',
-            }}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
+        {/* World scene: camera transforms applied here */}
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            transform: `translate3d(${cam.x.toFixed(3)}%, ${cam.y.toFixed(3)}%, 0) scale(${cam.zoom.toFixed(4)})`,
+            transformOrigin: `${cam.originX.toFixed(2)}% ${cam.originY.toFixed(2)}%`,
+            willChange: 'transform',
+          }}
+        >
+          {/* Master image (visible in camera and screen modes) */}
+          {studioMode !== 'led' && (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={imageSrcs[0]}
+              src={masterImageSrc}
               alt=""
-              style={{
-                width: `${imageAdjustments[0].width}%`,
-                height: `${imageAdjustments[0].height}%`,
-                objectFit: 'cover',
-                display: 'block',
-                backgroundColor: '#000000',
-                transform: `translate3d(${imageAdjustments[0].posX}%, ${imageAdjustments[0].posY}%, 0) scale(${imageAdjustments[0].scale})`,
-              }}
+              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
             />
-            {screens[0] && (
-              <div
+          )}
+
+          {/* Anchored video screen (recadre strictement la vidéo et les LEDs dans le frame de l'écran) */}
+          {studioMode !== 'led' && (
+            <div
+              style={{
+                position: 'absolute',
+                left: `${screen.left}%`,
+                top: `${screen.top}%`,
+                width: `${screen.width}%`,
+                height: `${screen.height}%`,
+                overflow: 'hidden',
+                outline: showVideoOutline ? `2px solid ${hexToRgba(videoOutlineColor, 0.85)}` : 'none',
+                outlineOffset: -1,
+                boxSizing: 'border-box',
+                backgroundColor: '#000000',
+              }}
+            >
+              <video
+                src={videoSrc}
+                autoPlay loop muted playsInline
                 style={{
                   position: 'absolute',
-                  left: `${screens[0].left}%`,
-                  top: `${screens[0].top}%`,
-                  width: `${screens[0].width}%`,
-                  height: `${screens[0].height}%`,
-                  overflow: 'hidden',
-                  borderRadius: 1,
-                  backgroundColor: '#000000',
-                  outline: showVideoOutline ? `2px solid ${videoOutlineColor}` : 'none',
-                  boxShadow: showVideoOutline ? `0 0 16px ${hexToRgba(videoOutlineColor, 0.85)}, inset 0 0 12px ${hexToRgba(videoOutlineColor, 0.3)}` : 'none',
-                  transition: 'outline 150ms ease, box-shadow 150ms ease',
+                  inset: 0,
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  display: 'block',
+                  opacity: Math.max(0, Math.min(1, 1 - (simProgress - 0.90) / 0.08)),
+                  transition: 'opacity 200ms ease',
                 }}
-              >
-                <video src={videoSrc} autoPlay loop muted playsInline style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', backgroundColor: '#000000' }} />
-              </div>
-            )}
-          </div>
-        )}
+              />
+              {/* MacroLedScene strictement recadrée dans le cadre de l'écran lorsque la caméra entre dans l'écran */}
+              <MacroLedScene
+                opacity={simProgress > 0.90 ? Math.min(1, (simProgress - 0.90) / 0.08) : 0}
+                showCabinetGrid={simProgress > 0.93}
+                style={{ position: 'absolute', inset: 0, zIndex: 3 }}
+              />
+            </div>
+          )}
 
-        {/* Layer 2 */}
-        {op2 > 0.001 && (
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              opacity: op2,
-              transform: `translate3d(${xShift2.toFixed(2)}%, ${yShift2.toFixed(2)}%, 0) scale(${scale2.toFixed(3)})`,
-              transformOrigin: `${l2OriginX}% ${l2OriginY}%`,
-              zIndex: 2,
-              backgroundColor: '#000000',
-            }}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={imageSrcs[1]}
-              alt=""
-              style={{
-                width: `${imageAdjustments[1].width}%`,
-                height: `${imageAdjustments[1].height}%`,
-                objectFit: 'cover',
-                display: 'block',
-                backgroundColor: '#000000',
-                transform: `translate3d(${imageAdjustments[1].posX}%, ${imageAdjustments[1].posY}%, 0) scale(${imageAdjustments[1].scale})`,
-              }}
+          {/* Mode LED Direct (pour inspecter et calibrer directement la structure de 32 modules en plein écran) */}
+          {studioMode === 'led' && (
+            <MacroLedScene
+              opacity={1}
+              showCabinetGrid={true}
+              style={{ position: 'absolute', inset: 0, zIndex: 5 }}
             />
-            {screens[1] && (
-              <div
-                style={{
+          )}
+
+          {/* Screen calibration handles (only in screen mode) */}
+          {studioMode === 'screen' && (
+            <div
+              onPointerDown={(e) => handlePointerDown(e, 'move')}
+              style={{
+                position: 'absolute',
+                left: `${screen.left}%`,
+                top: `${screen.top}%`,
+                width: `${screen.width}%`,
+                height: `${screen.height}%`,
+                border: `2px solid ${HANDLE_COLOR}`,
+                boxSizing: 'border-box',
+                cursor: 'move',
+                zIndex: 20,
+                boxShadow: `0 0 0 1px rgba(0,0,0,0.4)`,
+              }}
+            >
+              {/* Info badge */}
+              <div style={{
+                position: 'absolute', top: -22, left: 0, whiteSpace: 'nowrap',
+                background: 'rgba(0,0,0,0.8)', color: HANDLE_COLOR,
+                fontSize: 9, fontWeight: 700, fontFamily: 'monospace',
+                padding: '2px 6px', borderRadius: 4, pointerEvents: 'none',
+              }}>
+                {screen.width.toFixed(1)}% × {screen.height.toFixed(1)}%
+              </div>
+
+              {/* Corner handles */}
+              {([['nw', -5, -5, 'nwse-resize'], ['ne', undefined, -5, 'nesw-resize'], ['sw', -5, undefined, 'nesw-resize'], ['se', undefined, undefined, 'nwse-resize']] as [string, number|undefined, number|undefined, string][]).map(([dir, l, t, cur]) => (
+                <div key={dir} onPointerDown={(e) => handlePointerDown(e, dir as typeof dragMode)} style={{
                   position: 'absolute',
-                  left: `${screens[1].left}%`,
-                  top: `${screens[1].top}%`,
-                  width: `${screens[1].width}%`,
-                  height: `${screens[1].height}%`,
-                  overflow: 'hidden',
-                  borderRadius: 1.5,
-                  backgroundColor: '#000000',
-                  outline: showVideoOutline ? `2px solid ${videoOutlineColor}` : 'none',
-                  boxShadow: showVideoOutline ? `0 0 16px ${hexToRgba(videoOutlineColor, 0.85)}, inset 0 0 12px ${hexToRgba(videoOutlineColor, 0.3)}` : 'none',
-                  transition: 'outline 150ms ease, box-shadow 150ms ease',
-                }}
-              >
-                <video src={videoSrc} autoPlay loop muted playsInline style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', backgroundColor: '#000000' }} />
-              </div>
-            )}
-          </div>
-        )}
+                  ...(l !== undefined ? { left: l } : { right: -5 }),
+                  ...(t !== undefined ? { top: t } : { bottom: -5 }),
+                  width: HANDLE_SIZE+4, height: HANDLE_SIZE+4, borderRadius: 2,
+                  background: HANDLE_COLOR, border: '1.5px solid #000', cursor: cur, zIndex: 22,
+                }} />
+              ))}
 
-        {/* Layer 3 */}
-        {op3 > 0.001 && (
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              opacity: op3,
-              transform: `translate3d(${xShift3.toFixed(2)}%, ${yShift3.toFixed(2)}%, 0) scale(${scale3.toFixed(3)})`,
-              transformOrigin: `${l3OriginX}% ${l3OriginY}%`,
-              zIndex: 3,
-              backgroundColor: '#000000',
-            }}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={imageSrcs[2]}
-              alt=""
-              style={{
-                width: `${imageAdjustments[2].width}%`,
-                height: `${imageAdjustments[2].height}%`,
-                objectFit: 'cover',
-                display: 'block',
-                backgroundColor: '#000000',
-                transform: `translate3d(${imageAdjustments[2].posX}%, ${imageAdjustments[2].posY}%, 0) scale(${imageAdjustments[2].scale})`,
-              }}
-            />
-            {screens[2] && (
-              <div
-                style={{
-                  position: 'absolute',
-                  left: `${screens[2].left}%`,
-                  top: `${screens[2].top}%`,
-                  width: `${screens[2].width}%`,
-                  height: `${screens[2].height}%`,
-                  overflow: 'hidden',
-                  backgroundColor: '#000000',
-                  outline: showVideoOutline ? `2px solid ${videoOutlineColor}` : 'none',
-                  boxShadow: showVideoOutline ? `0 0 16px ${hexToRgba(videoOutlineColor, 0.85)}, inset 0 0 12px ${hexToRgba(videoOutlineColor, 0.3)}` : 'none',
-                  transition: 'outline 150ms ease, box-shadow 150ms ease',
-                }}
-              >
-                <video src={videoSrc} autoPlay loop muted playsInline style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', backgroundColor: '#000000' }} />
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Layer 4 */}
-        {op4 > 0.001 && (
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              opacity: op4,
-              transform: `translate3d(${xShift4.toFixed(2)}%, ${yShift4.toFixed(2)}%, 0) scale(${scale4.toFixed(3)})`,
-              transformOrigin: `${l4OriginX}% ${l4OriginY}%`,
-              mixBlendMode: 'screen',
-              zIndex: 5,
-              backgroundColor: '#000000',
-            }}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={imageSrcs[3]}
-              alt=""
-              style={{
-                width: `${imageAdjustments[3].width}%`,
-                height: `${imageAdjustments[3].height}%`,
-                objectFit: 'cover',
-                display: 'block',
-                backgroundColor: '#000000',
-                transform: `translate3d(${imageAdjustments[3].posX}%, ${imageAdjustments[3].posY}%, 0) scale(${imageAdjustments[3].scale})`,
-              }}
-            />
-          </div>
-        )}
-
-        {/* HUD overlay */}
-        <div style={{ position: 'absolute', top: 8, left: 8, right: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 20, pointerEvents: 'none' }}>
-          <span style={{ fontSize: 9, fontFamily: 'monospace', color: '#C3F910', background: 'rgba(0,0,0,0.8)', padding: '3px 8px', borderRadius: 99, letterSpacing: '.12em' }}>
-            APERÇU EN DIRECT
-          </span>
-          <span style={{ fontSize: 9, fontFamily: 'monospace', color: '#9CA3AF', background: 'rgba(0,0,0,0.8)', padding: '3px 8px', borderRadius: 99 }}>
-            {stageNames[currentStage]}
-          </span>
+              {/* Edge handles */}
+              <div onPointerDown={(e) => handlePointerDown(e, 'n')} style={{ position: 'absolute', top: -5, left: '50%', transform: 'translateX(-50%)', width: 18, height: HANDLE_SIZE, borderRadius: 2, background: HANDLE_COLOR, border: '1.5px solid #000', cursor: 'ns-resize', zIndex: 21 }} />
+              <div onPointerDown={(e) => handlePointerDown(e, 's')} style={{ position: 'absolute', bottom: -5, left: '50%', transform: 'translateX(-50%)', width: 18, height: HANDLE_SIZE, borderRadius: 2, background: HANDLE_COLOR, border: '1.5px solid #000', cursor: 'ns-resize', zIndex: 21 }} />
+              <div onPointerDown={(e) => handlePointerDown(e, 'w')} style={{ position: 'absolute', top: '50%', left: -5, transform: 'translateY(-50%)', width: HANDLE_SIZE, height: 18, borderRadius: 2, background: HANDLE_COLOR, border: '1.5px solid #000', cursor: 'ew-resize', zIndex: 21 }} />
+              <div onPointerDown={(e) => handlePointerDown(e, 'e')} style={{ position: 'absolute', top: '50%', right: -5, transform: 'translateY(-50%)', width: HANDLE_SIZE, height: 18, borderRadius: 2, background: HANDLE_COLOR, border: '1.5px solid #000', cursor: 'ew-resize', zIndex: 21 }} />
+            </div>
+          )}
         </div>
 
-        {/* Vignette */}
-        <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 95% 85% at 50% 50%, transparent 40%, rgba(0,0,0,0.7) 100%)', pointerEvents: 'none', zIndex: 10 }} />
+        {/* HUD overlays (outside world scene) */}
+        {/* Timecode */}
+        <div style={{
+          position: 'absolute', top: 10, left: 10, background: 'rgba(0,0,0,0.7)',
+          color: '#C3F910', fontSize: 10, fontFamily: 'monospace', fontWeight: 700,
+          padding: '3px 8px', borderRadius: 6, backdropFilter: 'blur(4px)',
+          pointerEvents: 'none', zIndex: 30,
+        }}>
+          {(simProgress * 100).toFixed(1)}%
+        </div>
+
+        {/* MODAL DE CONFIRMATION DE SUPPRESSION DESIGN PIXIATECH (REMPLACE LE CONFIRM DU NAVIGATEUR) */}
+        {keyToDelete && (
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              backgroundColor: 'rgba(5, 7, 11, 0.82)',
+              backdropFilter: 'blur(10px)',
+              zIndex: 100,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 20,
+              userSelect: 'none',
+            }}
+            onClick={() => setKeyToDelete(null)}
+          >
+            <div
+              style={{
+                width: '100%',
+                maxWidth: 420,
+                backgroundColor: '#0D0E12',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+                borderRadius: 16,
+                padding: '24px 22px',
+                boxShadow: '0 25px 60px rgba(0,0,0,0.9), 0 0 35px rgba(239,68,68,0.2)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 16,
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div
+                  style={{
+                    width: 42,
+                    height: 42,
+                    borderRadius: 12,
+                    backgroundColor: 'rgba(239,68,68,0.15)',
+                    border: '1px solid rgba(239,68,68,0.35)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}
+                >
+                  <Trash2 style={{ width: 20, height: 20, color: '#EF4444' }} />
+                </div>
+                <div>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: '#F5F4F0', letterSpacing: '-0.01em' }}>
+                    Supprimer l&apos;image clé ?
+                  </div>
+                  <div style={{ fontSize: 11, color: '#C3F910', marginTop: 2, fontFamily: 'monospace' }}>
+                    {keyToDelete.name} &bull; Position : {(keyToDelete.time * 100).toFixed(1)}%
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ fontSize: 12, color: '#D1D5DB', lineHeight: 1.6 }}>
+                Voulez-vous supprimer cette image clé de caméra ? Le mouvement de zoom se reconnectera automatiquement et de façon fluide entre les clés restantes.
+                <div style={{ marginTop: 10, padding: '10px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', fontSize: 11, color: '#9CA3AF' }}>
+                  💡 <strong style={{ color: '#F5F4F0' }}>Sécurité :</strong> Vous pourrez immédiatement annuler cette action en appuyant sur <kbd style={{ padding: '2px 6px', borderRadius: 4, background: 'rgba(195,249,16,0.15)', color: '#C3F910', fontFamily: 'monospace', fontWeight: 700 }}>Ctrl+Z</kbd>.
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+                <button
+                  type="button"
+                  onClick={() => setKeyToDelete(null)}
+                  style={{
+                    flex: 1,
+                    padding: '10px 16px',
+                    borderRadius: 10,
+                    background: 'rgba(255,255,255,0.06)',
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    color: '#D1D5DB',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Annuler
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const id = keyToDelete.id;
+                    setKeyToDelete(null);
+                    onDeleteKeyframe(id);
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: '10px 16px',
+                    borderRadius: 10,
+                    background: '#EF4444',
+                    border: 'none',
+                    color: '#FFFFFF',
+                    fontSize: 12,
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 20px rgba(239,68,68,0.4)',
+                  }}
+                >
+                  Supprimer la clé
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Mode badge */}
+        <div style={{
+          position: 'absolute', top: 10, right: 10, background: studioMode === 'led'
+            ? 'rgba(195,249,16,0.95)' : studioMode === 'camera'
+            ? 'rgba(195,249,16,0.85)' : 'rgba(59,130,246,0.85)',
+          color: '#05070B', fontSize: 9, fontFamily: 'monospace', fontWeight: 800,
+          padding: '3px 8px', borderRadius: 6, pointerEvents: 'none', zIndex: 30, letterSpacing: '.08em',
+        }}>
+          {studioMode === 'led' ? 'STRUCTURE LED (IMAGE 2)' : studioMode === 'camera' ? 'CAMÉRA GLOBALE' : 'ÉCRAN VIDÉO'}
+        </div>
+
+        {/* Telemetry HUD (Style IMAGE 2) */}
+        {(studioMode === 'led' || (studioMode === 'camera' && simProgress >= 0.50)) && (
+          <div style={{
+            position: 'absolute', top: 10, right: 180,
+            background: 'rgba(6, 10, 16, 0.88)', border: '1px solid rgba(255,255,255,0.12)',
+            borderRadius: 8, padding: '4px 10px', backdropFilter: 'blur(8px)',
+            display: 'flex', alignItems: 'center', gap: 10, pointerEvents: 'none', zIndex: 30,
+            fontFamily: 'monospace', fontSize: 9,
+          }}>
+            <span style={{ color: '#9CA3AF' }}>DIST: <strong style={{ color: '#FFFFFF' }}>{simProgress >= 0.70 && simProgress <= 0.88 ? '239 mm' : `${(5.5 - simProgress * 5).toFixed(1)} m`}</strong></span>
+            <span style={{ color: '#C3F910', fontWeight: 700 }}>3 Diodes RGB (P0.9)</span>
+            <span style={{ color: '#9CA3AF' }}>AU CŒUR DES LEDS</span>
+          </div>
+        )}
+
+        {/* Selected KF info in camera mode */}
+        {studioMode === 'camera' && selectedKf && (
+          <div style={{
+            position: 'absolute', bottom: 10, left: 10,
+            background: 'rgba(0,0,0,0.75)',
+            color: '#F5F4F0', fontSize: 9, fontFamily: 'monospace',
+            padding: '5px 10px', borderRadius: 8, backdropFilter: 'blur(4px)',
+            pointerEvents: 'none', zIndex: 30, lineHeight: 1.6,
+          }}>
+            <span style={{ color: '#C3F910', fontWeight: 800 }}>{selectedKf.name}</span>
+            {'  '}zoom: {cam.zoom.toFixed(2)}×{'  '}x: {cam.x.toFixed(1)}%{'  '}y: {cam.y.toFixed(1)}%
+          </div>
+        )}
       </div>
 
-      {/* Controls & Option Contour Vidéo */}
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-        <button
-          type="button"
-          onClick={() => setPlaying(!playing)}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8, background: playing ? '#C3F910' : 'rgba(255,255,255,0.08)', border: 'none', color: playing ? '#05070B' : '#D1D5DB', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
-        >
-          {playing ? <Pause style={{ width: 12, height: 12 }} /> : <Play style={{ width: 12, height: 12 }} />}
-          {playing ? 'Pause' : 'Lecture'}
-        </button>
+      {/* ── Premiere-style Timeline ──────────────────────────────────────── */}
+      <div style={{ background: '#0D0E12', borderRadius: 12, border: '1px solid rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+
+        {/* Transport controls */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderBottom: '1px solid rgba(255,255,255,0.06)', flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            onClick={() => setPlaying((p) => !p)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6, padding: '6px 13px', borderRadius: 8,
+              background: playing ? 'rgba(239,68,68,0.15)' : 'rgba(195,249,16,0.15)',
+              border: `1px solid ${playing ? 'rgba(239,68,68,0.4)' : '#C3F910'}`,
+              color: playing ? '#EF4444' : '#C3F910', fontWeight: 700, fontSize: 11, cursor: 'pointer',
+            }}
+          >
+            {playing ? <Pause style={{ width: 11, height: 11 }} /> : <Play style={{ width: 11, height: 11 }} />}
+            {playing ? 'Pause' : 'Lecture'}
+          </button>
+
+          <button type="button" onClick={() => { setSimProgress(0); setPlaying(false); }}
+            style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 11px', borderRadius: 8, background: 'rgba(255,255,255,0.06)', border: 'none', color: '#9CA3AF', fontSize: 11, cursor: 'pointer' }}>
+            <RotateCcw style={{ width: 11, height: 11 }} /> Début
+          </button>
+
+          {/* Boutons Historique : Annuler (Ctrl+Z) / Rétablir (Ctrl+Y) */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, paddingLeft: 6, borderLeft: '1px solid rgba(255,255,255,0.1)' }}>
+            <button
+              type="button"
+              onClick={onUndo}
+              disabled={!canUndo}
+              title="Annuler la dernière modification (Ctrl+Z)"
+              style={{
+                display: 'flex', alignItems: 'center', gap: 4, padding: '6px 10px', borderRadius: 7,
+                background: canUndo ? 'rgba(255,255,255,0.08)' : 'transparent',
+                border: canUndo ? '1px solid rgba(255,255,255,0.15)' : '1px solid transparent',
+                color: canUndo ? '#F5F4F0' : '#4B5563',
+                fontSize: 11, cursor: canUndo ? 'pointer' : 'not-allowed',
+                opacity: canUndo ? 1 : 0.4,
+                transition: 'all 120ms ease',
+              }}
+            >
+              <Undo2 style={{ width: 11, height: 11 }} />
+              <span style={{ fontSize: 10, fontFamily: 'monospace' }}>Ctrl+Z</span>
+            </button>
+            <button
+              type="button"
+              onClick={onRedo}
+              disabled={!canRedo}
+              title="Rétablir la modification (Ctrl+Y)"
+              style={{
+                display: 'flex', alignItems: 'center', gap: 4, padding: '6px 10px', borderRadius: 7,
+                background: canRedo ? 'rgba(255,255,255,0.08)' : 'transparent',
+                border: canRedo ? '1px solid rgba(255,255,255,0.15)' : '1px solid transparent',
+                color: canRedo ? '#F5F4F0' : '#4B5563',
+                fontSize: 11, cursor: canRedo ? 'pointer' : 'not-allowed',
+                opacity: canRedo ? 1 : 0.4,
+                transition: 'all 120ms ease',
+              }}
+            >
+              <Redo2 style={{ width: 11, height: 11 }} />
+              <span style={{ fontSize: 10, fontFamily: 'monospace' }}>Ctrl+Y</span>
+            </button>
+          </div>
+
+          {/* Timecode badge */}
+          <div style={{ fontFamily: 'monospace', fontSize: 11, color: '#C3F910', background: 'rgba(195,249,16,0.08)', padding: '4px 10px', borderRadius: 6, border: '1px solid rgba(195,249,16,0.2)' }}>
+            {(simProgress * 100).toFixed(1)}%
+          </div>
+
+          <div style={{ flex: 1 }} />
+
+          {/* Add / Delete keyframe */}
+          <button
+            type="button"
+            onClick={() => onAddKeyframe(parseFloat(simProgress.toFixed(3)))}
+            style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 8, background: 'rgba(195,249,16,0.12)', border: '1px solid rgba(195,249,16,0.3)', color: '#C3F910', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
+          >
+            <ZoomIn style={{ width: 11, height: 11 }} /> + Ajouter une clé
+          </button>
+
+          {selectedKf && (
+            <button
+              type="button"
+              onClick={() => setKeyToDelete(selectedKf)}
+              title={`Supprimer ${selectedKf.name}`}
+              style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 11px', borderRadius: 8, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#EF4444', fontSize: 11, cursor: 'pointer' }}
+            >
+              <Trash2 style={{ width: 11, height: 11 }} />
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={onSave}
+            disabled={isSaving}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 5, padding: '6px 13px', borderRadius: 8,
+              background: hasUnsaved ? '#C3F910' : 'rgba(195,249,16,0.12)',
+              color: hasUnsaved ? '#05070B' : '#C3F910',
+              border: 'none', fontSize: 11, fontWeight: 800, cursor: isSaving ? 'not-allowed' : 'pointer',
+            }}
+          >
+            {isSaving ? <Loader2 style={{ width: 11, height: 11, animation: 'spin 1s linear infinite' }} /> : <Save style={{ width: 11, height: 11 }} />}
+            Enregistrer
+          </button>
+        </div>
+
+        {/* Ruler + track */}
+        <div style={{ padding: '10px 14px 14px', position: 'relative' }}>
+          {/* Time ruler */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, pointerEvents: 'none' }}>
+            {[0, 25, 50, 75, 100].map((p) => (
+              <span key={p} style={{ fontSize: 9, color: '#4B5563', fontFamily: 'monospace' }}>{p}%</span>
+            ))}
+          </div>
+
+          {/* Camera track */}
+          <div
+            ref={timelineRef}
+            onClick={handleTimelineClick}
+            style={{
+              position: 'relative', height: 32, background: 'rgba(255,255,255,0.04)',
+              borderRadius: 6, border: '1px solid rgba(255,255,255,0.08)', cursor: 'crosshair',
+            }}
+          >
+            {/* Track line */}
+            <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: 2, background: 'rgba(255,255,255,0.12)', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+
+            {/* Keyframe diamonds */}
+            {sorted.map((kf) => {
+              const isSelected = kf.id === selectedKeyId;
+              return (
+                <div
+                  key={kf.id}
+                  onPointerDown={(e) => {
+                    e.stopPropagation();
+                    onSelectKey(kf.id);
+                    setSimProgress(kf.time);
+                    setPlaying(false);
+                    setDraggingKfId(kf.id);
+                    setDragKfStartX(e.clientX);
+                    setDragKfStartTime(kf.time);
+                    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+                  }}
+                  title={kf.name}
+                  style={{
+                    position: 'absolute',
+                    left: `${kf.time * 100}%`,
+                    top: '50%',
+                    transform: 'translate(-50%, -50%) rotate(45deg)',
+                    width: isSelected ? 14 : 10,
+                    height: isSelected ? 14 : 10,
+                    background: isSelected ? '#C3F910' : '#6B7280',
+                    border: isSelected ? '2px solid #fff' : '1.5px solid rgba(255,255,255,0.3)',
+                    borderRadius: 2,
+                    cursor: 'grab',
+                    zIndex: isSelected ? 10 : 5,
+                    boxShadow: isSelected ? '0 0 8px rgba(195,249,16,0.6)' : 'none',
+                    transition: 'width 100ms, height 100ms, background 100ms',
+                  }}
+                />
+              );
+            })}
+
+            {/* Playhead */}
+            <div
+              style={{
+                position: 'absolute', top: -4, bottom: -4,
+                left: `${simProgress * 100}%`,
+                width: 2, background: '#EF4444',
+                transform: 'translateX(-50%)',
+                pointerEvents: 'none', zIndex: 20,
+                boxShadow: '0 0 4px rgba(239,68,68,0.5)',
+              }}
+            >
+              {/* Playhead head */}
+              <div style={{ position: 'absolute', top: -1, left: '50%', transform: 'translateX(-50%)', width: 9, height: 9, background: '#EF4444', borderRadius: '0 0 2px 2px', clipPath: 'polygon(0 0, 100% 0, 50% 100%)' }} />
+            </div>
+          </div>
+
+          {/* Scrub bar (below track) */}
+          <input
+            type="range"
+            min={0} max={1000} step={1}
+            value={Math.round(simProgress * 1000)}
+            onChange={(e) => {
+              setSimProgress(parseInt(e.target.value, 10) / 1000);
+              setPlaying(false);
+            }}
+            style={{ width: '100%', marginTop: 6, accentColor: '#C3F910', cursor: 'pointer', height: 3 }}
+          />
+        </div>
+
+        {/* ── Selected keyframe inspector ───────────────────────────────── */}
+        {selectedKf && (
+          <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '12px 14px' }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#C3F910', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Crosshair style={{ width: 12, height: 12 }} />
+              {selectedKf.name} — Paramètres
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+              {([
+                { key: 'time', label: 'Temps', min: 0, max: 1, step: 0.001, fmt: (v: number) => `${(v * 100).toFixed(1)}%` },
+                { key: 'zoom', label: 'Zoom', min: 0.5, max: 10, step: 0.01, fmt: (v: number) => `${v.toFixed(2)}×` },
+                { key: 'x', label: 'Pan X', min: -100, max: 100, step: 0.1, fmt: (v: number) => `${v.toFixed(1)}%` },
+                { key: 'y', label: 'Pan Y', min: -100, max: 100, step: 0.1, fmt: (v: number) => `${v.toFixed(1)}%` },
+                { key: 'originX', label: 'Orig. X', min: 0, max: 100, step: 0.1, fmt: (v: number) => `${v.toFixed(1)}%` },
+                { key: 'originY', label: 'Orig. Y', min: 0, max: 100, step: 0.1, fmt: (v: number) => `${v.toFixed(1)}%` },
+              ] as { key: keyof CameraKeyframe; label: string; min: number; max: number; step: number; fmt: (v: number) => string }[]).map(({ key, label, min, max, step, fmt }) => {
+                const val = selectedKf[key] as number;
+                return (
+                  <div key={key} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: 9, color: '#6B7280', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '.06em' }}>{label}</span>
+                      <span style={{ fontSize: 9, color: '#C3F910', fontFamily: 'monospace', fontWeight: 700 }}>{fmt(val)}</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={min} max={max} step={step}
+                      value={val}
+                      onChange={(e) => onKeyframeChange(selectedKf.id, { [key]: parseFloat(parseFloat(e.target.value).toFixed(3)) })}
+                      style={{ accentColor: '#C3F910', cursor: 'pointer' }}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Easing selector */}
+            <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 10, color: '#6B7280', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '.06em' }}>Easing</span>
+              <div style={{ display: 'flex', gap: 4 }}>
+                {(['linear', 'easeIn', 'easeOut', 'easeInOut'] as KeyframeEasing[]).map((e) => (
+                  <button
+                    key={e}
+                    type="button"
+                    onClick={() => onKeyframeChange(selectedKf.id, { easing: e })}
+                    style={{
+                      padding: '3px 9px', borderRadius: 6, fontSize: 9, fontWeight: 700, cursor: 'pointer',
+                      border: selectedKf.easing === e ? '1px solid #C3F910' : '1px solid rgba(255,255,255,0.1)',
+                      background: selectedKf.easing === e ? '#C3F910' : 'rgba(255,255,255,0.05)',
+                      color: selectedKf.easing === e ? '#05070B' : '#6B7280',
+                    }}
+                  >
+                    {e}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* D-pad nudge */}
+            <div style={{ marginTop: 10, display: 'flex', gap: 8, alignItems: 'center' }}>
+              <span style={{ fontSize: 10, color: '#6B7280' }}>Ajust. fin</span>
+              <div style={{ display: 'flex', gap: 4 }}>
+                <button type="button" onClick={() => nudge('x', -0.2)} style={dpadBtnStyle}><ArrowLeft style={{ width: 10, height: 10 }} /></button>
+                <button type="button" onClick={() => nudge('y', 0.2)} style={dpadBtnStyle}><ArrowUp style={{ width: 10, height: 10 }} /></button>
+                <button type="button" onClick={() => nudge('y', -0.2)} style={dpadBtnStyle}><ArrowDown style={{ width: 10, height: 10 }} /></button>
+                <button type="button" onClick={() => nudge('x', 0.2)} style={dpadBtnStyle}><ArrowRight style={{ width: 10, height: 10 }} /></button>
+                <button type="button" onClick={() => nudge('zoom', 0.05)} style={dpadBtnStyle}><ZoomIn style={{ width: 10, height: 10 }} /></button>
+                <button type="button" onClick={() => nudge('zoom', -0.05)} style={{ ...dpadBtnStyle }}>−</button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Screen mode extra controls */}
+      {studioMode === 'screen' && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', padding: '10px 14px', background: '#0D0E12', borderRadius: 10, border: '1px solid rgba(255,255,255,0.08)', fontSize: 11 }}>
+          <button
+            type="button"
+            onClick={onToggleVideoOutline}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 5,
+              padding: '5px 10px',
+              borderRadius: 7,
+              border: '1px solid rgba(255,255,255,0.1)',
+              background: showVideoOutline ? 'rgba(195,249,16,0.12)' : 'rgba(255,255,255,0.05)',
+              color: showVideoOutline ? '#C3F910' : '#9CA3AF',
+              fontSize: 10,
+              fontWeight: 700,
+              cursor: 'pointer',
+            }}
+          >
+            <Square style={{ width: 11, height: 11 }} />
+            Contour
+          </button>
+          {showVideoOutline && (
+            <VideoOutlineColorControl
+              color={videoOutlineColor}
+              onChangeColor={onChangeVideoOutlineColor}
+            />
+          )}
+          <button
+            type="button"
+            onClick={onToggleLockAspect}
+            style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 7, cursor: 'pointer', border: `1px solid ${lockAspect ? '#C3F910' : 'rgba(255,255,255,0.1)'}`, background: lockAspect ? 'rgba(195,249,16,0.12)' : 'rgba(255,255,255,0.05)', color: lockAspect ? '#C3F910' : '#9CA3AF', fontSize: 10, fontWeight: 700 }}
+          >
+            {lockAspect ? <Lock style={{ width: 10, height: 10 }} /> : <Unlock style={{ width: 10, height: 10 }} />}
+            Ratio {lockAspect ? 'verrouillé' : 'libre'}
+          </button>
+          <div style={{ fontFamily: 'monospace', fontSize: 10, color: '#6B7280', marginLeft: 'auto' }}>
+            L: {screen.left.toFixed(2)}% T: {screen.top.toFixed(2)}% W: {screen.width.toFixed(2)}% H: {screen.height.toFixed(2)}%
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const dpadBtnStyle: React.CSSProperties = {
+  display: 'flex', alignItems: 'center', justifyContent: 'center',
+  width: 24, height: 24, borderRadius: 6,
+  background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)',
+  color: '#D1D5DB', cursor: 'pointer', fontSize: 11, fontWeight: 700,
+};
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// VideoScreenSettingsPanel – Réglages de l'écran vidéo sur l'image maître
+// ═══════════════════════════════════════════════════════════════════════════
+
+function VideoScreenSettingsPanel({
+  screen,
+  onChange,
+  lockAspect,
+  onToggleLockAspect,
+  showVideoOutline,
+  videoOutlineColor,
+  onToggleVideoOutline,
+  onChangeVideoOutlineColor,
+  onResetDefault,
+}: {
+  screen: CameraScreenCoords;
+  onChange: (sc: CameraScreenCoords) => void;
+  lockAspect: boolean;
+  onToggleLockAspect: () => void;
+  showVideoOutline: boolean;
+  videoOutlineColor: string;
+  onToggleVideoOutline: () => void;
+  onChangeVideoOutlineColor: (color: string) => void;
+  onResetDefault: () => void;
+}) {
+  const aspect = screen.width / Math.max(screen.height, 0.01);
+
+  const updateCoord = (key: keyof CameraScreenCoords, val: number) => {
+    const newScreen = { ...screen, [key]: parseFloat(val.toFixed(2)) };
+    if (lockAspect) {
+      if (key === 'width') {
+        newScreen.height = parseFloat((val / aspect).toFixed(2));
+      } else if (key === 'height') {
+        newScreen.width = parseFloat((val * aspect).toFixed(2));
+      }
+    }
+    onChange(newScreen);
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: '#F5F4F0', marginBottom: 4 }}>
+          Cadrage de l'Écran Vidéo
+        </div>
+        <div style={{ fontSize: 11, color: '#6B7280', marginBottom: 16, lineHeight: 1.5 }}>
+          Définissez la position de l'écran vidéo sur l'image maître. La vidéo reste parfaitement ancrée pendant toutes les translations et zooms de caméra.
+        </div>
+      </div>
+
+      {/* Sliders de position */}
+      <div style={{ display: 'grid', gap: 14 }}>
+        <SliderField
+          label="Position X (gauche)"
+          value={screen.left}
+          min={0}
+          max={90}
+          step={0.01}
+          unit="%"
+          onChange={(v) => updateCoord('left', v)}
+          onReset={() => updateCoord('left', DEFAULT_SCREEN_COORDS.left)}
+          defaultVal={DEFAULT_SCREEN_COORDS.left}
+        />
+        <SliderField
+          label="Position Y (haut)"
+          value={screen.top}
+          min={0}
+          max={90}
+          step={0.01}
+          unit="%"
+          onChange={(v) => updateCoord('top', v)}
+          onReset={() => updateCoord('top', DEFAULT_SCREEN_COORDS.top)}
+          defaultVal={DEFAULT_SCREEN_COORDS.top}
+        />
+        <SliderField
+          label="Largeur"
+          value={screen.width}
+          min={1}
+          max={90}
+          step={0.01}
+          unit="%"
+          onChange={(v) => updateCoord('width', v)}
+          onReset={() => updateCoord('width', DEFAULT_SCREEN_COORDS.width)}
+          defaultVal={DEFAULT_SCREEN_COORDS.width}
+        />
+        <SliderField
+          label="Hauteur"
+          value={screen.height}
+          min={1}
+          max={90}
+          step={0.01}
+          unit="%"
+          onChange={(v) => updateCoord('height', v)}
+          onReset={() => updateCoord('height', DEFAULT_SCREEN_COORDS.height)}
+          defaultVal={DEFAULT_SCREEN_COORDS.height}
+        />
+      </div>
+
+      {/* Options contour et ratio */}
+      <div style={{ padding: 14, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          Affichage & Options
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+          <button
+            type="button"
+            onClick={onToggleLockAspect}
+            style={{
+              flex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 6,
+              padding: '8px 12px',
+              borderRadius: 8,
+              border: `1px solid ${lockAspect ? '#C3F910' : 'rgba(255,255,255,0.1)'}`,
+              background: lockAspect ? 'rgba(195,249,16,0.12)' : 'rgba(255,255,255,0.05)',
+              color: lockAspect ? '#C3F910' : '#9CA3AF',
+              fontSize: 11,
+              fontWeight: 700,
+              cursor: 'pointer',
+            }}
+          >
+            {lockAspect ? <Lock style={{ width: 12, height: 12 }} /> : <Unlock style={{ width: 12, height: 12 }} />}
+            Ratio {lockAspect ? 'verrouillé' : 'libre'}
+          </button>
+
+          <button
+            type="button"
+            onClick={onToggleVideoOutline}
+            style={{
+              flex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 6,
+              padding: '8px 12px',
+              borderRadius: 8,
+              border: `1px solid ${showVideoOutline ? '#C3F910' : 'rgba(255,255,255,0.1)'}`,
+              background: showVideoOutline ? 'rgba(195,249,16,0.12)' : 'rgba(255,255,255,0.05)',
+              color: showVideoOutline ? '#C3F910' : '#9CA3AF',
+              fontSize: 11,
+              fontWeight: 700,
+              cursor: 'pointer',
+            }}
+          >
+            <Square style={{ width: 12, height: 12 }} />
+            Contour : {showVideoOutline ? 'Actif' : 'Masqué'}
+          </button>
+        </div>
+
+        {showVideoOutline && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+            <span style={{ fontSize: 11, color: '#9CA3AF' }}>Couleur du contour</span>
+            <VideoOutlineColorControl color={videoOutlineColor} onChangeColor={onChangeVideoOutlineColor} />
+          </div>
+        )}
+      </div>
+
+      <button
+        type="button"
+        onClick={onResetDefault}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 6,
+          padding: '10px 14px',
+          borderRadius: 10,
+          background: 'transparent',
+          border: '1px solid rgba(255,255,255,0.1)',
+          color: '#9CA3AF',
+          fontSize: 11,
+          fontWeight: 600,
+          cursor: 'pointer',
+        }}
+      >
+        <RotateCcw style={{ width: 12, height: 12 }} />
+        Restaurer le cadrage par défaut
+      </button>
+    </div>
+  );
+}
+
+function ScreenSidebarControls({
+  layerIndex,
+  screen,
+  allScreens = [],
+  lockAspect,
+  onToggleLockAspect,
+  showOnionSkin,
+  onToggleOnionSkin,
+  onionOpacity,
+  onChangeOnionOpacity,
+  showVideoOutline,
+  videoOutlineColor,
+  onToggleVideoOutline,
+  onChangeVideoOutlineColor,
+  onChange,
+  onAdaptZoomAndVideo,
+  onSave,
+  isSaving,
+  hasUnsaved,
+}: {
+  layerIndex: number;
+  screen: ScreenCoords;
+  allScreens?: (ScreenCoords | null)[];
+  lockAspect: boolean;
+  onToggleLockAspect: () => void;
+  showOnionSkin: boolean;
+  onToggleOnionSkin: () => void;
+  onionOpacity: number;
+  onChangeOnionOpacity: (op: number) => void;
+  showVideoOutline: boolean;
+  videoOutlineColor: string;
+  onToggleVideoOutline: () => void;
+  onChangeVideoOutlineColor: (color: string) => void;
+  onChange: (sc: ScreenCoords) => void;
+  onAdaptZoomAndVideo: (layerIdx: number, sc: ScreenCoords) => void;
+  onSave: () => void;
+  isSaving: boolean;
+  hasUnsaved: boolean;
+}) {
+  const defaultScreen = LAYERS[layerIndex].defaultScreen;
+  const prevLayerIndex = layerIndex > 0 ? layerIndex - 1 : null;
+
+  const sl = (key: keyof ScreenCoords, label: string, min: number, max: number) => (
+    <SliderField
+      label={label}
+      value={screen[key]}
+      min={min}
+      max={max}
+      step={0.01}
+      unit="%"
+      onChange={(v) => onChange({ ...screen, [key]: parseFloat(v.toFixed(2)) })}
+      onReset={() => onChange({ ...screen, [key]: defaultScreen?.[key] ?? 0 })}
+      defaultVal={defaultScreen?.[key]}
+    />
+  );
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {/* Bouton Enregistrer Principal */}
+      <button
+        type="button"
+        onClick={onSave}
+        disabled={isSaving}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 8,
+          padding: '10px 16px',
+          borderRadius: 10,
+          border: 'none',
+          cursor: isSaving ? 'not-allowed' : 'pointer',
+          background: hasUnsaved ? '#C3F910' : 'rgba(195,249,16,0.15)',
+          color: hasUnsaved ? '#05070B' : '#C3F910',
+          fontSize: 12,
+          fontWeight: 700,
+          boxShadow: hasUnsaved ? '0 4px 16px rgba(195,249,16,0.25)' : 'none',
+          transition: 'all 200ms ease',
+        }}
+      >
+        {isSaving ? <Loader2 style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} /> : <Save style={{ width: 14, height: 14 }} />}
+        {hasUnsaved ? 'Enregistrer les modifications' : 'Configuration enregistrée'}
+      </button>
+
+      {/* Bouton Adapter le zoom et la vidéo */}
+      <button
+        type="button"
+        onClick={() => onAdaptZoomAndVideo(layerIndex, screen)}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 8,
+          padding: '10px 14px',
+          borderRadius: 10,
+          border: '1px solid rgba(195, 249, 16, 0.4)',
+          background: 'rgba(195, 249, 16, 0.12)',
+          color: '#C3F910',
+          fontSize: 12,
+          fontWeight: 700,
+          cursor: 'pointer',
+        }}
+      >
+        <Sparkles style={{ width: 14, height: 14 }} />
+        Adapter le zoom & la vidéo
+      </button>
+
+      {/* Outils d'alignement et ratio */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '.08em' }}>
+          Outils de cadrage
+        </div>
 
         <button
           type="button"
-          onClick={() => setSimProgress(0)}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.06)', border: 'none', color: '#9CA3AF', fontSize: 11, cursor: 'pointer' }}
-        >
-          <RotateCcw style={{ width: 11, height: 11 }} />
-          Début
-        </button>
-
-        <button
-          type="button"
-          onClick={onToggleVideoOutline}
-          title="Afficher un contour visible autour de la surface vidéo pour faciliter son alignement"
+          onClick={onToggleLockAspect}
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: 6,
-            padding: '7px 12px',
+            justifyContent: 'center',
+            gap: 8,
+            padding: '8px 12px',
             borderRadius: 8,
-            border: `1px solid ${showVideoOutline ? videoOutlineColor : 'rgba(255,255,255,0.12)'}`,
-            background: showVideoOutline ? hexToRgba(videoOutlineColor, 0.15) : 'rgba(255,255,255,0.05)',
-            color: showVideoOutline ? videoOutlineColor : '#9CA3AF',
+            border: `1px solid ${lockAspect ? '#C3F910' : 'rgba(255,255,255,0.1)'}`,
+            background: lockAspect ? 'rgba(195, 249, 16, 0.15)' : 'rgba(255,255,255,0.04)',
+            color: lockAspect ? '#C3F910' : '#D1D5DB',
             fontSize: 11,
-            fontWeight: 700,
+            fontWeight: 600,
             cursor: 'pointer',
-            transition: 'all 180ms ease',
           }}
         >
-          <Square style={{ width: 12, height: 12 }} />
-          Contour : {showVideoOutline ? 'ON' : 'OFF'}
+          {lockAspect ? <Lock style={{ width: 13, height: 13 }} /> : <Unlock style={{ width: 13, height: 13 }} />}
+          Ratio d'aspect : {lockAspect ? 'Verrouillé' : 'Libre'}
         </button>
 
-        {showVideoOutline && (
-          <VideoOutlineColorControl
-            color={videoOutlineColor}
-            onChangeColor={onChangeVideoOutlineColor}
-          />
+        {prevLayerIndex !== null && (
+          <button
+            type="button"
+            onClick={onToggleOnionSkin}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              padding: '8px 12px',
+              borderRadius: 8,
+              border: `1px solid ${showOnionSkin ? '#38BDF8' : 'rgba(255,255,255,0.1)'}`,
+              background: showOnionSkin ? 'rgba(56, 189, 248, 0.15)' : 'rgba(255,255,255,0.04)',
+              color: showOnionSkin ? '#38BDF8' : '#D1D5DB',
+              fontSize: 11,
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            <Eye style={{ width: 13, height: 13 }} />
+            Superposition Étape 0{prevLayerIndex + 1} : {showOnionSkin ? 'Activée' : 'Désactivée'}
+          </button>
         )}
 
-        <div style={{ flex: 1, minWidth: 160, display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <input
-            type="range"
-            min={0}
-            max={1}
-            step={0.001}
-            value={simProgress}
-            onChange={(e) => { setPlaying(false); setSimProgress(parseFloat(e.target.value)); }}
-            style={{ width: '100%', accentColor: '#C3F910', cursor: 'pointer' }}
-          />
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, color: '#6B7280', fontFamily: 'monospace' }}>
-            {stageNames.map((n, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => { const fracs = [0.02, 0.32, 0.58, 0.88]; setSimProgress(fracs[i]); setPlaying(false); }}
-                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: currentStage === i ? '#C3F910' : '#6B7280', fontSize: 9, padding: 0, fontFamily: 'monospace' }}
-              >
-                {String(i + 1).padStart(2, '0')}
-              </button>
-            ))}
+        {showOnionSkin && prevLayerIndex !== null && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', background: 'rgba(56, 189, 248, 0.08)', borderRadius: 8, border: '1px solid rgba(56, 189, 248, 0.2)' }}>
+            <span style={{ fontSize: 10, color: '#38BDF8', fontWeight: 600 }}>Opacité :</span>
+            <input
+              type="range"
+              min={0.1}
+              max={0.9}
+              step={0.05}
+              value={onionOpacity}
+              onChange={(e) => onChangeOnionOpacity(parseFloat(e.target.value))}
+              style={{ flex: 1, accentColor: '#38BDF8', cursor: 'pointer' }}
+            />
+            <span style={{ fontSize: 10, fontFamily: 'monospace', color: '#38BDF8' }}>
+              {Math.round(onionOpacity * 100)}%
+            </span>
           </div>
+        )}
+
+        {/* Contour vidéo */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
+          <button
+            type="button"
+            onClick={onToggleVideoOutline}
+            style={{
+              flex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 6,
+              padding: '6px 10px',
+              borderRadius: 8,
+              border: `1px solid ${showVideoOutline ? videoOutlineColor : 'rgba(255,255,255,0.1)'}`,
+              background: showVideoOutline ? hexToRgba(videoOutlineColor, 0.15) : 'rgba(255,255,255,0.04)',
+              color: showVideoOutline ? videoOutlineColor : '#9CA3AF',
+              fontSize: 11,
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            <Square style={{ width: 12, height: 12 }} />
+            Contour : {showVideoOutline ? 'Activé' : 'Désactivé'}
+          </button>
+          {showVideoOutline && (
+            <VideoOutlineColorControl
+              color={videoOutlineColor}
+              onChangeColor={onChangeVideoOutlineColor}
+            />
+          )}
         </div>
       </div>
+
+      {/* Sliders de position */}
+      <div style={{ display: 'grid', gap: 14 }}>
+        {sl('left', 'Position X (gauche)', 0, 90)}
+        {sl('top', 'Position Y (haut)', 0, 90)}
+        {sl('width', 'Largeur', 1, 80)}
+        {sl('height', 'Hauteur', 1, 80)}
+      </div>
+
+      <button
+        type="button"
+        onClick={() => defaultScreen && onChange(defaultScreen)}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          padding: '8px 14px',
+          borderRadius: 8,
+          background: 'transparent',
+          border: '1px solid rgba(255,255,255,0.1)',
+          color: '#6B7280',
+          fontSize: 11,
+          fontWeight: 600,
+          cursor: 'pointer',
+          alignSelf: 'flex-start',
+        }}
+      >
+        <RotateCcw style={{ width: 11, height: 11 }} />
+        Réinitialiser cette étape
+      </button>
     </div>
   );
 }
@@ -1518,6 +2109,7 @@ export default function ShowreelAdminModule() {
   }, [setCurrentPageId]);
 
   const [activeTab, setActiveTab] = useState<StudioTab>('media');
+  const [selectedKeyId, setSelectedKeyId] = React.useState<string | null>(null);
   const [selectedLang, setSelectedLang] = useState<'fr' | 'en'>('fr');
   const [saving, setSaving] = useState(false);
   const [activeScreenLayer, setActiveScreenLayer] = useState(0);
@@ -1526,11 +2118,20 @@ export default function ShowreelAdminModule() {
   const [showVideoOutline, setShowVideoOutline] = useState<boolean>(true);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number>(0);
   const [activeTextStep, setActiveTextStep] = useState<string | null>('intro');
+  const [lockAspect, setLockAspect] = useState<boolean>(false);
+  const [showOnionSkin, setShowOnionSkin] = useState<boolean>(false);
+  const [onionOpacity, setOnionOpacity] = useState<number>(0.45);
 
   const cmsData = useMemo(
     () => (pages['home']?.sections?.showreel as Record<string, unknown>) || {},
     [pages]
   );
+
+  useEffect(() => {
+    if (cmsData['showVideoOutline'] !== undefined) {
+      setShowVideoOutline(cmsData['showVideoOutline'] !== false && cmsData['showVideoOutline'] !== 'false');
+    }
+  }, [cmsData]);
 
   // Multilingual video support
   const videoFr = useMemo(
@@ -1564,6 +2165,65 @@ export default function ShowreelAdminModule() {
   // Derived values from CMS (active video based on language/mode)
   const videoSrc = activeVideoUrl;
 
+  // ── Camera Keyframes & Master Image ────────────────────────────────────────
+  const keyframes: CameraKeyframe[] = React.useMemo(
+    () => parseKeyframesFromCms(cmsData['cameraKeyframes']),
+    [cmsData]
+  );
+
+  const masterImageSrc: string =
+    (cmsData['masterImageSrc'] as string | undefined) ||
+    (cmsData['image1Src'] as string | undefined) ||
+    DEFAULT_MASTER_IMAGE;
+
+  const videoScreen: CameraScreenCoords = {
+    left: parseFloat((cmsData['videoScreenLeft'] as string | undefined) || String(DEFAULT_SCREEN_COORDS.left)),
+    top: parseFloat((cmsData['videoScreenTop'] as string | undefined) || String(DEFAULT_SCREEN_COORDS.top)),
+    width: parseFloat((cmsData['videoScreenWidth'] as string | undefined) || String(DEFAULT_SCREEN_COORDS.width)),
+    height: parseFloat((cmsData['videoScreenHeight'] as string | undefined) || String(DEFAULT_SCREEN_COORDS.height)),
+  };
+
+  // Ensure selectedKeyId is initialized when keyframes load
+  React.useEffect(() => {
+    if (!selectedKeyId && keyframes.length > 0) {
+      setSelectedKeyId(keyframes[0].id);
+    }
+  }, [keyframes, selectedKeyId]);
+
+  const handleVideoScreenChange = useCallback(
+    (sc: CameraScreenCoords) => {
+      updateSectionField('showreel', 'videoScreenLeft', String(sc.left));
+      updateSectionField('showreel', 'videoScreenTop', String(sc.top));
+      updateSectionField('showreel', 'videoScreenWidth', String(sc.width));
+      updateSectionField('showreel', 'videoScreenHeight', String(sc.height));
+      markUnsaved();
+    },
+    [updateSectionField]
+  );
+
+  const handleResetDefaultVideoScreen = useCallback(() => {
+    handleVideoScreenChange(DEFAULT_SCREEN_COORDS);
+    toast.success("Position de l'écran réinitialisée par défaut.");
+  }, [handleVideoScreenChange]);
+
+
+  const handleMasterImageChange = useCallback(
+    (url: string) => {
+      updateSectionField('showreel', 'masterImageSrc', url);
+      markUnsaved();
+    },
+    [updateSectionField]
+  );
+
+  const handleResetKeyframes = useCallback(() => {
+    if (!confirm('Réinitialiser toutes les images clés aux valeurs par défaut ?')) return;
+    updateSectionField('showreel', 'cameraKeyframes', JSON.stringify(DEFAULT_KEYFRAMES));
+    setSelectedKeyId(DEFAULT_KEYFRAMES[0].id);
+    markUnsaved();
+    toast.success('Images clés réinitialisées.');
+  }, [updateSectionField]);
+
+
   const imageSrcs = LAYERS.map(
     (l) => (cmsData[l.key] as string | undefined) || l.defaultSrc
   );
@@ -1594,7 +2254,147 @@ export default function ShowreelAdminModule() {
 
   const markUnsaved = () => setHasUnsaved(true);
 
+  const handleToggleVideoOutline = useCallback(() => {
+    setShowVideoOutline((prev) => {
+      const next = !prev;
+      updateSectionField('showreel', 'showVideoOutline', next);
+      markUnsaved();
+      toast.success(next ? 'Contour de l\'écran activé' : 'Contour désactivé');
+      return next;
+    });
+  }, [updateSectionField, markUnsaved]);
+
+
+  // ── Pile d'historique Undo / Redo (Ctrl+Z / Ctrl+Y) ───────────────────────
+  const [undoStack, setUndoStack] = React.useState<CameraKeyframe[][]>([]);
+  const [redoStack, setRedoStack] = React.useState<CameraKeyframe[][]>([]);
+
+  const pushToHistory = useCallback((currentKeyframes: CameraKeyframe[]) => {
+    setUndoStack((prev) => [...prev.slice(-30), currentKeyframes]);
+    setRedoStack([]);
+  }, []);
+
+  const handleUndo = useCallback(() => {
+    if (undoStack.length === 0) return;
+    const previous = undoStack[undoStack.length - 1];
+    setUndoStack((prev) => prev.slice(0, -1));
+    setRedoStack((prev) => [...prev, keyframes]);
+    updateSectionField('showreel', 'cameraKeyframes', JSON.stringify(previous));
+    setSelectedKeyId(previous[0]?.id || null);
+    markUnsaved();
+    toast.success('Modification annulée (Ctrl+Z)');
+  }, [undoStack, keyframes, updateSectionField, markUnsaved]);
+
+  const handleRedo = useCallback(() => {
+    if (redoStack.length === 0) return;
+    const next = redoStack[redoStack.length - 1];
+    setRedoStack((prev) => prev.slice(0, -1));
+    setUndoStack((prev) => [...prev, keyframes]);
+    updateSectionField('showreel', 'cameraKeyframes', JSON.stringify(next));
+    setSelectedKeyId(next[0]?.id || null);
+    markUnsaved();
+    toast.success('Modification rétablie (Ctrl+Y)');
+  }, [redoStack, keyframes, updateSectionField, markUnsaved]);
+
+  // Écouteur global des raccourcis clavier Ctrl+Z / Ctrl+Y
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const activeEl = document.activeElement;
+      if (
+        activeEl &&
+        (activeEl.tagName === 'INPUT' ||
+          activeEl.tagName === 'TEXTAREA' ||
+          (activeEl as HTMLElement).isContentEditable)
+      ) {
+        return;
+      }
+
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z')) {
+        e.preventDefault();
+        if (e.shiftKey) {
+          handleRedo();
+        } else {
+          handleUndo();
+        }
+      } else if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || e.key === 'Y')) {
+        e.preventDefault();
+        handleRedo();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleUndo, handleRedo]);
+
+  const handleKeyframeChange = useCallback(
+    (id: string, patch: Partial<CameraKeyframe>) => {
+      pushToHistory(keyframes);
+      const updated = keyframes.map((k) => (k.id === id ? { ...k, ...patch } : k));
+      updateSectionField('showreel', 'cameraKeyframes', JSON.stringify(updated));
+      markUnsaved();
+    },
+    [keyframes, updateSectionField, pushToHistory, markUnsaved]
+  );
+
+  const handleAddKeyframe = useCallback(
+    (atTime: number) => {
+      pushToHistory(keyframes);
+      const cam = evaluateCamera(keyframes, atTime);
+      const newKf: CameraKeyframe = {
+        id: `kf-${Date.now()}`,
+        name: `Cl\xc3\xa9 ${String(keyframes.length + 1).padStart(2, '0')}`,
+        time: parseFloat(atTime.toFixed(3)),
+        zoom: cam.zoom,
+        x: cam.x,
+        y: cam.y,
+        originX: cam.originX,
+        originY: cam.originY,
+        easing: 'easeInOut',
+      };
+      const updated = [...keyframes, newKf].sort((a, b) => a.time - b.time);
+      updateSectionField('showreel', 'cameraKeyframes', JSON.stringify(updated));
+      setSelectedKeyId(newKf.id);
+      markUnsaved();
+      toast.success(`Cl\xc3\xa9 "${newKf.name}" ajout\xc3\xa9e \xc3\xa0 ${(atTime * 100).toFixed(1)}%.`);
+    },
+    [keyframes, updateSectionField, pushToHistory, markUnsaved]
+  );
+
+  const handleDeleteKeyframe = useCallback(
+    (id: string) => {
+      if (keyframes.length <= 1) {
+        toast.error('Vous devez conserver au moins une image cl\xc3\xa9.');
+        return;
+      }
+      pushToHistory(keyframes);
+      const deletedKf = keyframes.find((k) => k.id === id);
+      const updated = keyframes.filter((k) => k.id !== id);
+      updateSectionField('showreel', 'cameraKeyframes', JSON.stringify(updated));
+      setSelectedKeyId(updated[0]?.id || null);
+      markUnsaved();
+      toast.success(`Image cl\xc3\xa9 "${deletedKf?.name || 'Cl\xc3\xa9'}" supprim\xc3\xa9e. Appuyez sur Ctrl+Z pour annuler.`);
+    },
+    [keyframes, updateSectionField, pushToHistory, markUnsaved]
+  );
+
   const showCodeLeds = cmsData['showCodeLeds'] !== false && cmsData['showCodeLeds'] !== 'false';
+
+  // ── Interrupteurs CMS persistants (même pattern que showCodeLeds) ─────────────
+  // Valeur par défaut : true (rétrocompatibilité — préserve le comportement existant)
+  const animationEnabled =
+    cmsData['animationEnabled'] !== false && cmsData['animationEnabled'] !== 'false';
+  const imagesEnabled =
+    cmsData['imagesEnabled'] !== false && cmsData['imagesEnabled'] !== 'false';
+
+  const handleToggleAnimation = useCallback(() => {
+    updateSectionField('showreel', 'animationEnabled', !animationEnabled);
+    markUnsaved();
+  }, [animationEnabled, updateSectionField]);
+
+  const handleToggleImages = useCallback(() => {
+    updateSectionField('showreel', 'imagesEnabled', !imagesEnabled);
+    markUnsaved();
+  }, [imagesEnabled, updateSectionField]);
 
   const handleVideoChange = useCallback(
     (url: string) => {
@@ -1679,6 +2479,131 @@ export default function ShowreelAdminModule() {
     [updateSectionField]
   );
 
+  /**
+   * handleAdaptZoomAndVideo — Continuité géométrique complète entre les étapes.
+   *
+   * Pour chaque étape, on calcule :
+   *   • originX / originY  = centre du rectangle calibré (point fixe de zoom)
+   *   • scaleMax           = (largeur rect suivant / largeur rect courant) - 1
+   *                          = le facteur de grossissement nécessaire pour que le
+   *                            rectangle courant devienne aussi grand que le suivant
+   *   • XShift / YShift    = translation caméra calculée pour aligner les centres
+   *                          sans toucher aux YShift legacy (on ne les écrase pas)
+   *
+   * Le calcul garantit :  position X, Y, largeur, hauteur, ratio, échelle apparente.
+   */
+  const handleAdaptZoomAndVideo = useCallback(
+    (layerIdx: number, sc: ScreenCoords) => {
+      // Centre normalisé du rectangle calibré (= point fixe du zoom)
+      const cx = parseFloat((sc.left + sc.width / 2).toFixed(3));
+      const cy = parseFloat((sc.top + sc.height / 2).toFixed(3));
+
+      // ── Helpers ──────────────────────────────────────────────────────────────
+      /** scaleMax pour que le rect courant (wCur) occupe la même place que le suivant (wNext) */
+      const calcScaleMax = (wCur: number, wNext: number): number => {
+        if (wCur <= 0 || wNext <= 0) return 1.0;
+        return Math.max(0.3, Math.min(4.0, parseFloat(((wNext / wCur) - 1).toFixed(3))));
+      };
+
+      // ── Étape 01 ─────────────────────────────────────────────────────────────
+      if (layerIdx === 0) {
+        updateSectionField('showreel', 'screen1Left', String(sc.left));
+        updateSectionField('showreel', 'screen1Top', String(sc.top));
+        updateSectionField('showreel', 'screen1Width', String(sc.width));
+        updateSectionField('showreel', 'screen1Height', String(sc.height));
+        // Origine = centre exact du rectangle calibré image 1
+        updateSectionField('showreel', 'l1OriginX', String(cx));
+        updateSectionField('showreel', 'l1OriginY', String(cy));
+
+        const s2 = screens[1];
+        if (s2 && s2.width > 0) {
+          const cx2 = parseFloat((s2.left + s2.width / 2).toFixed(3));
+          const cy2 = parseFloat((s2.top + s2.height / 2).toFixed(3));
+          const sm = calcScaleMax(sc.width, s2.width);
+          updateSectionField('showreel', 'l1ScaleMax', String(sm));
+          // Continuité géométrique absolue : déplacement de caméra X & Y pendant le zoom
+          // À la fin du zoom (p1=1), le centre (cx, cy) de l'image 1 arrive exactement en (cx2, cy2)
+          const travelX = parseFloat((cx2 - cx).toFixed(3));
+          const travelY = parseFloat((cy - cy2).toFixed(3)); // yShift est soustrait (cy - travelY = cy2)
+          updateSectionField('showreel', 'l1XShift', String(travelX));
+          updateSectionField('showreel', 'l1YShift', String(travelY));
+          // Neutraliser le décalage initial au repos pour éviter tout saut de cadre en mode statique
+          updateSectionField('showreel', 'l1CamPosX', '0');
+          updateSectionField('showreel', 'l1CamPosY', '0');
+        }
+
+        markUnsaved();
+        toast.success(`Étape 01 adaptée — origine (${cx}%, ${cy}%), zoom continu vers étape 02 garanti.`);
+
+      // ── Étape 02 ─────────────────────────────────────────────────────────────
+      } else if (layerIdx === 1) {
+        updateSectionField('showreel', 'screen2Left', String(sc.left));
+        updateSectionField('showreel', 'screen2Top', String(sc.top));
+        updateSectionField('showreel', 'screen2Width', String(sc.width));
+        updateSectionField('showreel', 'screen2Height', String(sc.height));
+        // Origine = centre exact du rectangle calibré image 2
+        updateSectionField('showreel', 'l2OriginX', String(cx));
+        updateSectionField('showreel', 'l2OriginY', String(cy));
+
+        // Recalculer étape 01 ➔ 02 pour que l'arrivée colle parfaitement au nouveau rectangle 02
+        const s1 = screens[0];
+        if (s1 && s1.width > 0) {
+          const cx1 = parseFloat((s1.left + s1.width / 2).toFixed(3));
+          const cy1 = parseFloat((s1.top + s1.height / 2).toFixed(3));
+          const sm1 = calcScaleMax(s1.width, sc.width);
+          updateSectionField('showreel', 'l1ScaleMax', String(sm1));
+          updateSectionField('showreel', 'l1XShift', String(parseFloat((cx - cx1).toFixed(3))));
+          updateSectionField('showreel', 'l1YShift', String(parseFloat((cy1 - cy).toFixed(3))));
+          updateSectionField('showreel', 'l1CamPosX', '0');
+          updateSectionField('showreel', 'l1CamPosY', '0');
+        }
+
+        // Calculer étape 02 ➔ 03 pour la transition vers l'étape 03
+        const s3 = screens[2];
+        if (s3 && s3.width > 0) {
+          const cx3 = parseFloat((s3.left + s3.width / 2).toFixed(3));
+          const cy3 = parseFloat((s3.top + s3.height / 2).toFixed(3));
+          const sm2 = calcScaleMax(sc.width, s3.width);
+          updateSectionField('showreel', 'l2ScaleMax', String(sm2));
+          updateSectionField('showreel', 'l2XShift', String(parseFloat((cx3 - cx).toFixed(3))));
+          updateSectionField('showreel', 'l2YShift', String(parseFloat((cy - cy3).toFixed(3))));
+          updateSectionField('showreel', 'l2CamPosX', '0');
+          updateSectionField('showreel', 'l2CamPosY', '0');
+        }
+
+        markUnsaved();
+        toast.success(`Étape 02 adaptée — continuité 01 ➔ 02 ➔ 03 recalculée.`);
+
+      // ── Étape 03 ─────────────────────────────────────────────────────────────
+      } else if (layerIdx === 2) {
+        updateSectionField('showreel', 'screen3Left', String(sc.left));
+        updateSectionField('showreel', 'screen3Top', String(sc.top));
+        updateSectionField('showreel', 'screen3Width', String(sc.width));
+        updateSectionField('showreel', 'screen3Height', String(sc.height));
+        // Origine = centre exact du rectangle calibré image 3
+        updateSectionField('showreel', 'l3OriginX', String(cx));
+        updateSectionField('showreel', 'l3OriginY', String(cy));
+
+        // Recalculer étape 02 ➔ 03 pour que l'arrivée colle parfaitement au nouveau rectangle 03
+        const s2 = screens[1];
+        if (s2 && s2.width > 0) {
+          const cx2 = parseFloat((s2.left + s2.width / 2).toFixed(3));
+          const cy2 = parseFloat((s2.top + s2.height / 2).toFixed(3));
+          const sm2 = calcScaleMax(s2.width, sc.width);
+          updateSectionField('showreel', 'l2ScaleMax', String(sm2));
+          updateSectionField('showreel', 'l2XShift', String(parseFloat((cx - cx2).toFixed(3))));
+          updateSectionField('showreel', 'l2YShift', String(parseFloat((cy2 - cy).toFixed(3))));
+          updateSectionField('showreel', 'l2CamPosX', '0');
+          updateSectionField('showreel', 'l2CamPosY', '0');
+        }
+
+        markUnsaved();
+        toast.success(`Étape 03 adaptée — continuité 02 ➔ 03 recalculée.`);
+      }
+    },
+    [screens, updateSectionField]
+  );
+
   const handleTextField = useCallback(
     (key: string, value: string) => {
       updateSectionFieldLocalized('showreel', key, value, selectedLang, true);
@@ -1732,7 +2657,7 @@ export default function ShowreelAdminModule() {
   ];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 0, height: '100%', background: '#09090B', minHeight: '100vh', color: '#F5F4F0', fontFamily: 'var(--font-sans, system-ui, sans-serif)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 0, minHeight: '100vh', width: '100%', background: '#09090B', color: '#F5F4F0', fontFamily: 'var(--font-sans, system-ui, sans-serif)' }}>
 
       {/* ── Header ── */}
       <div style={{ padding: '16px 24px', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(12px)', position: 'sticky', top: 0, zIndex: 50 }}>
@@ -1801,38 +2726,43 @@ export default function ShowreelAdminModule() {
       </div>
 
       {/* ── Body ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', flex: 1, minHeight: 0, gap: 0 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', flex: 1, minHeight: 0, gap: 0, background: '#09090B' }}>
 
-        {/* ── Left: Live Preview ── */}
-        <div style={{ padding: 24, borderRight: '1px solid rgba(255,255,255,0.07)', display: 'flex', flexDirection: 'column', gap: 20 }}>
-          <div>
-            <div style={{ fontSize: 11, color: '#6B7280', letterSpacing: '.16em', fontFamily: 'var(--font-mono, monospace)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Eye style={{ width: 12, height: 12 }} />
-              PRÉVISUALISATION EN DIRECT
-            </div>
-            <LivePreviewPanel
-              videoSrc={videoSrc}
-              imageSrcs={imageSrcs}
-              screens={screens}
-              imageAdjustments={imageAdjustments}
-              cmsData={cmsData}
-              showVideoOutline={showVideoOutline}
-              videoOutlineColor={(cmsData['videoOutlineColor'] as string | undefined) || '#000000'}
-              onToggleVideoOutline={() => setShowVideoOutline((prev) => !prev)}
-              onChangeVideoOutlineColor={(c) => { updateSectionField('showreel', 'videoOutlineColor', c); markUnsaved(); }}
-              targetStep={
-                activeTab === 'camera'
-                  ? activeStep
-                  : activeTab === 'texts'
-                    ? (activeTextStep === 'step1' ? 1 : activeTextStep === 'step2' ? 2 : activeTextStep === 'step3' ? 3 : activeTextStep === 'step4' ? 4 : null)
-                    : null
-              }
-            />
-          </div>
+        {/* ── Left: Fenêtre Principale (Recadrage & Calibration ou Aperçu Animé) ── */}
+        <div style={{ padding: 24, borderRight: '1px solid rgba(255,255,255,0.07)', display: 'flex', flexDirection: 'column', gap: 16, background: '#09090B' }}>
+          {/* Barre d'en-tête du Studio : Mode Unique avec Sélection Rapide des Étapes */}
+                    <VirtualCameraStudioCanvas
+            masterImageSrc={masterImageSrc}
+            videoSrc={videoSrc}
+            screen={videoScreen}
+            keyframes={keyframes}
+            selectedKeyId={selectedKeyId}
+            onSelectKey={setSelectedKeyId}
+            onKeyframeChange={handleKeyframeChange}
+            onAddKeyframe={handleAddKeyframe}
+            onDeleteKeyframe={handleDeleteKeyframe}
+            onScreenChange={handleVideoScreenChange}
+            onSave={handleSave}
+            isSaving={saving || saveStatus === 'saving'}
+            hasUnsaved={hasUnsaved}
+            showVideoOutline={showVideoOutline}
+            videoOutlineColor={(cmsData['videoOutlineColor'] as string | undefined) || '#000000'}
+            onToggleVideoOutline={handleToggleVideoOutline}
+            onChangeVideoOutlineColor={(c) => {
+              updateSectionField('showreel', 'videoOutlineColor', c);
+              markUnsaved();
+            }}
+            lockAspect={lockAspect}
+            onToggleLockAspect={() => setLockAspect((v) => !v)}
+            canUndo={undoStack.length > 0}
+            canRedo={redoStack.length > 0}
+            onUndo={handleUndo}
+            onRedo={handleRedo}
+          />
         </div>
 
         {/* ── Right: Settings Panel ── */}
-        <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#0D0E12' }}>
 
           {/* Tab nav */}
           <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.07)', padding: '0 4px' }}>
@@ -2013,371 +2943,107 @@ export default function ShowreelAdminModule() {
 
             {/* ── SCREEN TAB ── */}
             {activeTab === 'screen' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#F5F4F0', marginBottom: 4 }}>Position de l'écran</div>
-                  <div style={{ fontSize: 11, color: '#6B7280', marginBottom: 16, lineHeight: 1.5 }}>
-                    Ajustez la position et la taille de la zone vidéo sur chaque image. L'aperçu montre en vert le cadre actuel.
-                  </div>
-                </div>
-
-                {/* Layer selector */}
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  {LAYERS.filter((l) => l.screenKey !== null).map((layer, i) => (
-                    <button
-                      key={layer.key}
-                      type="button"
-                      onClick={() => setActiveScreenLayer(i)}
-                      style={{
-                        padding: '6px 12px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 700,
-                        background: activeScreenLayer === i ? '#C3F910' : 'rgba(255,255,255,0.06)',
-                        color: activeScreenLayer === i ? '#05070B' : '#9CA3AF',
-                      }}
-                    >
-                      0{i + 1}
-                    </button>
-                  ))}
-                </div>
-
-                {LAYERS[activeScreenLayer].screenKey && screens[activeScreenLayer] && (
-                  <ScreenPositionEditor
-                    layerIndex={activeScreenLayer}
-                    screen={screens[activeScreenLayer]!}
-                    imageSrc={imageSrcs[activeScreenLayer]}
-                    videoSrc={videoSrc}
-                    showVideoOutline={showVideoOutline}
-                    videoOutlineColor={(cmsData['videoOutlineColor'] as string | undefined) || '#000000'}
-                    onToggleVideoOutline={() => setShowVideoOutline((prev) => !prev)}
-                    onChangeVideoOutlineColor={(c) => { updateSectionField('showreel', 'videoOutlineColor', c); markUnsaved(); }}
-                    onChange={(sc) => handleScreenChange(LAYERS[activeScreenLayer].screenKey!, sc)}
-                  />
-                )}
-
-                {LAYERS[activeScreenLayer].screenKey === null && (
-                  <div style={{ padding: 20, textAlign: 'center', color: '#6B7280', fontSize: 12 }}>
-                    Cette image (Macro LED) n'a pas de zone vidéo intégrée — elle se superpose en mode blend.
-                  </div>
-                )}
-              </div>
+              <VideoScreenSettingsPanel
+                screen={videoScreen}
+                onChange={handleVideoScreenChange}
+                lockAspect={lockAspect}
+                onToggleLockAspect={() => setLockAspect((v) => !v)}
+                showVideoOutline={showVideoOutline}
+                videoOutlineColor={(cmsData['videoOutlineColor'] as string | undefined) || '#000000'}
+                onToggleVideoOutline={handleToggleVideoOutline}
+                onChangeVideoOutlineColor={(c) => {
+                  updateSectionField('showreel', 'videoOutlineColor', c);
+                  markUnsaved();
+                }}
+                onResetDefault={handleResetDefaultVideoScreen}
+              />
             )}
-
             {/* ── IMAGES TAB ── */}
             {activeTab === 'images' && (
-              <>
-                <SingleImageEditor
-                  layers={LAYERS}
-                  imageSrcs={imageSrcs}
-                  imageAdjustments={imageAdjustments}
-                  selectedImageIndex={selectedImageIndex}
-                  onSelectImage={setSelectedImageIndex}
-                  onImageChange={handleImageChange}
-                  onAdjustmentChange={handleImageAdjustmentChange}
-                  onResetAdjustment={handleResetImageAdjustment}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                <MasterImagePanel
+                  currentSrc={masterImageSrc}
+                  onImageChange={handleMasterImageChange}
                 />
-
-                {/* Option : LED générées par le code */}
-                <div style={{
-                  marginTop: 16,
-                  padding: '14px 16px',
-                  background: 'rgba(255,255,255,0.03)',
-                  border: `1px solid ${showCodeLeds ? 'rgba(195,249,16,0.3)' : 'rgba(255,255,255,0.08)'}`,
-                  borderRadius: 12,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: 12,
-                }}>
-                  <div>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: '#D1D5DB', marginBottom: 2 }}>
-                      LED générées par le code
-                    </div>
-                    <div style={{ fontSize: 11, color: '#6B7280', lineHeight: 1.4 }}>
-                      Superposition vectorielle SVG (diodes RGB rouges, vertes, bleues + traces dorées).
-                      Désactivez pour afficher uniquement la photographie de l'étape 5.
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      updateSectionField('showreel', 'showCodeLeds', !showCodeLeds);
-                      markUnsaved();
-                    }}
-                    style={{
-                      flexShrink: 0,
-                      width: 44,
-                      height: 24,
-                      borderRadius: 12,
-                      border: 'none',
-                      cursor: 'pointer',
-                      background: showCodeLeds ? '#C3F910' : 'rgba(255,255,255,0.15)',
-                      position: 'relative',
-                      transition: 'background 200ms ease',
-                    }}
-                  >
-                    <span style={{
-                      position: 'absolute',
-                      top: 3,
-                      left: showCodeLeds ? 23 : 3,
-                      width: 18,
-                      height: 18,
-                      borderRadius: '50%',
-                      background: showCodeLeds ? '#05070B' : '#6B7280',
-                      transition: 'left 200ms ease',
-                    }} />
-                  </button>
-                </div>
-              </>
+              </div>
             )}
 
             {/* ── CAMERA TAB ── */}
             {activeTab === 'camera' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#F5F4F0', marginBottom: 4 }}>Animation & Caméra</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#F5F4F0', marginBottom: 4 }}>Images Clés de Caméra</div>
                   <div style={{ fontSize: 11, color: '#6B7280', marginBottom: 16, lineHeight: 1.5 }}>
-                    Ces paramètres contrôlent les transformations d'échelle et les points de départ/arrivée de chaque étape du zoom.
+                    Chaque image clé définit la position, le zoom et le mouvement de la caméra virtuelle. Manipulez-les directement sur le canvas.
                   </div>
                 </div>
 
-                {/* Accordéon exclusif — Étapes 1, 2, 3 et 4 */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%', minWidth: 0, boxSizing: 'border-box' }}>
-                  {[
-                    { step: 1 as const, title: 'Étape 01 — Ville lointaine', prefix: 'l1', defaults: { scaleMax: 1.39, originX: 49.97, originY: 59.88, xShift: 0, yShift: 14.1, camPosX: 0, camPosY: 0 } },
-                    { step: 2 as const, title: 'Étape 02 — Vue intermédiaire', prefix: 'l2', defaults: { scaleMax: 0.66, originX: 49.85, originY: 46.55, xShift: 0, yShift: 10.0, camPosX: 0, camPosY: 0 } },
-                    { step: 3 as const, title: 'Étape 03 — Façade écran', prefix: 'l3', defaults: { scaleMax: 1.65, originX: 49.94, originY: 35.76, xShift: 0, yShift: 0, camPosX: 0, camPosY: 0 } },
-                    { step: 4 as const, title: 'Étape 04 — Macro LED', prefix: 'l4', defaults: { scaleMax: 1.35, originX: 50.0, originY: 50.0, xShift: 0, yShift: 0, camPosX: 0, camPosY: 0 } },
-                  ].map((layer) => {
-                    const isOpen = activeStep === layer.step;
-                    const scaleMax = parseFloat((cmsData[`${layer.prefix}ScaleMax`] as string | undefined) || String(layer.defaults.scaleMax));
-                    const originX = parseFloat((cmsData[`${layer.prefix}OriginX`] as string | undefined) || String(layer.defaults.originX));
-                    const originY = parseFloat((cmsData[`${layer.prefix}OriginY`] as string | undefined) || String(layer.defaults.originY));
-                    const xShift = parseFloat((cmsData[`${layer.prefix}XShift`] as string | undefined) || String(layer.defaults.xShift));
-                    const yShift = parseFloat((cmsData[`${layer.prefix}YShift`] as string | undefined) || String(layer.defaults.yShift));
-                    const camPosX = parseFloat((cmsData[`${layer.prefix}CamPosX`] as string | undefined) || String(layer.defaults.camPosX));
-                    const camPosY = parseFloat((cmsData[`${layer.prefix}CamPosY`] as string | undefined) || String(layer.defaults.camPosY));
+                {/* Animation toggle */}
+                <div style={{
+                  padding: '12px 16px',
+                  background: animationEnabled ? 'rgba(195,249,16,0.06)' : 'rgba(255,255,255,0.03)',
+                  border: `1px solid ${animationEnabled ? 'rgba(195,249,16,0.25)' : 'rgba(255,255,255,0.08)'}`,
+                  borderRadius: 12,
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+                }}>
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: animationEnabled ? '#C3F910' : '#6B7280', marginBottom: 2 }}>Animation activée</div>
+                    <div style={{ fontSize: 10, color: '#4B5563', lineHeight: 1.4 }}>
+                      {animationEnabled ? 'Le zoom scroll-progressif est actif.' : 'Animation suspendue — les réglages sont conservés.'}
+                    </div>
+                  </div>
+                  <button type="button" onClick={handleToggleAnimation}
+                    style={{ flexShrink: 0, width: 44, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer', background: animationEnabled ? '#C3F910' : 'rgba(255,255,255,0.15)', position: 'relative', transition: 'background 200ms ease' }}>
+                    <span style={{ position: 'absolute', top: 3, left: animationEnabled ? 23 : 3, width: 18, height: 18, borderRadius: '50%', background: animationEnabled ? '#05070B' : '#6B7280', transition: 'left 200ms ease' }} />
+                  </button>
+                </div>
 
+                {/* Keyframe list */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {[...keyframes].sort((a, b) => a.time - b.time).map((kf) => {
+                    const isSelected = kf.id === selectedKeyId;
                     return (
                       <div
-                        key={layer.prefix}
+                        key={kf.id}
+                        onClick={() => setSelectedKeyId(kf.id)}
                         style={{
-                          background: 'rgba(255,255,255,0.03)',
-                          border: `1px solid ${isOpen ? 'rgba(195,249,16,0.35)' : 'rgba(255,255,255,0.08)'}`,
-                          borderRadius: 12,
-                          overflow: 'hidden',
-                          transition: 'border-color 200ms ease, background 200ms ease',
-                          boxSizing: 'border-box',
-                          width: '100%',
-                          minWidth: 0,
+                          padding: '10px 14px',
+                          background: isSelected ? 'rgba(195,249,16,0.08)' : 'rgba(255,255,255,0.03)',
+                          border: `1px solid ${isSelected ? 'rgba(195,249,16,0.4)' : 'rgba(255,255,255,0.08)'}`,
+                          borderRadius: 10, cursor: 'pointer', transition: 'all 150ms',
                         }}
                       >
-                        {/* Header accordéon cliquable */}
-                        <div
-                          role="button"
-                          tabIndex={0}
-                          onClick={() => setActiveStep(isOpen ? null : layer.step)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault();
-                              setActiveStep(isOpen ? null : layer.step);
-                            }
-                          }}
-                          style={{
-                            width: '100%',
-                            padding: '12px 14px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            gap: 8,
-                            cursor: 'pointer',
-                            userSelect: 'none',
-                            background: isOpen ? 'rgba(195,249,16,0.05)' : 'transparent',
-                            transition: 'background 180ms ease',
-                            boxSizing: 'border-box',
-                          }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, flex: 1, overflow: 'hidden' }}>
-                            <span
-                              style={{
-                                fontSize: 10,
-                                fontWeight: 800,
-                                fontFamily: 'var(--font-mono, monospace)',
-                                padding: '2px 6px',
-                                borderRadius: 6,
-                                background: isOpen ? '#C3F910' : 'rgba(255,255,255,0.08)',
-                                color: isOpen ? '#05070B' : '#9CA3AF',
-                                flexShrink: 0,
-                                transition: 'all 180ms ease',
-                              }}
-                            >
-                              0{layer.step}
-                            </span>
-                            <span
-                              style={{
-                                fontSize: 12,
-                                fontWeight: 700,
-                                color: isOpen ? '#F5F4F0' : '#D1D5DB',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                              }}
-                            >
-                              {layer.title}
-                            </span>
-                          </div>
-
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-                            {isOpen && (
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  updateSectionField('showreel', `${layer.prefix}ScaleMax`, String(layer.defaults.scaleMax));
-                                  updateSectionField('showreel', `${layer.prefix}OriginX`, String(layer.defaults.originX));
-                                  updateSectionField('showreel', `${layer.prefix}OriginY`, String(layer.defaults.originY));
-                                  updateSectionField('showreel', `${layer.prefix}XShift`, String(layer.defaults.xShift));
-                                  updateSectionField('showreel', `${layer.prefix}YShift`, String(layer.defaults.yShift));
-                                  updateSectionField('showreel', `${layer.prefix}CamPosX`, String(layer.defaults.camPosX));
-                                  updateSectionField('showreel', `${layer.prefix}CamPosY`, String(layer.defaults.camPosY));
-                                  markUnsaved();
-                                }}
-                                title="Réinitialiser les réglages de cette étape"
-                                style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: 4,
-                                  background: 'transparent',
-                                  border: 'none',
-                                  color: '#6B7280',
-                                  fontSize: 10,
-                                  cursor: 'pointer',
-                                  padding: '2px 6px',
-                                  borderRadius: 4,
-                                  transition: 'color 150ms ease',
-                                }}
-                                onMouseEnter={(e) => (e.currentTarget.style.color = '#F5F4F0')}
-                                onMouseLeave={(e) => (e.currentTarget.style.color = '#6B7280')}
-                              >
-                                <RotateCcw style={{ width: 10, height: 10 }} />
-                                <span>Reset</span>
-                              </button>
-                            )}
-                            <span
-                              style={{
-                                color: isOpen ? '#C3F910' : '#6B7280',
-                                display: 'flex',
-                                alignItems: 'center',
-                                transition: 'color 180ms ease',
-                              }}
-                            >
-                              {isOpen ? <ChevronDown style={{ width: 14, height: 14 }} /> : <ChevronRight style={{ width: 14, height: 14 }} />}
-                            </span>
-                          </div>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: isSelected ? '#C3F910' : '#D1D5DB' }}>{kf.name}</span>
+                          <span style={{ fontSize: 10, color: '#6B7280', fontFamily: 'monospace' }}>{(kf.time * 100).toFixed(1)}%</span>
                         </div>
-
-                        {/* Contenu déployé avec animation fluide */}
-                        {isOpen && (
-                          <div
-                            style={{
-                              padding: '14px 16px 16px',
-                              borderTop: '1px solid rgba(255,255,255,0.06)',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              gap: 14,
-                              boxSizing: 'border-box',
-                              width: '100%',
-                              minWidth: 0,
-                              overflow: 'hidden',
-                              animation: 'accordionIn 200ms cubic-bezier(0.16, 1, 0.3, 1)',
-                            }}
-                          >
-                            {/* Groupe 1 : Zoom & Cadrage focal */}
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                              <div style={{ fontSize: 10, fontWeight: 800, color: '#C3F910', letterSpacing: '.08em', textTransform: 'uppercase', fontFamily: 'monospace' }}>
-                                Zoom &amp; Point Focal
-                              </div>
-                              <SliderField
-                                label="Zoom maximum (scale)"
-                                value={scaleMax}
-                                min={0.1}
-                                max={4}
-                                step={0.01}
-                                onChange={(v) => { updateSectionField('showreel', `${layer.prefix}ScaleMax`, String(v)); markUnsaved(); }}
-                              />
-                              <SliderField
-                                label="Origine X (point focal %)"
-                                value={originX}
-                                min={0}
-                                max={100}
-                                step={0.01}
-                                unit="%"
-                                onChange={(v) => { updateSectionField('showreel', `${layer.prefix}OriginX`, String(v)); markUnsaved(); }}
-                              />
-                              <SliderField
-                                label="Origine Y (point focal %)"
-                                value={originY}
-                                min={0}
-                                max={100}
-                                step={0.01}
-                                unit="%"
-                                onChange={(v) => { updateSectionField('showreel', `${layer.prefix}OriginY`, String(v)); markUnsaved(); }}
-                              />
-                            </div>
-
-                            {/* Groupe 2 : Mouvement & Position de la Caméra */}
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-                              <div style={{ fontSize: 10, fontWeight: 800, color: '#C3F910', letterSpacing: '.08em', textTransform: 'uppercase', fontFamily: 'monospace' }}>
-                                Mouvement &amp; Position Caméra
-                              </div>
-                              <SliderField
-                                label="Position Caméra X (cadrage initial %)"
-                                value={camPosX}
-                                min={-50}
-                                max={50}
-                                step={0.1}
-                                unit="%"
-                                onChange={(v) => { updateSectionField('showreel', `${layer.prefix}CamPosX`, String(v)); markUnsaved(); }}
-                              />
-                              <SliderField
-                                label="Position Caméra Y (cadrage initial %)"
-                                value={camPosY}
-                                min={-50}
-                                max={50}
-                                step={0.1}
-                                unit="%"
-                                onChange={(v) => { updateSectionField('showreel', `${layer.prefix}CamPosY`, String(v)); markUnsaved(); }}
-                              />
-                              <SliderField
-                                label="Mouvement Caméra X (Pan horizontal %)"
-                                value={xShift}
-                                min={-50}
-                                max={50}
-                                step={0.1}
-                                unit="%"
-                                onChange={(v) => { updateSectionField('showreel', `${layer.prefix}XShift`, String(v)); markUnsaved(); }}
-                              />
-                              <SliderField
-                                label="Mouvement Caméra Y (Travelling vertical / Plongée %)"
-                                value={yShift}
-                                min={-50}
-                                max={50}
-                                step={0.1}
-                                unit="%"
-                                onChange={(v) => { updateSectionField('showreel', `${layer.prefix}YShift`, String(v)); markUnsaved(); }}
-                              />
-                            </div>
-                          </div>
-                        )}
+                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                          {[
+                            `zoom: ${kf.zoom.toFixed(2)}×`,
+                            `x: ${kf.x.toFixed(1)}%`,
+                            `y: ${kf.y.toFixed(1)}%`,
+                            kf.easing,
+                          ].map((info) => (
+                            <span key={info} style={{ fontSize: 9, color: '#6B7280', fontFamily: 'monospace', background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: 4 }}>{info}</span>
+                          ))}
+                        </div>
                       </div>
                     );
                   })}
                 </div>
 
-                <div style={{ padding: '12px 14px', borderRadius: 10, background: 'rgba(195,249,16,0.05)', border: '1px solid rgba(195,249,16,0.15)', fontSize: 11, color: '#9CA3AF', lineHeight: 1.5 }}>
-                  <strong style={{ color: '#C3F910' }}>Note :</strong> Ces valeurs modifient le comportement de zoom scroll-driven. L'aperçu se met à jour en direct pour valider le résultat.
-                </div>
+                {/* Reset button */}
+                <button
+                  type="button"
+                  onClick={handleResetKeyframes}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 10, background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: '#9CA3AF', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
+                >
+                  <RotateCcw style={{ width: 12, height: 12 }} />
+                  Réinitialiser les images clés par défaut
+                </button>
               </div>
-            )}
 
+            )}
             {/* ── TEXTS TAB ── */}
             {activeTab === 'texts' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -2585,7 +3251,7 @@ export default function ShowreelAdminModule() {
           </div>
 
           {/* Footer save */}
-          <div style={{ padding: '12px 20px', borderTop: '1px solid rgba(255,255,255,0.07)', display: 'flex', gap: 8 }}>
+          <div style={{ padding: '12px 20px', borderTop: '1px solid rgba(255,255,255,0.07)', display: 'flex', gap: 8, background: '#0D0E12' }}>
             <button
               type="button"
               onClick={handleSave}

@@ -395,7 +395,10 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
   const isExpanded = sidebarState === 'expanded';
 
   return (
-    <div id="admin-root" className="relative flex min-h-dvh lg:h-dvh lg:overflow-hidden w-full text-theme-text bg-theme-app">
+    <div id="admin-root" className={cn(
+      "relative flex min-h-dvh lg:h-dvh lg:overflow-hidden w-full text-theme-text",
+      pathname?.startsWith('/admin/site-web/showreel') ? "bg-[#09090B]" : "bg-theme-app"
+    )}>
       {/* Mobile Overlay */}
       <AnimatePresence>
         {sidebarState !== 'hidden' && (
@@ -435,7 +438,10 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
         selectedSettingsSection={activeSettingsSection}
       />
 
-      <div id="admin-main-scroll" className="flex-1 flex flex-col overflow-y-auto custom-scrollbar relative">
+      <div id="admin-main-scroll" className={cn(
+        "flex-1 flex flex-col overflow-y-auto custom-scrollbar relative",
+        pathname?.startsWith('/admin/site-web/showreel') ? "bg-[#09090B]" : ""
+      )}>
         <header className={cn(
           "px-4 py-4 md:px-8 border-b border-white/5 backdrop-blur-md sticky top-0 z-[40]",
           "bg-theme-nav-bg text-theme-nav-text",

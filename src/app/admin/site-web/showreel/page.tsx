@@ -6,5 +6,9 @@ export const metadata = {
 };
 
 export default function ShowreelAdminPage() {
-  return <ShowreelAdminModule />;
+  return (
+    <div style={{ backgroundColor: '#09090B', minHeight: '100%', width: '100%' }}>
+      <ShowreelAdminModule />
+    </div>
+  );
 }
