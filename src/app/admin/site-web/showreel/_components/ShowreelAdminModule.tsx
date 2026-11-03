@@ -2115,7 +2115,6 @@ export default function ShowreelAdminModule() {
   const [activeScreenLayer, setActiveScreenLayer] = useState(0);
   const [activeStep, setActiveStep] = useState<1 | 2 | 3 | 4 | null>(1);
   const [hasUnsaved, setHasUnsaved] = useState(false);
-  const [showVideoOutline, setShowVideoOutline] = useState<boolean>(true);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number>(0);
   const [activeTextStep, setActiveTextStep] = useState<string | null>('intro');
   const [lockAspect, setLockAspect] = useState<boolean>(false);
@@ -2127,11 +2126,8 @@ export default function ShowreelAdminModule() {
     [pages]
   );
 
-  useEffect(() => {
-    if (cmsData['showVideoOutline'] !== undefined) {
-      setShowVideoOutline(cmsData['showVideoOutline'] !== false && cmsData['showVideoOutline'] !== 'false');
-    }
-  }, [cmsData]);
+  // Dérivé directement du CMS (évite toute mutation d'état pendant le rendu)
+  const showVideoOutline = cmsData['showVideoOutline'] !== false && cmsData['showVideoOutline'] !== 'false';
 
   // Multilingual video support
   const videoFr = useMemo(
@@ -2255,14 +2251,11 @@ export default function ShowreelAdminModule() {
   const markUnsaved = () => setHasUnsaved(true);
 
   const handleToggleVideoOutline = useCallback(() => {
-    setShowVideoOutline((prev) => {
-      const next = !prev;
-      updateSectionField('showreel', 'showVideoOutline', next);
-      markUnsaved();
-      toast.success(next ? 'Contour de l\'écran activé' : 'Contour désactivé');
-      return next;
-    });
-  }, [updateSectionField, markUnsaved]);
+    const next = !showVideoOutline;
+    updateSectionField('showreel', 'showVideoOutline', next);
+    markUnsaved();
+    toast.success(next ? 'Contour de l\'écran activé' : 'Contour désactivé');
+  }, [showVideoOutline, updateSectionField, markUnsaved]);
 
 
   // ── Pile d'historique Undo / Redo (Ctrl+Z / Ctrl+Y) ───────────────────────
