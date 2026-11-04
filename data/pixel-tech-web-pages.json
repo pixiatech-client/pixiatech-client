@@ -4,7 +4,7 @@
       "id": "home",
       "name": "home",
       "slug": "/home",
-      "updatedAt": "2026-11-03T14:44:44.294Z",
+      "updatedAt": "2026-11-03T16:04:47.611Z",
       "sections": {
         "pixia-web": {
           "text_1790257213042": "sdsdsdsdÉDITEUR DIRECT : CLIQUEZ SUR UN TEXTE OU UNE IMAGE",
@@ -1266,10 +1266,10 @@
             },
             "cameraKeyframes": {
               "fr": {
-                "value": "[{\"id\":\"kf-1\",\"name\":\"Cléé 01\",\"time\":0,\"zoom\":1,\"x\":0.6,\"y\":0.8,\"originX\":49.97,\"originY\":56.3,\"easing\":\"easeIn\"},{\"id\":\"kf-2\",\"name\":\"Cléé 02\",\"time\":0.296,\"zoom\":1.65,\"x\":3.2,\"y\":-9.4,\"originX\":52.7,\"originY\":52.3,\"easing\":\"linear\"},{\"id\":\"kf-4\",\"name\":\"Cléé 04\",\"time\":1,\"zoom\":10,\"x\":6,\"y\":-23.5,\"originX\":49.97,\"originY\":57.2,\"easing\":\"easeOut\"}]",
+                "value": "[{\"id\":\"kf-1793720895300\",\"name\":\"Clé 03\",\"time\":0,\"zoom\":1.12,\"x\":0.1,\"y\":-5.3,\"originX\":49.97,\"originY\":57.2,\"easing\":\"easeInOut\"},{\"id\":\"kf-1793720813029\",\"name\":\"Clé 02\",\"time\":0.902,\"zoom\":4.85,\"x\":0.1,\"y\":-5.3,\"originX\":49.97,\"originY\":57.2,\"easing\":\"easeInOut\"}]",
                 "status": "source",
-                "updatedAt": "2026-11-03T14:44:29.653Z",
-                "sourceText": "[{\"id\":\"kf-1\",\"name\":\"Cléé 01\",\"time\":0,\"zoom\":1,\"x\":0.6,\"y\":0.8,\"originX\":49.97,\"originY\":56.3,\"easing\":\"easeIn\"},{\"id\":\"kf-2\",\"name\":\"Cléé 02\",\"time\":0.296,\"zoom\":1.65,\"x\":3.2,\"y\":-9.4,\"originX\":52.7,\"originY\":52.3,\"easing\":\"linear\"},{\"id\":\"kf-4\",\"name\":\"Cléé 04\",\"time\":1,\"zoom\":10,\"x\":6,\"y\":-23.5,\"originX\":49.97,\"originY\":57.2,\"easing\":\"easeOut\"}]"
+                "updatedAt": "2026-11-03T15:48:36.029Z",
+                "sourceText": "[{\"id\":\"kf-1793720895300\",\"name\":\"Clé 03\",\"time\":0,\"zoom\":1.12,\"x\":0.1,\"y\":-5.3,\"originX\":49.97,\"originY\":57.2,\"easing\":\"easeInOut\"},{\"id\":\"kf-1793720813029\",\"name\":\"Clé 02\",\"time\":0.902,\"zoom\":4.85,\"x\":0.1,\"y\":-5.3,\"originX\":49.97,\"originY\":57.2,\"easing\":\"easeInOut\"}]"
               }
             }
           },
@@ -1370,11 +1370,12 @@
           "animationEnabled": true,
           "imagesEnabled": true,
           "masterImageSrc": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2F01_top_0s5fc.png?alt=media",
-          "videoScreenLeft": "42.17",
-          "videoScreenTop": "53.34",
-          "videoScreenWidth": "14.36",
-          "videoScreenHeight": "11.56",
-          "cameraKeyframes": "[{\"id\":\"kf-1\",\"name\":\"Cléé 01\",\"time\":0,\"zoom\":1,\"x\":0.6,\"y\":0.8,\"originX\":49.97,\"originY\":56.3,\"easing\":\"easeIn\"},{\"id\":\"kf-2\",\"name\":\"Cléé 02\",\"time\":0.296,\"zoom\":1.65,\"x\":3.2,\"y\":-9.4,\"originX\":52.7,\"originY\":52.3,\"easing\":\"linear\"},{\"id\":\"kf-4\",\"name\":\"Cléé 04\",\"time\":1,\"zoom\":10,\"x\":6,\"y\":-23.5,\"originX\":49.97,\"originY\":57.2,\"easing\":\"easeOut\"}]"
+          "videoScreenLeft": "42.22",
+          "videoScreenTop": "53.412",
+          "videoScreenWidth": "14.319",
+          "videoScreenHeight": "11.44",
+          "cameraKeyframes": "[{\"id\":\"kf-1793720895300\",\"name\":\"Clé 03\",\"time\":0,\"zoom\":1.12,\"x\":0.1,\"y\":-5.3,\"originX\":49.97,\"originY\":57.2,\"easing\":\"easeInOut\"},{\"id\":\"kf-1793720813029\",\"name\":\"Clé 02\",\"time\":0.902,\"zoom\":4.85,\"x\":0.1,\"y\":-5.3,\"originX\":49.97,\"originY\":57.2,\"easing\":\"easeInOut\"}]",
+          "showVideoOutline": false
         },
         "technology": {
           "_elements": {
@@ -1994,5 +1995,5 @@
       }
     }
   },
-  "updatedAt": "2026-11-03T14:44:45.298Z"
+  "updatedAt": "2026-11-03T16:04:47.756Z"
 }

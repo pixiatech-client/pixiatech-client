@@ -49,7 +49,12 @@ import {
   ScreenCoords as CameraScreenCoords,
   evaluateCamera,
   parseKeyframesFromCms,
+  parseLedKeyframesFromCms,
+  parseLedTriggersFromCms,
+  LedAnimationTrigger,
   DEFAULT_KEYFRAMES,
+  DEFAULT_LED_KEYFRAMES,
+  DEFAULT_LED_TRIGGERS,
   DEFAULT_SCREEN_COORDS,
   DEFAULT_MASTER_IMAGE,
   applyEasing,
@@ -754,6 +759,15 @@ function VirtualCameraStudioCanvas({
   ledCustomImageSrc = '',
   onLedCustomImageChange,
   onRestoreDefaultLed,
+  ledKeyframes,
+  selectedLedKeyId,
+  onSelectLedKey,
+  onLedKeyframeChange,
+  onAddLedKeyframe,
+  onDeleteLedKeyframe,
+  ledTriggers,
+  onAddLedTrigger,
+  onDeleteLedTrigger,
 }: {
   masterImageSrc: string;
   videoSrc: string;
@@ -781,6 +795,15 @@ function VirtualCameraStudioCanvas({
   ledCustomImageSrc?: string;
   onLedCustomImageChange?: (url: string) => void;
   onRestoreDefaultLed?: () => void;
+  ledKeyframes: CameraKeyframe[];
+  selectedLedKeyId: string | null;
+  onSelectLedKey: (id: string) => void;
+  onLedKeyframeChange: (id: string, patch: Partial<CameraKeyframe>) => void;
+  onAddLedKeyframe: (atTime: number) => void;
+  onDeleteLedKeyframe: (id: string) => void;
+  ledTriggers: LedAnimationTrigger[];
+  onAddLedTrigger: (atTime: number) => void;
+  onDeleteLedTrigger: (id: string) => void;
 }) {
   const ledFileInputRef = React.useRef<HTMLInputElement>(null);
   const [uploadingLedImage, setUploadingLedImage] = React.useState(false);
@@ -795,8 +818,24 @@ function VirtualCameraStudioCanvas({
   const animRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // ── Interaction mode ───────────────────────────────────────────────────────
-  // 'camera' = manipulate camera framing rect  |  'screen' = calibrate video screen rect
+  // 'camera' = manipulate camera framing rect  |  'led' = independent LED animation  |  'screen' = calibrate video screen rect
   const [studioMode, setStudioMode] = React.useState<'camera' | 'led' | 'screen'>('camera');
+
+  // Sélecteur de déclencheur actif sur la timeline globale
+  const [selectedTriggerId, setSelectedTriggerId] = React.useState<string | null>(null);
+  const selectedTrigger = React.useMemo(
+    () => (ledTriggers || []).find((t) => t.id === selectedTriggerId) || null,
+    [ledTriggers, selectedTriggerId]
+  );
+
+  // Routage des keyframes selon le mode actif
+  const isLedMode = studioMode === 'led';
+  const activeKeyframes = isLedMode ? ledKeyframes : keyframes;
+  const activeSelectedKeyId = isLedMode ? selectedLedKeyId : selectedKeyId;
+  const activeOnSelectKey = isLedMode ? onSelectLedKey : onSelectKey;
+  const activeOnKeyframeChange = isLedMode ? onLedKeyframeChange : onKeyframeChange;
+  const activeOnAddKeyframe = isLedMode ? onAddLedKeyframe : onAddKeyframe;
+  const activeOnDeleteKeyframe = isLedMode ? onDeleteLedKeyframe : onDeleteKeyframe;
 
   // ── Screen rect drag state ─────────────────────────────────────────────────
   const [dragMode, setDragMode] = React.useState<
@@ -828,24 +867,58 @@ function VirtualCameraStudioCanvas({
     return () => { if (animRef.current) clearInterval(animRef.current); };
   }, [playing]);
 
-  // ── Evaluate camera at current simProgress ────────────────────────────────
-  const cam = React.useMemo(
+  // ── Evaluate Global Camera at current simProgress ──────────────────────────
+  const globalCam = React.useMemo(
     () => evaluateCamera(keyframes, simProgress),
     [keyframes, simProgress]
   );
 
+  // ── Déclencheur actif de Structure LED sur la timeline globale ─────────────
+  const activeTrigger = React.useMemo(() => {
+    if (!ledTriggers || ledTriggers.length === 0) return null;
+    const sortedTrig = [...ledTriggers].sort((a, b) => a.time - b.time);
+    const fired = sortedTrig.filter((t) => t.time <= simProgress);
+    return fired.length > 0 ? fired[fired.length - 1] : null;
+  }, [ledTriggers, simProgress]);
+
+  // Progression de l'animation LED (de 0.00 à 1.00)
+  const ledProgress = React.useMemo(() => {
+    if (studioMode === 'led') return simProgress;
+    if (!activeTrigger) return 0;
+    const span = 1.0 - activeTrigger.time;
+    if (span <= 0.001) return 1;
+    return Math.max(0, Math.min(1, (simProgress - activeTrigger.time) / span));
+  }, [studioMode, simProgress, activeTrigger]);
+
+  // Caméra dédiée Structure LED interpolée sur sa progression propre
+  const ledCam = React.useMemo(
+    () => evaluateCamera(ledKeyframes, ledProgress),
+    [ledKeyframes, ledProgress]
+  );
+
+  // Opacités de superposition
+  const ledOpacity = activeTrigger
+    ? Math.min(1, (simProgress - activeTrigger.time) / 0.04)
+    : 0;
+  const videoOpacity = activeTrigger
+    ? Math.max(0, 1 - (simProgress - activeTrigger.time) / 0.06)
+    : 1;
+
+  // Caméra active appliquée au viewport
+  const cam = studioMode === 'led' ? ledCam : globalCam;
+
   // ── Jump to keyframe when selected ────────────────────────────────────────
   useEffect(() => {
-    const kf = keyframes.find((k) => k.id === selectedKeyId);
+    const kf = activeKeyframes.find((k) => k.id === activeSelectedKeyId);
     if (kf) {
       setSimProgress(kf.time);
       setPlaying(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedKeyId]);
+  }, [activeSelectedKeyId, studioMode]);
 
-  const selectedKf = keyframes.find((k) => k.id === selectedKeyId) || null;
-  const sorted = [...keyframes].sort((a, b) => a.time - b.time);
+  const selectedKf = activeKeyframes.find((k) => k.id === activeSelectedKeyId) || null;
+  const sorted = [...activeKeyframes].sort((a, b) => a.time - b.time);
 
   // ── Screen drag handlers ───────────────────────────────────────────────────
   const handlePointerDown = (e: React.PointerEvent, mode: typeof dragMode) => {
@@ -932,7 +1005,7 @@ function VirtualCameraStudioCanvas({
       const tRect = timelineRef.current.getBoundingClientRect();
       const rawT = (e.clientX - tRect.left) / tRect.width;
       const clampedT = Math.max(0, Math.min(1, rawT));
-      onKeyframeChange(draggingKfId, { time: parseFloat(clampedT.toFixed(3)) });
+      activeOnKeyframeChange(draggingKfId, { time: parseFloat(clampedT.toFixed(3)) });
       setSimProgress(clampedT);
     }
   };
@@ -956,7 +1029,7 @@ function VirtualCameraStudioCanvas({
   const nudge = (key: keyof CameraKeyframe, delta: number) => {
     if (!selectedKf) return;
     const current = selectedKf[key] as number;
-    onKeyframeChange(selectedKf.id, { [key]: parseFloat((current + delta).toFixed(3)) });
+    activeOnKeyframeChange(selectedKf.id, { [key]: parseFloat((current + delta).toFixed(3)) });
   };
 
   const HANDLE_COLOR = '#C3F910';
@@ -1055,22 +1128,26 @@ function VirtualCameraStudioCanvas({
 
         {/* Keyframe pills */}
         <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
-          {sorted.map((kf) => (
-            <button
-              key={kf.id}
-              type="button"
-              onClick={() => { onSelectKey(kf.id); setSimProgress(kf.time); setPlaying(false); }}
-              style={{
-                padding: '4px 10px', borderRadius: 6, fontSize: 10, fontWeight: 700, cursor: 'pointer',
-                border: selectedKeyId === kf.id ? '1px solid #C3F910' : '1px solid rgba(255,255,255,0.1)',
-                background: selectedKeyId === kf.id ? '#C3F910' : 'rgba(255,255,255,0.05)',
-                color: selectedKeyId === kf.id ? '#05070B' : '#9CA3AF',
-                transition: 'all 120ms',
-              }}
-            >
-              {kf.name}
-            </button>
-          ))}
+          {sorted.map((kf) => {
+            const isSelected = activeSelectedKeyId === kf.id;
+            const accentColor = isLedMode ? '#38BDF8' : '#C3F910';
+            return (
+              <button
+                key={kf.id}
+                type="button"
+                onClick={() => { activeOnSelectKey(kf.id); setSimProgress(kf.time); setPlaying(false); }}
+                style={{
+                  padding: '4px 10px', borderRadius: 6, fontSize: 10, fontWeight: 700, cursor: 'pointer',
+                  border: isSelected ? `1px solid ${accentColor}` : '1px solid rgba(255,255,255,0.1)',
+                  background: isSelected ? accentColor : 'rgba(255,255,255,0.05)',
+                  color: isSelected ? '#05070B' : '#9CA3AF',
+                  transition: 'all 120ms',
+                }}
+              >
+                {kf.name}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -1132,53 +1209,74 @@ function VirtualCameraStudioCanvas({
                   height: '100%',
                   objectFit: 'cover',
                   display: 'block',
-                  opacity: Math.max(0, Math.min(1, 1 - (simProgress - 0.90) / 0.08)),
-                  transition: 'opacity 200ms ease',
+                  opacity: videoOpacity,
+                  transition: 'opacity 150ms ease',
                 }}
               />
-              {/* MacroLedScene ou photo personnalisée strictement recadrée dans le cadre de l'écran */}
+              {/* Structure LED superposée avec son animation indépendante interpolée via ledCam */}
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  opacity: ledOpacity,
+                  pointerEvents: 'none',
+                  zIndex: 3,
+                  transition: 'opacity 150ms ease',
+                  transform: `translate3d(${ledCam.x.toFixed(2)}%, ${ledCam.y.toFixed(2)}%, 0) scale(${ledCam.zoom.toFixed(4)})`,
+                  transformOrigin: `${ledCam.originX.toFixed(2)}% ${ledCam.originY.toFixed(2)}%`,
+                  willChange: 'transform, opacity',
+                }}
+              >
+                {ledCustomImageSrc ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={ledCustomImageSrc}
+                    alt="Structure LED"
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      display: 'block',
+                    }}
+                  />
+                ) : (
+                  <MacroLedScene
+                    opacity={1}
+                    showCabinetGrid={ledProgress > 0.15}
+                    style={{ position: 'absolute', inset: 0 }}
+                  />
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Mode LED Direct : Espace dédié où l'utilisateur visualise et anime sa Structure LED */}
+          {studioMode === 'led' && (
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                transform: `translate3d(${ledCam.x.toFixed(3)}%, ${ledCam.y.toFixed(3)}%, 0) scale(${ledCam.zoom.toFixed(4)})`,
+                transformOrigin: `${ledCam.originX.toFixed(2)}% ${ledCam.originY.toFixed(2)}%`,
+                willChange: 'transform',
+                zIndex: 5,
+              }}
+            >
               {ledCustomImageSrc ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={ledCustomImageSrc}
-                  alt="Structure LED"
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                    opacity: simProgress > 0.90 ? Math.min(1, (simProgress - 0.90) / 0.08) : 0,
-                    zIndex: 3,
-                    transition: 'opacity 200ms ease',
-                  }}
+                  alt="Structure LED personnalisée"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                 />
               ) : (
                 <MacroLedScene
-                  opacity={simProgress > 0.90 ? Math.min(1, (simProgress - 0.90) / 0.08) : 0}
-                  showCabinetGrid={simProgress > 0.93}
-                  style={{ position: 'absolute', inset: 0, zIndex: 3 }}
+                  opacity={1}
+                  showCabinetGrid={true}
+                  style={{ position: 'absolute', inset: 0 }}
                 />
               )}
             </div>
-          )}
-
-          {/* Mode LED Direct : Photo personnalisée si présente, sinon création vectorielle 32 modules */}
-          {studioMode === 'led' && (
-            ledCustomImageSrc ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={ledCustomImageSrc}
-                alt="Structure LED personnalisée"
-                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 5 }}
-              />
-            ) : (
-              <MacroLedScene
-                opacity={1}
-                showCabinetGrid={true}
-                style={{ position: 'absolute', inset: 0, zIndex: 5 }}
-              />
-            )
           )}
 
           {/* Screen calibration handles (only in screen mode) — COMPENSÉS PAR LE ZOOM POUR RESTER FINS ET ÉLÉGANTS */}
@@ -1389,7 +1487,7 @@ function VirtualCameraStudioCanvas({
                   onClick={() => {
                     const id = keyToDelete.id;
                     setKeyToDelete(null);
-                    onDeleteKeyframe(id);
+                    activeOnDeleteKeyframe(id);
                   }}
                   style={{
                     flex: 1,
@@ -1626,11 +1724,71 @@ function VirtualCameraStudioCanvas({
           {/* Add / Delete keyframe */}
           <button
             type="button"
-            onClick={() => onAddKeyframe(parseFloat(simProgress.toFixed(3)))}
-            style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 8, background: 'rgba(195,249,16,0.12)', border: '1px solid rgba(195,249,16,0.3)', color: '#C3F910', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
+            onClick={() => activeOnAddKeyframe(parseFloat(simProgress.toFixed(3)))}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 8,
+              background: isLedMode ? 'rgba(56, 189, 248, 0.12)' : 'rgba(195,249,16,0.12)',
+              border: isLedMode ? '1px solid rgba(56, 189, 248, 0.35)' : '1px solid rgba(195,249,16,0.3)',
+              color: isLedMode ? '#38BDF8' : '#C3F910',
+              fontSize: 11, fontWeight: 700, cursor: 'pointer'
+            }}
           >
             <ZoomIn style={{ width: 11, height: 11 }} /> + Ajouter une clé
           </button>
+
+          {/* Bouton + Structure LED (uniquement en mode Caméra Globale) */}
+          {studioMode === 'camera' && (
+            <button
+              type="button"
+              onClick={() => onAddLedTrigger(parseFloat(simProgress.toFixed(3)))}
+              title={`Déclencher l'animation Structure LED à ${(simProgress * 100).toFixed(1)}%`}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 5,
+                padding: '6px 12px',
+                borderRadius: 8,
+                background: 'rgba(56, 189, 248, 0.12)',
+                border: '1px solid rgba(56, 189, 248, 0.45)',
+                color: '#38BDF8',
+                fontSize: 11,
+                fontWeight: 700,
+                cursor: 'pointer',
+                boxShadow: '0 0 10px rgba(56, 189, 248, 0.15)',
+                transition: 'all 120ms ease',
+              }}
+            >
+              <Sparkles style={{ width: 11, height: 11 }} />
+              + Structure LED
+            </button>
+          )}
+
+          {/* Bouton supprimer déclencheur sélectionné */}
+          {studioMode === 'camera' && selectedTrigger && (
+            <button
+              type="button"
+              onClick={() => {
+                onDeleteLedTrigger(selectedTrigger.id);
+                setSelectedTriggerId(null);
+              }}
+              title={`Supprimer le déclencheur Structure LED (${(selectedTrigger.time * 100).toFixed(1)}%)`}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 5,
+                padding: '6px 10px',
+                borderRadius: 8,
+                background: 'rgba(56, 189, 248, 0.15)',
+                border: '1px solid rgba(56, 189, 248, 0.4)',
+                color: '#38BDF8',
+                fontSize: 11,
+                cursor: 'pointer',
+              }}
+            >
+              <Trash2 style={{ width: 11, height: 11 }} />
+              <span>Suppr. déclencheur ({(selectedTrigger.time * 100).toFixed(0)}%)</span>
+            </button>
+          )}
 
           {selectedKf && (
             <button
@@ -1682,13 +1840,14 @@ function VirtualCameraStudioCanvas({
 
             {/* Keyframe diamonds */}
             {sorted.map((kf) => {
-              const isSelected = kf.id === selectedKeyId;
+              const isSelected = kf.id === activeSelectedKeyId;
+              const diamondColor = isLedMode ? '#38BDF8' : '#C3F910';
               return (
                 <div
                   key={kf.id}
                   onPointerDown={(e) => {
                     e.stopPropagation();
-                    onSelectKey(kf.id);
+                    activeOnSelectKey(kf.id);
                     setSimProgress(kf.time);
                     setPlaying(false);
                     setDraggingKfId(kf.id);
@@ -1704,13 +1863,45 @@ function VirtualCameraStudioCanvas({
                     transform: 'translate(-50%, -50%) rotate(45deg)',
                     width: isSelected ? 14 : 10,
                     height: isSelected ? 14 : 10,
-                    background: isSelected ? '#C3F910' : '#6B7280',
+                    background: isSelected ? diamondColor : '#6B7280',
                     border: isSelected ? '2px solid #fff' : '1.5px solid rgba(255,255,255,0.3)',
                     borderRadius: 2,
                     cursor: 'grab',
                     zIndex: isSelected ? 10 : 5,
-                    boxShadow: isSelected ? '0 0 8px rgba(195,249,16,0.6)' : 'none',
+                    boxShadow: isSelected ? `0 0 8px ${diamondColor}` : 'none',
                     transition: 'width 100ms, height 100ms, background 100ms',
+                  }}
+                />
+              );
+            })}
+
+            {/* Marqueurs bleus des déclencheurs Structure LED (sur la timeline globale) */}
+            {studioMode === 'camera' && ledTriggers && ledTriggers.map((trig) => {
+              const isTriggerSelected = trig.id === selectedTriggerId;
+              return (
+                <div
+                  key={trig.id}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedTriggerId(isTriggerSelected ? null : trig.id);
+                    setSimProgress(trig.time);
+                    setPlaying(false);
+                  }}
+                  title={`Déclencheur Structure LED à ${(trig.time * 100).toFixed(1)}% — Cliquez pour sélectionner/supprimer`}
+                  style={{
+                    position: 'absolute',
+                    left: `${trig.time * 100}%`,
+                    top: '50%',
+                    transform: 'translate(-50%, -50%) rotate(45deg)',
+                    width: isTriggerSelected ? 16 : 12,
+                    height: isTriggerSelected ? 16 : 12,
+                    background: '#38BDF8',
+                    border: isTriggerSelected ? '2px solid #FFFFFF' : '1.5px solid rgba(255,255,255,0.7)',
+                    borderRadius: 2,
+                    cursor: 'pointer',
+                    zIndex: isTriggerSelected ? 18 : 12,
+                    boxShadow: isTriggerSelected ? '0 0 14px #38BDF8' : '0 0 8px rgba(56, 189, 248, 0.7)',
+                    transition: 'all 100ms ease',
                   }}
                 />
               );
@@ -1748,14 +1939,14 @@ function VirtualCameraStudioCanvas({
         {/* ── Selected keyframe inspector ───────────────────────────────── */}
         {selectedKf && (
           <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '12px 14px' }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#C3F910', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: isLedMode ? '#38BDF8' : '#C3F910', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
               <Crosshair style={{ width: 12, height: 12 }} />
-              {selectedKf.name} — Paramètres
+              {isLedMode ? 'Structure LED — ' : 'Caméra Globale — '}{selectedKf.name} — Paramètres
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
               {([
                 { key: 'time', label: 'Temps', min: 0, max: 1, step: 0.001, fmt: (v: number) => `${(v * 100).toFixed(1)}%` },
-                { key: 'zoom', label: 'Zoom', min: 0.5, max: 10, step: 0.01, fmt: (v: number) => `${v.toFixed(2)}×` },
+                { key: 'zoom', label: 'Zoom', min: 0.5, max: 25, step: 0.01, fmt: (v: number) => `${v.toFixed(2)}×` },
                 { key: 'x', label: 'Pan X', min: -100, max: 100, step: 0.1, fmt: (v: number) => `${v.toFixed(1)}%` },
                 { key: 'y', label: 'Pan Y', min: -100, max: 100, step: 0.1, fmt: (v: number) => `${v.toFixed(1)}%` },
                 { key: 'originX', label: 'Orig. X', min: 0, max: 100, step: 0.1, fmt: (v: number) => `${v.toFixed(1)}%` },
@@ -1772,7 +1963,7 @@ function VirtualCameraStudioCanvas({
                       type="range"
                       min={min} max={max} step={step}
                       value={val}
-                      onChange={(e) => onKeyframeChange(selectedKf.id, { [key]: parseFloat(parseFloat(e.target.value).toFixed(3)) })}
+                      onChange={(e) => activeOnKeyframeChange(selectedKf.id, { [key]: parseFloat(parseFloat(e.target.value).toFixed(3)) })}
                       style={{ accentColor: '#C3F910', cursor: 'pointer' }}
                     />
                   </div>
@@ -1788,7 +1979,7 @@ function VirtualCameraStudioCanvas({
                   <button
                     key={e}
                     type="button"
-                    onClick={() => onKeyframeChange(selectedKf.id, { easing: e })}
+                    onClick={() => activeOnKeyframeChange(selectedKf.id, { easing: e })}
                     style={{
                       padding: '3px 9px', borderRadius: 6, fontSize: 9, fontWeight: 700, cursor: 'pointer',
                       border: selectedKf.easing === e ? '1px solid #C3F910' : '1px solid rgba(255,255,255,0.1)',
@@ -2399,11 +2590,29 @@ export default function ShowreelAdminModule() {
   // Derived values from CMS (active video based on language/mode)
   const videoSrc = activeVideoUrl;
 
-  // ── Camera Keyframes & Master Image ────────────────────────────────────────
+  // ── Camera Keyframes & Structure LED Independent Animations ─────────────────
   const keyframes: CameraKeyframe[] = React.useMemo(
     () => parseKeyframesFromCms(cmsData['cameraKeyframes']),
     [cmsData]
   );
+
+  const ledKeyframes: CameraKeyframe[] = React.useMemo(
+    () => parseLedKeyframesFromCms(cmsData['ledKeyframes']),
+    [cmsData]
+  );
+
+  const ledTriggers: LedAnimationTrigger[] = React.useMemo(
+    () => parseLedTriggersFromCms(cmsData['ledTriggers']),
+    [cmsData]
+  );
+
+  const [selectedLedKeyId, setSelectedLedKeyId] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (!selectedLedKeyId && ledKeyframes.length > 0) {
+      setSelectedLedKeyId(ledKeyframes[0].id);
+    }
+  }, [ledKeyframes, selectedLedKeyId]);
 
   const masterImageSrc: string =
     (cmsData['masterImageSrc'] as string | undefined) ||
@@ -2637,6 +2846,93 @@ export default function ShowreelAdminModule() {
       toast.success(`Image clé "${deletedKf?.name || 'Clé'}" supprimée. Appuyez sur Ctrl+Z pour annuler.`);
     },
     [keyframes, updateSectionField, pushToHistory, markUnsaved]
+  );
+
+  // ── Handlers Structure LED (Indépendants de la Caméra Globale) ────────────
+  const handleLedKeyframeChange = useCallback(
+    (id: string, patch: Partial<CameraKeyframe>) => {
+      const updated = ledKeyframes.map((k) => (k.id === id ? { ...k, ...patch } : k));
+      updateSectionField('showreel', 'ledKeyframes', JSON.stringify(updated));
+      markUnsaved();
+    },
+    [ledKeyframes, updateSectionField]
+  );
+
+  const handleAddLedKeyframe = useCallback(
+    (atTime: number) => {
+      const cam = evaluateCamera(ledKeyframes, atTime);
+      const existingNums = new Set(
+        ledKeyframes.map((k) => {
+          const m = k.name.match(/\d+/);
+          return m ? parseInt(m[0], 10) : 0;
+        })
+      );
+      let nextNum = 1;
+      while (existingNums.has(nextNum)) {
+        nextNum++;
+      }
+      const newName = `Clé ${String(nextNum).padStart(2, '0')}`;
+
+      const newKf: CameraKeyframe = {
+        id: `led-kf-${Date.now()}`,
+        name: newName,
+        time: parseFloat(atTime.toFixed(3)),
+        zoom: cam.zoom,
+        x: cam.x,
+        y: cam.y,
+        originX: cam.originX,
+        originY: cam.originY,
+        easing: 'easeInOut',
+      };
+      const updated = [...ledKeyframes, newKf].sort((a, b) => a.time - b.time);
+      updateSectionField('showreel', 'ledKeyframes', JSON.stringify(updated));
+      setSelectedLedKeyId(newKf.id);
+      markUnsaved();
+      toast.success(`Clé Structure LED "${newKf.name}" ajoutée à ${(atTime * 100).toFixed(1)}%.`);
+    },
+    [ledKeyframes, updateSectionField]
+  );
+
+  const handleDeleteLedKeyframe = useCallback(
+    (id: string) => {
+      if (ledKeyframes.length <= 1) {
+        toast.error('Vous devez conserver au moins une image clé pour la Structure LED.');
+        return;
+      }
+      const deletedKf = ledKeyframes.find((k) => k.id === id);
+      const updated = ledKeyframes.filter((k) => k.id !== id);
+      updateSectionField('showreel', 'ledKeyframes', JSON.stringify(updated));
+      setSelectedLedKeyId(updated[0]?.id || null);
+      markUnsaved();
+      toast.success(`Image clé "${deletedKf?.name || 'Clé'}" de Structure LED supprimée.`);
+    },
+    [ledKeyframes, updateSectionField]
+  );
+
+  const handleAddLedTrigger = useCallback(
+    (atTime: number) => {
+      const clampedTime = parseFloat(Math.max(0, Math.min(1, atTime)).toFixed(3));
+      const newTrig: LedAnimationTrigger = {
+        id: `trig-${Date.now()}`,
+        time: clampedTime,
+        label: `Structure LED (${(clampedTime * 100).toFixed(0)}%)`,
+      };
+      const updated = [...ledTriggers, newTrig].sort((a, b) => a.time - b.time);
+      updateSectionField('showreel', 'ledTriggers', JSON.stringify(updated));
+      markUnsaved();
+      toast.success(`Déclencheur Structure LED placé à ${(clampedTime * 100).toFixed(1)}%`);
+    },
+    [ledTriggers, updateSectionField]
+  );
+
+  const handleDeleteLedTrigger = useCallback(
+    (id: string) => {
+      const updated = ledTriggers.filter((t) => t.id !== id);
+      updateSectionField('showreel', 'ledTriggers', JSON.stringify(updated));
+      markUnsaved();
+      toast.success('Déclencheur Structure LED supprimé.');
+    },
+    [ledTriggers, updateSectionField]
   );
 
   const showCodeLeds = cmsData['showCodeLeds'] !== false && cmsData['showCodeLeds'] !== 'false';
@@ -3023,6 +3319,15 @@ export default function ShowreelAdminModule() {
             ledCustomImageSrc={ledCustomImageSrc}
             onLedCustomImageChange={handleLedCustomImageChange}
             onRestoreDefaultLed={handleRestoreDefaultLed}
+            ledKeyframes={ledKeyframes}
+            selectedLedKeyId={selectedLedKeyId}
+            onSelectLedKey={setSelectedLedKeyId}
+            onLedKeyframeChange={handleLedKeyframeChange}
+            onAddLedKeyframe={handleAddLedKeyframe}
+            onDeleteLedKeyframe={handleDeleteLedKeyframe}
+            ledTriggers={ledTriggers}
+            onAddLedTrigger={handleAddLedTrigger}
+            onDeleteLedTrigger={handleDeleteLedTrigger}
           />
         </div>
 

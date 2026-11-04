@@ -160,13 +160,108 @@ export function evaluateCamera(
 }
 
 export function sanitizeKeyframeName(name: string, fallbackIndex = 1): string {
-  if (!name) return `Clé ${String(fallbackIndex).padStart(2, '0')}`;
-  return name
-    .replace(/ClÃ©/g, 'Clé')
+  if (!name || typeof name !== 'string') return `Clé ${String(fallbackIndex).padStart(2, '0')}`;
+  
+  // Supprime toute répétition accidentelle ("Cléééé..."), artefacts UTF-8 ou mojibake
+  const clean = name
     .replace(/ClÃ©/g, 'Clé')
     .replace(/Cl\xc3\xa9/g, 'Clé')
-    .replace(/Cl/g, 'Clé')
+    .replace(/Cl[ée]+/gi, 'Clé')
     .trim();
+
+  // Si commence déjà par "Clé XX"
+  const match = clean.match(/^Clé\s*(\d+)(.*)$/i);
+  if (match) {
+    const num = match[1].padStart(2, '0');
+    const suffix = match[2] ? match[2].trim() : '';
+    return suffix ? `Clé ${num} ${suffix}`.replace(/\s+/g, ' ') : `Clé ${num}`;
+  }
+
+  // Si contient un chiffre et commence par cl
+  const numMatch = clean.match(/\d+/);
+  if (numMatch && clean.toLowerCase().startsWith('cl')) {
+    return `Clé ${numMatch[0].padStart(2, '0')}`;
+  }
+
+  return clean || `Clé ${String(fallbackIndex).padStart(2, '0')}`;
+}
+
+/**
+ * Keyframes par défaut pour l'animation dédiée de Structure LED
+ */
+export const DEFAULT_LED_KEYFRAMES: CameraKeyframe[] = [
+  { id: 'led-kf-1', name: 'Clé 01 — Grille globale', time: 0.00, zoom: 1.00, x: 0.0, y: 0.0, originX: 50.0, originY: 50.0, easing: 'easeInOut' },
+  { id: 'led-kf-2', name: 'Clé 02 — Cabinets 500mm', time: 0.50, zoom: 2.20, x: 0.0, y: 0.0, originX: 50.0, originY: 50.0, easing: 'easeInOut' },
+  { id: 'led-kf-3', name: 'Clé 03 — Diodes RGB', time: 1.00, zoom: 6.00, x: 0.0, y: 0.0, originX: 50.0, originY: 50.0, easing: 'easeInOut' },
+];
+
+/**
+ * Déclencheur d'animation Structure LED sur la timeline globale
+ */
+export interface LedAnimationTrigger {
+  id: string;
+  time: number; // Position de 0.00 à 1.00 sur la timeline globale
+  label?: string;
+}
+
+export const DEFAULT_LED_TRIGGERS: LedAnimationTrigger[] = [
+  { id: 'trig-1', time: 0.60, label: 'Déclencheur Structure LED' },
+];
+
+/**
+ * Lecture sécurisée des keyframes Structure LED depuis le CMS
+ */
+export function parseLedKeyframesFromCms(raw: unknown): CameraKeyframe[] {
+  if (Array.isArray(raw) && raw.length > 0) {
+    return raw.map((k, i) => ({
+      id: String(k.id || `led-kf-${i + 1}`),
+      name: sanitizeKeyframeName(String(k.name || ''), i + 1),
+      time: typeof k.time === 'number' ? Math.max(0, Math.min(1, k.time)) : i / Math.max(1, raw.length - 1),
+      zoom: typeof k.zoom === 'number' ? k.zoom : 1.0,
+      x: typeof k.x === 'number' ? k.x : 0,
+      y: typeof k.y === 'number' ? k.y : 0,
+      originX: typeof k.originX === 'number' ? k.originX : 50,
+      originY: typeof k.originY === 'number' ? k.originY : 50,
+      easing: (['linear', 'easeIn', 'easeOut', 'easeInOut'].includes(k.easing)
+        ? k.easing
+        : 'easeInOut') as KeyframeEasing,
+    }));
+  }
+
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parseLedKeyframesFromCms(parsed);
+      }
+    } catch {}
+  }
+
+  return DEFAULT_LED_KEYFRAMES;
+}
+
+/**
+ * Lecture sécurisée des déclencheurs Structure LED depuis le CMS
+ */
+export function parseLedTriggersFromCms(raw: unknown): LedAnimationTrigger[] {
+  if (Array.isArray(raw) && raw.length > 0) {
+    return raw.map((t, i) => ({
+      id: String(t.id || `trig-${i + 1}`),
+      time: typeof t.time === 'number' ? Math.max(0, Math.min(1, t.time)) : 0.60,
+      label: String(t.label || `Structure LED (${((typeof t.time === 'number' ? t.time : 0.60) * 100).toFixed(0)}%)`),
+    }));
+  }
+
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parseLedTriggersFromCms(parsed);
+      }
+    } catch {}
+  }
+
+  return DEFAULT_LED_TRIGGERS;
 }
 
 /**

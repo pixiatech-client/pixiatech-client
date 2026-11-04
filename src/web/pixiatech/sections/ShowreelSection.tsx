@@ -13,6 +13,8 @@ import {
   DEFAULT_MASTER_IMAGE,
   evaluateCamera,
   parseKeyframesFromCms,
+  parseLedKeyframesFromCms,
+  parseLedTriggersFromCms,
   ScreenCoords,
 } from './camera-engine';
 import { MacroLedScene } from './MacroLedScene';
@@ -63,9 +65,20 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
     height: parseFloat(String(cmsData['videoScreenHeight'] ?? cmsData['screen1Height'] ?? DEFAULT_SCREEN_COORDS.height)),
   }), [cmsData]);
 
-  // Images clés (Keyframes) de la caméra virtuelle
+  // Images clés (Keyframes) de la caméra virtuelle principale
   const keyframes = useMemo(
     () => parseKeyframesFromCms(cmsData['cameraKeyframes']),
+    [cmsData]
+  );
+
+  // Images clés et déclencheurs de Structure LED (animation secondaire indépendante)
+  const ledKeyframes = useMemo(
+    () => parseLedKeyframesFromCms(cmsData['ledKeyframes']),
+    [cmsData]
+  );
+
+  const ledTriggers = useMemo(
+    () => parseLedTriggersFromCms(cmsData['ledTriggers']),
     [cmsData]
   );
 
@@ -310,6 +323,38 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
     [keyframes, scrollProgress]
   );
 
+  // Déclencheur Structure LED actif sur la timeline globale
+  const activeLedTrigger = useMemo(() => {
+    if (!ledTriggers || ledTriggers.length === 0) return null;
+    const sorted = [...ledTriggers].sort((a, b) => a.time - b.time);
+    const fired = sorted.filter((t) => t.time <= scrollProgress);
+    return fired.length > 0 ? fired[fired.length - 1] : null;
+  }, [ledTriggers, scrollProgress]);
+
+  // Progression de l'animation propre de Structure LED (de 0.00 à 1.00)
+  const ledProgress = useMemo(() => {
+    if (!activeLedTrigger) return 0;
+    const span = 1.0 - activeLedTrigger.time;
+    if (span <= 0.001) return 1;
+    return Math.max(0, Math.min(1, (scrollProgress - activeLedTrigger.time) / span));
+  }, [activeLedTrigger, scrollProgress]);
+
+  // Caméra dédiée Structure LED interpolée sur sa propre progression
+  const ledCamera = useMemo(
+    () => evaluateCamera(ledKeyframes, ledProgress),
+    [ledKeyframes, ledProgress]
+  );
+
+  // Opacité d'apparition de Structure LED à partir du déclencheur
+  const ledOpacity = activeLedTrigger
+    ? Math.min(1, (scrollProgress - activeLedTrigger.time) / 0.04)
+    : 0;
+
+  // Fondu de sortie de la vidéo lorsque la Structure LED prend le relais
+  const videoFade = activeLedTrigger
+    ? Math.max(0, 1 - (scrollProgress - activeLedTrigger.time) / 0.06)
+    : 1;
+
   const camZoom = animationEnabled ? camera.zoom : 1.0;
   const camX = animationEnabled ? camera.x : 0;
   const camY = animationEnabled ? camera.y : 0;
@@ -319,8 +364,6 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
   const curBorderRadius = scrollProgress < 0.25 ? 1 : scrollProgress < 0.50 ? 1.5 : 2;
   // Rendu net et réaliste sans lueur jaune parasite
   const curBoxShadow = 'none';
-
-  const videoOpacity = Math.max(0, Math.min(1, 1 - (scrollProgress - 0.85) / 0.08));
 
   return (
     <div
@@ -437,8 +480,8 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
                     objectFit: 'cover',
                     display: 'block',
                     backgroundColor: '#000000',
-                    opacity: Math.max(0, Math.min(1, 1 - (scrollProgress - 0.90) / 0.08)),
-                    transition: 'opacity 200ms ease',
+                    opacity: videoFade,
+                    transition: 'opacity 150ms ease',
                   }}
                 />
 
@@ -456,35 +499,44 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
                   }}
                 />
 
-                {/* STRUCTURE LED : Photo personnalisée si configurée, sinon création vectorielle de précision par défaut */}
+                {/* STRUCTURE LED : Animée indépendamment via ses propres keyframes dès le déclencheur */}
                 {showCodeLeds && (
-                  ledCustomImageSrc ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={ledCustomImageSrc}
-                      alt="Structure LED PIXIATECH"
-                      style={{
-                        position: 'absolute',
-                        inset: 0,
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover',
-                        opacity: scrollProgress > 0.90 ? Math.min(1, (scrollProgress - 0.90) / 0.08) : 0,
-                        zIndex: 3,
-                        transition: 'opacity 200ms ease',
-                      }}
-                    />
-                  ) : (
-                    <MacroLedScene
-                      opacity={scrollProgress > 0.90 ? Math.min(1, (scrollProgress - 0.90) / 0.08) : 0}
-                      showCabinetGrid={scrollProgress > 0.93}
-                      style={{
-                        position: 'absolute',
-                        inset: 0,
-                        zIndex: 3,
-                      }}
-                    />
-                  )
+                  <div
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      opacity: ledOpacity,
+                      pointerEvents: 'none',
+                      zIndex: 3,
+                      transition: 'opacity 150ms ease',
+                      transform: `translate3d(${ledCamera.x.toFixed(2)}%, ${ledCamera.y.toFixed(2)}%, 0) scale(${ledCamera.zoom.toFixed(4)})`,
+                      transformOrigin: `${ledCamera.originX.toFixed(2)}% ${ledCamera.originY.toFixed(2)}%`,
+                      willChange: 'transform, opacity',
+                    }}
+                  >
+                    {ledCustomImageSrc ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={ledCustomImageSrc}
+                        alt="Structure LED PIXIATECH"
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                          display: 'block',
+                        }}
+                      />
+                    ) : (
+                      <MacroLedScene
+                        opacity={1}
+                        showCabinetGrid={ledProgress > 0.15}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                        }}
+                      />
+                    )}
+                  </div>
                 )}
               </div>
           </div>
