@@ -60,6 +60,7 @@ import {
   applyEasing,
 } from '@/web/pixiatech/sections/camera-engine';
 import { MacroLedScene } from '@/web/pixiatech/sections/MacroLedScene';
+import { StudioRulerGuides } from './StudioRulerGuides';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -812,6 +813,27 @@ function VirtualCameraStudioCanvas({
   const canvasRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
 
+  // ── Règles & Repères (Rulers & Guides) ─────────────────────────────────────
+  const [canvasRect, setCanvasRect] = React.useState<{ left: number; top: number; width: number; height: number } | null>(null);
+  const [snapEnabled, setSnapEnabled] = React.useState(true);
+
+  React.useEffect(() => {
+    const updateRect = () => {
+      if (canvasRef.current) {
+        const r = canvasRef.current.getBoundingClientRect();
+        setCanvasRect({ left: r.left, top: r.top, width: r.width, height: r.height });
+      }
+    };
+    updateRect();
+    const handleUpdate = () => updateRect();
+    window.addEventListener('resize', handleUpdate);
+    window.addEventListener('scroll', handleUpdate, true);
+    return () => {
+      window.removeEventListener('resize', handleUpdate);
+      window.removeEventListener('scroll', handleUpdate, true);
+    };
+  }, []);
+
   // ── Playback state ─────────────────────────────────────────────────────────
   const [simProgress, setSimProgress] = React.useState(0);
   const [playing, setPlaying] = React.useState(false);
@@ -1125,6 +1147,14 @@ function VirtualCameraStudioCanvas({
             <span>Avancer (Ctrl+Y)</span>
           </button>
         </div>
+
+        {/* Studio Rulers & Guides (Photoshop / After Effects like) */}
+        <StudioRulerGuides
+          canvasRect={canvasRect}
+          cam={cam}
+          snapEnabled={snapEnabled}
+          onToggleSnap={() => setSnapEnabled((v) => !v)}
+        />
 
         {/* Keyframe pills */}
         <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>

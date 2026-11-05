@@ -92,7 +92,10 @@ export const AboutExperienceSection: React.FC<AboutExperienceSectionProps> = ({
         </div>
 
         <div className="relative z-10 wrap pb-20 pt-36">
-          <div className="text-[11px] font-mono tracking-[0.24em] text-[#C3F910] uppercase font-bold mb-6">
+          <div
+            className="text-[11px] font-mono tracking-[0.24em] uppercase font-bold mb-6"
+            style={{ color: 'var(--accent, #C3F910)' }}
+          >
             {t.eyebrow}
           </div>
           <h2 className="text-[clamp(34px,4.5vw,72px)] font-black tracking-tight leading-[1.04] text-[#f5f4f0] max-w-4xl m-0 mb-8">
@@ -111,7 +114,8 @@ export const AboutExperienceSection: React.FC<AboutExperienceSectionProps> = ({
                 if (document.body.classList.contains('cms-editing')) return;
                 window.location.href = '/web/contact';
               }}
-              className="px-7 py-4 bg-[#C3F910] text-black font-bold text-[13px] tracking-wider uppercase hover:bg-white transition-colors cursor-pointer"
+              className="px-7 py-4 text-black font-bold text-[13px] tracking-wider uppercase hover:bg-white transition-colors cursor-pointer"
+              style={{ backgroundColor: 'var(--accent, #C3F910)' }}
             >
               {t.visitBtn}
             </button>
@@ -149,7 +153,12 @@ export const AboutExperienceSection: React.FC<AboutExperienceSectionProps> = ({
                 className="bg-[#0b0b0a] p-7 flex flex-col justify-between hover:bg-[#111110] transition-colors"
               >
                 <div>
-                  <div className="text-[12px] font-mono tracking-[0.2em] text-[#C3F910] font-bold mb-4">{st.num}</div>
+                  <div
+                    className="text-[12px] font-mono tracking-[0.2em] font-bold mb-4"
+                    style={{ color: 'var(--accent, #C3F910)' }}
+                  >
+                    {st.num}
+                  </div>
                   <h3 className="text-[18px] font-bold text-white mb-2 leading-snug">{st.title}</h3>
                 </div>
                 <p className="text-[13px] text-[#8a8a86] leading-relaxed mt-4">{st.desc}</p>

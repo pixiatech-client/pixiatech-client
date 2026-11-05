@@ -4,7 +4,7 @@
       "id": "home",
       "name": "home",
       "slug": "/home",
-      "updatedAt": "2026-11-03T16:04:47.611Z",
+      "updatedAt": "2026-11-05T16:26:03.802Z",
       "sections": {
         "pixia-web": {
           "text_1790257213042": "sdsdsdsdÉDITEUR DIRECT : CLIQUEZ SUR UN TEXTE OU UNE IMAGE",
@@ -175,18 +175,18 @@
             },
             "slider1.description": {
               "fr": {
-                "value": "Pour vos boutiques, entreprises et projets architecturaux, choisissez un écran LED intérieur ou extérieur adapté à votre espace et à votre budget. PixiaTech vous accompagne du choix de la solution à l’installation, partout en France.",
+                "value": "Choisissez un écran LED intérieur ou extérieur adapté à votre espace et à votre budget",
                 "status": "source",
-                "updatedAt": "2026-11-01T18:33:37.543Z",
-                "sourceText": "Pour vos boutiques, entreprises et projets architecturaux, choisissez un écran LED intérieur ou extérieur adapté à votre espace et à votre budget. PixiaTech vous accompagne du choix de la solution à l’installation, partout en France."
+                "updatedAt": "2026-11-05T15:28:53.213Z",
+                "sourceText": "Choisissez un écran LED intérieur ou extérieur adapté à votre espace et à votre budget"
               }
             },
             "slider2.tagline": {
               "fr": {
-                "value": "Donnez une nouvelle dimension à vos événements.",
+                "value": "",
                 "status": "source",
-                "updatedAt": "2026-11-01T18:38:14.733Z",
-                "sourceText": "Donnez une nouvelle dimension à vos événements."
+                "updatedAt": "2026-11-05T15:29:17.057Z",
+                "sourceText": ""
               }
             },
             "slider1.title": {
@@ -263,10 +263,10 @@
             },
             "slider1.primaryCta": {
               "fr": {
-                "value": "Découvrir nos écrans LED → →",
+                "value": "Découvrir nos écrans LED →",
                 "status": "source",
-                "updatedAt": "2026-11-01T18:34:18.424Z",
-                "sourceText": "Découvrir nos écrans LED → →"
+                "updatedAt": "2026-11-04T21:40:08.477Z",
+                "sourceText": "Découvrir nos écrans LED →"
               },
               "en": {
                 "value": "Découvrir nos écrans LED → ",
@@ -292,9 +292,9 @@
               }
             }
           },
-          "minHeight": 882,
+          "minHeight": 0,
           "paddingBottom": 0,
-          "slideImage1": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2Fecran_led_sur_mesure_6nfpw.webp?alt=media",
+          "slideImage1": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2Fslider01_oayl2.jpg?alt=media",
           "_elements": {
             "div:2/section:1/div:7/div:1/div:3/span:2": {
               "text": "PROJETS INTERNATIONAUX 11"
@@ -312,7 +312,7 @@
             },
             "description": {
               "fontSize": "16px",
-              "color": "#ebeaea",
+              "color": "#ffffff",
               "backgroundColor": "transparent",
               "offsetX": 0,
               "offsetY": 0
@@ -324,13 +324,13 @@
               "borderRadius": "9999px",
               "borderWidth": "1px",
               "borderStyle": "solid",
-              "borderColor": "#b2e212",
+              "borderColor": "var(--accent)",
               "offsetX": 0,
               "offsetY": 0
             },
             "title": {
               "fontSize": "60px",
-              "color": "#ffffff",
+              "color": "#e6e6e6",
               "backgroundColor": "transparent",
               "offsetX": -4,
               "offsetY": -12
@@ -352,20 +352,28 @@
             "section:1/div:5/div:1/div:3/span:1": {
               "text_fr": "INSTALLATION PARTOUT EN FRANCE"
             },
-            "section:1/div:5/div:1/div:3/span:3": {
-              "text_fr": "ÉCRANS LED SUR MESURE"
-            },
             "section:1/div:5/div:1/div:3/span:3/div:1/div:1/table:1/tbody:1/tr:1/td:1": {
               "borderStyle": "solid",
               "text_fr": "LED SUR MESURE"
             },
             "badge": {
               "offsetX": 4,
-              "offsetY": -20
+              "offsetY": -20,
+              "color": "#f5f5f5",
+              "fontWeight": "700",
+              "fontStyle": "normal"
+            },
+            "slideImage1": {
+              "src": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2Fslider01_oayl2.jpg?alt=media",
+              "mediaType": "image"
+            },
+            "slideImage3": {
+              "src": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2Fm_gastore-sportif-aux-paysages-lumineux_p479i.webp?alt=media",
+              "mediaType": "image"
             }
           },
           "slideImage2": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2Fecran_de_location_pgjf5.webp?alt=media",
-          "slideImage3": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FLIGHT_BOX_DYNAMIQUE_przvi.webp?alt=media",
+          "slideImage3": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2Fm_gastore-sportif-aux-paysages-lumineux_p479i.webp?alt=media",
           "title": "TECHNOLOGIES03 D’AFFICHAGE 01",
           "badge": "PIXIATECH / VISUAL TECHNOLOGY ",
           "description": "Spécialisée dans la vente d’écrans professionnels et de technologies d’affichage LED, Micro LED et OLED, pour les entreprises, les commerces, l’architecture et l’événementiel",
@@ -380,8 +388,8 @@
           "slider2.title": "Location d’écrans LED ",
           "slider3.description": "Valorisez vos vitrines avec des caissons lumineux LED fixes ou portables, conçus sur mesure. Leur animation s’adapte à chaque image pour un rendu unique et dynamique.",
           "slider2.description": "Pour vos salons, conférences et événements privés, choisissez un écran LED intérieur ou extérieur adapté à votre espace et à votre budget. Plat, incurvé ou à 360°, votre écran vous attend à Paris et en Île-de-France.",
-          "slider1.description": "Pour vos boutiques, entreprises et projets architecturaux, choisissez un écran LED intérieur ou extérieur adapté à votre espace et à votre budget. PixiaTech vous accompagne du choix de la solution à l’installation, partout en France.",
-          "slider2.tagline": "Donnez une nouvelle dimension à vos événements.",
+          "slider1.description": "Choisissez un écran LED intérieur ou extérieur adapté à votre espace et à votre budget",
+          "slider2.tagline": "",
           "slider1.title": "Écrans LED sur mesure.  ",
           "slider1.tagline": "Donnez vie à vos espaces .",
           "slider3.tagline": "Donnez une nouvelle dimension à vos visuels.",
@@ -391,9 +399,11 @@
           "slider2.secondaryCta": "Estimer mon projet →",
           "slider1.secondaryCta": "Estimer mon projet →",
           "slider3.secondaryCta": "Estimer mon projet →",
-          "slider1.primaryCta": "Découvrir nos écrans LED → →",
+          "slider1.primaryCta": "Découvrir nos écrans LED →",
           "slider2.primaryCta": "Découvrir nos écrans à louer →",
-          "slider3.primaryCta": "Découvrir nos caissons dynamiques →"
+          "slider3.primaryCta": "Découvrir nos caissons dynamiques →",
+          "bgColor": "#ffffff",
+          "textColor": "#ffffff"
         },
         "markets": {
           "_elements": {
@@ -445,26 +455,35 @@
             },
             "titleLine3": {
               "color": "#e9683d",
-              "fontSize": "68px",
+              "fontSize": "50px",
               "backgroundColor": "transparent"
             },
+            "titleLine2": {
+              "color": "#e9683d",
+              "fontSize": "50px"
+            },
+            "title": {
+              "color": "#e9683d",
+              "fontSize": "50px",
+              "offsetX": 0,
+              "offsetY": -80
+            },
             "badge": {
-              "color": "#050505"
+              "offsetX": 0,
+              "offsetY": 60
             },
             "subtitle": {
-              "fontWeight": "700",
-              "fontSize": "16px",
-              "fontStyle": "normal",
-              "textDecoration": "none"
-            },
-            "titleLine2": {
-              "color": "#e9683d"
+              "fontSize": "20px",
+              "fontWeight": "400",
+              "width": "1171px",
+              "offsetX": 0,
+              "offsetY": -4
             }
           },
           "paddingTop": 0,
           "overlayColor": "#d50b0b",
           "overlayOpacity": 85,
-          "minHeight": 738,
+          "minHeight": 334,
           "marginBottom": 0,
           "paddingBottom": 0,
           "visible": true,
@@ -482,42 +501,45 @@
             },
             "badge": {
               "fr": {
-                "value": "01 / À PROPOS",
+                "value": "01 / À PROPOS DE PIXIATECH",
                 "status": "source",
-                "updatedAt": "2026-10-21T17:32:17.867Z",
-                "sourceText": "01 / À PROPOS"
+                "updatedAt": "2026-11-05T15:28:17.770Z",
+                "sourceText": "01 / À PROPOS DE PIXIATECH"
               }
             },
             "title": {
               "fr": {
-                "value": "Des solutions d’affichage LED conçues pour vos projets\n  ",
+                "value": "NOUS FAISONS DE LA TECHNOLOGIE LED",
                 "status": "source",
-                "updatedAt": "2026-10-17T11:19:53.166Z",
-                "sourceText": "Des solutions d’affichage LED conçues pour vos projets\n  "
+                "updatedAt": "2026-11-05T15:23:02.501Z",
+                "sourceText": "NOUS FAISONS DE LA TECHNOLOGIE LED"
               }
             },
             "titleLine2": {
               "fr": {
-                "value": "NOUS DONNONS VIE À VOS ",
+                "value": "UNE PARTIE",
                 "status": "source",
-                "updatedAt": "2026-11-01T22:47:45.998Z",
-                "sourceText": "NOUS DONNONS VIE À VOS "
+                "updatedAt": "2026-11-05T15:23:22.285Z",
+                "sourceText": "UNE PARTIE"
               }
             },
             "titleLine3": {
               "fr": {
-                "value": "ESPACES",
+                "value": "INTÉGRANTE DE VOS ESPACES.",
                 "status": "source",
-                "updatedAt": "2026-11-01T22:47:50.767Z",
-                "sourceText": "ESPACES"
+                "updatedAt": "2026-11-05T15:23:39.312Z",
+                "sourceText": "INTÉGRANTE DE VOS ESPACES."
               }
             }
           },
           "subtitle": "PIXIATECH est une entreprise française spécialisée dans les solutions visuelles sur mesure. Nous aidons les entreprises à dynamiser leur communication, à valoriser leurs espaces et à capter l’attention de leurs publics. Écrans LED, affichages transparents et caissons lumineux dynamiques : nous adaptons chaque solution à votre message, à votre environnement et à vos objectifs.",
-          "badge": "01 / À PROPOS",
-          "title": "Des solutions d’affichage LED conçues pour vos projets\n  ",
-          "titleLine2": "NOUS DONNONS VIE À VOS ",
-          "titleLine3": "ESPACES"
+          "badge": "01 / À PROPOS DE PIXIATECH",
+          "title": "NOUS FAISONS DE LA TECHNOLOGIE LED",
+          "titleLine2": "UNE PARTIE",
+          "titleLine3": "INTÉGRANTE DE VOS ESPACES.",
+          "bgColor": "#fffff",
+          "paddingRight": 0,
+          "paddingLeft": 72
         },
         "pitch": {
           "paddingTop": 16,
@@ -640,11 +662,11 @@
               "text_fr": "RETRANSMISSION SPORTIVE — LE SPORT EN GRAND, L’ÉMOTION ENSEMBLE."
             },
             "project_1_image": {
-              "src": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/uploads%2F1786788310401-WhatsApp%20Video%202026-07-31%20at%2009.37.39_%C3%A8-.mp4?alt=media",
+              "src": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fshowreel%2Fvideos%2FDesign_sans_titre_nntt3r.mp4?alt=media",
               "mediaType": "video"
             },
             "project_0_image": {
-              "src": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/uploads%2F1787607624269-158384-816637349_small.mp4?alt=media",
+              "src": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fshowreel%2Fvideos%2F2025-11-07___09.19.19_a8308487_06z5m5.mp4?alt=media",
               "mediaType": "video"
             }
           },
@@ -659,8 +681,8 @@
             }
           },
           "description": "Un espace à transformer, un message à faire rayonner, une expérience à créer. Découvrez comment nos solutions visuelles prennent vie à travers des projets pensés pour chaque lieu, chaque usage et chaque ambition.",
-          "project_1_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/uploads%2F1786788310401-WhatsApp%20Video%202026-07-31%20at%2009.37.39_%C3%A8-.mp4?alt=media",
-          "project_0_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/uploads%2F1787607624269-158384-816637349_small.mp4?alt=media",
+          "project_1_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fshowreel%2Fvideos%2FDesign_sans_titre_nntt3r.mp4?alt=media",
+          "project_0_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fshowreel%2Fvideos%2F2025-11-07___09.19.19_a8308487_06z5m5.mp4?alt=media",
           "visible": true,
           "layout": {
             "visible": true
@@ -1266,10 +1288,18 @@
             },
             "cameraKeyframes": {
               "fr": {
-                "value": "[{\"id\":\"kf-1793720895300\",\"name\":\"Clé 03\",\"time\":0,\"zoom\":1.12,\"x\":0.1,\"y\":-5.3,\"originX\":49.97,\"originY\":57.2,\"easing\":\"easeInOut\"},{\"id\":\"kf-1793720813029\",\"name\":\"Clé 02\",\"time\":0.902,\"zoom\":4.85,\"x\":0.1,\"y\":-5.3,\"originX\":49.97,\"originY\":57.2,\"easing\":\"easeInOut\"}]",
+                "value": "[{\"id\":\"kf-1793720895300\",\"name\":\"Clé 03\",\"time\":0,\"zoom\":1.12,\"x\":0.1,\"y\":-5.3,\"originX\":49.97,\"originY\":57.2,\"easing\":\"easeInOut\"},{\"id\":\"kf-1793720813029\",\"name\":\"Clé 02\",\"time\":0.902,\"zoom\":8.93,\"x\":0.1,\"y\":-5.3,\"originX\":49.97,\"originY\":59.2,\"easing\":\"easeInOut\"}]",
                 "status": "source",
-                "updatedAt": "2026-11-03T15:48:36.029Z",
-                "sourceText": "[{\"id\":\"kf-1793720895300\",\"name\":\"Clé 03\",\"time\":0,\"zoom\":1.12,\"x\":0.1,\"y\":-5.3,\"originX\":49.97,\"originY\":57.2,\"easing\":\"easeInOut\"},{\"id\":\"kf-1793720813029\",\"name\":\"Clé 02\",\"time\":0.902,\"zoom\":4.85,\"x\":0.1,\"y\":-5.3,\"originX\":49.97,\"originY\":57.2,\"easing\":\"easeInOut\"}]"
+                "updatedAt": "2026-11-05T15:32:01.357Z",
+                "sourceText": "[{\"id\":\"kf-1793720895300\",\"name\":\"Clé 03\",\"time\":0,\"zoom\":1.12,\"x\":0.1,\"y\":-5.3,\"originX\":49.97,\"originY\":57.2,\"easing\":\"easeInOut\"},{\"id\":\"kf-1793720813029\",\"name\":\"Clé 02\",\"time\":0.902,\"zoom\":8.93,\"x\":0.1,\"y\":-5.3,\"originX\":49.97,\"originY\":59.2,\"easing\":\"easeInOut\"}]"
+              }
+            },
+            "ledKeyframes": {
+              "fr": {
+                "value": "[{\"id\":\"led-kf-1\",\"name\":\"Clé 01 — Grille globale\",\"time\":0,\"zoom\":1,\"x\":0,\"y\":0,\"originX\":50,\"originY\":50,\"easing\":\"easeInOut\"},{\"id\":\"led-kf-2\",\"name\":\"Clé 02 — Cabinets 500mm\",\"time\":0.502,\"zoom\":2.2,\"x\":-10.9,\"y\":0,\"originX\":50,\"originY\":62.5,\"easing\":\"easeInOut\"}]",
+                "status": "source",
+                "updatedAt": "2026-11-05T15:35:36.535Z",
+                "sourceText": "[{\"id\":\"led-kf-1\",\"name\":\"Clé 01 — Grille globale\",\"time\":0,\"zoom\":1,\"x\":0,\"y\":0,\"originX\":50,\"originY\":50,\"easing\":\"easeInOut\"},{\"id\":\"led-kf-2\",\"name\":\"Clé 02 — Cabinets 500mm\",\"time\":0.502,\"zoom\":2.2,\"x\":-10.9,\"y\":0,\"originX\":50,\"originY\":62.5,\"easing\":\"easeInOut\"}]"
               }
             }
           },
@@ -1286,7 +1316,7 @@
             "visible": true
           },
           "ch2TitleLine1": "Intégration façade",
-          "videoOutlineColor": "#FFFFFF",
+          "videoOutlineColor": "#EF4444",
           "screen1Left": "42.32",
           "screen1Top": "53.88",
           "screen1Width": "14.24",
@@ -1374,8 +1404,9 @@
           "videoScreenTop": "53.412",
           "videoScreenWidth": "14.319",
           "videoScreenHeight": "11.44",
-          "cameraKeyframes": "[{\"id\":\"kf-1793720895300\",\"name\":\"Clé 03\",\"time\":0,\"zoom\":1.12,\"x\":0.1,\"y\":-5.3,\"originX\":49.97,\"originY\":57.2,\"easing\":\"easeInOut\"},{\"id\":\"kf-1793720813029\",\"name\":\"Clé 02\",\"time\":0.902,\"zoom\":4.85,\"x\":0.1,\"y\":-5.3,\"originX\":49.97,\"originY\":57.2,\"easing\":\"easeInOut\"}]",
-          "showVideoOutline": false
+          "cameraKeyframes": "[{\"id\":\"kf-1793720895300\",\"name\":\"Clé 03\",\"time\":0,\"zoom\":1.12,\"x\":0.1,\"y\":-5.3,\"originX\":49.97,\"originY\":57.2,\"easing\":\"easeInOut\"},{\"id\":\"kf-1793720813029\",\"name\":\"Clé 02\",\"time\":0.902,\"zoom\":8.93,\"x\":0.1,\"y\":-5.3,\"originX\":49.97,\"originY\":59.2,\"easing\":\"easeInOut\"}]",
+          "showVideoOutline": false,
+          "ledKeyframes": "[{\"id\":\"led-kf-1\",\"name\":\"Clé 01 — Grille globale\",\"time\":0,\"zoom\":1,\"x\":0,\"y\":0,\"originX\":50,\"originY\":50,\"easing\":\"easeInOut\"},{\"id\":\"led-kf-2\",\"name\":\"Clé 02 — Cabinets 500mm\",\"time\":0.502,\"zoom\":2.2,\"x\":-10.9,\"y\":0,\"originX\":50,\"originY\":62.5,\"easing\":\"easeInOut\"}]"
         },
         "technology": {
           "_elements": {
@@ -1995,5 +2026,5 @@
       }
     }
   },
-  "updatedAt": "2026-11-03T16:04:47.756Z"
+  "updatedAt": "2026-11-05T16:26:03.907Z"
 }

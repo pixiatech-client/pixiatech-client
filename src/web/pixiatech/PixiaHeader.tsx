@@ -208,6 +208,21 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileSubMenu, setMobileSubMenu] = useState<'main' | 'products'>('main');
   const [searchOpen, setSearchOpen] = useState(false);
+  // Couleur d'accent courante — se met à jour quand ThemePanel dispatch l'événement
+  const [accentColor, setAccentColor] = useState<string>('var(--accent, #C3F910)');
+
+  // Écouter les changements de thème pour forcer un re-render des couleurs inline
+  useEffect(() => {
+    const onThemeChange = (e: Event) => {
+      const detail = (e as CustomEvent<{ accent: string }>).detail;
+      if (detail?.accent) setAccentColor(detail.accent);
+    };
+    window.addEventListener('pixiatech-theme-change', onThemeChange);
+    // Lire la valeur courante immédiatement
+    const current = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+    if (current) setAccentColor(current);
+    return () => window.removeEventListener('pixiatech-theme-change', onThemeChange);
+  }, []);
 
   const prevScrollRef = useRef(0);
   const headerRootRef = useRef<HTMLDivElement>(null);
@@ -512,7 +527,7 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
           left: 0,
           right: 0,
           zIndex: 200,
-          '--accent': isLight ? '#111110' : '#C3F910',
+          ...(isLight ? { '--accent': '#111110' } : {}),
         } as React.CSSProperties}
       >
         <style>{`
@@ -521,7 +536,7 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
             letter-spacing: .16em;
             text-transform: uppercase;
             font-weight: 700;
-            color: var(--pxt-nav-color, #FFFFFF) !important;
+            color: var(--pxt-nav-color, #FFFFFF);
             padding: 10px 0;
             border-bottom: 2px solid transparent;
             white-space: nowrap;
@@ -530,15 +545,15 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
             cursor: pointer;
           }
           .pxt-nav-link:hover {
-            color: var(--pxt-nav-hover, #C3F910) !important;
-            border-bottom-color: var(--pxt-nav-hover, #C3F910) !important;
+            color: var(--accent, #C3F910);
+            border-bottom-color: var(--accent, #C3F910);
           }
           .pxt-nav-link.active {
-            color: var(--pxt-nav-active, #C3F910) !important;
-            border-bottom-color: var(--pxt-nav-active, #C3F910) !important;
+            color: var(--accent, #C3F910);
+            border-bottom-color: var(--accent, #C3F910);
           }
           .mega-card-item:hover .mega-title {
-            color: #C3F910 !important;
+            color: var(--accent, #C3F910);
           }
           .nav-desktop-cta { display: none !important; }
           @media (min-width: 1560px) {
@@ -567,8 +582,7 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
             transition:
               'background .35s ease, border-color .35s ease, box-shadow .35s ease, height .45s cubic-bezier(.2,.8,.2,1)',
             '--pxt-nav-color': isLight ? '#111110' : '#FFFFFF',
-            '--pxt-nav-hover': isLight ? '#000000' : '#C3F910',
-            '--pxt-nav-active': isLight ? '#000000' : '#C3F910',
+            ...(isLight ? { '--pxt-nav-hover': '#000000', '--pxt-nav-active': '#000000' } : {}),
           } as React.CSSProperties}
         >
           {/* Logo / Brand Name */}
@@ -761,7 +775,7 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                 transition: 'color .25s ease',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.color = isLight ? '#000000' : '#C3F910';
+                e.currentTarget.style.color = isLight ? '#000000' : accentColor;
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.color = isLight ? '#111110' : '#FFFFFF';
@@ -793,8 +807,8 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                 transition: 'all .25s ease',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = isLight ? '#111110' : '#C3F910';
-                e.currentTarget.style.color = isLight ? '#000000' : '#C3F910';
+                e.currentTarget.style.borderColor = isLight ? '#111110' : accentColor;
+                e.currentTarget.style.color = isLight ? '#000000' : accentColor;
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.borderColor = isLight ? 'rgba(17, 17, 16, 0.2)' : 'rgba(255, 255, 255, 0.2)';
@@ -834,7 +848,7 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                 transition: 'color .25s ease',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.color = isLight ? '#000000' : '#C3F910';
+                e.currentTarget.style.color = isLight ? '#000000' : accentColor;
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.color = isLight ? '#111110' : '#FFFFFF';
@@ -1008,7 +1022,7 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                             style={{
                               fontSize: 15,
                               fontWeight: 600,
-                              color: isHovered ? '#C3F910' : '#EDEBE6',
+                              color: isHovered ? accentColor : '#EDEBE6',
                               transition: 'color .2s ease',
                             }}
                           >
@@ -1101,7 +1115,7 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                           padding: '4px 8px',
                           fontSize: 10,
                           fontFamily: 'var(--font-mono)',
-                          color: '#C3F910',
+                          color: accentColor,
                           letterSpacing: '.1em',
                         }}
                       >
@@ -1154,10 +1168,10 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                       fontSize: 12.5,
                       letterSpacing: '.1em',
                       fontWeight: 700,
-                      color: '#C3F910',
+                      color: accentColor,
                       cursor: preview?.clickable ? 'pointer' : 'default',
                       opacity: preview?.clickable ? 1 : 0.4,
-                      borderBottom: preview?.clickable ? '1px solid #C3F910' : '1px solid #3b4526',
+                      borderBottom: preview?.clickable ? `1px solid ${accentColor}` : '1px solid #3b4526',
                     }}
                   >
                     {preview?.clickable
@@ -1181,14 +1195,14 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                       fontSize: 11.5,
                       letterSpacing: '.12em',
                       fontWeight: 700,
-                      color: '#C3F910',
+                      color: accentColor,
                       textDecoration: 'none',
                       textTransform: 'uppercase',
                       borderBottom: '1px solid transparent',
                       transition: 'border-color .2s ease',
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.borderBottomColor = '#C3F910';
+                      e.currentTarget.style.borderBottomColor = accentColor;
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.borderBottomColor = 'transparent';
@@ -1261,7 +1275,7 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                     letterSpacing: '.14em',
                     textTransform: 'uppercase',
                     fontWeight: 600,
-                    color: routeKey === 'home' && !activeSection ? '#C3F910' : '#EDEBE6',
+                    color: routeKey === 'home' && !activeSection ? accentColor : '#EDEBE6',
                     padding: '14px 0',
                     borderBottom: '1px solid #1F1F1F',
                     textDecoration: 'none',
@@ -1289,7 +1303,7 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                     fontWeight: 700,
                     // Comme sur desktop : l'onglet actif suit la route, pas
                     // l'ouverture du sous-menu.
-                    color: routeKey === 'products' ? '#C3F910' : '#EDEBE6',
+                    color: routeKey === 'products' ? accentColor : '#EDEBE6',
                     cursor: 'pointer',
                     textAlign: 'left',
                   }}
@@ -1338,7 +1352,7 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                         letterSpacing: '.14em',
                         textTransform: 'uppercase',
                         fontWeight: 600,
-                        color: activeSection === '#markets' ? '#C3F910' : '#EDEBE6',
+                        color: activeSection === '#markets' ? accentColor : '#EDEBE6',
                         padding: '14px 0',
                         borderBottom: '1px solid #1F1F1F',
                         textDecoration: 'none',
@@ -1358,7 +1372,7 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                         letterSpacing: '.14em',
                         textTransform: 'uppercase',
                         fontWeight: 600,
-                        color: activeSection === '#projects' ? '#C3F910' : '#EDEBE6',
+                        color: activeSection === '#projects' ? accentColor : '#EDEBE6',
                         padding: '14px 0',
                         borderBottom: '1px solid #1F1F1F',
                         textDecoration: 'none',
@@ -1378,7 +1392,7 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                         letterSpacing: '.14em',
                         textTransform: 'uppercase',
                         fontWeight: 600,
-                        color: activeSection === '#technology' ? '#C3F910' : '#EDEBE6',
+                        color: activeSection === '#technology' ? accentColor : '#EDEBE6',
                         padding: '14px 0',
                         borderBottom: '1px solid #1F1F1F',
                         textDecoration: 'none',
@@ -1398,7 +1412,7 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                         letterSpacing: '.14em',
                         textTransform: 'uppercase',
                         fontWeight: 600,
-                        color: activeSection === '#manifesto' ? '#C3F910' : '#EDEBE6',
+                        color: activeSection === '#manifesto' ? accentColor : '#EDEBE6',
                         padding: '14px 0',
                         borderBottom: '1px solid #1F1F1F',
                         textDecoration: 'none',
@@ -1422,7 +1436,7 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                     letterSpacing: '.14em',
                     textTransform: 'uppercase',
                     fontWeight: 600,
-                    color: routeKey === 'insights' ? '#C3F910' : '#EDEBE6',
+                    color: routeKey === 'insights' ? accentColor : '#EDEBE6',
                     padding: '14px 0',
                     borderBottom: '1px solid #1F1F1F',
                     textDecoration: 'none',
@@ -1444,7 +1458,7 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                     letterSpacing: '.14em',
                     textTransform: 'uppercase',
                     fontWeight: 600,
-                    color: routeKey === 'contact' ? '#C3F910' : '#EDEBE6',
+                    color: routeKey === 'contact' ? accentColor : '#EDEBE6',
                     padding: '14px 0',
                     borderBottom: '1px solid #1F1F1F',
                     textDecoration: 'none',
@@ -1536,7 +1550,7 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                     gap: 10,
                     background: '#181816',
                     border: '1px solid #333',
-                    color: '#C3F910',
+                    color: accentColor,
                     padding: '12px 16px',
                     width: '100%',
                     fontSize: 12,
@@ -1609,7 +1623,7 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                               <span style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>{m.label}</span>
-                              <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: '#C3F910' }}>
+                              <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: accentColor }}>
                                 {m.tag}
                               </span>
                             </div>

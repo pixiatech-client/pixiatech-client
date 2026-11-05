@@ -43,7 +43,7 @@ export const FieldworkSection: React.FC<FieldworkSectionProps> = ({ companyName,
           </h2>
           <a
             href="#hero"
-            className="text-[12.5px] font-bold tracking-[0.18em] uppercase text-[#111110] border-b border-[#111110] pb-1 hover:text-[#C3F910] hover:border-[#C3F910] hover:bg-[#111110] px-2 transition-all"
+            className="text-[12.5px] font-bold tracking-[0.18em] uppercase text-[#111110] border-b border-[#111110] pb-1 hover:text-[var(--accent, #C3F910)] hover:border-[var(--accent, #C3F910)] hover:bg-[#111110] px-2 transition-all"
           >
             {t.allProjects} →
           </a>

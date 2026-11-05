@@ -8,6 +8,7 @@ import { CmsSectionBar } from './CmsSectionBar';
 import { BackendExportModal } from './BackendExportModal';
 import { VisualInPlaceEditor } from './VisualInPlaceEditor';
 import { useCmsElementStyles } from './useCmsElementStyles';
+import { loadSavedTheme } from './ThemePanel';
 
 // Pont CMS pour l'univers /web.
 // L'authentification se fait UNIQUEMENT côté serveur (session admin /admin).
@@ -33,6 +34,16 @@ export const WebCmsBridge: React.FC = () => {
   // sinon une modification validée n'existerait que le temps d'une session
   // d'édition.
   useCmsElementStyles();
+
+  // Charge et applique le thème couleur global (sauvegardé via le Gestionnaire de Thèmes)
+  // Appelé pour TOUS (admin + visiteurs) pour que le thème soit cohérent sur tout le site.
+  useEffect(() => {
+    loadSavedTheme();
+    // Réappliquer si la fenêtre redevient active (onglet focus)
+    const onFocus = () => loadSavedTheme();
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, []);
 
   const pageTitle = useMemo(() => {
     const page = pages[currentPageId];

@@ -601,8 +601,8 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
                 width: 7,
                 height: 7,
                 borderRadius: '50%',
-                background: '#C3F910',
-                boxShadow: '0 0 10px #C3F910',
+                background: 'var(--accent, #C3F910)',
+                boxShadow: '0 0 10px var(--accent, #C3F910)',
                 animation: 'xr-blink 1.4s ease-in-out infinite',
               }}
             />
@@ -636,7 +636,7 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
                 padding: '4px 10px',
                 borderRadius: 999,
                 background: 'rgba(6, 10, 16, 0.8)',
-                border: '1px solid rgba(195, 249, 16, 0.35)',
+                border: '1px solid rgba(var(--accent-rgb, 195, 249, 16), 0.35)',
                 backdropFilter: 'blur(12px)',
               }}
             >
@@ -656,7 +656,7 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
                 style={{
                   background: 'transparent',
                   border: 'none',
-                  color: '#C3F910',
+                  color: 'var(--accent, #C3F910)',
                   padding: 4,
                   cursor: 'pointer',
                   display: 'flex',
@@ -678,7 +678,7 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
                 style={{
                   background: 'transparent',
                   border: 'none',
-                  color: '#C3F910',
+                  color: 'var(--accent, #C3F910)',
                   padding: 4,
                   cursor: 'pointer',
                   display: 'flex',
@@ -781,7 +781,7 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
                   fontSize: 16.5,
                   fontWeight: 700,
                   letterSpacing: '-.01em',
-                  color: '#C3F910',
+                  color: 'var(--accent, #C3F910)',
                   fontFamily: 'var(--font-mono, monospace)',
                 }}
               >
@@ -830,7 +830,7 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
                 <div style={{ fontSize: 9, letterSpacing: '.18em', color: '#6B7280', fontFamily: 'var(--font-mono)' }}>
                   GENLOCK
                 </div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#C3F910', marginTop: 2 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent, #C3F910)', marginTop: 2 }}>
                   7,680 Hz
                 </div>
               </div>
@@ -857,7 +857,7 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
             style={{
               fontSize: 11,
               letterSpacing: '.24em',
-              color: '#C3F910',
+              color: 'var(--accent, #C3F910)',
               fontWeight: 700,
               marginBottom: 16,
               fontFamily: 'var(--font-mono)',
@@ -947,7 +947,7 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
                 style={{
                   fontSize: 11,
                   letterSpacing: '.24em',
-                  color: '#C3F910',
+                  color: 'var(--accent, #C3F910)',
                   fontWeight: 700,
                   marginBottom: 14,
                   fontFamily: 'var(--font-mono)',
@@ -1013,21 +1013,21 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
                       textTransform: 'none',
                       letterSpacing: '.06em',
                       border: 0,
-                      background: '#C3F910',
+                      background: 'var(--accent, #C3F910)',
                       color: '#05070B',
                       fontWeight: 800,
                       borderRadius: 999,
                       cursor: 'pointer',
-                      boxShadow: '0 10px 30px rgba(195, 249, 16, 0.4)',
+                      boxShadow: '0 10px 30px rgba(var(--accent-rgb, 195, 249, 16), 0.4)',
                       transition: 'transform 160ms cubic-bezier(0.23, 1, 0.32, 1), opacity 160ms ease, box-shadow 160ms ease',
                     }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.transform = 'translateY(-2px) scale(1.02)';
-                      e.currentTarget.style.boxShadow = '0 14px 40px rgba(195, 249, 16, 0.55)';
+                      e.currentTarget.style.boxShadow = '0 14px 40px rgba(var(--accent-rgb, 195, 249, 16), 0.55)';
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.transform = 'translateY(0px) scale(1)';
-                      e.currentTarget.style.boxShadow = '0 10px 30px rgba(195, 249, 16, 0.4)';
+                      e.currentTarget.style.boxShadow = '0 10px 30px rgba(var(--accent-rgb, 195, 249, 16), 0.4)';
                     }}
                     onMouseDown={(e) => {
                       e.currentTarget.style.transform = 'scale(0.97)';
@@ -1076,8 +1076,8 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
                 top: 0,
                 bottom: 0,
                 width: `${(scrollProgress * 100).toFixed(1)}%`,
-                background: '#C3F910',
-                boxShadow: '0 0 12px #C3F910',
+                background: 'var(--accent, #C3F910)',
+                boxShadow: '0 0 12px var(--accent, #C3F910)',
                 transition: 'width 80ms linear',
               }}
             />
@@ -1107,7 +1107,7 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
                     border: 'none',
                     padding: '4px 8px',
                     cursor: 'pointer',
-                    color: active ? '#C3F910' : '#6B7280',
+                    color: active ? 'var(--accent, #C3F910)' : '#6B7280',
                     fontWeight: active ? 700 : 500,
                     display: 'flex',
                     alignItems: 'center',
@@ -1126,8 +1126,8 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
                       width: 5,
                       height: 5,
                       borderRadius: '50%',
-                      background: active ? '#C3F910' : 'rgba(255,255,255,0.2)',
-                      boxShadow: active ? '0 0 8px #C3F910' : 'none',
+                      background: active ? 'var(--accent, #C3F910)' : 'rgba(255,255,255,0.2)',
+                      boxShadow: active ? '0 0 8px var(--accent, #C3F910)' : 'none',
                     }}
                   />
                   <span>{stName}</span>

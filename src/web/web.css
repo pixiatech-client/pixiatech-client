@@ -3,6 +3,11 @@
 :root {
   --accent: #C3F910;
   --accent-rgb: 195, 249, 16;
+  --accent-hover: #b0e20e;
+  --accent-active: #9acc0c;
+  --accent-muted: rgba(195, 249, 16, 0.15);
+  --accent-border: rgba(195, 249, 16, 0.35);
+  --accent-glow: rgba(195, 249, 16, 0.45);
   font-family: var(--font);
 }
 

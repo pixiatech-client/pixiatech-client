@@ -55,6 +55,7 @@ export type ElementStyle = {
   target?: string;
   rel?: string;
   actionType?: string;
+  width?: string;
   offsetX?: number;
   offsetY?: number;
   hover?: ElementVisualState;
@@ -260,6 +261,11 @@ export function applyElementStyle(el: HTMLElement, style: ElementStyle, lang?: s
   if (style.textDecoration !== undefined) el.style.textDecoration = style.textDecoration;
   if (style.textAlign !== undefined) el.style.textAlign = style.textAlign;
   if (style.padding !== undefined) el.style.padding = style.padding;
+  if (style.width !== undefined) {
+    el.style.width = style.width;
+    el.style.maxWidth = style.width;
+    el.style.boxSizing = 'border-box';
+  }
 
   // Propriétés qui peuvent être surchargées par hover/active :
   // on les applique en inline SEULEMENT s'il n'y a pas de hover ni de active

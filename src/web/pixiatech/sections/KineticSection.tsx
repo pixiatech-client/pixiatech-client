@@ -11,12 +11,32 @@ interface KineticSectionProps {
   onOpenConsultation?: () => void;
 }
 
-const ACCENT_GREEN = '#C3F910';
-
 export const KineticSection: React.FC<KineticSectionProps> = ({ lang = 'FR' }) => {
   const [activePart, setActivePart] = useState<number>(0);
+  const [accentColor, setAccentColor] = useState<string>('#C3F910');
+  const accentRgbRef = useRef<string>('195,249,16');
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { pages, currentLang, isEditing } = useCms();
+
+  useEffect(() => {
+    const updateAccent = () => {
+      if (typeof window === 'undefined') return;
+      const color = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+      const rgb = getComputedStyle(document.documentElement).getPropertyValue('--accent-rgb').trim();
+      if (color) setAccentColor(color);
+      if (rgb) accentRgbRef.current = rgb;
+    };
+    updateAccent();
+    const onTheme = (e: Event) => {
+      const detail = (e as CustomEvent<{ accent: string; tokens?: Record<string, string> }>).detail;
+      if (detail?.accent) setAccentColor(detail.accent);
+      if (detail?.tokens?.['--accent-rgb']) {
+        accentRgbRef.current = detail.tokens['--accent-rgb'];
+      }
+    };
+    window.addEventListener('pixiatech-theme-change', onTheme);
+    return () => window.removeEventListener('pixiatech-theme-change', onTheme);
+  }, []);
   const cmsData = (pages['home']?.sections?.kinetic as Record<string, unknown>) || {};
   const cms = useSectionStyle(cmsData);
   const activeLang = isEditing ? currentLang : normalizeLang(lang);
@@ -168,7 +188,7 @@ export const KineticSection: React.FC<KineticSectionProps> = ({ lang = 'FR' }) =
           ctx.stroke();
 
           if (uNorm > 0.55) {
-            ctx.fillStyle = `rgba(195,249,16,${((uNorm - 0.55) * 0.95).toFixed(2)})`;
+            ctx.fillStyle = `rgba(${accentRgbRef.current},${((uNorm - 0.55) * 0.95).toFixed(2)})`;
             ctx.fillRect(topFaceX, topFaceY, faceSize, 1.5);
           }
 
@@ -253,7 +273,7 @@ export const KineticSection: React.FC<KineticSectionProps> = ({ lang = 'FR' }) =
     };
   }, []);
 
-  const d = (index: number) => (activePart === index ? ACCENT_GREEN : '#3E3E3C');
+  const d = (index: number) => (activePart === index ? accentColor : '#3E3E3C');
 
   return (
     <section
@@ -529,7 +549,7 @@ export const KineticSection: React.FC<KineticSectionProps> = ({ lang = 'FR' }) =
                       style={{
                         fontSize: 11,
                         letterSpacing: '.14em',
-                        color: isSelected ? ACCENT_GREEN : '#3A3A3A',
+                        color: isSelected ? accentColor : '#3A3A3A',
                         minWidth: 22,
                         fontFamily: 'var(--font-mono)',
                         fontWeight: 700,

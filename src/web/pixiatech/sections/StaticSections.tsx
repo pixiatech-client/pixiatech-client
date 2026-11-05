@@ -163,7 +163,7 @@ export const ProjectsSection: React.FC<SectionCommonProps> = ({
               transition: 'background .25s ease, color .25s ease',
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = '#C3F910';
+              e.currentTarget.style.background = 'var(--accent, #C3F910)';
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.background = '#F5F4F0';
@@ -290,7 +290,7 @@ export const ProjectsSection: React.FC<SectionCommonProps> = ({
                 style={{
                   fontSize: 10.5,
                   letterSpacing: '.18em',
-                  color: '#C3F910',
+                  color: 'var(--accent, #C3F910)',
                   marginTop: 6,
                   fontFamily: 'var(--font-mono)',
                   fontWeight: 700,
@@ -506,7 +506,7 @@ export const ProcessSection: React.FC<SectionCommonProps> = ({
               top: 0,
               bottom: 0,
               width: 2,
-              background: '#C3F910',
+              background: 'var(--accent, #C3F910)',
               transform: 'scaleY(0)',
               transformOrigin: 'top',
               willChange: 'transform',
@@ -530,7 +530,7 @@ export const ProcessSection: React.FC<SectionCommonProps> = ({
                 style={{
                   fontSize: 13,
                   letterSpacing: '.2em',
-                  color: '#C3F910',
+                  color: 'var(--accent, #C3F910)',
                   fontFamily: 'var(--font-mono)',
                   fontWeight: 800,
                 }}
@@ -720,7 +720,7 @@ export const ExperienceSection: React.FC<SectionCommonProps> = ({
                 fontWeight: 800,
                 textTransform: 'none',
                 letterSpacing: '.04em',
-                background: '#C3F910',
+                background: 'var(--accent, #C3F910)',
                 color: '#080808',
                 border: 0,
                 cursor: 'pointer',

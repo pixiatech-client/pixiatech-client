@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useCms } from '@/lib/site-web/cms-context';
-import { Edit3, Eye, Save, CheckCircle2, AlertTriangle, LogOut, Layers } from 'lucide-react';
+import { Edit3, Eye, Save, CheckCircle2, AlertTriangle, LogOut, Layers, Palette } from 'lucide-react';
+import { ThemePanel } from './ThemePanel';
 
 interface AdminTopBarProps {
   /** Ouvre la console développeur. Volontairement hors de la barre visible. */
@@ -12,6 +13,15 @@ interface AdminTopBarProps {
 
 export const AdminTopBar: React.FC<AdminTopBarProps> = ({ onOpenBackendModal, currentPageTitle }) => {
   const { isAdmin, isEditing, setIsEditing, saveCurrentPage, saveStatus, settings } = useCms();
+  const [showThemePanel, setShowThemePanel] = useState<boolean>(false);
+  const [, setAccentTick] = useState(0);
+
+  // Écouter les changements de thème en direct
+  useEffect(() => {
+    const onThemeChange = () => setAccentTick((t) => t + 1);
+    window.addEventListener('pixiatech-theme-change', onThemeChange);
+    return () => window.removeEventListener('pixiatech-theme-change', onThemeChange);
+  }, []);
 
   // Mesure la hauteur réelle de la barre et l'expose à l'ensemble de la page
   // via --admin-bar-h posée sur l'ancêtre commun (#pixia-web). Aucun 42px
@@ -49,12 +59,15 @@ export const AdminTopBar: React.FC<AdminTopBarProps> = ({ onOpenBackendModal, cu
       <div className="w-full max-w-[1920px] mx-auto flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 bg-[#171715] px-2.5 py-1 rounded border border-[#2B2B28]">
-            <span className="w-2 h-2 rounded-full bg-[#C3F910] animate-pulse" />
+            <span
+              className="w-2 h-2 rounded-full animate-pulse"
+              style={{ backgroundColor: 'var(--accent, #C3F910)' }}
+            />
             <span className="font-bold tracking-wider text-[#F5F4F0]">{settings.companyName} CMS</span>
             <span className="text-[#7A7A76] text-[10px] border-l border-[#333] pl-2">Site Web v3</span>
           </div>
           <div className="hidden sm:flex items-center gap-1.5 text-[#9A9A94] bg-[#121211] px-2 py-1 rounded">
-            <Layers className="w-3.5 h-3.5 text-[#C3F910]" />
+            <Layers className="w-3.5 h-3.5" style={{ color: 'var(--accent, #C3F910)' }} />
             <span>Page active :</span>
             <span className="text-white font-semibold">{currentPageTitle}</span>
           </div>
@@ -63,12 +76,38 @@ export const AdminTopBar: React.FC<AdminTopBarProps> = ({ onOpenBackendModal, cu
         <div className="flex items-center gap-2">
           <button
             type="button"
+            onClick={() => setShowThemePanel((v) => !v)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-bold transition-all cursor-pointer border"
+            style={{
+              backgroundColor: showThemePanel ? 'var(--accent-muted, rgba(195,249,16,0.2))' : '#1C1C1A',
+              borderColor: showThemePanel ? 'var(--accent, #C3F910)' : '#333330',
+              color: showThemePanel ? 'var(--accent, #C3F910)' : '#EDEBE6',
+              boxShadow: showThemePanel ? '0 0 12px var(--accent-glow, rgba(195,249,16,0.3))' : 'none',
+            }}
+            title="Personnaliser les couleurs et l'identité visuelle du site"
+          >
+            <Palette className="w-3.5 h-3.5" />
+            <span>THÈME</span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => setIsEditing(!isEditing)}
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded text-xs font-bold transition-all cursor-pointer border ${
+            className="flex items-center gap-2 px-3.5 py-1.5 rounded text-xs font-bold transition-all cursor-pointer border"
+            style={
               isEditing
-                ? 'bg-[#C3F910] text-[#080808] border-[#C3F910] shadow-[0_0_15px_rgba(195,249,16,0.35)]'
-                : 'bg-[#1C1C1A] text-[#EDEBE6] border-[#333330] hover:border-[#555]'
-            }`}
+                ? {
+                    backgroundColor: 'var(--accent, #C3F910)',
+                    borderColor: 'var(--accent, #C3F910)',
+                    color: '#080808',
+                    boxShadow: '0 0 15px var(--accent-glow, rgba(195,249,16,0.35))',
+                  }
+                : {
+                    backgroundColor: '#1C1C1A',
+                    borderColor: '#333330',
+                    color: '#EDEBE6',
+                  }
+            }
           >
             {isEditing ? (
               <>
@@ -91,17 +130,20 @@ export const AdminTopBar: React.FC<AdminTopBarProps> = ({ onOpenBackendModal, cu
                 type="button"
                 onClick={() => saveCurrentPage()}
                 disabled={saveStatus === 'saving'}
-                className="flex items-center gap-1.5 bg-[#171715] hover:bg-[#20201D] text-[#EDEBE6] hover:text-[#C3F910] border border-[#2B2B28] hover:border-[#C3F910]/50 px-3 py-1.5 rounded transition-all cursor-pointer"
+                className="flex items-center gap-1.5 bg-[#171715] hover:bg-[#20201D] text-[#EDEBE6] border border-[#2B2B28] px-3 py-1.5 rounded transition-all cursor-pointer"
               >
                 {saveStatus === 'saving' ? (
                   <>
-                    <span className="w-3 h-3 border-2 border-[#C3F910] border-t-transparent rounded-full animate-spin" />
+                    <span
+                      className="w-3 h-3 border-2 border-t-transparent rounded-full animate-spin"
+                      style={{ borderColor: 'var(--accent, #C3F910)' }}
+                    />
                     <span>Enregistrement...</span>
                   </>
                 ) : saveStatus === 'saved' ? (
                   <>
-                    <CheckCircle2 className="w-3.5 h-3.5 text-[#C3F910]" />
-                    <span className="text-[#C3F910] font-bold">✓ Enregistré</span>
+                    <CheckCircle2 className="w-3.5 h-3.5" style={{ color: 'var(--accent, #C3F910)' }} />
+                    <span className="font-bold" style={{ color: 'var(--accent, #C3F910)' }}>✓ Enregistré</span>
                   </>
                 ) : saveStatus === 'error' ? (
                   <>
@@ -140,6 +182,7 @@ export const AdminTopBar: React.FC<AdminTopBarProps> = ({ onOpenBackendModal, cu
         </div>
       </div>
     </aside>
+    {showThemePanel && <ThemePanel onClose={() => setShowThemePanel(false)} />}
     </>
   );
 };

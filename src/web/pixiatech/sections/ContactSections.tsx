@@ -25,7 +25,7 @@ const SHOW_PROJECT_TYPE_STEP = false;
    (studio sombre, texture merch, nuages 3D) ont été retirés. */
 
 /* ──────────────────────────────  Styles  ──────────────────────────────
-   Repris de web.css / pixiatech.css : encre #080808, accent lime #C3F910, mono
+   Repris de web.css / pixiatech.css : encre #080808, accent lime var(--accent, #C3F910), mono
    pour les surtitres, filets 1px, aucune couleur décorative.
 
    Les états :hover / :focus-visible / :active / :checked ne sont pas
@@ -62,12 +62,12 @@ const CONTACT_CSS = `
 .ct-input::placeholder, .ct-area::placeholder { color: var(--ct-placeholder); opacity: 1; }
 .ct-input:hover, .ct-area:hover { border-color: var(--ct-line-hover); }
 .ct-input:focus, .ct-area:focus {
-  border-color: #C3F910;
+  border-color: var(--accent, #C3F910);
   background: var(--ct-surface-focus);
-  box-shadow: 0 0 0 3px rgba(195, 249, 16, .2);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb, 195, 249, 16), .2);
 }
 .ct-input:focus-visible, .ct-area:focus-visible {
-  outline: 2px solid #C3F910;
+  outline: 2px solid var(--accent, #C3F910);
   outline-offset: 2px;
 }
 .ct-area { resize: vertical; min-height: 132px; }
@@ -86,15 +86,15 @@ const CONTACT_CSS = `
   border-bottom: 1px solid transparent;
   transition: color .2s ease, border-color .2s ease;
 }
-.ct-link:hover, .ct-link:active { color: #C3F910; border-bottom-color: #C3F910; }
+.ct-link:hover, .ct-link:active { color: var(--accent, #C3F910); border-bottom-color: var(--accent, #C3F910); }
 .ct-link:focus-visible {
-  outline: 2px solid #C3F910;
+  outline: 2px solid var(--accent, #C3F910);
   outline-offset: 2px;
 }
 
 /* Lignes de coordonnées : le libellé passe au lime au survol de la ligne. */
 .ct-row-label { transition: color .2s ease; }
-.ct-row:hover .ct-row-label { color: #C3F910; }
+.ct-row:hover .ct-row-label { color: var(--accent, #C3F910); }
 
 /* Titre de carte en Satoshi, comme tous les titres du site. */
 .ct-chip {
@@ -115,21 +115,21 @@ const CONTACT_CSS = `
     transform .12s ease;
 }
 .ct-chip:hover {
-  border-color: #C3F910;
-  background: rgba(195, 249, 16, .12);
+  border-color: var(--accent, #C3F910);
+  background: rgba(var(--accent-rgb, 195, 249, 16), .12);
   color: var(--ct-text);
 }
 /* Élément sélectionné ou activé : lime plein, texte quasi noir. */
 .ct-chip[aria-pressed='true'],
 .ct-chip:active {
-  background: #C3F910;
-  border-color: #C3F910;
+  background: var(--accent, #C3F910);
+  border-color: var(--accent, #C3F910);
   color: #0a0a0a;
 }
 .ct-chip[aria-pressed='true']:hover { background: #d4ff2e; }
 .ct-chip:active { transform: scale(.985); }
 .ct-chip:focus-visible {
-  outline: 2px solid #C3F910;
+  outline: 2px solid var(--accent, #C3F910);
   outline-offset: 2px;
 }
 .ct-chip-sub {
@@ -157,8 +157,8 @@ const CONTACT_CSS = `
   cursor: pointer;
   transition: background .2s ease, border-color .2s ease;
 }
-.ct-check:hover, .ct-check:active { border-color: #C3F910; background: rgba(195, 249, 16, .22); }
-.ct-check:checked { background: #C3F910; border-color: #C3F910; }
+.ct-check:hover, .ct-check:active { border-color: var(--accent, #C3F910); background: rgba(var(--accent-rgb, 195, 249, 16), .22); }
+.ct-check:checked { background: var(--accent, #C3F910); border-color: var(--accent, #C3F910); }
 .ct-check:checked::after {
   content: '';
   width: 8px;
@@ -168,7 +168,7 @@ const CONTACT_CSS = `
   transform: rotate(-45deg) translate(1px, -2px);
 }
 .ct-check:focus-visible {
-  outline: 2px solid #C3F910;
+  outline: 2px solid var(--accent, #C3F910);
   outline-offset: 2px;
 }
 
@@ -194,14 +194,14 @@ const CONTACT_CSS = `
     box-shadow .2s ease, transform .12s ease;
 }
 .ct-btn:hover, .ct-btn:active {
-  background: #C3F910;
-  border-color: #C3F910;
+  background: var(--accent, #C3F910);
+  border-color: var(--accent, #C3F910);
   color: #0a0a0a;
-  box-shadow: 0 0 0 3px rgba(195, 249, 16, .2);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb, 195, 249, 16), .2);
 }
 .ct-btn:active { transform: scale(.985); }
 .ct-btn:focus-visible {
-  outline: 2px solid #C3F910;
+  outline: 2px solid var(--accent, #C3F910);
   outline-offset: 3px;
 }
 .ct-btn:disabled {
@@ -213,17 +213,17 @@ const CONTACT_CSS = `
   box-shadow: none;
 }
 .ct-btn-solid {
-  background: #C3F910;
-  border-color: #C3F910;
+  background: var(--accent, #C3F910);
+  border-color: var(--accent, #C3F910);
   color: #0a0a0a;
 }
 .ct-btn-solid:hover {
   background: #d4ff2e;
   border-color: #d4ff2e;
-  box-shadow: 0 0 0 4px rgba(195, 249, 16, .26);
+  box-shadow: 0 0 0 4px rgba(var(--accent-rgb, 195, 249, 16), .26);
 }
 .ct-btn-solid:disabled {
-  background: rgba(195, 249, 16, .4);
+  background: rgba(var(--accent-rgb, 195, 249, 16), .4);
   border-color: transparent;
   color: #0a0a0a;
   box-shadow: none;
@@ -266,18 +266,18 @@ const CONTACT_CSS = `
     transform .3s ease;
 }
 .ct-faq-btn:hover .ct-faq-plus, .ct-faq-btn:active .ct-faq-plus {
-  background: #C3F910;
-  border-color: #C3F910;
+  background: var(--accent, #C3F910);
+  border-color: var(--accent, #C3F910);
   color: #0a0a0a;
 }
 .ct-faq-btn[aria-expanded='true'] .ct-faq-plus {
-  background: #C3F910;
-  border-color: #C3F910;
+  background: var(--accent, #C3F910);
+  border-color: var(--accent, #C3F910);
   color: #0a0a0a;
   transform: rotate(45deg);
 }
 .ct-faq-btn:focus-visible {
-  outline: 2px solid #C3F910;
+  outline: 2px solid var(--accent, #C3F910);
   outline-offset: 2px;
 }
 
@@ -313,7 +313,7 @@ const CONTACT_CSS = `
   z-index: -1;
   pointer-events: none;
   background-image:
-    radial-gradient(38% 42% at 14% 20%, var(--mesh-1, #C3F910) 0px, transparent 100%),
+    radial-gradient(38% 42% at 14% 20%, var(--mesh-1, var(--accent, #C3F910)) 0px, transparent 100%),
     radial-gradient(40% 38% at 86% 14%, var(--mesh-2, #8FE83A) 0px, transparent 100%),
     radial-gradient(42% 44% at 80% 86%, var(--mesh-3, #4AE07A) 0px, transparent 100%),
     radial-gradient(36% 40% at 18% 84%, var(--mesh-2, #8FE83A) 0px, transparent 100%);
@@ -324,7 +324,7 @@ const CONTACT_CSS = `
   animation-delay: calc(var(--i, 0) * -4.6s);
   will-change: transform;
 }
-.ct-mesh-1 { --mesh-1: #C3F910; --mesh-2: #8FE83A; --mesh-3: #4AE07A; }
+.ct-mesh-1 { --mesh-1: var(--accent, #C3F910); --mesh-2: #8FE83A; --mesh-3: #4AE07A; }
 .ct-mesh-2 { --mesh-1: #8FE83A; --mesh-2: #4AE07A; --mesh-3: #22C9A8; }
 .ct-mesh-3 { --mesh-1: #4AE07A; --mesh-2: #22C9A8; --mesh-3: #2BB6E0; }
 .ct-mesh-4 { --mesh-1: #22C9A8; --mesh-2: #2BB6E0; --mesh-3: #4A8CE8; }
@@ -357,7 +357,7 @@ const CONTACT_CSS = `
   z-index: 0;
   pointer-events: none;
   background-image:
-    radial-gradient(38% 42% at 14% 20%, var(--mesh-1, #C3F910) 0px, transparent 100%),
+    radial-gradient(38% 42% at 14% 20%, var(--mesh-1, var(--accent, #C3F910)) 0px, transparent 100%),
     radial-gradient(40% 38% at 86% 14%, var(--mesh-2, #8FE83A) 0px, transparent 100%),
     radial-gradient(42% 44% at 80% 86%, var(--mesh-3, #4AE07A) 0px, transparent 100%),
     radial-gradient(36% 40% at 18% 84%, var(--mesh-2, #8FE83A) 0px, transparent 100%);
@@ -602,14 +602,14 @@ const CONTACT_CSS = `
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #C3F910;
-  box-shadow: 0 0 6px #C3F910;
+  background: var(--accent, #C3F910);
+  box-shadow: 0 0 6px var(--accent, #C3F910);
   flex: none;
   animation: ct-dot-pulse 2.8s ease-in-out infinite;
 }
 @keyframes ct-dot-pulse {
-  0%, 100% { opacity: 1; box-shadow: 0 0 6px #C3F910; }
-  50% { opacity: .6; box-shadow: 0 0 10px #C3F910; }
+  0%, 100% { opacity: 1; box-shadow: 0 0 6px var(--accent, #C3F910); }
+  50% { opacity: .6; box-shadow: 0 0 10px var(--accent, #C3F910); }
 }
 .ct-os-bar-right {
   display: flex;
@@ -663,7 +663,7 @@ const CONTACT_CSS = `
 .ct-os-battery-fill {
   height: 100%;
   width: 72%;
-  background: #C3F910;
+  background: var(--accent, #C3F910);
   border-radius: 1px;
 }
 
@@ -693,8 +693,8 @@ const CONTACT_CSS = `
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #C3F910;
-  box-shadow: 0 0 8px #C3F910;
+  background: var(--accent, #C3F910);
+  box-shadow: 0 0 8px var(--accent, #C3F910);
   flex: none;
 }
 .ct-tablet-badge {
@@ -703,9 +703,9 @@ const CONTACT_CSS = `
   gap: 6px;
   font-size: 10px;
   letter-spacing: .14em;
-  color: #C3F910;
-  background: rgba(195, 249, 16, .1);
-  border: 1px solid rgba(195, 249, 16, .25);
+  color: var(--accent, #C3F910);
+  background: rgba(var(--accent-rgb, 195, 249, 16), .1);
+  border: 1px solid rgba(var(--accent-rgb, 195, 249, 16), .25);
   padding: 3px 9px;
 }
 .ct-device-screen .ct-form-shell {
@@ -754,7 +754,7 @@ const CONTACT_CSS = `
 .ct-reassurance-dash {
   width: 14px;
   height: 2px;
-  background: #C3F910;
+  background: var(--accent, #C3F910);
   flex: none;
 }
 
@@ -791,15 +791,15 @@ const CONTACT_CSS = `
   transition: border-color .2s ease, background .2s ease;
 }
 .ct-coord-card:hover {
-  border-color: rgba(195, 249, 16, .55);
-  background: rgba(195, 249, 16, .06);
+  border-color: rgba(var(--accent-rgb, 195, 249, 16), .55);
+  background: rgba(var(--accent-rgb, 195, 249, 16), .06);
 }
 .ct-coord-card:hover .ct-coord-label {
-  color: #C3F910;
+  color: var(--accent, #C3F910);
 }
 .ct-coord-card:hover .ct-coord-value,
 .ct-coord-card:hover .ct-coord-value a {
-  color: #C3F910;
+  color: var(--accent, #C3F910);
 }
 .ct-coord-label {
   font-family: var(--font);
@@ -817,7 +817,7 @@ const CONTACT_CSS = `
   transition: color .2s ease;
 }
 .ct-coord-value a { color: var(--ct-text); }
-.ct-coord-value a:hover { color: #C3F910; }
+.ct-coord-value a:hover { color: var(--accent, #C3F910); }
 .ct-coord-sub {
   display: block;
   font-size: 12px;
@@ -859,10 +859,10 @@ const TONE_DARK: Tone = {
   '--ct-line-strong': 'var(--dark-line, #1f1f1f)',
   '--ct-line-hover': '#3a3a3a',
   '--ct-surface': 'transparent',
-  '--ct-surface-focus': 'rgba(195, 249, 16, .06)',
+  '--ct-surface-focus': 'rgba(var(--accent-rgb, 195, 249, 16), .06)',
   '--ct-placeholder': '#7a7a76',
   '--ct-error': '#ffb3a4',
-  '--ct-accent': '#C3F910',
+  '--ct-accent': 'var(--accent, #C3F910)',
   /* Sur le noir le voile peut monter : le texte clair garde son contraste. */
   '--ct-mesh-op': '.24',
 };
@@ -876,7 +876,7 @@ const TONE_LIGHT: Tone = {
   '--ct-line-strong': 'var(--line-2, #e2e0da)',
   '--ct-line-hover': '#c9c7c2',
   '--ct-surface': 'var(--paper-2, #fff)',
-  '--ct-surface-focus': 'rgba(195, 249, 16, .05)',
+  '--ct-surface-focus': 'rgba(var(--accent-rgb, 195, 249, 16), .05)',
   '--ct-placeholder': 'var(--muted-2, #6b6a66)',
   '--ct-error': '#a3271b',
   '--ct-accent': 'var(--ink, #111110)',
@@ -887,7 +887,7 @@ const TONE_LIGHT: Tone = {
 /* Lime : hexadécimal littéral, jamais `var(--accent)`. Le CMS peut redéfinir
    `--accent` à l'exécution, ce qui rendait les chips sélectionnés illisibles
    (noir sur noir). Ici la couleur est fixe. */
-const ACCENT = '#C3F910';
+const ACCENT = 'var(--accent, #C3F910)';
 
 /* Le lime n'est lisible qu'en fond ou en texte sur fond noir (15:1). Sur le
    papier il tombe à 1.5:1 : sur section blanche, l'accent en texte devient
@@ -1152,7 +1152,7 @@ function ContactFormCard({
         style={{
           ...meshVars(0),
           border: `1px solid ${ACCENT}`,
-          background: 'rgba(195, 249, 16, .04)',
+          background: 'rgba(var(--accent-rgb, 195, 249, 16), .04)',
           padding: 'clamp(28px, 4vw, 48px)',
         }}
       >

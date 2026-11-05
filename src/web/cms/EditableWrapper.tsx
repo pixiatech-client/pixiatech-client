@@ -207,6 +207,8 @@ export const EditableWrapper: React.FC<EditableWrapperProps> = ({
             : 'none'
           : undefined,
         outlineOffset: isEditing ? '-2px' : undefined,
+        boxSizing: 'border-box',
+        isolation: isEditing ? 'isolate' : undefined,
       }}
     >
       {/* Contenu de la section — premier enfant direct, identique en public et

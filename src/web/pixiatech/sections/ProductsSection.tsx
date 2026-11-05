@@ -149,7 +149,7 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
               transition: 'background .25s ease, color .25s ease',
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = '#C3F910';
+              e.currentTarget.style.background = 'var(--accent, #C3F910)';
               e.currentTarget.style.color = '#080808';
             }}
             onMouseLeave={(e) => {

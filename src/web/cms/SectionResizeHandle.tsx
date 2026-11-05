@@ -13,7 +13,7 @@ interface SectionResizeHandleProps {
   onResizeEnd?: (finalHeight: number, finalPaddingBottom: number) => void;
 }
 
-const MIN_HEIGHT = 100;
+const MIN_HEIGHT = 0;
 const MAX_HEIGHT = 2000;
 
 export const SectionResizeHandle: React.FC<SectionResizeHandleProps> = ({

@@ -181,7 +181,7 @@ export const ManifestoSection: React.FC<ManifestoSectionProps> = ({ lang = 'FR' 
           }}
         >
           <span><span data-text-key="title">{t.line1}</span><br /></span>
-          <span><span data-text-key="titleLine2">{t.line2}</span> <span style={{ color: 'var(--accent, #C3F910)' }} data-text-key="titleLine3">{t.line3}</span></span>
+          <span><span data-text-key="titleLine2">{t.line2}</span> <span style={{ color: 'var(--accent, var(--accent, #C3F910))' }} data-text-key="titleLine3">{t.line3}</span></span>
         </h2>
 
         <p

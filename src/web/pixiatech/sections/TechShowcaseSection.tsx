@@ -286,7 +286,7 @@ export const TechShowcaseSection: React.FC<TechShowcaseSectionProps> = ({ lang =
                       letterSpacing: '.14em',
                       fontFamily: 'var(--font-mono)',
                       fontWeight: 700,
-                      color: isSelected ? '#C3F910' : '#7A7A76',
+                      color: isSelected ? 'var(--accent, #C3F910)' : '#7A7A76',
                       transition: 'color .4s ease',
                     }}
                   >

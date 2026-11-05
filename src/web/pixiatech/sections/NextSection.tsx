@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { translations, Language } from '../../pixiatech-translations';
 import { useCms } from '@/lib/site-web/cms-context';
 import { useSectionStyle } from '../../cms/useSectionStyle';
@@ -15,6 +15,9 @@ export const NextSection: React.FC<NextSectionProps> = ({ onOpenConsultation, la
   const cmsData = (pages['home']?.sections?.contact as Record<string, unknown>) || {};
   const cms = useSectionStyle(cmsData);
   const t = translations[lang].next;
+  const [hovCard1, setHovCard1] = useState(false);
+  const [hovCard2, setHovCard2] = useState(false);
+  const [hovBtn, setHovBtn] = useState(false);
 
   return (
     <section
@@ -44,10 +47,18 @@ export const NextSection: React.FC<NextSectionProps> = ({ onOpenConsultation, la
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <a
             href="#hero"
-            className="block border border-[#1f1f1f] p-8 transition-colors duration-300 hover:border-[#C3F910] group"
+            className="block border p-8 transition-colors duration-300"
+            style={{
+              borderColor: hovCard1 ? 'var(--accent, #C3F910)' : '#1f1f1f',
+            }}
+            onMouseEnter={() => setHovCard1(true)}
+            onMouseLeave={() => setHovCard1(false)}
           >
             <div className="text-[10.5px] tracking-[0.2em] text-[#7a7a76] mb-3.5 uppercase font-mono">{t.prevSeries}</div>
-            <div className="text-[clamp(22px,2.2vw,32px)] font-bold text-white group-hover:text-[#C3F910] transition-colors">
+            <div
+              className="text-[clamp(22px,2.2vw,32px)] font-bold transition-colors"
+              style={{ color: hovCard1 ? 'var(--accent, #C3F910)' : '#ffffff' }}
+            >
               WK Series
             </div>
             <div className="text-[13px] text-[#7a7a76] mt-1.5">{t.seriesDesc}</div>
@@ -55,10 +66,18 @@ export const NextSection: React.FC<NextSectionProps> = ({ onOpenConsultation, la
 
           <a
             href="#hero"
-            className="block border border-[#1f1f1f] p-8 text-left md:text-right transition-colors duration-300 hover:border-[#C3F910] group"
+            className="block border p-8 text-left md:text-right transition-colors duration-300"
+            style={{
+              borderColor: hovCard2 ? 'var(--accent, #C3F910)' : '#1f1f1f',
+            }}
+            onMouseEnter={() => setHovCard2(true)}
+            onMouseLeave={() => setHovCard2(false)}
           >
             <div className="text-[10.5px] tracking-[0.2em] text-[#7a7a76] mb-3.5 uppercase font-mono">{t.nextSeries}</div>
-            <div className="text-[clamp(22px,2.2vw,32px)] font-bold text-white group-hover:text-[#C3F910] transition-colors">
+            <div
+              className="text-[clamp(22px,2.2vw,32px)] font-bold transition-colors"
+              style={{ color: hovCard2 ? 'var(--accent, #C3F910)' : '#ffffff' }}
+            >
               PXT Ultra
             </div>
             <div className="text-[13px] text-[#7a7a76] mt-1.5">{t.seriesDesc}</div>
@@ -81,7 +100,14 @@ export const NextSection: React.FC<NextSectionProps> = ({ onOpenConsultation, la
               if (document.body.classList.contains('cms-editing')) return;
               window.location.href = '/web/contact';
             }}
-            className="btn btn-solid py-5 px-9 text-[14px] font-semibold text-black bg-white hover:bg-[#C3F910] hover:text-black transition-all cursor-pointer tracking-[0.06em]"
+            className="btn btn-solid py-5 px-9 text-[14px] font-semibold tracking-[0.06em] transition-all cursor-pointer"
+            style={{
+              backgroundColor: hovBtn ? 'var(--accent, #C3F910)' : '#ffffff',
+              color: '#000000',
+              borderColor: hovBtn ? 'var(--accent, #C3F910)' : '#ffffff',
+            }}
+            onMouseEnter={() => setHovBtn(true)}
+            onMouseLeave={() => setHovBtn(false)}
           >
             {t.ctaBtn}
           </button>

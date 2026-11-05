@@ -354,6 +354,122 @@ export const FloatingElementToolbar: React.FC<{
     [commit, style.fontSize]
   );
 
+  // Sauvegarde et restauration de sélection pour éviter de la perdre au clic sur la barre d'outils
+  const savedSelectionRef = useRef<{ range: Range; el: HTMLElement } | null>(null);
+
+  const saveSelection = useCallback(() => {
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) { savedSelectionRef.current = null; return; }
+    const range = sel.getRangeAt(0);
+    // Chercher l'élément contenteditable parent
+    let node: Node | null = range.commonAncestorContainer;
+    while (node && !(node instanceof HTMLElement && node.isContentEditable)) {
+      node = node.parentNode;
+    }
+    if (!node) { savedSelectionRef.current = null; return; }
+    savedSelectionRef.current = { range: range.cloneRange(), el: node as HTMLElement };
+  }, []);
+
+  const restoreSelection = useCallback(() => {
+    const saved = savedSelectionRef.current;
+    if (!saved) return;
+    const sel = window.getSelection();
+    if (!sel) return;
+    sel.removeAllRanges();
+    sel.addRange(saved.range);
+  }, []);
+
+  const bumpFontSizeOnSelection = useCallback(
+    (delta: number) => {
+      // 1. Vérifie la sélection active dans un contenteditable
+      const sel = window.getSelection();
+      const hasSelection = sel && sel.rangeCount > 0 && !sel.isCollapsed;
+
+      if (hasSelection && sel) {
+        const range = sel.getRangeAt(0);
+        let ceEl: HTMLElement | null = null;
+        let node: Node | null = range.commonAncestorContainer;
+        while (node && !(node instanceof HTMLElement && node.isContentEditable)) {
+          node = node.parentNode;
+        }
+        if (node instanceof HTMLElement && node.isContentEditable) ceEl = node;
+
+        if (ceEl) {
+          // Calculer la taille actuelle du premier nœud de texte de la sélection
+          const startNode = range.startContainer;
+          let currentFontSize = 16;
+          const parentEl = startNode instanceof Text ? startNode.parentElement : startNode as HTMLElement;
+          if (parentEl) {
+            const cs = window.getComputedStyle(parentEl);
+            currentFontSize = parseFloat(cs.fontSize) || 16;
+            // Si le parent est lui-même un span de taille, récupérer sa valeur
+            if (parentEl.style.fontSize) {
+              currentFontSize = parseFloat(parentEl.style.fontSize) || currentFontSize;
+            }
+          }
+          const newSize = Math.max(8, Math.min(160, currentFontSize + delta));
+
+          // Encapsuler la sélection dans un <span> avec la nouvelle taille
+          const span = document.createElement('span');
+          span.style.fontSize = `${newSize}px`;
+
+          try {
+            // Extraire le contenu sélectionné et l'encapsuler
+            const fragment = range.extractContents();
+            span.appendChild(fragment);
+            range.insertNode(span);
+
+            // Restaurer la sélection sur le span inséré
+            const newRange = document.createRange();
+            newRange.selectNodeContents(span);
+            sel.removeAllRanges();
+            sel.addRange(newRange);
+
+            // Déclencher un événement input pour que React mette à jour
+            ceEl.dispatchEvent(new Event('input', { bubbles: true }));
+          } catch {
+            // Fallback : comportement global
+            bumpFontSize(delta);
+          }
+          return;
+        }
+      }
+
+      // Pas de sélection partielle : comportement global existant
+      bumpFontSize(delta);
+    },
+    [bumpFontSize]
+  );
+
+  const handleWidthResizeStart = useCallback((e: React.MouseEvent, side: 'left' | 'right') => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!selected) return;
+
+    const startX = e.clientX;
+    const el = selected.el;
+    const startWidth = el.offsetWidth;
+
+    const handleMove = (moveEvent: MouseEvent) => {
+      const dx = moveEvent.clientX - startX;
+      const newWidth = Math.max(40, side === 'right' ? startWidth + dx : startWidth - dx);
+      el.style.width = `${newWidth}px`;
+      el.style.maxWidth = `${newWidth}px`;
+      el.style.boxSizing = 'border-box';
+    };
+
+    const handleUp = (upEvent: MouseEvent) => {
+      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('mouseup', handleUp);
+      const dx = upEvent.clientX - startX;
+      const finalWidth = Math.max(40, side === 'right' ? startWidth + dx : startWidth - dx);
+      commit({ width: `${finalWidth}px` });
+    };
+
+    window.addEventListener('mousemove', handleMove);
+    window.addEventListener('mouseup', handleUp);
+  }, [selected, commit]);
+
   const resetPosition = useCallback(() => {
     commit({ offsetX: 0, offsetY: 0 });
   }, [commit]);
@@ -466,6 +582,7 @@ export const FloatingElementToolbar: React.FC<{
   const off = 'text-[#B9B7B1] hover:text-[#C3F910] hover:bg-[#1a1a17]';
 
   return (
+    <>
     <div
       ref={toolbarRef}
       data-cms-ui
@@ -529,7 +646,8 @@ export const FloatingElementToolbar: React.FC<{
             <div className="flex items-center gap-0.5 px-1 border-l border-[#2b2b28]">
               <button
                 type="button"
-                onClick={() => bumpFontSize(-FONT_STEP)}
+                onMouseDown={(e) => { e.preventDefault(); saveSelection(); }}
+                onClick={() => bumpFontSizeOnSelection(-FONT_STEP)}
                 className={`${iconBtn} ${off}`}
                 title="Réduire la taille (A−)"
               >
@@ -540,7 +658,8 @@ export const FloatingElementToolbar: React.FC<{
               </span>
               <button
                 type="button"
-                onClick={() => bumpFontSize(FONT_STEP)}
+                onMouseDown={(e) => { e.preventDefault(); saveSelection(); }}
+                onClick={() => bumpFontSizeOnSelection(FONT_STEP)}
                 className={`${iconBtn} ${off}`}
                 title="Agrandir la taille (A+)"
               >
@@ -1064,5 +1183,61 @@ export const FloatingElementToolbar: React.FC<{
         </div>
       )}
     </div>
+
+      {/* Poignées de redimensionnement horizontal — affichées sur les bords gauche/droit de l'élément texte sélectionné */}
+      {selected && selected.kind === 'text' && selected.el.isConnected && coords && (() => {
+        const rect = selected.el.getBoundingClientRect();
+        return (
+          <>
+            {/* Poignée gauche */}
+            <div
+              data-cms-ui
+              style={{
+                position: 'fixed',
+                top: rect.top + rect.height / 2 - 16,
+                left: rect.left - 8,
+                width: 16,
+                height: 32,
+                zIndex: 360,
+                cursor: 'ew-resize',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: 4,
+                background: '#0e0e0d',
+                border: '1px solid #C3F910',
+              }}
+              onMouseDown={(e) => handleWidthResizeStart(e, 'left')}
+              title="Redimensionner horizontalement (gauche)"
+            >
+              <svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M2 1L2 13M6 1L6 13" stroke="#C3F910" strokeWidth="1.5" strokeLinecap="round"/></svg>
+            </div>
+            {/* Poignée droite */}
+            <div
+              data-cms-ui
+              style={{
+                position: 'fixed',
+                top: rect.top + rect.height / 2 - 16,
+                left: rect.right - 8,
+                width: 16,
+                height: 32,
+                zIndex: 360,
+                cursor: 'ew-resize',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: 4,
+                background: '#0e0e0d',
+                border: '1px solid #C3F910',
+              }}
+              onMouseDown={(e) => handleWidthResizeStart(e, 'right')}
+              title="Redimensionner horizontalement (droite)"
+            >
+              <svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M2 1L2 13M6 1L6 13" stroke="#C3F910" strokeWidth="1.5" strokeLinecap="round"/></svg>
+            </div>
+          </>
+        );
+      })()}
+    </>
   );
 };

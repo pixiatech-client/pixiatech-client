@@ -128,7 +128,7 @@ export function FeaturedSection() {
                 const on = Math.sin(i * 3 + j * 5 + t * 2 + c * 2) > 0.1;
                 if (!on) continue;
                 const s = Math.min(cellW / pCols, cellH / pRows) * 0.55;
-                ctx.fillStyle = i % 3 === 0 ? `rgba(195,249,16,${alpha + 0.25})` : `rgba(245,244,240,${alpha + 0.3})`;
+                ctx.fillStyle = i % 3 === 0 ? `rgba(var(--accent-rgb, 195, 249, 16),${alpha + 0.25})` : `rgba(245,244,240,${alpha + 0.3})`;
                 ctx.fillRect(px - s / 2, py - s / 2, s, s);
               }
             }
@@ -222,13 +222,13 @@ export function FeaturedSection() {
               <text x="52" y="116" fill="#7A7A76" fontSize="9" letterSpacing="1.5">
                 02
               </text>
-              <rect x="226" y="80" width="68" height="42" stroke="#C3F910" />
+              <rect x="226" y="80" width="68" height="42" stroke="var(--accent, #C3F910)" />
               <line x1="260" y1="122" x2="260" y2="166" stroke="#3a3a3a" strokeDasharray="3 3" />
               <text x="275" y="144" fill="#7A7A76" fontSize="9" letterSpacing="1.5">
                 248.5 MM
               </text>
-              <rect x="232" y="86" width="56" height="30" fill="rgba(195,249,16,.12)" />
-              <text x="238" y="106" fill="#C3F910" fontSize="8" letterSpacing="1.5">
+              <rect x="232" y="86" width="56" height="30" fill="rgba(var(--accent-rgb, 195, 249, 16),.12)" />
+              <text x="238" y="106" fill="var(--accent, #C3F910)" fontSize="8" letterSpacing="1.5">
                 03
               </text>
               <circle cx="260" cy="56" r="5" stroke="#3a3a3a" />
@@ -260,7 +260,7 @@ export function FeaturedSection() {
                     cursor: 'default',
                   }}
                 >
-                  <span style={{ fontSize: 11, letterSpacing: '.14em', color: s.active ? '#C3F910' : '#3A3A3A', minWidth: 22 }}>
+                  <span style={{ fontSize: 11, letterSpacing: '.14em', color: s.active ? 'var(--accent, #C3F910)' : '#3A3A3A', minWidth: 22 }}>
                     {s.n}
                   </span>
                   <span
