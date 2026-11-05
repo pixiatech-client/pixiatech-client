@@ -109,18 +109,12 @@ export function applyThemeTokens(hex: string): void {
       color: ${color} !important;
     }
 
-    /* ── Éléments avec classes Tailwind d'accentuation sur tout le site ── */
-    .text-\\[\\#C3F910\\],
-    [class*="text-[#C3F910]"] {
-      color: ${color} !important;
-    }
-    .bg-\\[\\#C3F910\\],
-    [class*="bg-[#C3F910]"] {
-      background-color: ${color} !important;
-    }
-    .border-\\[\\#C3F910\\],
-    [class*="border-[#C3F910]"] {
-      border-color: ${color} !important;
+    /* ── Isolation stricte des barres et outils d'édition CMS ── */
+    #admin-top-bar,
+    #cms-section-bar,
+    #floating-element-toolbar,
+    [data-cms-ui] {
+      /* Les barres d'outils CMS conservent leurs transparences et badges fonctionnels */
     }
 
     /* ── Cartes Marchés (Image 1 : EXPLORER COMMERCE, puces, etc.) ── */

@@ -609,7 +609,12 @@ export const FloatingElementToolbar: React.FC<{
         </div>
         {/* Badge indicateur de type & section */}
         <span
-          className="px-2 py-1 rounded-md bg-[#C3F910]/15 border border-[#C3F910]/30 text-[#C3F910] font-mono text-[10px] font-bold tracking-wider uppercase whitespace-nowrap"
+          style={{
+            backgroundColor: 'rgba(195, 249, 16, 0.12)',
+            color: '#C3F910',
+            borderColor: 'rgba(195, 249, 16, 0.35)',
+          }}
+          className="px-2 py-1 rounded-md border font-mono text-[10px] font-bold tracking-wider uppercase whitespace-nowrap"
           title={`${selected.sectionKey} → ${selected.elementKey}`}
         >
           {isMedia
@@ -732,11 +737,12 @@ export const FloatingElementToolbar: React.FC<{
           <button
             type="button"
             onClick={() => setShowLinkEditor((v) => !v)}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer ${
-              showLinkEditor || realCurrentUrl
-                ? 'bg-[#C3F910]/20 text-[#C3F910] border border-[#C3F910]/40'
-                : off
-            }`}
+            style={{
+              backgroundColor: showLinkEditor || realCurrentUrl ? 'rgba(195, 249, 16, 0.16)' : 'transparent',
+              color: showLinkEditor || realCurrentUrl ? '#C3F910' : '#B9B7B1',
+              borderColor: showLinkEditor || realCurrentUrl ? 'rgba(195, 249, 16, 0.35)' : 'transparent',
+            }}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer border"
             title="Éditer le lien de redirection de cet élément (URL / Page interne)"
           >
             <LinkIcon className="w-3.5 h-3.5" />

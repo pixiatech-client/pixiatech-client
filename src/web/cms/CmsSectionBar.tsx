@@ -227,10 +227,14 @@ export const CmsSectionBar: React.FC = () => {
                 toggleSectionVisibility(activeKey);
                 void saveCurrentPage();
               }}
+              style={{
+                backgroundColor: isVisible ? 'transparent' : 'rgba(255, 68, 68, 0.15)',
+                color: isVisible ? '#C3F910' : '#ff6666',
+              }}
               className={`flex items-center gap-1.5 px-2 py-0.5 rounded border transition-colors cursor-pointer ${
                 isVisible
-                  ? 'text-[#C3F910] border-[#C3F910]/40 hover:bg-[#C3F910]/15'
-                  : 'text-[#ff6666] bg-[#ff4444]/15 border-[#ff4444]/50 hover:bg-[#ff4444]/25'
+                  ? 'border-[#C3F910]/40 hover:bg-[#C3F910]/15'
+                  : 'border-[#ff4444]/50 hover:bg-[#ff4444]/25'
               }`}
               title={isVisible ? 'Masquer cette section sur le site public' : 'Réafficher cette section'}
             >
