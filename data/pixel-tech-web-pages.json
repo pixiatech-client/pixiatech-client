@@ -4,7 +4,7 @@
       "id": "home",
       "name": "home",
       "slug": "/home",
-      "updatedAt": "2026-11-05T16:26:03.802Z",
+      "updatedAt": "2026-11-05T19:40:36.048Z",
       "sections": {
         "pixia-web": {
           "text_1790257213042": "sdsdsdsdÉDITEUR DIRECT : CLIQUEZ SUR UN TEXTE OU UNE IMAGE",
@@ -151,26 +151,26 @@
             },
             "slider2.title": {
               "fr": {
-                "value": "Location d’écrans LED ",
+                "value": "LOCATION D’ÉCRANS LED",
                 "status": "source",
-                "updatedAt": "2026-10-13T17:54:22.473Z",
-                "sourceText": "Location d’écrans LED "
+                "updatedAt": "2026-11-05T19:15:36.563Z",
+                "sourceText": "LOCATION D’ÉCRANS LED"
               }
             },
             "slider3.description": {
               "fr": {
-                "value": "Valorisez vos vitrines avec des caissons lumineux LED fixes ou portables, conçus sur mesure. Leur animation s’adapte à chaque image pour un rendu unique et dynamique.",
+                "value": "Des caissons lumineux LED sur mesure pour sublimer vos vitrines et dynamiser vos visuels.",
                 "status": "source",
-                "updatedAt": "2026-10-17T11:33:47.692Z",
-                "sourceText": "Valorisez vos vitrines avec des caissons lumineux LED fixes ou portables, conçus sur mesure. Leur animation s’adapte à chaque image pour un rendu unique et dynamique."
+                "updatedAt": "2026-11-05T19:11:32.318Z",
+                "sourceText": "Des caissons lumineux LED sur mesure pour sublimer vos vitrines et dynamiser vos visuels."
               }
             },
             "slider2.description": {
               "fr": {
-                "value": "Pour vos salons, conférences et événements privés, choisissez un écran LED intérieur ou extérieur adapté à votre espace et à votre budget. Plat, incurvé ou à 360°, votre écran vous attend à Paris et en Île-de-France.",
+                "value": "Louez votre écran LED, plat ou incurvé, pour vos événements à Paris et en Île-de-France.",
                 "status": "source",
-                "updatedAt": "2026-11-01T18:38:22.557Z",
-                "sourceText": "Pour vos salons, conférences et événements privés, choisissez un écran LED intérieur ou extérieur adapté à votre espace et à votre budget. Plat, incurvé ou à 360°, votre écran vous attend à Paris et en Île-de-France."
+                "updatedAt": "2026-11-05T19:11:15.289Z",
+                "sourceText": "Louez votre écran LED, plat ou incurvé, pour vos événements à Paris et en Île-de-France."
               }
             },
             "slider1.description": {
@@ -183,34 +183,34 @@
             },
             "slider2.tagline": {
               "fr": {
-                "value": "",
+                "value": "SUR MESURE . ",
                 "status": "source",
-                "updatedAt": "2026-11-05T15:29:17.057Z",
-                "sourceText": ""
+                "updatedAt": "2026-11-05T19:15:57.597Z",
+                "sourceText": "SUR MESURE . "
               }
             },
             "slider1.title": {
               "fr": {
-                "value": "Écrans LED sur mesure.  ",
+                "value": "VENTE D’ÉCRANS LED",
                 "status": "source",
-                "updatedAt": "2026-11-01T18:33:30.030Z",
-                "sourceText": "Écrans LED sur mesure.  "
+                "updatedAt": "2026-11-05T19:17:47.673Z",
+                "sourceText": "VENTE D’ÉCRANS LED"
               }
             },
             "slider1.tagline": {
               "fr": {
-                "value": "Donnez vie à vos espaces .",
+                "value": "SUR MESURE .",
                 "status": "source",
-                "updatedAt": "2026-10-13T22:49:37.447Z",
-                "sourceText": "Donnez vie à vos espaces ."
+                "updatedAt": "2026-11-05T19:16:05.607Z",
+                "sourceText": "SUR MESURE ."
               }
             },
             "slider3.tagline": {
               "fr": {
-                "value": "Donnez une nouvelle dimension à vos visuels.",
+                "value": "SUR MESURE .",
                 "status": "source",
-                "updatedAt": "2026-11-01T18:40:59.347Z",
-                "sourceText": "Donnez une nouvelle dimension à vos visuels."
+                "updatedAt": "2026-11-05T19:16:10.750Z",
+                "sourceText": "SUR MESURE ."
               }
             },
             "slider1.badge": {
@@ -292,8 +292,8 @@
               }
             }
           },
-          "minHeight": 0,
-          "paddingBottom": 0,
+          "minHeight": 773,
+          "paddingBottom": 55,
           "slideImage1": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2Fslider01_oayl2.jpg?alt=media",
           "_elements": {
             "div:2/section:1/div:7/div:1/div:3/span:2": {
@@ -303,49 +303,18 @@
               "text": "PARIS · MONDE 11"
             },
             "tagline": {
-              "fontSize": "36px",
+              "fontSize": "44px",
               "offsetX": 0,
               "offsetY": 8,
               "backgroundColor": "transparent",
               "color": "#ffffff",
-              "fontWeight": "700"
+              "fontWeight": "700",
+              "width": "276px"
             },
             "description": {
               "fontSize": "16px",
               "color": "#ffffff",
               "backgroundColor": "transparent",
-              "offsetX": 0,
-              "offsetY": 0
-            },
-            "secondaryCta": {
-              "href": "/quote",
-              "target": "_self",
-              "rel": "",
-              "borderRadius": "9999px",
-              "borderWidth": "1px",
-              "borderStyle": "solid",
-              "borderColor": "var(--accent)",
-              "offsetX": 0,
-              "offsetY": 0
-            },
-            "title": {
-              "fontSize": "60px",
-              "color": "#e6e6e6",
-              "backgroundColor": "transparent",
-              "offsetX": -4,
-              "offsetY": -12
-            },
-            "primaryCta": {
-              "borderRadius": "9999px",
-              "color": "#ffffff",
-              "backgroundColor": "#000000",
-              "hover": {
-                "color": "#b9f005",
-                "borderRadius": "12px"
-              },
-              "active": {
-                "color": "#eb0f0f"
-              },
               "offsetX": 0,
               "offsetY": 0
             },
@@ -370,6 +339,11 @@
             "slideImage3": {
               "src": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2Fm_gastore-sportif-aux-paysages-lumineux_p479i.webp?alt=media",
               "mediaType": "image"
+            },
+            "title": {
+              "fontSize": "62px",
+              "width": "627px",
+              "backgroundColor": "#2f1d1d"
             }
           },
           "slideImage2": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2Fecran_de_location_pgjf5.webp?alt=media",
@@ -385,14 +359,14 @@
             "visible": true
           },
           "slider3.title": "Caissons lumineux dynamiques.",
-          "slider2.title": "Location d’écrans LED ",
-          "slider3.description": "Valorisez vos vitrines avec des caissons lumineux LED fixes ou portables, conçus sur mesure. Leur animation s’adapte à chaque image pour un rendu unique et dynamique.",
-          "slider2.description": "Pour vos salons, conférences et événements privés, choisissez un écran LED intérieur ou extérieur adapté à votre espace et à votre budget. Plat, incurvé ou à 360°, votre écran vous attend à Paris et en Île-de-France.",
+          "slider2.title": "LOCATION D’ÉCRANS LED",
+          "slider3.description": "Des caissons lumineux LED sur mesure pour sublimer vos vitrines et dynamiser vos visuels.",
+          "slider2.description": "Louez votre écran LED, plat ou incurvé, pour vos événements à Paris et en Île-de-France.",
           "slider1.description": "Choisissez un écran LED intérieur ou extérieur adapté à votre espace et à votre budget",
-          "slider2.tagline": "",
-          "slider1.title": "Écrans LED sur mesure.  ",
-          "slider1.tagline": "Donnez vie à vos espaces .",
-          "slider3.tagline": "Donnez une nouvelle dimension à vos visuels.",
+          "slider2.tagline": "SUR MESURE . ",
+          "slider1.title": "VENTE D’ÉCRANS LED",
+          "slider1.tagline": "SUR MESURE .",
+          "slider3.tagline": "SUR MESURE .",
           "slider1.badge": "PIXIATECH / TECHNOLOGIE VISUELLE",
           "slider2.badge": "PIXIATECH / TECHNOLOGIE VISUELLE",
           "slider3.badge": "PIXIATECH / TECHNOLOGIE VISUELLE ",
@@ -465,19 +439,20 @@
             "title": {
               "color": "#e9683d",
               "fontSize": "50px",
-              "offsetX": 0,
-              "offsetY": -80
+              "offsetX": -268,
+              "offsetY": -328
             },
             "badge": {
-              "offsetX": 0,
-              "offsetY": 60
+              "offsetX": -4,
+              "offsetY": 0,
+              "fontSize": "14px"
             },
             "subtitle": {
               "fontSize": "20px",
               "fontWeight": "400",
               "width": "1171px",
-              "offsetX": 0,
-              "offsetY": -4
+              "offsetX": 4,
+              "offsetY": 0
             }
           },
           "paddingTop": 0,
@@ -719,6 +694,10 @@
             },
             "ch4TitleLine2": {
               "fontSize": "48px"
+            },
+            "ch2Desc": {
+              "color": "#ffffff",
+              "backgroundColor": "transparent"
             }
           },
           "_i18n": {
@@ -1224,10 +1203,10 @@
             },
             "ch1Desc": {
               "fr": {
-                "value": "Visible à des kilomètres dans la nuit urbaine, la technologie d’affichage monumentale PIXIATECH rayonne avec une luminosité crête de 10,000 nits.",
+                "value": "Visible à des kilomètres dans la nuit urbaine, une luminosité crête de 10,000 nits.",
                 "status": "source",
-                "updatedAt": "2026-11-01T12:16:13.693Z",
-                "sourceText": "Visible à des kilomètres dans la nuit urbaine, la technologie d’affichage monumentale PIXIATECH rayonne avec une luminosité crête de 10,000 nits."
+                "updatedAt": "2026-11-05T19:08:14.233Z",
+                "sourceText": "Visible à des kilomètres dans la nuit urbaine, une luminosité crête de 10,000 nits."
               },
               "en": {
                 "value": "Visible for miles in the urban night, PIXIATECH’s monumental display technology shines with a peak brightness of 10,000 nits.",
@@ -1242,6 +1221,12 @@
                 "status": "manual",
                 "updatedAt": "2026-11-01T12:39:18.308Z",
                 "sourceText": "SMD, GOB, COB et MicroLED : PIXIATECH maîtrise les principales architectures d’affichage LED, ainsi que les solutions transparentes, holographiques et blanc froid. Chaque technologie est sélectionnée pour garantir une image précise, des couleurs fidèles et une luminosité adaptée à chaque environnement."
+              },
+              "fr": {
+                "value": "PIXIATECH maîtrise les technologies LED pour un affichage précis, lumineux et adapté à chaque projet.",
+                "status": "source",
+                "updatedAt": "2026-11-05T19:10:07.867Z",
+                "sourceText": "PIXIATECH maîtrise les technologies LED pour un affichage précis, lumineux et adapté à chaque projet."
               }
             },
             "ch4Eyebrow": {
@@ -1377,8 +1362,8 @@
           "ch1Eyebrow": "01 / LA MÉTROPOLE",
           "ch1TitleLine1": "Écrans LED",
           "ch1TitleLine2": "à l’échelle de la ville.",
-          "ch1Desc": "Visible à des kilomètres dans la nuit urbaine, la technologie d’affichage monumentale PIXIATECH rayonne avec une luminosité crête de 10,000 nits.",
-          "ch4Desc": "SMD, GOB, COB et MicroLED : PIXIATECH maîtrise les principales architectures d’affichage LED, ainsi que les solutions transparentes, holographiques et blanc froid. Chaque technologie est sélectionnée pour garantir une image précise, des couleurs fidèles et une luminosité adaptée à chaque environnement.",
+          "ch1Desc": "Visible à des kilomètres dans la nuit urbaine, une luminosité crête de 10,000 nits.",
+          "ch4Desc": "PIXIATECH maîtrise les technologies LED pour un affichage précis, lumineux et adapté à chaque projet.",
           "ch4Eyebrow": "04 / PLONGÉE DANS LE PIXEL",
           "ch4TitleLine1": "Au cœur de la technologie LED",
           "showCodeLeds": true,
@@ -1463,18 +1448,18 @@
           "_i18n": {
             "tech_solidskin_desc": {
               "fr": {
-                "value": "Des micro-LED pilotées par une matrice active composent l’image sur une dalle transparente. Chaque pixel est contrôlé électroniquement pour moduler sa luminosité, tandis que la dalle laisse apparaître les objets et l’espace situés derrière elle.",
+                "value": "Micro-LED pilotées individuellement sur une dalle transparente, alliant affichage et visibilité.",
                 "status": "source",
-                "updatedAt": "2026-11-01T19:21:19.534Z",
-                "sourceText": "Des micro-LED pilotées par une matrice active composent l’image sur une dalle transparente. Chaque pixel est contrôlé électroniquement pour moduler sa luminosité, tandis que la dalle laisse apparaître les objets et l’espace situés derrière elle."
+                "updatedAt": "2026-11-05T18:59:14.453Z",
+                "sourceText": "Micro-LED pilotées individuellement sur une dalle transparente, alliant affichage et visibilité."
               }
             },
             "tech_coldled_desc": {
               "fr": {
-                "value": "Chaque pixel associe des LED rouges, vertes et bleues dont l’intensité est pilotée pour composer l’image. Les modules s’assemblent pour former l’écran, tandis que l’espacement des pixels détermine la finesse des détails à une distance donnée",
+                "value": "Chaque pixel RGB compose l’image, tandis que le pitch détermine la finesse d’affichage.",
                 "status": "source",
-                "updatedAt": "2026-11-01T19:19:42.620Z",
-                "sourceText": "Chaque pixel associe des LED rouges, vertes et bleues dont l’intensité est pilotée pour composer l’image. Les modules s’assemblent pour former l’écran, tandis que l’espacement des pixels détermine la finesse des détails à une distance donnée"
+                "updatedAt": "2026-11-05T18:58:46.035Z",
+                "sourceText": "Chaque pixel RGB compose l’image, tandis que le pitch détermine la finesse d’affichage."
               }
             },
             "tech_coldled_name": {
@@ -1511,26 +1496,26 @@
             },
             "tech_cbsf_desc": {
               "fr": {
-                "value": "De minuscules LED forment une image sur un support presque invisible. Leur espacement laisse passer la lumière et permet de voir à travers l’écran. Les contenus semblent ainsi flotter devant le décor, sans masquer entièrement ce qui se trouve derrière.",
+                "value": "Des LED espacées créent une image lumineuse tout en préservant la transparence.",
                 "status": "source",
-                "updatedAt": "2026-11-01T19:26:43.871Z",
-                "sourceText": "De minuscules LED forment une image sur un support presque invisible. Leur espacement laisse passer la lumière et permet de voir à travers l’écran. Les contenus semblent ainsi flotter devant le décor, sans masquer entièrement ce qui se trouve derrière."
+                "updatedAt": "2026-11-05T19:00:24.775Z",
+                "sourceText": "Des LED espacées créent une image lumineuse tout en préservant la transparence."
               }
             },
             "tech_armorled_desc": {
               "fr": {
-                "value": "Des diodes organiques émettent leur propre lumière, sans rétroéclairage. Chaque pixel s’allume ou s’éteint individuellement pour former l’image et ses contrastes. La dalle transparente laisse voir les objets placés derrière l’écran.",
+                "value": "Des pixels OLED autoémissifs offrent une image contrastée sur une dalle transparente.",
                 "status": "source",
-                "updatedAt": "2026-11-01T19:21:48.743Z",
-                "sourceText": "Des diodes organiques émettent leur propre lumière, sans rétroéclairage. Chaque pixel s’allume ou s’éteint individuellement pour former l’image et ses contrastes. La dalle transparente laisse voir les objets placés derrière l’écran."
+                "updatedAt": "2026-11-05T18:59:43.528Z",
+                "sourceText": "Des pixels OLED autoémissifs offrent une image contrastée sur une dalle transparente."
               }
             },
             "tech_infinite_desc": {
               "fr": {
-                "value": "Des panneaux LED placés derrière un visuel imprimé font varier la lumière pour en animer certaines zones. Selon la version, ils utilisent le blanc ou la couleur pour créer des effets de mouvement. L’image reste fixe : c’est la lumière qui lui donne vie",
+                "value": "Un éclairage LED anime un visuel imprimé grâce à des effets lumineux dynamiques.",
                 "status": "source",
-                "updatedAt": "2026-11-01T19:28:55.217Z",
-                "sourceText": "Des panneaux LED placés derrière un visuel imprimé font varier la lumière pour en animer certaines zones. Selon la version, ils utilisent le blanc ou la couleur pour créer des effets de mouvement. L’image reste fixe : c’est la lumière qui lui donne vie"
+                "updatedAt": "2026-11-05T19:00:47.489Z",
+                "sourceText": "Un éclairage LED anime un visuel imprimé grâce à des effets lumineux dynamiques."
               }
             },
             "tech_infinite_name": {
@@ -1558,15 +1543,15 @@
               }
             }
           },
-          "tech_solidskin_desc": "Des micro-LED pilotées par une matrice active composent l’image sur une dalle transparente. Chaque pixel est contrôlé électroniquement pour moduler sa luminosité, tandis que la dalle laisse apparaître les objets et l’espace situés derrière elle.",
-          "tech_coldled_desc": "Chaque pixel associe des LED rouges, vertes et bleues dont l’intensité est pilotée pour composer l’image. Les modules s’assemblent pour former l’écran, tandis que l’espacement des pixels détermine la finesse des détails à une distance donnée",
+          "tech_solidskin_desc": "Micro-LED pilotées individuellement sur une dalle transparente, alliant affichage et visibilité.",
+          "tech_coldled_desc": "Chaque pixel RGB compose l’image, tandis que le pitch détermine la finesse d’affichage.",
           "tech_coldled_name": "LED modulaire",
           "tech_armorled_name": "OLED transparente",
           "tech_solidskin_name": "MicroLED transparente",
           "tech_cbsf_name": "Écran holographique transparent",
-          "tech_cbsf_desc": "De minuscules LED forment une image sur un support presque invisible. Leur espacement laisse passer la lumière et permet de voir à travers l’écran. Les contenus semblent ainsi flotter devant le décor, sans masquer entièrement ce qui se trouve derrière.",
-          "tech_armorled_desc": "Des diodes organiques émettent leur propre lumière, sans rétroéclairage. Chaque pixel s’allume ou s’éteint individuellement pour former l’image et ses contrastes. La dalle transparente laisse voir les objets placés derrière l’écran.",
-          "tech_infinite_desc": "Des panneaux LED placés derrière un visuel imprimé font varier la lumière pour en animer certaines zones. Selon la version, ils utilisent le blanc ou la couleur pour créer des effets de mouvement. L’image reste fixe : c’est la lumière qui lui donne vie",
+          "tech_cbsf_desc": "Des LED espacées créent une image lumineuse tout en préservant la transparence.",
+          "tech_armorled_desc": "Des pixels OLED autoémissifs offrent une image contrastée sur une dalle transparente.",
+          "tech_infinite_desc": "Un éclairage LED anime un visuel imprimé grâce à des effets lumineux dynamiques.",
           "tech_infinite_name": "Rétroéclairage LED dynamique",
           "tech_solidskin_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FMICRO_LED_b10x0.webp?alt=media",
           "tech_coldled_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FECRAN_LED_1d7qw.webp?alt=media",
@@ -2026,5 +2011,5 @@
       }
     }
   },
-  "updatedAt": "2026-11-05T16:26:03.907Z"
+  "updatedAt": "2026-11-05T19:40:37.097Z"
 }

@@ -208,7 +208,7 @@ export const CmsSectionBar: React.FC = () => {
       className="fixed left-0 right-0 z-[279] bg-[#0A0A09]/95 backdrop-blur-md border-b border-[#262624] text-[#F5F4F0] px-3 py-1.5 select-none shadow-lg"
     >
       <div className="mx-auto max-w-[1920px] flex items-center gap-2 flex-wrap font-mono text-[11px]">
-        <span className="flex items-center gap-1.5 text-[#C3F910] font-bold tracking-wider">
+        <span className="flex items-center gap-1.5 font-bold tracking-wider" style={{ color: 'var(--accent, #C3F910)' }}>
           <Layers className="w-3.5 h-3.5" />
           SECTION
         </span>
@@ -228,14 +228,11 @@ export const CmsSectionBar: React.FC = () => {
                 void saveCurrentPage();
               }}
               style={{
-                backgroundColor: isVisible ? 'transparent' : 'rgba(255, 68, 68, 0.15)',
-                color: isVisible ? '#C3F910' : '#ff6666',
+                backgroundColor: isVisible ? 'var(--accent-muted, rgba(195, 249, 16, 0.12))' : 'rgba(255, 68, 68, 0.15)',
+                color: isVisible ? 'var(--accent, #C3F910)' : '#ff6666',
+                borderColor: isVisible ? 'var(--accent-border, rgba(195, 249, 16, 0.4))' : 'rgba(255, 68, 68, 0.5)',
               }}
-              className={`flex items-center gap-1.5 px-2 py-0.5 rounded border transition-colors cursor-pointer ${
-                isVisible
-                  ? 'border-[#C3F910]/40 hover:bg-[#C3F910]/15'
-                  : 'border-[#ff4444]/50 hover:bg-[#ff4444]/25'
-              }`}
+              className="flex items-center gap-1.5 px-2 py-0.5 rounded border transition-colors cursor-pointer"
               title={isVisible ? 'Masquer cette section sur le site public' : 'Réafficher cette section'}
             >
               {isVisible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
@@ -246,7 +243,7 @@ export const CmsSectionBar: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setReorderDrawerOpen(true)}
-                className="flex items-center gap-1 px-2 py-0.5 rounded border border-[#2B2B28] text-[#9A9A94] hover:text-[#C3F910] hover:border-[#C3F910]/50 transition-colors cursor-pointer"
+                className="flex items-center gap-1 px-2 py-0.5 rounded border border-[#2B2B28] text-[#9A9A94] hover:text-white transition-colors cursor-pointer"
                 title="Déplacer / réorganiser les sections de la page"
               >
                 <GripVertical className="w-3.5 h-3.5" />
@@ -260,10 +257,19 @@ export const CmsSectionBar: React.FC = () => {
                 setSelectedBlockId(activeKey);
                 stylePanelStore.set(styleOpen ? null : activeKey);
               }}
+              style={
+                styleOpen
+                  ? {
+                      color: 'var(--accent, #C3F910)',
+                      borderColor: 'var(--accent, #C3F910)',
+                      backgroundColor: 'var(--accent-muted, rgba(195, 249, 16, 0.15))',
+                    }
+                  : {}
+              }
               className={`flex items-center gap-1.5 px-2 py-0.5 rounded border transition-colors cursor-pointer ${
                 styleOpen
-                  ? 'text-[#C3F910] border-[#C3F910] bg-[#C3F910]/15'
-                  : 'text-[#9A9A94] border-[#2B2B28] hover:text-[#C3F910] hover:border-[#C3F910]/50'
+                  ? ''
+                  : 'text-[#9A9A94] border-[#2B2B28] hover:text-white'
               }`}
               title="Ouvrir les réglages de style et espacement"
             >
@@ -296,9 +302,18 @@ export const CmsSectionBar: React.FC = () => {
                       e.stopPropagation();
                       heroSlideStore.set(i);
                     }}
+                    style={
+                      i === activeHeroSlide
+                        ? {
+                            backgroundColor: 'var(--accent, #C3F910)',
+                            color: '#080808',
+                            borderColor: 'var(--accent, #C3F910)',
+                          }
+                        : {}
+                    }
                     className={`px-2 py-0.5 rounded border text-[10px] font-bold transition-colors ${
                       i === activeHeroSlide
-                        ? 'bg-[#C3F910] text-[#080808] border-[#C3F910]'
+                        ? ''
                         : 'bg-[#171715] text-[#9A9A94] border-[#2B2B28] hover:text-white'
                     }`}
                     title={`Afficher la photo ${i + 1}`}

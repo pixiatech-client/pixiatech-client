@@ -63,6 +63,8 @@ export function applyThemeTokens(hex: string): void {
     document.body,
     document.getElementById('pixia-web'),
     document.getElementById('admin-top-bar'),
+    document.getElementById('cms-section-bar'),
+    document.getElementById('floating-element-toolbar'),
   ];
 
   targets.forEach((t) => {
@@ -88,7 +90,7 @@ export function applyThemeTokens(hex: string): void {
   }
 
   dynamicStyleTag.textContent = `
-    :root, html, body, #pixia-web, #admin-top-bar, nav, header {
+    :root, html, body, #pixia-web, #admin-top-bar, #cms-section-bar, #floating-element-toolbar, [data-cms-ui], nav, header {
       --accent: ${color} !important;
       --accent-rgb: ${tokens['--accent-rgb']} !important;
       --accent-hover: ${tokens['--accent-hover']} !important;

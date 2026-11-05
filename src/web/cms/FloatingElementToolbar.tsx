@@ -610,9 +610,9 @@ export const FloatingElementToolbar: React.FC<{
         {/* Badge indicateur de type & section */}
         <span
           style={{
-            backgroundColor: 'rgba(195, 249, 16, 0.12)',
-            color: '#C3F910',
-            borderColor: 'rgba(195, 249, 16, 0.35)',
+            backgroundColor: 'var(--accent-muted, rgba(195, 249, 16, 0.12))',
+            color: 'var(--accent, #C3F910)',
+            borderColor: 'var(--accent-border, rgba(195, 249, 16, 0.35))',
           }}
           className="px-2 py-1 rounded-md border font-mono text-[10px] font-bold tracking-wider uppercase whitespace-nowrap"
           title={`${selected.sectionKey} → ${selected.elementKey}`}
@@ -725,7 +725,7 @@ export const FloatingElementToolbar: React.FC<{
               >
                 <Palette className="w-3.5 h-3.5" />
                 {(hasHoverStyles || hasActiveStyles || Boolean(style.backgroundColor || style.borderColor || style.borderRadius)) && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#C3F910] ml-0.5" />
+                  <span className="w-1.5 h-1.5 rounded-full ml-0.5" style={{ backgroundColor: 'var(--accent, #C3F910)' }} />
                 )}
               </button>
             </div>
@@ -738,9 +738,9 @@ export const FloatingElementToolbar: React.FC<{
             type="button"
             onClick={() => setShowLinkEditor((v) => !v)}
             style={{
-              backgroundColor: showLinkEditor || realCurrentUrl ? 'rgba(195, 249, 16, 0.16)' : 'transparent',
-              color: showLinkEditor || realCurrentUrl ? '#C3F910' : '#B9B7B1',
-              borderColor: showLinkEditor || realCurrentUrl ? 'rgba(195, 249, 16, 0.35)' : 'transparent',
+              backgroundColor: showLinkEditor || realCurrentUrl ? 'var(--accent-muted, rgba(195, 249, 16, 0.16))' : 'transparent',
+              color: showLinkEditor || realCurrentUrl ? 'var(--accent, #C3F910)' : '#B9B7B1',
+              borderColor: showLinkEditor || realCurrentUrl ? 'var(--accent-border, rgba(195, 249, 16, 0.35))' : 'transparent',
             }}
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer border"
             title="Éditer le lien de redirection de cet élément (URL / Page interne)"
@@ -748,7 +748,7 @@ export const FloatingElementToolbar: React.FC<{
             <LinkIcon className="w-3.5 h-3.5" />
             <span>LIEN</span>
             {realCurrentUrl && (
-              <span className="w-1.5 h-1.5 rounded-full bg-[#C3F910]" title={`Lien : ${realCurrentUrl}`} />
+              <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'var(--accent, #C3F910)' }} title={`Lien : ${realCurrentUrl}`} />
             )}
           </button>
         </div>
@@ -756,9 +756,8 @@ export const FloatingElementToolbar: React.FC<{
         {/* ── Cas 4 : DÉPLACEMENT (NUDGE TRANSFORM) ── */}
         <div className="flex items-center gap-0.5 px-1 border-l border-[#2b2b28]">
           <span
-            className={`flex items-center gap-1 font-mono text-[10px] font-bold ${
-              hasOffset ? 'text-[#C3F910]' : 'text-[#6a6a65]'
-            }`}
+            style={{ color: hasOffset ? 'var(--accent, #C3F910)' : '#6a6a65' }}
+            className="flex items-center gap-1 font-mono text-[10px] font-bold"
             title="Décalage horizontal / vertical (nudge)"
           >
             <Move className="w-3 h-3" />
@@ -811,7 +810,7 @@ export const FloatingElementToolbar: React.FC<{
             className={`${iconBtn} ${off}`}
             title="Réinitialiser tous les styles de l'élément (effacer fond, couleur, bordures, etc.)"
           >
-            <Sparkles className="w-3.5 h-3.5 text-[#C3F910]" />
+            <Sparkles className="w-3.5 h-3.5" style={{ color: 'var(--accent, #C3F910)' }} />
           </button>
         </div>
 
@@ -824,9 +823,9 @@ export const FloatingElementToolbar: React.FC<{
                 saveState === 'error'
                   ? '#ff4444'
                   : saveState === 'saving'
-                  ? '#C3F910'
+                  ? 'var(--accent, #C3F910)'
                   : saveState === 'saved'
-                  ? '#C3F910'
+                  ? 'var(--accent, #C3F910)'
                   : '#7a7a76',
               backgroundColor:
                 saveState === 'saved'
@@ -1211,12 +1210,12 @@ export const FloatingElementToolbar: React.FC<{
                 justifyContent: 'center',
                 borderRadius: 4,
                 background: '#0e0e0d',
-                border: '1px solid #C3F910',
+                border: '1px solid var(--accent, #C3F910)',
               }}
               onMouseDown={(e) => handleWidthResizeStart(e, 'left')}
               title="Redimensionner horizontalement (gauche)"
             >
-              <svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M2 1L2 13M6 1L6 13" stroke="#C3F910" strokeWidth="1.5" strokeLinecap="round"/></svg>
+              <svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M2 1L2 13M6 1L6 13" stroke="var(--accent, #C3F910)" strokeWidth="1.5" strokeLinecap="round"/></svg>
             </div>
             {/* Poignée droite */}
             <div
@@ -1234,12 +1233,12 @@ export const FloatingElementToolbar: React.FC<{
                 justifyContent: 'center',
                 borderRadius: 4,
                 background: '#0e0e0d',
-                border: '1px solid #C3F910',
+                border: '1px solid var(--accent, #C3F910)',
               }}
               onMouseDown={(e) => handleWidthResizeStart(e, 'right')}
               title="Redimensionner horizontalement (droite)"
             >
-              <svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M2 1L2 13M6 1L6 13" stroke="#C3F910" strokeWidth="1.5" strokeLinecap="round"/></svg>
+              <svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M2 1L2 13M6 1L6 13" stroke="var(--accent, #C3F910)" strokeWidth="1.5" strokeLinecap="round"/></svg>
             </div>
           </>
         );

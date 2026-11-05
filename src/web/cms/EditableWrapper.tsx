@@ -199,9 +199,9 @@ export const EditableWrapper: React.FC<EditableWrapperProps> = ({
           : undefined,
         outline: isEditing
           ? isSelected
-            ? '2px solid #C3F910'
+            ? '2px solid var(--accent, #C3F910)'
             : isHovered
-            ? '2px dashed rgba(195, 249, 16, 0.7)'
+            ? '2px dashed var(--accent-border, rgba(195, 249, 16, 0.7))'
             : !isVisible
             ? '2px dashed rgba(255, 68, 68, 0.5)'
             : 'none'

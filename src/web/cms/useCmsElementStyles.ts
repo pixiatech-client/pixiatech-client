@@ -174,9 +174,18 @@ export function registerElementDynamicStyles(styledId: string, style: ElementSty
   // ── État Normal : injecté dans le stylesheet pour permettre l'override hover/active ──
   if (hasNormalOverridable || hasHover || hasActive) {
     rules += `${base} {\n`;
-    if (hasNormalColor) rules += `  color: ${style.color} !important;\n`;
-    if (hasNormalBg) rules += `  background-color: ${style.backgroundColor} !important;\n`;
-    if (hasNormalBorderColor) rules += `  border-color: ${style.borderColor} !important;\n`;
+    if (hasNormalColor) {
+      const c = (style.color?.toUpperCase() === '#C3F910') ? 'var(--accent, #C3F910)' : style.color;
+      rules += `  color: ${c} !important;\n`;
+    }
+    if (hasNormalBg) {
+      const bg = (style.backgroundColor?.toUpperCase() === '#C3F910') ? 'var(--accent, #C3F910)' : style.backgroundColor;
+      rules += `  background-color: ${bg} !important;\n`;
+    }
+    if (hasNormalBorderColor) {
+      const bc = (style.borderColor?.toUpperCase() === '#C3F910') ? 'var(--accent, #C3F910)' : style.borderColor;
+      rules += `  border-color: ${bc} !important;\n`;
+    }
     if (hasNormalBorderWidth) {
       rules += `  border-width: ${style.borderWidth} !important;\n`;
       rules += `  border-style: ${style.borderStyle || 'solid'} !important;\n`;
@@ -277,10 +286,16 @@ export function applyElementStyle(el: HTMLElement, style: ElementStyle, lang?: s
 
   if (!useStylesheet) {
     // Pas de hover/active → inline direct (comportement historique préservé)
-    if (style.color !== undefined) el.style.color = style.color;
-    if (style.backgroundColor !== undefined) el.style.backgroundColor = style.backgroundColor;
+    if (style.color !== undefined) {
+      el.style.color = (style.color?.toUpperCase() === '#C3F910') ? 'var(--accent, #C3F910)' : style.color;
+    }
+    if (style.backgroundColor !== undefined) {
+      el.style.backgroundColor = (style.backgroundColor?.toUpperCase() === '#C3F910') ? 'var(--accent, #C3F910)' : style.backgroundColor;
+    }
     if (style.borderRadius !== undefined) el.style.borderRadius = style.borderRadius;
-    if (style.borderColor !== undefined) el.style.borderColor = style.borderColor;
+    if (style.borderColor !== undefined) {
+      el.style.borderColor = (style.borderColor?.toUpperCase() === '#C3F910') ? 'var(--accent, #C3F910)' : style.borderColor;
+    }
     if (style.borderWidth !== undefined) {
       el.style.borderWidth = style.borderWidth;
       el.style.borderStyle = style.borderStyle || 'solid';

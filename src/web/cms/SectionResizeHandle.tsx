@@ -180,14 +180,14 @@ export const SectionResizeHandle: React.FC<SectionResizeHandleProps> = ({
           style={{
             height: isDragging ? 3 : shouldHighlight ? 2 : 1,
             backgroundColor: isDragging
-              ? '#C3F910'
+              ? 'var(--accent, #C3F910)'
               : shouldHighlight
-              ? '#C3F910'
-              : 'rgba(195, 249, 16, 0.25)',
+              ? 'var(--accent, #C3F910)'
+              : 'var(--accent-muted, rgba(195, 249, 16, 0.25))',
             boxShadow: isDragging
-              ? '0 0 16px rgba(195, 249, 16, 0.9), 0 0 4px #C3F910'
+              ? '0 0 16px var(--accent-glow, rgba(195, 249, 16, 0.9)), 0 0 4px var(--accent, #C3F910)'
               : shouldHighlight
-              ? '0 0 10px rgba(195, 249, 16, 0.6)'
+              ? '0 0 10px var(--accent-glow, rgba(195, 249, 16, 0.6))'
               : 'none',
           }}
         />
@@ -196,11 +196,11 @@ export const SectionResizeHandle: React.FC<SectionResizeHandleProps> = ({
         <div
           className="absolute flex items-center gap-1.5 px-3 py-1 rounded-full font-mono text-[11px] font-bold shadow-2xl transition-all duration-150 select-none"
           style={{
-            backgroundColor: isDragging ? '#C3F910' : '#0e0e0d',
-            color: isDragging ? '#000000' : '#C3F910',
-            border: isDragging ? '1px solid #C3F910' : '1px solid rgba(195, 249, 16, 0.6)',
+            backgroundColor: isDragging ? 'var(--accent, #C3F910)' : '#0e0e0d',
+            color: isDragging ? '#000000' : 'var(--accent, #C3F910)',
+            border: isDragging ? '1px solid var(--accent, #C3F910)' : '1px solid var(--accent-border, rgba(195, 249, 16, 0.6))',
             boxShadow: isDragging
-              ? '0 0 20px rgba(195, 249, 16, 0.8), 0 4px 12px rgba(0, 0, 0, 0.8)'
+              ? '0 0 20px var(--accent-glow, rgba(195, 249, 16, 0.8)), 0 4px 12px rgba(0, 0, 0, 0.8)'
               : '0 4px 14px rgba(0, 0, 0, 0.7)',
             transform: isDragging ? 'scale(1.08)' : isHovered ? 'scale(1.03)' : 'scale(1)',
           }}
@@ -231,12 +231,12 @@ export const SectionResizeHandle: React.FC<SectionResizeHandleProps> = ({
         {/* Floating Tooltip during drag */}
         {isDragging && (
           <div
-            className="absolute -top-10 flex items-center gap-2 px-3 py-1 bg-black/95 border border-[#C3F910] text-[#C3F910] rounded-md shadow-2xl text-[11px] font-mono font-bold animate-in fade-in zoom-in-95 pointer-events-none"
-            style={{ zIndex: 170 }}
+            className="absolute -top-10 flex items-center gap-2 px-3 py-1 bg-black/95 rounded-md shadow-2xl text-[11px] font-mono font-bold animate-in fade-in zoom-in-95 pointer-events-none border"
+            style={{ zIndex: 170, borderColor: 'var(--accent, #C3F910)', color: 'var(--accent, #C3F910)' }}
           >
             <span>SECTION : {sectionLabel.toUpperCase()}</span>
             <span className="text-white">→</span>
-            <span className="text-[#C3F910] bg-[#1a1a17] px-1.5 py-0.5 rounded">
+            <span className="bg-[#1a1a17] px-1.5 py-0.5 rounded" style={{ color: 'var(--accent, #C3F910)' }}>
               {draftHeight}px
             </span>
           </div>

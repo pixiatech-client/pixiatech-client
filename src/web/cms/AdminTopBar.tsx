@@ -60,6 +60,7 @@ export const AdminTopBar: React.FC<AdminTopBarProps> = ({ onOpenBackendModal, cu
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 bg-[#171715] px-2.5 py-1 rounded border border-[#2B2B28]">
             <span
+              data-accent-badge
               className="w-2 h-2 rounded-full animate-pulse"
               style={{ backgroundColor: 'var(--accent, #C3F910)' }}
             />
@@ -67,7 +68,7 @@ export const AdminTopBar: React.FC<AdminTopBarProps> = ({ onOpenBackendModal, cu
             <span className="text-[#7A7A76] text-[10px] border-l border-[#333] pl-2">Site Web v3</span>
           </div>
           <div className="hidden sm:flex items-center gap-1.5 text-[#9A9A94] bg-[#121211] px-2 py-1 rounded">
-            <Layers className="w-3.5 h-3.5" style={{ color: 'var(--accent, #C3F910)' }} />
+            <Layers data-accent-icon className="w-3.5 h-3.5" style={{ color: 'var(--accent, #C3F910)' }} />
             <span>Page active :</span>
             <span className="text-white font-semibold">{currentPageTitle}</span>
           </div>
