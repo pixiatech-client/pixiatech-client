@@ -2,11 +2,42 @@
 
 import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { useCms } from '@/lib/site-web/cms-context';
-import { Image as ImageIcon, Film, Upload, Check, X, Sparkles, Link as LinkIcon, Loader2, Trash2, Play, Lock, AlertTriangle } from 'lucide-react';
+import {
+  Image as ImageIcon,
+  Film,
+  Upload,
+  Check,
+  X,
+  Sparkles,
+  Link as LinkIcon,
+  Loader2,
+  Trash2,
+  Play,
+  Lock,
+  AlertTriangle,
+  Layers,
+  Sliders,
+  Palette,
+  ArrowDown,
+  ArrowUp,
+  ArrowRight,
+  ArrowLeft,
+  ArrowDownRight,
+  Eye,
+  RotateCcw,
+} from 'lucide-react';
 import { findSectionKey, getSectionNode, resolveElementKey, setSelectedElement } from './section-registry';
 
 import { FloatingElementToolbar } from './FloatingElementToolbar';
-import { applyElementStyle, elementTextKey, type ElementStyle } from './useCmsElementStyles';
+import {
+  applyElementStyle,
+  elementTextKey,
+  computeOverlayBackground,
+  hexToRgba,
+  makeElementStyledId,
+  type ElementStyle,
+  type ImageOverlayConfig,
+} from './useCmsElementStyles';
 import { normalizeLang } from '@/lib/site-web/cms-i18n';
 import { closestExplicitKeyElement, isInsideCmsUi, isMediaElement, isSimpleTextElement } from './section-registry';
 import { saveContactField } from './contact-edit';
@@ -63,16 +94,17 @@ function looksLikeImageUrl(value: string): boolean {
 
 export const VisualInPlaceEditor: React.FC = () => {
   const {
-  isEditing,
-  isAdmin,
-  currentLang,
-  pages,
-  uploadMedia,
-  updateSectionField,
-  updateElementStyle,
-  saveCurrentPage,
-  setSelectedBlockId,
-} = useCms();
+    isEditing,
+    isAdmin,
+    currentLang,
+    pages,
+    currentPageData,
+    uploadMedia,
+    updateSectionField,
+    updateElementStyle,
+    saveCurrentPage,
+    setSelectedBlockId,
+  } = useCms();
 
   // State pour la modal d'édition d'image
   const [activeImageTarget, setActiveImageTarget] = useState<ImageEditState | null>(null);
@@ -80,6 +112,19 @@ export const VisualInPlaceEditor: React.FC = () => {
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [isApplying, setIsApplying] = useState<boolean>(false);
   const [toast, setToast] = useState<{ message: string; tone: 'ok' | 'pending' | 'error' } | null>(null);
+
+  // Configuration de l'overlay personnalisable (Fonctionnalité 1)
+  const [overlayConfig, setOverlayConfig] = useState<ImageOverlayConfig>({
+    enabled: false,
+    color: '#000000',
+    opacity: 45,
+    gradientEnabled: false,
+    gradientStartColor: '#000000',
+    gradientStartOpacity: 45,
+    gradientEndColor: '#000000',
+    gradientEndOpacity: 85,
+    gradientDirection: 'to bottom',
+  });
 
   // Bibliothèque d'images réelle (démo statiques + uploads Firebase), chargée
   // depuis /api/site-web/media-library, avec recherche + filtre « utilisées ».
@@ -124,6 +169,40 @@ export const VisualInPlaceEditor: React.FC = () => {
 
   const openImageModalForElement = useCallback((el: HTMLElement) => {
     const kind: MediaKind = el.tagName === 'VIDEO' ? 'video' : 'image';
+    const sectionKey = findSectionKey(el);
+    const sectionRoot = sectionKey ? getSectionNode(sectionKey) : null;
+    const elementKey = sectionKey ? resolveElementKey(el, sectionRoot) : '';
+    const sectionData = sectionKey ? ((currentPageData?.sections?.[sectionKey] as Record<string, unknown>) || {}) : {};
+    const bag = (sectionData?._elements as Record<string, ElementStyle>) || {};
+    const existingStyle = bag[elementKey] || {};
+    const existingOverlay = existingStyle.overlay;
+
+    if (existingOverlay) {
+      setOverlayConfig({
+        enabled: Boolean(existingOverlay.enabled),
+        color: existingOverlay.color || '#000000',
+        opacity: existingOverlay.opacity ?? 45,
+        gradientEnabled: Boolean(existingOverlay.gradientEnabled),
+        gradientStartColor: existingOverlay.gradientStartColor || '#000000',
+        gradientStartOpacity: existingOverlay.gradientStartOpacity ?? 45,
+        gradientEndColor: existingOverlay.gradientEndColor || '#000000',
+        gradientEndOpacity: existingOverlay.gradientEndOpacity ?? 85,
+        gradientDirection: existingOverlay.gradientDirection || 'to bottom',
+      });
+    } else {
+      setOverlayConfig({
+        enabled: false,
+        color: '#000000',
+        opacity: 45,
+        gradientEnabled: false,
+        gradientStartColor: '#000000',
+        gradientStartOpacity: 45,
+        gradientEndColor: '#000000',
+        gradientEndOpacity: 85,
+        gradientDirection: 'to bottom',
+      });
+    }
+
     setActiveImageTarget({
       element: el,
       kind,
@@ -131,7 +210,7 @@ export const VisualInPlaceEditor: React.FC = () => {
       alt: (el as HTMLImageElement).alt || '',
     });
     setNewImageSrc(el.getAttribute('src') || '');
-  }, []);
+  }, [currentPageData]);
 
   // Charge la bibliothèque réelle depuis l'API admin (lecture seule). En cas
   // d'échec, on retombe sur les images de démonstration historiques.
@@ -275,6 +354,8 @@ export const VisualInPlaceEditor: React.FC = () => {
       .pixia-el-selected {
         outline: 2px solid #C3F910 !important;
         outline-offset: 3px !important;
+      }
+      .pixia-el-selected:not([data-cms-preview-state="hover"]):not([data-cms-preview-state="active"]) {
         box-shadow: 0 0 0 4px rgba(195, 249, 16, 0.15) !important;
       }
       .pixia-el-selected.pixia-el-media {
@@ -621,17 +702,18 @@ export const VisualInPlaceEditor: React.FC = () => {
     };
   }, [isEditing, isAdmin, currentLang, uploadMedia, updateSectionField, updateElementStyle, setSelectedBlockId, persist, openImageModalForElement, showToast]);
 
-  // Appliquer le remplacement de l'image ou de la vidéo
+  // Appliquer le remplacement de l'image ou de la vidéo et/ou son overlay
   const handleApplyImage = async (srcToApply?: string) => {
     const finalSrc = srcToApply || newImageSrc;
-    if (!activeImageTarget || !finalSrc) return;
+    if (!activeImageTarget) return;
 
     const targetEl = activeImageTarget.element;
-    const isTargetVideo = isMediaVideo(finalSrc);
+    const effectiveSrc = finalSrc || activeImageTarget.currentSrc;
+    const isTargetVideo = isMediaVideo(effectiveSrc);
     const effectiveEl = targetEl;
 
     // Mise à jour de l'attribut src si le type de balise correspond déjà (sinon React re-rendra déclarativement)
-    if ((isTargetVideo && targetEl.tagName === 'VIDEO') || (!isTargetVideo && targetEl.tagName === 'IMG')) {
+    if (finalSrc && ((isTargetVideo && targetEl.tagName === 'VIDEO') || (!isTargetVideo && targetEl.tagName === 'IMG'))) {
       effectiveEl.setAttribute('src', finalSrc);
       if (effectiveEl.tagName === 'IMG') {
         (effectiveEl as HTMLImageElement).src = finalSrc;
@@ -651,22 +733,22 @@ export const VisualInPlaceEditor: React.FC = () => {
     const elementKey = resolveElementKey(effectiveEl, sectionRoot);
     const explicitKey = effectiveEl.getAttribute('data-image-key') || effectiveEl.getAttribute('data-media-key');
 
-    if (explicitKey) {
+    const nextPatch: Partial<ElementStyle> = {
+      ...(finalSrc ? { src: finalSrc, mediaType: isTargetVideo ? 'video' : 'image' } : {}),
+      overlay: overlayConfig,
+    };
+
+    if (explicitKey && finalSrc) {
       // Clé déclarée par le composant : le champ existe réellement, on l'écrit.
       updateSectionField(sectionKey, explicitKey, finalSrc);
-      updateElementStyle(sectionKey, elementKey, { src: finalSrc, mediaType: isTargetVideo ? 'video' : 'image' });
-    } else {
-      const next = updateElementStyle(sectionKey, elementKey, {
-        src: finalSrc,
-        mediaType: isTargetVideo ? 'video' : 'image',
-        alt: (effectiveEl as HTMLImageElement).alt || undefined,
-      });
-      applyElementStyle(effectiveEl, next as ElementStyle, normalizeLang(currentLang));
     }
+    const next = updateElementStyle(sectionKey, elementKey, nextPatch as Record<string, unknown>);
+    applyElementStyle(effectiveEl, next as ElementStyle, normalizeLang(currentLang), makeElementStyledId(sectionKey, elementKey));
+
     setSelectedBlockId(sectionKey);
 
     setIsApplying(true);
-    const ok = await persist(explicitKey ? `${sectionKey}.${explicitKey}` : `${sectionKey}._elements.${elementKey}.src`);
+    const ok = await persist(explicitKey ? `${sectionKey}.${explicitKey}` : `${sectionKey}._elements.${elementKey}`);
     setIsApplying(false);
     if (ok) {
       setActiveImageTarget(null);
@@ -761,7 +843,7 @@ export const VisualInPlaceEditor: React.FC = () => {
               </button>
             </div>
 
-            {/* Current & Preview Side by Side */}
+            {/* Current & Preview Side by Side avec couche d'overlay en temps réel */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
               <div>
                 <label className="block text-[11px] font-mono text-[#8a8880] uppercase mb-2 flex items-center justify-between">
@@ -770,7 +852,7 @@ export const VisualInPlaceEditor: React.FC = () => {
                     {isMediaVideo(activeImageTarget.currentSrc) ? 'Vidéo' : 'Image'}
                   </span>
                 </label>
-                <div className="h-44 rounded-xl overflow-hidden border border-[#222] bg-[#141414] flex items-center justify-center">
+                <div className="relative h-44 rounded-xl overflow-hidden border border-[#222] bg-[#141414] flex items-center justify-center">
                   {isMediaVideo(activeImageTarget.currentSrc) ? (
                     <video
                       src={activeImageTarget.currentSrc}
@@ -789,6 +871,13 @@ export const VisualInPlaceEditor: React.FC = () => {
                       className="w-full h-full object-contain"
                     />
                   )}
+                  {/* Couche d'aperçu d'overlay en direct sur le média actuel */}
+                  {overlayConfig.enabled && (
+                    <div
+                      className="absolute inset-0 pointer-events-none transition-all duration-150"
+                      style={{ background: computeOverlayBackground(overlayConfig), zIndex: 10 }}
+                    />
+                  )}
                 </div>
               </div>
 
@@ -801,7 +890,7 @@ export const VisualInPlaceEditor: React.FC = () => {
                     </span>
                   )}
                 </label>
-                <div className="h-44 rounded-xl overflow-hidden border border-[#C3F910]/40 bg-[#141414] flex items-center justify-center">
+                <div className="relative h-44 rounded-xl overflow-hidden border border-[#C3F910]/40 bg-[#141414] flex items-center justify-center">
                   {newImageSrc ? (
                     isMediaVideo(newImageSrc) ? (
                       <video
@@ -824,8 +913,318 @@ export const VisualInPlaceEditor: React.FC = () => {
                   ) : (
                     <span className="text-xs text-[#555] font-mono">Aucun aperçu</span>
                   )}
+                  {/* Couche d'aperçu d'overlay en direct sur la nouvelle sélection */}
+                  {overlayConfig.enabled && newImageSrc && (
+                    <div
+                      className="absolute inset-0 pointer-events-none transition-all duration-150"
+                      style={{ background: computeOverlayBackground(overlayConfig), zIndex: 10 }}
+                    />
+                  )}
                 </div>
               </div>
+            </div>
+
+            {/* ── NOUVELLE SECTION : OVERLAY / SUPERPOSITION (FONCTIONNALITÉ 1) ── */}
+            <div className="mb-6 bg-[#141412] border border-[#262624] rounded-2xl p-4 shadow-sm">
+              {/* En-tête de section avec Interrupteur ON/OFF */}
+              <div className="flex items-center justify-between pb-3 border-b border-[#222220] mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-md bg-[#C3F910]/15 text-[#C3F910] flex items-center justify-center">
+                    <Layers className="w-3.5 h-3.5" />
+                  </div>
+                  <div>
+                    <span className="font-mono text-xs font-bold text-white uppercase tracking-wider block">
+                      Overlay / Superposition
+                    </span>
+                    <span className="text-[10px] font-mono text-[#7a7a76]">
+                      Superposition colorée ou dégradé non-destructif sur ce média
+                    </span>
+                  </div>
+                </div>
+
+                {/* Interrupteur ON/OFF */}
+                <label className="relative inline-flex items-center cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={overlayConfig.enabled}
+                    onChange={(e) => setOverlayConfig((prev) => ({ ...prev, enabled: e.target.checked }))}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-[#222220] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#333] after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#C3F910]" />
+                  <span className="ml-2.5 font-mono text-xs font-bold text-[#f5f4f0]">
+                    {overlayConfig.enabled ? (
+                      <span className="text-[#C3F910]">ACTIVÉ</span>
+                    ) : (
+                      <span className="text-[#666]">DÉSACTIVÉ</span>
+                    )}
+                  </span>
+                </label>
+              </div>
+
+              {overlayConfig.enabled ? (
+                <div className="flex flex-col gap-4 animate-in fade-in duration-200">
+                  {/* Switch Dégradé ON/OFF */}
+                  <div className="flex items-center justify-between bg-[#191917] p-2.5 rounded-xl border border-[#2b2b28]">
+                    <span className="font-mono text-xs text-[#ddd] flex items-center gap-1.5">
+                      <Sliders className="w-3.5 h-3.5 text-[#C3F910]" />
+                      <span>Mode Dégradé (Gradient)</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setOverlayConfig((prev) => ({ ...prev, gradientEnabled: !prev.gradientEnabled }))
+                      }
+                      className={`px-3 py-1 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer ${
+                        overlayConfig.gradientEnabled
+                          ? 'bg-[#C3F910] text-[#080808] shadow-sm'
+                          : 'bg-[#222220] text-[#888] hover:text-white'
+                      }`}
+                    >
+                      {overlayConfig.gradientEnabled ? 'DÉGRADÉ ACTIF' : 'COULEUR UNIE'}
+                    </button>
+                  </div>
+
+                  {!overlayConfig.gradientEnabled ? (
+                    /* CAS 1 : COULEUR UNIE */
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-[#191917] p-3.5 rounded-xl border border-[#2b2b28]">
+                      {/* Couleur unie */}
+                      <div>
+                        <label className="block text-[11px] font-mono text-[#8a8880] uppercase mb-2">
+                          Couleur de superposition
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <label
+                            className="relative w-8 h-8 rounded-lg overflow-hidden border border-[#444] cursor-pointer shrink-0 shadow-inner flex items-center justify-center"
+                            style={{ background: overlayConfig.color || '#000000' }}
+                          >
+                            <input
+                              type="color"
+                              value={overlayConfig.color || '#000000'}
+                              onChange={(e) =>
+                                setOverlayConfig((prev) => ({ ...prev, color: e.target.value }))
+                              }
+                              className="absolute inset-0 opacity-0 cursor-pointer"
+                            />
+                          </label>
+                          <input
+                            type="text"
+                            value={overlayConfig.color || '#000000'}
+                            onChange={(e) =>
+                              setOverlayConfig((prev) => ({ ...prev, color: e.target.value }))
+                            }
+                            placeholder="#000000"
+                            className="flex-1 bg-[#141412] border border-[#333] rounded-lg px-2.5 py-1.5 text-xs text-white font-mono uppercase focus:border-[#C3F910] focus:outline-none"
+                          />
+                        </div>
+
+                        {/* Presets rapides de couleur */}
+                        <div className="flex items-center gap-1.5 mt-2.5">
+                          <span className="text-[10px] font-mono text-[#666]">Presets :</span>
+                          {[
+                            { hex: '#000000', label: 'Noir' },
+                            { hex: '#080808', label: 'Dark' },
+                            { hex: '#111110', label: 'Anthracite' },
+                            { hex: '#ffffff', label: 'Blanc' },
+                            { hex: '#C3F910', label: 'Lime' },
+                          ].map((p) => (
+                            <button
+                              key={p.hex}
+                              type="button"
+                              onClick={() => setOverlayConfig((prev) => ({ ...prev, color: p.hex }))}
+                              className="w-4 h-4 rounded border border-[#444] hover:scale-110 transition-transform cursor-pointer"
+                              style={{ background: p.hex }}
+                              title={`${p.label} (${p.hex})`}
+                            />
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Opacité unie */}
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <label className="text-[11px] font-mono text-[#8a8880] uppercase">
+                            Opacité
+                          </label>
+                          <span className="font-mono text-xs font-bold text-[#C3F910]">
+                            {overlayConfig.opacity ?? 45} %
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0"
+                          max="100"
+                          step="1"
+                          value={overlayConfig.opacity ?? 45}
+                          onChange={(e) =>
+                            setOverlayConfig((prev) => ({ ...prev, opacity: Number(e.target.value) }))
+                          }
+                          className="w-full h-1.5 bg-[#262624] rounded-lg appearance-none cursor-pointer accent-[#C3F910]"
+                        />
+                        {/* Paliers rapides d'opacité */}
+                        <div className="flex items-center justify-between mt-2.5 text-[10px] font-mono text-[#777]">
+                          {[0, 25, 45, 65, 100].map((step) => (
+                            <button
+                              key={step}
+                              type="button"
+                              onClick={() => setOverlayConfig((prev) => ({ ...prev, opacity: step }))}
+                              className={`px-1.5 py-0.5 rounded hover:text-white transition-colors cursor-pointer ${
+                                overlayConfig.opacity === step ? 'text-[#C3F910] font-bold bg-[#C3F910]/15' : ''
+                              }`}
+                            >
+                              {step}%
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    /* CAS 2 : SYSTÈME DE DÉGRADÉ (GRADIENT) */
+                    <div className="flex flex-col gap-3.5 bg-[#191917] p-3.5 rounded-xl border border-[#2b2b28]">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {/* Couleur & Opacité de départ */}
+                        <div className="bg-[#141412] p-2.5 rounded-lg border border-[#262624]">
+                          <span className="block text-[10.5px] font-mono text-[#8a8880] uppercase mb-2">
+                            1. Couleur de Départ
+                          </span>
+                          <div className="flex items-center gap-2 mb-2">
+                            <label
+                              className="relative w-7 h-7 rounded-lg overflow-hidden border border-[#444] cursor-pointer shrink-0"
+                              style={{ background: overlayConfig.gradientStartColor || '#000000' }}
+                            >
+                              <input
+                                type="color"
+                                value={overlayConfig.gradientStartColor || '#000000'}
+                                onChange={(e) =>
+                                  setOverlayConfig((prev) => ({ ...prev, gradientStartColor: e.target.value }))
+                                }
+                                className="absolute inset-0 opacity-0 cursor-pointer"
+                              />
+                            </label>
+                            <input
+                              type="text"
+                              value={overlayConfig.gradientStartColor || '#000000'}
+                              onChange={(e) =>
+                                setOverlayConfig((prev) => ({ ...prev, gradientStartColor: e.target.value }))
+                              }
+                              className="flex-1 bg-[#1a1a18] border border-[#333] rounded px-2 py-1 text-xs text-white font-mono uppercase focus:border-[#C3F910] focus:outline-none"
+                            />
+                          </div>
+                          <div className="flex items-center justify-between text-[10.5px] font-mono text-[#aaa] mb-1">
+                            <span>Opacité départ</span>
+                            <span className="text-[#C3F910] font-bold">{overlayConfig.gradientStartOpacity ?? 45} %</span>
+                          </div>
+                          <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            value={overlayConfig.gradientStartOpacity ?? 45}
+                            onChange={(e) =>
+                              setOverlayConfig((prev) => ({
+                                ...prev,
+                                gradientStartOpacity: Number(e.target.value),
+                              }))
+                            }
+                            className="w-full h-1.5 bg-[#262624] rounded-lg appearance-none cursor-pointer accent-[#C3F910]"
+                          />
+                        </div>
+
+                        {/* Couleur & Opacité d'arrivée */}
+                        <div className="bg-[#141412] p-2.5 rounded-lg border border-[#262624]">
+                          <span className="block text-[10.5px] font-mono text-[#8a8880] uppercase mb-2">
+                            2. Couleur d&apos;Arrivée
+                          </span>
+                          <div className="flex items-center gap-2 mb-2">
+                            <label
+                              className="relative w-7 h-7 rounded-lg overflow-hidden border border-[#444] cursor-pointer shrink-0"
+                              style={{ background: overlayConfig.gradientEndColor || '#000000' }}
+                            >
+                              <input
+                                type="color"
+                                value={overlayConfig.gradientEndColor || '#000000'}
+                                onChange={(e) =>
+                                  setOverlayConfig((prev) => ({ ...prev, gradientEndColor: e.target.value }))
+                                }
+                                className="absolute inset-0 opacity-0 cursor-pointer"
+                              />
+                            </label>
+                            <input
+                              type="text"
+                              value={overlayConfig.gradientEndColor || '#000000'}
+                              onChange={(e) =>
+                                setOverlayConfig((prev) => ({ ...prev, gradientEndColor: e.target.value }))
+                              }
+                              className="flex-1 bg-[#1a1a18] border border-[#333] rounded px-2 py-1 text-xs text-white font-mono uppercase focus:border-[#C3F910] focus:outline-none"
+                            />
+                          </div>
+                          <div className="flex items-center justify-between text-[10.5px] font-mono text-[#aaa] mb-1">
+                            <span>Opacité arrivée</span>
+                            <span className="text-[#C3F910] font-bold">{overlayConfig.gradientEndOpacity ?? 85} %</span>
+                          </div>
+                          <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            value={overlayConfig.gradientEndOpacity ?? 85}
+                            onChange={(e) =>
+                              setOverlayConfig((prev) => ({
+                                ...prev,
+                                gradientEndOpacity: Number(e.target.value),
+                              }))
+                            }
+                            className="w-full h-1.5 bg-[#262624] rounded-lg appearance-none cursor-pointer accent-[#C3F910]"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Direction du dégradé */}
+                      <div>
+                        <label className="block text-[11px] font-mono text-[#8a8880] uppercase mb-2">
+                          Direction du dégradé
+                        </label>
+                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
+                          {[
+                            { dir: 'to bottom', label: 'Haut → Bas', icon: ArrowDown },
+                            { dir: 'to top', label: 'Bas → Haut', icon: ArrowUp },
+                            { dir: 'to right', label: 'Gauche → Droite', icon: ArrowRight },
+                            { dir: 'to left', label: 'Droite → Gauche', icon: ArrowLeft },
+                            { dir: 'to bottom right', label: 'Diagonal', icon: ArrowDownRight },
+                          ].map(({ dir, label, icon: Icon }) => (
+                            <button
+                              key={dir}
+                              type="button"
+                              onClick={() =>
+                                setOverlayConfig((prev) => ({
+                                  ...prev,
+                                  gradientDirection: dir as ImageOverlayConfig['gradientDirection'],
+                                }))
+                              }
+                              className={`flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-[10.5px] font-mono transition-all cursor-pointer border ${
+                                (overlayConfig.gradientDirection || 'to bottom') === dir
+                                  ? 'bg-[#C3F910] text-[#080808] font-bold border-[#C3F910] shadow-sm'
+                                  : 'bg-[#141412] text-[#8a8880] hover:text-white border-[#262624]'
+                              }`}
+                            >
+                              <Icon className="w-3 h-3" />
+                              <span>{label}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="flex items-center justify-between text-xs font-mono text-[#666] py-1">
+                  <span>Aucun filtre appliqué — L&apos;image est affichée à l&apos;état original.</span>
+                  <button
+                    type="button"
+                    onClick={() => setOverlayConfig((prev) => ({ ...prev, enabled: true }))}
+                    className="text-[#C3F910] hover:underline cursor-pointer font-bold text-[11px]"
+                  >
+                    + Activer l&apos;overlay
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Input URL Directe */}

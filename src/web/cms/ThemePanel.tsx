@@ -166,12 +166,12 @@ export function applyThemeTokens(hex: string): void {
       border-color: ${color} !important;
     }
 
-    .hero-cta2:hover,
-    .hero-cta1:hover,
-    .btn-solid:hover,
-    .btn-ink:hover,
-    .btn-outline:hover,
-    .hov-acc-bg:hover {
+    .hero-cta2:hover:not([data-cms-styled-id]),
+    .hero-cta1:hover:not([data-cms-styled-id]),
+    .btn-solid:hover:not([data-cms-styled-id]),
+    .btn-ink:hover:not([data-cms-styled-id]),
+    .btn-outline:hover:not([data-cms-styled-id]),
+    .hov-acc-bg:hover:not([data-cms-styled-id]) {
       background: ${color} !important;
       border-color: ${color} !important;
       color: #080808 !important;

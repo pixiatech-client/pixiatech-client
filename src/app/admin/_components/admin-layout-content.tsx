@@ -769,7 +769,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
           pathname?.startsWith('/admin/site-web/showreel')
             ? "flex-1 p-0 bg-[#09090B]"
             : pathname === '/admin/messages'
-              ? "h-[calc(100vh-88px)] overflow-hidden p-4 md:p-6 w-full bg-theme-app"
+              ? "h-[calc(100dvh-88px)] overflow-hidden p-4 md:p-6 w-full bg-theme-app"
               : "flex-1 px-4 py-4 md:px-6 md:py-6 bg-theme-app"
         )}>
           {children}

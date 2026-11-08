@@ -251,10 +251,10 @@ export const PitchSection: React.FC<PitchSectionProps> = ({
           }}
         >
           {/* Left Column: Title, Explanations, Interactive Slider & Presets */}
-          <div>
+          <div style={{ minWidth: 0 }}>
             <h2
               style={{
-                fontSize: 'clamp(38px, 4.4vw, 76px)',
+                fontSize: 'clamp(30px, 8.8vw, 76px)',
                 fontWeight: 900,
                 letterSpacing: '-.03em',
                 lineHeight: 1.04,
@@ -272,7 +272,7 @@ export const PitchSection: React.FC<PitchSectionProps> = ({
               data-text-key="description"
               style={{
                 margin: '0 0 48px',
-                maxWidth: 480,
+                maxWidth: 'min(480px, 100%)',
                 fontSize: 16.5,
                 lineHeight: 1.6,
                 color: '#4A4A46',
@@ -286,7 +286,7 @@ export const PitchSection: React.FC<PitchSectionProps> = ({
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, marginBottom: 28 }}>
               <span
                 style={{
-                  fontSize: 'clamp(72px, 7vw, 120px)',
+                  fontSize: 'clamp(56px, 16vw, 120px)',
                   fontWeight: 900,
                   letterSpacing: '-.03em',
                   lineHeight: 1,
@@ -300,7 +300,7 @@ export const PitchSection: React.FC<PitchSectionProps> = ({
             </div>
 
             {/* Range Slider */}
-            <div style={{ maxWidth: 520 }}>
+            <div style={{ maxWidth: 'min(520px, 100%)' }}>
               <input
                 type="range"
                 className="xr-range"
@@ -365,19 +365,21 @@ export const PitchSection: React.FC<PitchSectionProps> = ({
             <div
               style={{
                 display: 'flex',
-                gap: 52,
+                flexWrap: 'wrap',
+                gap: 'clamp(24px, 6vw, 52px)',
                 marginTop: 48,
                 paddingTop: 32,
                 borderTop: '1px solid #dfddd5',
               }}
             >
-              <div>
+              <div style={{ minWidth: 0 }}>
                 <div
                   style={{
                     fontSize: 28,
                     fontWeight: 800,
                     color: '#111110',
                     fontVariantNumeric: 'tabular-nums',
+                    overflowWrap: 'break-word',
                   }}
                 >
                   {pixelsPerM2(pitch, lang)}
@@ -396,12 +398,13 @@ export const PitchSection: React.FC<PitchSectionProps> = ({
                 </div>
               </div>
 
-              <div>
+              <div style={{ minWidth: 0 }}>
                 <div
                   style={{
                     fontSize: 28,
                     fontWeight: 800,
                     color: '#111110',
+                    overflowWrap: 'break-word',
                   }}
                 >
                   {getTypicalUse(pitch)}
@@ -461,7 +464,7 @@ export const PitchSection: React.FC<PitchSectionProps> = ({
           </div>
 
           {/* Right Column: LED Surface Canvas Simulation + Distance Ruler with Human Silhouette */}
-          <div>
+          <div style={{ minWidth: 0 }}>
             {/* The LED Simulation Screen */}
             <div
               className="pitch-sim"
@@ -471,8 +474,6 @@ export const PitchSection: React.FC<PitchSectionProps> = ({
                 overflow: 'hidden',
                 border: '1px solid #1f1f1e',
                 borderRadius: 2,
-                height: 'min(56vh, 520px)',
-                minHeight: 380,
                 boxShadow: '0 20px 60px rgba(0,0,0,0.12)',
               }}
             >

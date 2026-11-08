@@ -231,7 +231,7 @@ function VerifyContent() {
 export default function VerifyPage() {
     const { t } = useI18n();
     return (
-        <main className="min-h-screen bg-[#F5F5F5] flex items-center justify-center p-6">
+        <main className="min-h-[100dvh] bg-[#F5F5F5] flex items-center justify-center p-6">
             <Suspense fallback={
                 <div className="w-full max-w-md mx-auto">
                     <div className="bg-white rounded-[28px] shadow-2xl border border-slate-100 p-10 text-center flex flex-col items-center gap-6">

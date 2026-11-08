@@ -356,3 +356,30 @@ header a, header button {
     height: clamp(200px, 58vw, 260px) !important;
   }
 }
+
+
+/* --- Mobile organisation (better-layout + ui-ux-pro-max) : append 2026-11 --- */
+@media (max-width:760px){
+  .field, input, textarea, select{font-size:16px!important}
+  .float-cta{bottom:max(16px, env(safe-area-inset-bottom, 0px));right:16px}
+  .btn, .chip, .hero-cta1, .hero-cta2{min-height:44px}
+
+  /* Hero : la ligne télémétrie passe en deux rangées — les trois textes
+     restent alignés au même bord, les sélecteurs 01/02/03 sur la rangée
+     du bas, jamais coupés. La flèche décorative ↓ disparaît en mobile. */
+  .hero-meta{flex-wrap:wrap;row-gap:10px;column-gap:16px;justify-content:flex-start}
+  .hero-meta span{min-width:0;overflow-wrap:break-word}
+  .hero-meta-arrow{display:none}
+  .hero-dots-inline{margin-left:auto}
+  .hero-dot{min-height:44px;min-width:44px;display:inline-flex;align-items:center;justify-content:center}
+
+  /* Éléments stylés par le CMS (largeurs desktop forcées) : sur mobile ils
+     wrappent dans le conteneur au lieu de déborder. better-layout #10. */
+  [data-cms-styled-id]{overflow-wrap:break-word}
+
+  /* Pitch — bloc de présentation : titre proportionné (2-3 lignes),
+     paragraphe à pleine largeur avec marges régulières. */
+  #pitch h2{font-size:clamp(28px, 8.5vw, 40px)!important;line-height:1.08}
+  #pitch h2 span,#pitch p{overflow-wrap:break-word}
+}
+

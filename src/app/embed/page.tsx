@@ -26,7 +26,7 @@ export default async function EmbedPage(props: PageProps) {
   const allProducts: Product[] = productsResult.products;
 
   return (
-    <main className="w-full h-screen bg-transparent overflow-hidden flex flex-col">
+    <main className="w-full h-[100dvh] bg-transparent overflow-hidden flex flex-col">
       <ChatWidgetClient 
         settings={settings}
         deliverySettings={deliverySettings}

@@ -817,7 +817,7 @@ export default function CheckoutPage() {
 
   if (items.length === 0 && step === 'payment' && !isDemo) {
     return (
-      <div className="w-full min-h-screen flex items-center justify-center bg-[#F5F5F5]" style={{ backgroundColor: '#F5F5F5' }}>
+      <div className="w-full min-h-[100dvh] flex items-center justify-center bg-[#F5F5F5]" style={{ backgroundColor: '#F5F5F5' }}>
         <div className="text-center">
           <ShoppingBag size={48} className="mx-auto text-gray-300 mb-4" />
           <h2 className="text-xl font-bold text-primary-900 mb-2">{t('cart.emptyTitle') || 'Votre panier est vide'}</h2>
@@ -969,7 +969,7 @@ export default function CheckoutPage() {
     } : undefined;
 
     return (
-      <div className="min-h-screen overflow-x-hidden flex flex-col items-center py-6 px-4 relative">
+      <div className="min-h-[100dvh] overflow-x-hidden flex flex-col items-center py-6 px-4 relative">
         <ConfettiEffect />
 
         {/* Success Header */}
@@ -1315,7 +1315,7 @@ export default function CheckoutPage() {
 
   if (paypalConfig.loading) {
     return (
-      <div className="w-full min-h-screen bg-[#F5F5F5] flex items-center justify-center">
+      <div className="w-full min-h-[100dvh] bg-[#F5F5F5] flex items-center justify-center">
         <LiquidLoader size={40} />
       </div>
     );
@@ -1323,7 +1323,7 @@ export default function CheckoutPage() {
 
   return (
     <PayPalScriptProvider options={{ clientId: paypalClientId, currency: 'EUR', components: 'buttons' }}>
-    <div className="w-full min-h-screen bg-[#F5F5F5]" style={{ backgroundColor: '#F5F5F5' }}>
+    <div className="w-full min-h-[100dvh] bg-[#F5F5F5]" style={{ backgroundColor: '#F5F5F5' }}>
 
 
       <main className="max-w-6xl mx-auto px-6 md:px-10 lg:px-14 pb-16">

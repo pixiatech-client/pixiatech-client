@@ -235,7 +235,7 @@ export default function ConnexionPage() {
       <div className="absolute left-1/2 top-0 h-72 w-72 -translate-x-1/2 rounded-full bg-blue-500/10 blur-3xl" />
       <div className="absolute bottom-0 right-0 h-80 w-80 rounded-full bg-blue-300/10 blur-3xl" />
 
-      <div className="relative mx-auto flex min-h-[calc(100vh-4rem)] max-w-lg items-center justify-center">
+      <div className="relative mx-auto flex min-h-[calc(100dvh-4rem)] max-w-lg items-center justify-center">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}

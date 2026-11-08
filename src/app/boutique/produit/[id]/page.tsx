@@ -649,7 +649,7 @@ export default function ProductDetailPage() {
 
   if (loading) {
     return (
-      <div className="w-full min-h-screen flex items-center justify-center bg-[#F5F5F5]" style={{ backgroundColor: '#F5F5F5' }}>
+      <div className="w-full min-h-[100dvh] flex items-center justify-center bg-[#F5F5F5]" style={{ backgroundColor: '#F5F5F5' }}>
         <LiquidLoader size={110} />
       </div>
     );
@@ -657,7 +657,7 @@ export default function ProductDetailPage() {
 
   if (!product) {
     return (
-      <div className="w-full min-h-screen flex items-center justify-center bg-[#F5F5F5]" style={{ backgroundColor: '#F5F5F5' }}>
+      <div className="w-full min-h-[100dvh] flex items-center justify-center bg-[#F5F5F5]" style={{ backgroundColor: '#F5F5F5' }}>
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">{t('product.notFound')}</h1>
           <button onClick={() => router.push('/boutique')} className="px-4 py-2 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:bg-blue-600 transition-all">{t('product.backToShop')}</button>
@@ -667,7 +667,7 @@ export default function ProductDetailPage() {
   }
 
   return (
-    <div className="w-full min-h-screen bg-[#F5F5F5]" style={{ backgroundColor: '#F5F5F5' }}>
+    <div className="w-full min-h-[100dvh] bg-[#F5F5F5]" style={{ backgroundColor: '#F5F5F5' }}>
       {lightboxOpen && (
         <Lightbox
           items={mediaItems}
@@ -1643,7 +1643,7 @@ export default function ProductDetailPage() {
         </div>
 
         <aside
-          className="hidden lg:flex flex-col fixed z-10 w-[420px] max-h-[calc(100vh-9rem)]"
+          className="hidden lg:flex flex-col fixed z-10 w-[420px] max-h-[calc(100dvh-9rem)]"
           style={{ top: stickyTop, right: 'max(16px, calc((100vw - 1280px) / 2 + 64px))', transition: 'top 0.35s ease', overflowY: 'auto', overflowX: 'hidden' }}
         >
           <div className="flex-1 min-h-0 pr-1 overflow-y-auto overflow-x-hidden">

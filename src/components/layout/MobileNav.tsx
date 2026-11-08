@@ -20,13 +20,13 @@ export default function MobileNav({
   ];
 
   return (
-    <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#1a1d21] border-t border-white/5 px-6 py-3 flex items-center justify-between z-[100] safe-area-bottom">
+    <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#1a1d21] border-t border-white/5 px-4 pt-2 safe-area-bottom flex items-center justify-around gap-2 z-[100]">
       {tabs.map((tab) => (
         <button
           key={tab.id}
           onClick={() => onTabChange(tab.id)}
           className={cn(
-            "relative flex flex-col items-center gap-1 transition-all",
+            "relative flex min-h-[44px] min-w-[44px] flex-col items-center justify-center gap-1 px-4 transition-all",
             activeTab === tab.id ? "text-blue-500 scale-110" : "text-gray-500"
           )}
         >

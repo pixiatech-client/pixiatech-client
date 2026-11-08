@@ -224,7 +224,7 @@ export default function CartPage() {
   const total = calc.total;
   const discount = promo ? subtotal - totalAfterDiscount : 0;
   return (
-    <div className="w-full min-h-screen bg-[#F5F5F5]" style={{ backgroundColor: '#F5F5F5' }}>
+    <div className="w-full min-h-[100dvh] bg-[#F5F5F5]" style={{ backgroundColor: '#F5F5F5' }}>
 
 
       <main className="max-w-6xl mx-auto px-6 md:px-10 lg:px-14 py-8">

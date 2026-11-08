@@ -88,9 +88,9 @@ export default function CheckoutConfirmation({
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#F5F5F5]">
+    <div className="min-h-[100dvh] w-full bg-[#F5F5F5]">
       <ConfettiEffect />
-      <div className="mx-auto flex min-h-screen w-full max-w-3xl flex-col items-center px-5 py-12 sm:px-8">
+      <div className="mx-auto flex min-h-[100dvh] w-full max-w-3xl flex-col items-center px-5 py-12 sm:px-8">
         <div className="flex justify-center mb-5">
           <div className="rounded-full bg-emerald-500/10 p-1" style={{ boxShadow: '0 0 20px rgba(34,197,94,0.2)' }}>
             <div className="rounded-full bg-emerald-500 p-3 shadow-lg shadow-emerald-500/20">

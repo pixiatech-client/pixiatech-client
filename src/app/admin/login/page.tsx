@@ -467,7 +467,7 @@ export default function LoginPage() {
       <div className="absolute left-1/2 top-0 h-72 w-72 -translate-x-1/2 rounded-full bg-blue-500/10 blur-3xl" />
       <div className="absolute bottom-0 right-0 h-80 w-80 rounded-full bg-blue-300/10 blur-3xl" />
 
-      <div className="relative mx-auto flex min-h-[calc(100vh-4rem)] max-w-6xl items-center justify-center">
+      <div className="relative mx-auto flex min-h-[calc(100dvh-4rem)] max-w-6xl items-center justify-center">
         <div className="grid w-full items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">
           <motion.div
             initial={{ opacity: 0, x: -32 }}

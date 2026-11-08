@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 
 export default function GestionCookiesRoute() {
   return (
-    <div id="pixia-web" className="min-h-screen w-full bg-[#080808] text-[#f5f4f0] antialiased">
+    <div id="pixia-web" className="min-h-[100dvh] w-full bg-[#080808] text-[#f5f4f0] antialiased">
       <WebCmsShell>
         <GestionCookiesPage />
       </WebCmsShell>

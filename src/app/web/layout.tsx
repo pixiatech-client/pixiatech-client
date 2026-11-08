@@ -95,7 +95,7 @@ export default async function WebLayout({ children }: { children: React.ReactNod
       />
       <div
         id="pixia-web"
-        className="min-h-screen w-full bg-[#080808] text-[#f5f4f0] antialiased"
+        className="min-h-[100dvh] w-full bg-[#080808] text-[#f5f4f0] antialiased"
         style={{
           paddingTop:
             'calc(var(--admin-bar-h, 0px) + var(--preview-bar-h, 0px) + var(--cms-section-bar-h, 0px))',

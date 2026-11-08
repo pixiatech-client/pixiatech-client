@@ -7,7 +7,9 @@ import { DEFAULT_CMS_SETTINGS, type CmsBackendSettings, type CmsDb, type CmsPage
 // ─────────────────────────────────────────────────────────────────────────────
 
 const FIRESTORE_COLLECTION = 'siteWebCms';  // collection dédiée au CMS pages
-const FIRESTORE_DB_DOC     = '__db__';      // document « base complète » (settings, etc.)
+// IMPORTANT : Firestore interdit les IDs de documents encadrés par __ (ex: __db__).
+// Erreur code 3 (INVALID_ARGUMENT) si le nom commence ET termine par "__".
+const FIRESTORE_DB_DOC     = 'cms-db-settings'; // document settings/meta global
 
 // ─────────────────────────────────────────────────────────────────────────────
 // JSON local (fallback read-only en production, lecture/écriture en dev)
@@ -30,6 +32,11 @@ function readJsonDb(): CmsDb {
 }
 
 function writeJsonDb(db: CmsDb): boolean {
+  // En mode développement Next.js, écrire dans data/ déclenche le watcher
+  // HMR de Turbopack/Webpack et provoque un rechargement complet de la page,
+  // faisant perdre l'état d'édition CMS en cours. On ne persiste le JSON
+  // local qu'en production (Cloud Run) où il sert de fallback de démarrage.
+  if (process.env.NODE_ENV === 'development') return true;
   try {
     fs.mkdirSync(path.dirname(DATA_FILE), { recursive: true });
     fs.writeFileSync(DATA_FILE, JSON.stringify(db, null, 2), 'utf-8');
@@ -44,7 +51,26 @@ function writeJsonDb(db: CmsDb): boolean {
 // Firestore helpers (async)
 // ─────────────────────────────────────────────────────────────────────────────
 
+let firestoreDisabledInDev = false;
+
+function handleFirestoreDevError(op: string, err: unknown): void {
+  if (process.env.NODE_ENV === 'development') {
+    if (!firestoreDisabledInDev) {
+      firestoreDisabledInDev = true;
+      const anyErr = err as { code?: string | number; message?: string };
+      console.warn(
+        `[pages-store] Firestore indisponible en environnement local (${anyErr?.code || anyErr?.message || 'code: 3'}), repli automatique et transparent sur data/pixel-tech-web-pages.json.`
+      );
+    }
+  } else {
+    console.error(`[pages-store] Firestore ${op} error:`, err);
+  }
+}
+
 async function getFirestoreDb() {
+  if (process.env.NODE_ENV === 'development' && firestoreDisabledInDev) {
+    return null;
+  }
   try {
     const hasServiceAccount = Boolean(process.env.ADMIN_CLIENT_EMAIL && process.env.ADMIN_PRIVATE_KEY);
     const hasGoogleCredentials = Boolean(process.env.GOOGLE_APPLICATION_CREDENTIALS || process.env.K_SERVICE);
@@ -55,7 +81,7 @@ async function getFirestoreDb() {
     const { adminDb } = getFirebaseAdmin();
     return adminDb;
   } catch (err) {
-    console.error('[pages-store] Firestore Admin indisponible:', err);
+    handleFirestoreDevError('getFirestoreDb', err);
     return null;
   }
 }
@@ -71,12 +97,12 @@ async function firestoreGetPage(pageId: string): Promise<CmsPageData | null> {
     }
     return null;
   } catch (err) {
-    console.error(`[pages-store] Firestore read error (page=${pageId}):`, err);
+    handleFirestoreDevError(`getPage(${pageId})`, err);
     return null;
   }
 }
 
-/** Lit toutes les pages depuis Firestore (exclut le doc __db__). */
+/** Lit toutes les pages depuis Firestore (exclut le doc de settings). */
 async function firestoreGetAllPages(): Promise<Record<string, CmsPageData>> {
   try {
     const db = await getFirestoreDb();
@@ -90,7 +116,7 @@ async function firestoreGetAllPages(): Promise<Record<string, CmsPageData>> {
     });
     return pages;
   } catch (err) {
-    console.error('[pages-store] Firestore getAllPages error:', err);
+    handleFirestoreDevError('getAllPages', err);
     return {};
   }
 }
@@ -103,7 +129,7 @@ async function firestoreSetPage(pageId: string, page: CmsPageData): Promise<bool
     await db.collection(FIRESTORE_COLLECTION).doc(pageId).set(page);
     return true;
   } catch (err) {
-    console.error(`[pages-store] Firestore write error (page=${pageId}):`, err);
+    handleFirestoreDevError(`setPage(${pageId})`, err);
     return false;
   }
 }
@@ -116,7 +142,7 @@ async function firestoreDeletePage(pageId: string): Promise<boolean> {
     await db.collection(FIRESTORE_COLLECTION).doc(pageId).delete();
     return true;
   } catch (err) {
-    console.error(`[pages-store] Firestore delete error (page=${pageId}):`, err);
+    handleFirestoreDevError(`deletePage(${pageId})`, err);
     return false;
   }
 }
@@ -133,7 +159,7 @@ async function firestoreGetSettings(): Promise<CmsBackendSettings | null> {
     }
     return null;
   } catch (err) {
-    console.error('[pages-store] Firestore getSettings error:', err);
+    handleFirestoreDevError('getSettings', err);
     return null;
   }
 }
@@ -149,7 +175,7 @@ async function firestoreSetSettings(settings: CmsBackendSettings): Promise<boole
     );
     return true;
   } catch (err) {
-    console.error('[pages-store] Firestore setSettings error:', err);
+    handleFirestoreDevError('setSettings', err);
     return false;
   }
 }

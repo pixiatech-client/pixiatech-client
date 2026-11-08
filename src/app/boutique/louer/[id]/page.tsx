@@ -56,7 +56,7 @@ export default function QuickRentPage() {
   }, [params.id, router]);
 
   return (
-    <div className="w-full min-h-screen flex items-center justify-center bg-[#F5F5F5]" style={{ backgroundColor: '#F5F5F5' }}>
+    <div className="w-full min-h-[100dvh] flex items-center justify-center bg-[#F5F5F5]" style={{ backgroundColor: '#F5F5F5' }}>
       <LiquidLoader size={110} />
     </div>
   );

@@ -157,7 +157,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ lang = 'FR', onOpenCon
       getCmsText(cmsHero, 'secondaryCta', activeLang, activeLang === 'fr' ? 'Estimation gratuite →' : 'Free quote →')
     ),
     city: activeLang === 'fr' ? 'PARIS · MONDE' : 'PARIS · GLOBAL PROJECTS',
-    scroll: activeLang === 'fr' ? 'DÉFILEZ POUR DÉCOUVRIR ↓' : 'SCROLL TO DISCOVER ↓',
+    scroll: activeLang === 'fr' ? 'DÉFILEZ POUR DÉCOUVRIR' : 'SCROLL TO DISCOVER',
+    scrollArrow: '↓',
     tagline: activeLang === 'fr' ? "SYSTÈMES D'AFFICHAGE LED" : 'LED DISPLAY SYSTEMS',
   };
 
@@ -285,7 +286,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ lang = 'FR', onOpenCon
           {/* Hero Bottom Telemetry Bar */}
           <div className="hero-meta">
             <span>{t.city}</span>
-            <span>{t.scroll}</span>
+            <span>{t.scroll}<span className="hero-meta-arrow" aria-hidden="true"> {t.scrollArrow}</span></span>
             <span>{t.tagline}</span>
             <div className="hero-dots-inline" data-cms-ui>
               {slides.map((_, idx) => (

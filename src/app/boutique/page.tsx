@@ -462,7 +462,7 @@ export default function BoutiquePage() {
   };
 
   return (
-    <div className="w-full min-h-screen bg-[#F5F5F5]" style={{ backgroundColor: '#F5F5F5' }}>
+    <div className="w-full min-h-[100dvh] bg-[#F5F5F5]" style={{ backgroundColor: '#F5F5F5' }}>
       <FilterDrawer
         open={filterOpen}
         onClose={() => setFilterOpen(false)}
@@ -533,7 +533,7 @@ export default function BoutiquePage() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as typeof activeTab)}
-              className="relative px-3 sm:px-6 py-1.5 md:py-2 rounded-full text-xs font-medium transition-colors duration-300 shrink-0"
+              className="relative min-h-[44px] px-4 sm:px-6 py-2.5 rounded-full text-xs font-medium transition-colors duration-300 shrink-0"
             >
               {activeTab === tab.id && (
                 <motion.div
@@ -552,7 +552,7 @@ export default function BoutiquePage() {
           <div className="relative">
             <button
               onClick={() => setSortOpen(!sortOpen)}
-              className="flex items-center gap-1.5 bg-white border border-transparent hover:border-gray-200 rounded-full px-3 sm:px-4 py-2 text-xs font-medium text-gray-700 shadow-sm transition-all duration-300 cursor-pointer"
+              className="flex min-h-[44px] items-center gap-1.5 bg-white border border-transparent hover:border-gray-200 rounded-full px-4 py-2.5 text-xs font-medium text-gray-700 shadow-sm transition-all duration-300 cursor-pointer"
             >
               {sortBy === 'manual' ? t('boutique.sortManual') : sortBy === 'newest' ? t('boutique.sortNewest') : sortBy === 'recent' ? t('boutique.sortPopular') : sortBy === 'price-asc' ? t('boutique.sortPriceAsc') : t('boutique.sortPriceDesc')}
               <ChevronDown size={13} className="text-gray-400 transition-transform duration-300" style={{ transform: sortOpen ? 'rotate(180deg)' : undefined }} />

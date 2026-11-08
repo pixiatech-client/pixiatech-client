@@ -114,6 +114,24 @@
     scrollbar-gutter: stable;
   }
 
+  /* ── Mobile-first foundation (better-layout + ui-ux-pro-max) ──
+     better-layout #7 / #8 : contenu dans des marges de 16px sur mobile,
+     chrome fixe avec safe-areas. ui-ux-pro-max : 16px mini pour le texte
+     courant et les inputs (anti zoom iOS), cibles tactiles 44px, pas de
+     scroll horizontal. */
+  @media (max-width: 767px) {
+    html { font-size: 100%; }
+    body { overflow-x: clip; }
+    /* Évite le zoom auto d'iOS Safari sur les champs < 16px */
+    input, textarea, select { font-size: 16px; }
+  }
+  /* tap delay + feedback, cf. ui-ux-pro-max (touch-action: manipulation) */
+  body, button, a, [role="button"] { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+  .safe-area-bottom { padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px)); }
+  .safe-area-top { padding-top: max(0.75rem, env(safe-area-inset-top, 0px)); }
+  .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .pt-safe { padding-top: env(safe-area-inset-top, 0px); }
+
    /* Admin specific overrides to respect dynamic theme */
    #admin-root .bg-white:not(.static-white) {
      background-color: var(--theme-card-bg) !important;

@@ -382,9 +382,9 @@ export default function CheckoutFlow() {
       initial={{ x: '100%' }}
       animate={{ x: 0 }}
       transition={{ type: 'spring', stiffness: 300, damping: 34 }}
-      className="min-h-screen w-full bg-[#F5F5F5]"
+      className="min-h-[100dvh] w-full bg-[#F5F5F5]"
     >
-      <div className={cn('mx-auto flex min-h-screen w-full flex-col px-5 py-8 sm:px-8 sm:py-10', step === 'delivery' ? 'max-w-6xl' : 'max-w-5xl')}>
+      <div className={cn('mx-auto flex min-h-[100dvh] w-full flex-col px-5 py-8 sm:px-8 sm:py-10', step === 'delivery' ? 'max-w-6xl' : 'max-w-5xl')}>
         <div className="mb-8 flex flex-col gap-4 sm:mb-10 sm:flex-row sm:items-center sm:justify-between">
           <div className="self-start sm:w-28">
             <button

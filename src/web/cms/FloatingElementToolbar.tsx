@@ -44,8 +44,11 @@ import {
   readElementStyle,
   makeElementStyledId,
   removeElementDynamicStyles,
+  hexToRgba,
   type ElementStyle,
   type ElementVisualState,
+  type ButtonEffectConfig,
+  type ButtonEffectType,
 } from './useCmsElementStyles';
 import { normalizeLang } from '@/lib/site-web/cms-i18n';
 import { isMediaVideo } from './media-utils';
@@ -53,6 +56,109 @@ import { isMediaVideo } from './media-utils';
 const NUDGE = 4;
 const FONT_STEP = 2;
 const SAVE_DEBOUNCE_MS = 600;
+
+export const BUTTON_EFFECTS_CATALOG: {
+  id: ButtonEffectType;
+  name: string;
+  tagline: string;
+  badge?: string;
+  hasIntensity?: boolean;
+  hasDuration?: boolean;
+  hasColor?: boolean;
+  hasAmplitude?: boolean;
+}[] = [
+  {
+    id: 'none',
+    name: 'Aucun effet',
+    tagline: 'Comportement standard sans animation spéciale',
+  },
+  {
+    id: 'signature',
+    name: 'PIXIATECH Signature',
+    tagline: 'Reproduction exacte de la Section 10 (gap expansif + halo signature + élévation)',
+    badge: 'SECTION 10',
+    hasIntensity: true,
+    hasDuration: true,
+    hasColor: true,
+    hasAmplitude: true,
+  },
+  {
+    id: 'lift',
+    name: 'Lift',
+    tagline: 'Élévation subtile au survol avec ombre portée dynamique',
+    hasIntensity: true,
+    hasDuration: true,
+    hasAmplitude: true,
+  },
+  {
+    id: 'glow',
+    name: 'Glow',
+    tagline: 'Halo lumineux vibrant d’intensité réglable',
+    hasIntensity: true,
+    hasDuration: true,
+    hasColor: true,
+  },
+  {
+    id: 'shine',
+    name: 'Shine',
+    tagline: 'Reflet lumineux qui traverse le bouton',
+    hasIntensity: true,
+    hasDuration: true,
+  },
+  {
+    id: 'fill',
+    name: 'Fill',
+    tagline: 'Remplissage progressif du fond de bas en haut',
+    hasDuration: true,
+    hasColor: true,
+  },
+  {
+    id: 'scale',
+    name: 'Scale',
+    tagline: 'Agrandissement dynamique et élastique',
+    hasIntensity: true,
+    hasDuration: true,
+    hasAmplitude: true,
+  },
+  {
+    id: 'border-glow',
+    name: 'Border Glow',
+    tagline: 'Bordure devenant intensément lumineuse',
+    hasIntensity: true,
+    hasDuration: true,
+    hasColor: true,
+  },
+  {
+    id: 'slide',
+    name: 'Slide',
+    tagline: 'Déplacement latéral fluide du contenu ou de la flèche',
+    hasDuration: true,
+    hasAmplitude: true,
+  },
+  {
+    id: 'pulse',
+    name: 'Pulse',
+    tagline: 'Légère pulsation continue au survol',
+    hasIntensity: true,
+    hasDuration: true,
+    hasColor: true,
+  },
+  {
+    id: 'magnetic',
+    name: 'Magnetic',
+    tagline: 'Attraction subtile vers le curseur (desktop uniquement)',
+    hasDuration: true,
+    hasAmplitude: true,
+  },
+  {
+    id: 'underline',
+    name: 'Underline',
+    tagline: 'Soulignement animé qui se déploie sous le texte',
+    hasDuration: true,
+    hasColor: true,
+    hasAmplitude: true,
+  },
+];
 
 const ALIGNS: { value: ElementStyle['textAlign']; icon: LucideIcon; label: string }[] = [
   { value: 'left', icon: AlignLeft, label: 'Gauche' },
@@ -89,6 +195,8 @@ export const FloatingElementToolbar: React.FC<{
   const [showPalettePanel, setShowPalettePanel] = useState(false);
   const [paletteStateTab, setPaletteStateTab] = useState<'normal' | 'hover' | 'active'>('normal');
   const [showLinkEditor, setShowLinkEditor] = useState(false);
+  const [showEffectsPanel, setShowEffectsPanel] = useState(false);
+  const [effectsPreviewState, setEffectsPreviewState] = useState<'normal' | 'hover' | 'active'>('normal');
   const [coords, setCoords] = useState<{ top: number; left: number; placeBelow: boolean } | null>(null);
   const [dragPosition, setDragPosition] = useState<{ top: number; left: number } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -101,6 +209,10 @@ export const FloatingElementToolbar: React.FC<{
   useEffect(() => {
     setDragPosition(null);
     setPaletteStateTab('normal');
+    setEffectsPreviewState('normal');
+    setShowEffectsPanel(false);
+    setShowPalettePanel(false);
+    setShowLinkEditor(false);
     return () => {
       if (selected?.el) selected.el.removeAttribute('data-cms-preview-state');
       if (selected?.clickableEl) selected.clickableEl.removeAttribute('data-cms-preview-state');
@@ -523,6 +635,61 @@ export const FloatingElementToolbar: React.FC<{
     }, SAVE_DEBOUNCE_MS);
   }, [selected, currentPageData, updateSectionField, saveCurrentPage]);
 
+  const switchEffectsPreviewState = useCallback(
+    (state: 'normal' | 'hover' | 'active') => {
+      setEffectsPreviewState(state);
+      if (!selected?.el) return;
+      if (state === 'normal') {
+        selected.el.removeAttribute('data-cms-preview-state');
+        if (selected.clickableEl) selected.clickableEl.removeAttribute('data-cms-preview-state');
+      } else {
+        selected.el.setAttribute('data-cms-preview-state', state);
+        if (selected.clickableEl) selected.clickableEl.setAttribute('data-cms-preview-state', state);
+      }
+    },
+    [selected]
+  );
+
+  const handleSelectEffect = useCallback(
+    (type: ButtonEffectType) => {
+      if (type === 'none') {
+        switchEffectsPreviewState('normal');
+        commit({ buttonEffect: { type: 'none' } });
+      } else {
+        const existing = style.buttonEffect || { type: 'signature' };
+        commit({
+          buttonEffect: {
+            type,
+            intensity: existing.intensity ?? 60,
+            duration: existing.duration ?? 300,
+            color: existing.color ?? '#C3F910',
+            amplitude: existing.amplitude ?? 4,
+          },
+        });
+        // Active instantanément l'état Survol pour voir l'animation en temps réel sur le bouton
+        switchEffectsPreviewState('hover');
+      }
+    },
+    [commit, style.buttonEffect, switchEffectsPreviewState]
+  );
+
+  const handleUpdateEffectParam = useCallback(
+    (param: 'intensity' | 'duration' | 'color' | 'amplitude', value: any) => {
+      const currentEff = style.buttonEffect || { type: 'signature' };
+      commit({
+        buttonEffect: {
+          ...currentEff,
+          [param]: value,
+        },
+      });
+      // S'assure que l'aperçu Survol reste actif pour observer le changement en temps réel
+      if (effectsPreviewState === 'normal') {
+        switchEffectsPreviewState('hover');
+      }
+    },
+    [commit, style.buttonEffect, effectsPreviewState, switchEffectsPreviewState]
+  );
+
   const currentVisualState: ElementVisualState = useMemo(() => {
     if (paletteStateTab === 'hover') return style.hover || {};
     if (paletteStateTab === 'active') return style.active || {};
@@ -719,13 +886,59 @@ export const FloatingElementToolbar: React.FC<{
             <div className="flex items-center gap-1 px-1 border-l border-[#2b2b28]">
               <button
                 type="button"
-                onClick={() => setShowPalettePanel((v) => !v)}
+                onClick={() => {
+                  setShowPalettePanel((v) => !v);
+                  if (!showPalettePanel) {
+                    setShowEffectsPanel(false);
+                    setShowLinkEditor(false);
+                  }
+                }}
                 className={`${iconBtn} ${showPalettePanel ? on : off}`}
                 title="Palette & Styles visuels (Couleurs, Fond, Bordures, Arrondis — Normal, Survol, Clic)"
               >
                 <Palette className="w-3.5 h-3.5" />
                 {(hasHoverStyles || hasActiveStyles || Boolean(style.backgroundColor || style.borderColor || style.borderRadius)) && (
                   <span className="w-1.5 h-1.5 rounded-full ml-0.5" style={{ backgroundColor: 'var(--accent, #C3F910)' }} />
+                )}
+              </button>
+            </div>
+
+            {/* ── Cas 3 : BIBLIOTHÈQUE D'EFFETS & ANIMATIONS (FONCTIONNALITÉ 2) ── */}
+            <div className="flex items-center gap-1 px-1 border-l border-[#2b2b28]">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowEffectsPanel((v) => !v);
+                  if (!showEffectsPanel) {
+                    setShowPalettePanel(false);
+                    setShowLinkEditor(false);
+                  }
+                }}
+                style={{
+                  backgroundColor:
+                    showEffectsPanel || (style.buttonEffect?.type && style.buttonEffect.type !== 'none')
+                      ? 'var(--accent-muted, rgba(195, 249, 16, 0.16))'
+                      : 'transparent',
+                  color:
+                    showEffectsPanel || (style.buttonEffect?.type && style.buttonEffect.type !== 'none')
+                      ? 'var(--accent, #C3F910)'
+                      : '#B9B7B1',
+                  borderColor:
+                    showEffectsPanel || (style.buttonEffect?.type && style.buttonEffect.type !== 'none')
+                      ? 'var(--accent-border, rgba(195, 249, 16, 0.35))'
+                      : 'transparent',
+                }}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer border"
+                title="Bibliothèque d'effets et animations (Signature, Lift, Glow, Shine, Fill, Scale, etc.)"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>EFFETS</span>
+                {style.buttonEffect?.type && style.buttonEffect.type !== 'none' && (
+                  <span
+                    className="w-1.5 h-1.5 rounded-full"
+                    style={{ backgroundColor: 'var(--accent, #C3F910)' }}
+                    title={`Effet actif : ${style.buttonEffect.type}`}
+                  />
                 )}
               </button>
             </div>
@@ -736,7 +949,13 @@ export const FloatingElementToolbar: React.FC<{
         <div className="flex items-center gap-1.5 px-1 border-l border-[#2b2b28]">
           <button
             type="button"
-            onClick={() => setShowLinkEditor((v) => !v)}
+            onClick={() => {
+              setShowLinkEditor((v) => !v);
+              if (!showLinkEditor) {
+                setShowPalettePanel(false);
+                setShowEffectsPanel(false);
+              }
+            }}
             style={{
               backgroundColor: showLinkEditor || realCurrentUrl ? 'var(--accent-muted, rgba(195, 249, 16, 0.16))' : 'transparent',
               color: showLinkEditor || realCurrentUrl ? 'var(--accent, #C3F910)' : '#B9B7B1',
@@ -1185,6 +1404,257 @@ export const FloatingElementToolbar: React.FC<{
               </button>
             )}
           </div>
+        </div>
+      )}
+
+      {/* ── Ligne 3 (Conditionnelle) : Panneau de la Bibliothèque d'Effets & Animations (FONCTIONNALITÉ 2) ── */}
+      {showEffectsPanel && (
+        <div className="flex flex-col gap-3 pt-2.5 border-t border-[#2b2b28] bg-[#141412] p-3 rounded-lg animate-in slide-in-from-top-1 w-full">
+          {/* En-tête : Titre + Test des 3 États (Normal, Hover, Active) */}
+          <div className="flex items-center justify-between gap-3 pb-2 border-b border-[#262624] flex-wrap">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-[#C3F910]" />
+              <span className="font-mono text-xs font-bold text-white uppercase tracking-wider">
+                Bibliothèque d&apos;Effets & Animations
+              </span>
+              {style.buttonEffect?.type && style.buttonEffect.type !== 'none' && (
+                <span className="px-1.5 py-0.5 rounded text-[9.5px] font-mono font-bold bg-[#C3F910]/20 text-[#C3F910] border border-[#C3F910]/30 uppercase">
+                  {style.buttonEffect.type}
+                </span>
+              )}
+            </div>
+
+            {/* Test des 3 états en direct sur le bouton réel du site */}
+            <div className="flex items-center gap-1 bg-[#0a0a09] p-0.5 rounded-lg border border-[#262624]">
+              {(['normal', 'hover', 'active'] as const).map((st) => (
+                <button
+                  key={st}
+                  type="button"
+                  onClick={() => switchEffectsPreviewState(st)}
+                  className={`px-2 py-0.5 rounded font-mono text-[10px] font-bold transition-all cursor-pointer ${
+                    effectsPreviewState === st
+                      ? 'bg-[#C3F910] text-[#080808] shadow-sm'
+                      : 'text-[#888] hover:text-white'
+                  }`}
+                  title={`Tester l'état ${st === 'normal' ? 'Normal' : st === 'hover' ? 'Survol (Hover)' : 'Clic (Active)'} sur le bouton réel`}
+                >
+                  {st === 'normal' ? 'Normal' : st === 'hover' ? 'Survol' : 'Clic'}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Grille de vignettes interactives (Démonstration au survol) */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+            {BUTTON_EFFECTS_CATALOG.map((item) => {
+              const isCurrent = (style.buttonEffect?.type || 'none') === item.id;
+              return (
+                <div
+                  key={item.id}
+                  onClick={() => handleSelectEffect(item.id)}
+                  className={`group relative p-2 rounded-xl border transition-all cursor-pointer flex flex-col justify-between min-h-[72px] select-none ${
+                    isCurrent
+                      ? 'bg-[#1c2211] border-[#C3F910] ring-1 ring-[#C3F910]/60'
+                      : 'bg-[#181816] border-[#2b2b28] hover:border-[#444] hover:bg-[#1e1e1b]'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-1 mb-1">
+                    <span className="font-mono text-[11px] font-bold text-white group-hover:text-[#C3F910] transition-colors leading-tight">
+                      {item.name}
+                    </span>
+                    {item.badge && (
+                      <span className="px-1 py-0.5 rounded text-[7.5px] font-mono font-bold bg-[#C3F910] text-[#080808]">
+                        {item.badge}
+                      </span>
+                    )}
+                    {isCurrent && !item.badge && (
+                      <Check className="w-3 h-3 text-[#C3F910] shrink-0" />
+                    )}
+                  </div>
+                  <span className="text-[9px] font-mono text-[#8a8880] leading-tight line-clamp-2 mb-1.5">
+                    {item.tagline}
+                  </span>
+
+                  {/* Micro-bouton de démonstration interactif au survol de la vignette */}
+                  <div className="pt-1 border-t border-[#262624] flex items-center justify-center">
+                    {item.id === 'none' && (
+                      <span className="text-[9px] font-mono text-[#666]">Standard</span>
+                    )}
+                    {item.id === 'signature' && (
+                      <span className="px-2 py-0.5 text-[9px] font-bold rounded bg-[#C3F910] text-black inline-flex items-center gap-1 transition-all group-hover:gap-2 group-hover:shadow-[0_0_10px_rgba(195,249,16,0.6)]">
+                        <span>Signature</span>
+                        <span>→</span>
+                      </span>
+                    )}
+                    {item.id === 'lift' && (
+                      <span className="px-2 py-0.5 text-[9px] font-bold rounded bg-[#262624] text-white transition-all group-hover:-translate-y-1 group-hover:shadow-[0_4px_10px_rgba(0,0,0,0.5)]">
+                        Lift ↗
+                      </span>
+                    )}
+                    {item.id === 'glow' && (
+                      <span className="px-2 py-0.5 text-[9px] font-bold rounded bg-[#262624] text-white border border-[#C3F910]/40 transition-all group-hover:shadow-[0_0_12px_rgba(195,249,16,0.8)] group-hover:border-[#C3F910]">
+                        Glow ☀
+                      </span>
+                    )}
+                    {item.id === 'shine' && (
+                      /* Curtain closing effect (dev.to / shubhamtiwari909) :
+                         deux demi-rideaux colorés se referment sur le bouton au hover */
+                      <span className="relative overflow-hidden px-2 py-0.5 text-[9px] font-bold rounded bg-[#262624] text-white transition-colors duration-300 group-hover:text-black before:content-[''] before:absolute before:inset-y-0 before:left-0 before:w-0 before:bg-[#C3F910] before:transition-all before:duration-300 group-hover:before:w-1/2 after:content-[''] after:absolute after:inset-y-0 after:right-0 after:w-0 after:bg-[#C3F910] after:transition-all after:duration-300 group-hover:after:w-1/2">
+                        <span className="relative z-10">Shine ✦</span>
+                      </span>
+                    )}
+                    {item.id === 'fill' && (
+                      /* Slide transition — fond remontant de bas en haut */
+                      <span className="relative overflow-hidden px-2 py-0.5 text-[9px] font-bold rounded border border-[#C3F910] text-[#C3F910] group-hover:text-black transition-colors duration-300 before:content-[''] before:absolute before:inset-x-0 before:bottom-0 before:h-0 before:bg-[#C3F910] before:transition-all before:duration-300 group-hover:before:h-full">
+                        <span className="relative z-10">Fill ▲</span>
+                      </span>
+                    )}
+                    {item.id === 'scale' && (
+                      /* Multicolor transition — dégradé arc-en-ciel au hover */
+                      <span className="relative px-2 py-0.5 text-[9px] font-bold rounded bg-[#262624] text-white transition-all duration-300 group-hover:bg-gradient-to-r group-hover:from-[#C3F910] group-hover:via-[#00e5ff] group-hover:to-[#ff6ec7] group-hover:text-black group-hover:scale-105">
+                        Scale 🌈
+                      </span>
+                    )}
+                    {item.id === 'border-glow' && (
+                      /* Multi-color border hover — bordure qui tourne en couleurs */
+                      <span className="relative px-2 py-0.5 text-[9px] font-bold rounded text-white bg-[#0e0e0d] border-2 border-transparent transition-all duration-300 group-hover:[background:linear-gradient(#0e0e0d,#0e0e0d)_padding-box,linear-gradient(90deg,#C3F910,#00e5ff,#ff6ec7,#C3F910)_border-box] group-hover:shadow-[0_0_10px_rgba(195,249,16,0.5)]">
+                        Border ▣
+                      </span>
+                    )}
+                    {item.id === 'slide' && (
+                      /* Star / sparkle transition — étoiles qui apparaissent + slide du texte */
+                      <span className="relative overflow-hidden px-2 py-0.5 text-[9px] font-bold rounded bg-[#262624] text-white inline-flex items-center gap-0.5 transition-all duration-300 group-hover:gap-1.5 group-hover:bg-[#1a1f0a] group-hover:text-[#C3F910]">
+                        <span className="transition-transform duration-300 group-hover:-translate-x-0.5">Slide</span>
+                        <span className="transition-all duration-300 opacity-0 group-hover:opacity-100 scale-0 group-hover:scale-100">★</span>
+                        <span className="transition-transform duration-300 group-hover:translate-x-0.5">→</span>
+                      </span>
+                    )}
+                    {item.id === 'pulse' && (
+                      /* Pulse renforcé avec ring animé expansif */
+                      <span className="relative px-2 py-0.5 text-[9px] font-bold rounded bg-[#C3F910]/20 text-[#C3F910] border border-[#C3F910]/40 transition-all duration-300 group-hover:bg-[#C3F910]/30 group-hover:shadow-[0_0_0_4px_rgba(195,249,16,0.15),0_0_0_8px_rgba(195,249,16,0.07)] group-hover:animate-pulse">
+                        Pulse ◎
+                      </span>
+                    )}
+                    {item.id === 'magnetic' && (
+                      /* Shimmer latéral — reflet qui traverse + déplacement magnétique */
+                      <span className="relative overflow-hidden px-2 py-0.5 text-[9px] font-bold rounded bg-[#262624] text-white transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:shadow-[2px_-2px_6px_rgba(195,249,16,0.3)] before:content-[''] before:absolute before:top-0 before:left-[-60%] before:w-[40%] before:h-full before:bg-gradient-to-r before:from-transparent before:via-white/30 before:to-transparent before:skew-x-[-20deg] group-hover:before:left-[160%] before:transition-all before:duration-500">
+                        Magnetic ⌖
+                      </span>
+                    )}
+                    {item.id === 'underline' && (
+                      /* Underline double — barre qui grandit + seconde barre décalée */
+                      <span className="relative px-2 py-0.5 text-[9px] font-bold text-white group-hover:text-[#C3F910] transition-colors duration-200 after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-[2px] after:bg-[#C3F910] after:transition-all after:duration-300 group-hover:after:w-full before:content-[''] before:absolute before:bottom-[-3px] before:right-0 before:w-0 before:h-[1px] before:bg-[#C3F910]/40 before:transition-all before:duration-500 before:delay-100 group-hover:before:w-3/4">
+                        Underline ═
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Paramètres personnalisables contextuels selon l'effet sélectionné */}
+          {style.buttonEffect?.type && style.buttonEffect.type !== 'none' && (() => {
+            const currentCat = BUTTON_EFFECTS_CATALOG.find((c) => c.id === style.buttonEffect?.type);
+            const eff = style.buttonEffect;
+            return (
+              <div className="flex items-center gap-2.5 pt-2 border-t border-[#262624] flex-wrap bg-[#0e0e0d] p-2.5 rounded-xl">
+                <span className="font-mono text-[10px] text-[#7a7a76] uppercase tracking-wider block w-full mb-0.5">
+                  Réglages personnalisés : {currentCat?.name}
+                </span>
+
+                {/* 1. Intensité (0 à 100%) */}
+                {currentCat?.hasIntensity && (
+                  <div className="flex items-center gap-1.5 bg-[#171715] px-2 py-1 rounded-lg border border-[#2b2b28]">
+                    <span className="font-mono text-[9.5px] text-[#888] uppercase">Intensité</span>
+                    <input
+                      type="range"
+                      min="10"
+                      max="100"
+                      step="5"
+                      value={eff.intensity ?? 60}
+                      onChange={(e) => handleUpdateEffectParam('intensity', Number(e.target.value))}
+                      className="w-16 h-1.5 bg-[#262624] rounded-lg appearance-none cursor-pointer accent-[#C3F910]"
+                    />
+                    <span className="font-mono text-[10px] font-bold text-[#C3F910] min-w-[24px]">
+                      {eff.intensity ?? 60}%
+                    </span>
+                  </div>
+                )}
+
+                {/* 2. Durée (ms) */}
+                {currentCat?.hasDuration && (
+                  <div className="flex items-center gap-1 bg-[#171715] px-2 py-1 rounded-lg border border-[#2b2b28]">
+                    <span className="font-mono text-[9.5px] text-[#888] uppercase">Durée</span>
+                    <select
+                      value={eff.duration ?? 300}
+                      onChange={(e) => handleUpdateEffectParam('duration', Number(e.target.value))}
+                      className="bg-[#141412] border border-[#333] rounded px-1.5 py-0.5 text-white font-mono text-[10px] cursor-pointer"
+                    >
+                      <option value="150">150 ms (Vif)</option>
+                      <option value="250">250 ms (Rapide)</option>
+                      <option value="300">300 ms (Standard)</option>
+                      <option value="500">500 ms (Fluide)</option>
+                      <option value="800">800 ms (Doux)</option>
+                    </select>
+                  </div>
+                )}
+
+                {/* 3. Amplitude (px) */}
+                {currentCat?.hasAmplitude && (
+                  <div className="flex items-center gap-1.5 bg-[#171715] px-2 py-1 rounded-lg border border-[#2b2b28]">
+                    <span className="font-mono text-[9.5px] text-[#888] uppercase">Amplitude</span>
+                    <input
+                      type="range"
+                      min="2"
+                      max="12"
+                      step="1"
+                      value={eff.amplitude ?? 4}
+                      onChange={(e) => handleUpdateEffectParam('amplitude', Number(e.target.value))}
+                      className="w-14 h-1.5 bg-[#262624] rounded-lg appearance-none cursor-pointer accent-[#C3F910]"
+                    />
+                    <span className="font-mono text-[10px] font-bold text-[#C3F910] min-w-[20px]">
+                      {eff.amplitude ?? 4}px
+                    </span>
+                  </div>
+                )}
+
+                {/* 4. Couleur de l'effet */}
+                {currentCat?.hasColor && (
+                  <div className="flex items-center gap-1.5 bg-[#171715] px-2 py-1 rounded-lg border border-[#2b2b28]">
+                    <span className="font-mono text-[9.5px] text-[#888] uppercase">Couleur</span>
+                    <label
+                      className="relative w-4 h-4 rounded overflow-hidden border border-[#444] cursor-pointer shrink-0"
+                      style={{ background: eff.color || '#C3F910' }}
+                    >
+                      <input
+                        type="color"
+                        value={eff.color?.startsWith('#') ? eff.color : '#C3F910'}
+                        onChange={(e) => handleUpdateEffectParam('color', e.target.value)}
+                        className="absolute inset-0 opacity-0 cursor-pointer"
+                      />
+                    </label>
+                    <input
+                      type="text"
+                      value={eff.color || '#C3F910'}
+                      onChange={(e) => handleUpdateEffectParam('color', e.target.value)}
+                      className="w-14 bg-[#141412] border border-[#333] rounded px-1 py-0.5 text-[10px] text-white font-mono uppercase focus:border-[#C3F910] focus:outline-none"
+                    />
+                  </div>
+                )}
+
+                {/* Bouton réinitialiser l'effet */}
+                <button
+                  type="button"
+                  onClick={() => handleSelectEffect('none')}
+                  className="ml-auto flex items-center gap-1 text-[10px] font-mono text-[#ff7777] hover:text-[#ffaaaa] hover:underline cursor-pointer"
+                >
+                  <Trash2 className="w-3 h-3" />
+                  <span>Retirer l&apos;effet</span>
+                </button>
+              </div>
+            );
+          })()}
         </div>
       )}
     </div>

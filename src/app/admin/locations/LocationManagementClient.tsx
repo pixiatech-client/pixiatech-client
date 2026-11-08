@@ -120,7 +120,7 @@ const LocationListItem = ({ location, onClick }: any) => {
         <Calendar className="w-6 h-6" />
       </div>
 
-      <div className="flex-1 grid grid-cols-4 gap-4 items-center">
+      <div className="flex-1 grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 items-center">
         <div className="col-span-1">
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-0.5">{t('Client')}</p>
           <h4 className="font-black text-slate-900 uppercase tracking-tighter truncate">
