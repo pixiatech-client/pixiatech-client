@@ -614,40 +614,56 @@ function segmentBySections(pages: ParsedPage[]): Map<SectionKey, PdfLine[]> {
  * exactement à un titre connu du gabarit.
  */
 function matchSectionTitle(line: PdfLine): SectionKey | null {
-  const n = normLabel(line.text);
-  const clean = n.replace(/^(?:SECTION\s*)?(?:0?[1-9]\s*[-|:]?\s*)+/, '').trim();
+  // Un titre de section est un intitulé court (< 60 caractères), pas une phrase de paragraphe
+  if (line.text.length > 60) return null;
 
-  // 1. Correspondance exacte avec les ancres du gabarit
-  for (const s of SECTION_TITLES) {
-    if (clean === s.match || clean.startsWith(s.match)) {
-      return s.key;
-    }
+  const n = normLabel(line.text);
+  const hasSectionNumber = /^(?:SECTION\s*)?(?:0?[1-9]\s*[-|:)]\s*)/.test(n);
+  let clean = n.replace(/^(?:SECTION\s*)?(?:0?[1-9]\s*[-|:)]?\s*)+/, '').trim();
+  clean = clean.replace(/^(?:LES|DES|LE|LA|DU)\s+/, '').trim();
+
+  // 1. Features / Points forts (vérifier AVANT specs pour ne pas confondre CARACTERISTIQUES DE POINTE avec CARACTERISTIQUES TECHNIQUES)
+  if (clean.includes('POINTS FORTS') || clean.includes('CARACTERISTIQUES DE POINTE') || clean === 'FEATURES') {
+    return 'features';
   }
 
-  // 2. Variantes courantes pour la section 04 (spécifications / matrice)
+  // 2. Spécifications / Matrice comparative
+  // Note : si la ligne est un en-tête de groupe intérieur ("CARACTÉRISTIQUES TECHNIQUES" en petit corps <= 9),
+  // on ne bascule pas vers une nouvelle section specs.
+  const isSmallGroupTitle = line.items.length === 1 && line.items[0].size <= 9.0;
   if (
-    clean.startsWith('CARACTERISTIQUES TECHNIQUES') ||
-    clean.startsWith('SPECIFICATIONS TECHNIQUES') ||
-    clean === 'SPECIFICATIONS' ||
-    clean.startsWith('SPECIFICATIONS') ||
-    clean === 'CARACTERISTIQUES' ||
-    clean.startsWith('CARACTERISTIQUES') ||
-    clean === 'MATRICE TECHNIQUE' ||
-    clean === 'MATRICE DES CARACTERISTIQUES' ||
-    clean === 'TABLEAU TECHNIQUE' ||
-    clean.includes('CARACTERISTIQUES TECHNIQUES') ||
-    clean.includes('SPECIFICATIONS TECHNIQUES')
+    !isSmallGroupTitle &&
+    (clean.startsWith('CARACTERISTIQUES TECHNIQUES') ||
+      clean.startsWith('SPECIFICATIONS TECHNIQUES') ||
+      clean === 'SPECIFICATIONS' ||
+      clean.startsWith('SPECIFICATIONS') ||
+      clean.includes('SPECIFICATIONS') ||
+      clean === 'CARACTERISTIQUES' ||
+      clean === 'MATRICE TECHNIQUE' ||
+      clean === 'MATRICE DES CARACTERISTIQUES' ||
+      clean === 'TABLEAU TECHNIQUE' ||
+      clean.includes('CARACTERISTIQUES TECHNIQUES') ||
+      clean.includes('SPECIFICATIONS TECHNIQUES') ||
+      clean === 'DONNEES TECHNIQUES' ||
+      (hasSectionNumber && clean.includes('DONNEES TECHNIQUES')))
   ) {
     if (!clean.includes('EXACTEMENT') && !clean.includes('RECOMMAND') && !clean.includes('CONFIRME')) {
       return 'specs';
     }
   }
 
-  // 3. Variantes courantes pour les autres sections
-  if (clean === 'APERCU' || clean.startsWith('APERCU PRODUIT') || clean === 'OVERVIEW' || clean.includes('APERCU PRODUIT')) return 'overview';
-  if (clean === 'CONCEPTION' || clean.startsWith('CONCEPTION FORMAT') || clean === 'DESIGN' || clean.includes('CONCEPTION FORMAT')) return 'design';
-  if (clean.startsWith('POINTS FORTS') || clean === 'FEATURES' || clean.includes('POINTS FORTS TECHNIQUES')) return 'features';
-  if (clean.startsWith('REFERENCES') || clean.startsWith('REALISATIONS') || clean.startsWith('PROJETS') || clean === 'FIELDWORK' || clean.includes('REFERENCES TERRAIN')) return 'fieldwork';
+  // 3. Correspondance exacte avec les ancres du gabarit
+  for (const s of SECTION_TITLES) {
+    if (s.key === 'specs' && isSmallGroupTitle) continue;
+    if (clean === s.match || clean.startsWith(s.match)) {
+      return s.key;
+    }
+  }
+
+  // 4. Variantes courantes pour les autres sections
+  if (clean === 'APERCU' || clean.startsWith('APERCU PRODUIT') || clean === 'OVERVIEW' || clean.includes('APERCU') || clean === 'TECHNOLOGIE') return 'overview';
+  if (clean.startsWith('CONCEPTION ARCHITECTURALE') || clean.startsWith('CONCEPTION FORMAT') || clean === 'CONCEPTION' || clean === 'DESIGN' || clean === 'CONFIGURATION') return 'design';
+  if (clean.startsWith('REFERENCES') || clean.startsWith('REALISATIONS') || clean.startsWith('PROJETS') || clean === 'FIELDWORK' || clean.includes('SUR LE TERRAIN') || clean.includes('REFERENCES TERRAIN')) return 'fieldwork';
 
   // Repli strict sur item unique et coordonnées géométriques (gabarit officiel)
   if (line.items.length === 1) {
@@ -972,6 +988,36 @@ function parseMasthead(lines: PdfLine[]): Partial<ParsedFiche> {
     }
   }
 
+  // Repli pour les documents au format personnalisé (ex: titre produit centré en grand corps)
+  if (!out.productName) {
+    let maxSize = 0;
+    let maxLine: PdfLine | null = null;
+    for (const line of lines) {
+      const lineMaxSize = Math.max(...line.items.map((i) => i.size));
+      if (lineMaxSize > maxSize && lineMaxSize >= 18) {
+        maxSize = lineMaxSize;
+        maxLine = line;
+      }
+    }
+    if (maxLine) {
+      const cleaned = cleanGabaritString(joinItems(maxLine.items));
+      if (isFilledSlot(cleaned)) out.productName = cleaned;
+    }
+  }
+
+  // Repli pour le sous-titre si non encore détecté
+  if (!out.subtitle && out.productName) {
+    for (const line of lines) {
+      const txt = cleanGabaritString(joinItems(line.items));
+      if (!txt || txt === out.productName || txt === out.series) continue;
+      const maxSz = Math.max(...line.items.map((i) => i.size));
+      if (maxSz >= 11 && maxSz <= 16 && line.items.length === 1) {
+        out.subtitle = txt;
+        break;
+      }
+    }
+  }
+
   // Grille de badges : 4 VALEURS en corps 11.5, puis 4 libellés en corps 6.6
   // partageant exactement les mêmes centres. On ancre sur les valeurs, sinon
   // les libellés (corps 6.6) passent pour une grille de marchés (corps 7.5).
@@ -1075,10 +1121,15 @@ function parseOverview(lines: PdfLine[]): ParsedFiche['overview'] {
   }
 
   // 3 statistiques : valeur (corps 15) au-dessus, label (corps 7.5) en dessous.
+  // Les labels doivent être en petit corps (< 10pt) pour distinguer les vraies
+  // stats des features-clés qui ont aussi des titres en grands corps.
   for (let i = 0; i < lines.length; i++) {
     const cols = lineColumns(lines[i].items);
     if (cols.length < 2) continue;
     if (!cols.every((c) => c.size >= 12)) continue;
+    // Vérifie que la ligne de labels est bien en petit corps (stats gabarit ≤ 9pt)
+    const labelLine = lines[i + 1];
+    if (!labelLine || !labelLine.items.every((it) => it.size < 10)) continue;
     const { pairs, endIndex } = pairValueOverLabel(lines, i, 2);
     if (pairs.length) {
       out.stats = pairs;
@@ -1204,6 +1255,92 @@ function parseDesign(lines: PdfLine[]): ParsedFiche['design'] {
       ...(isFilledSlot(description) ? { description } : {}),
     });
   }
+
+  // Repli : documents présentant 3 colonnes de configuration horizontales (ex: 01, 02, 03)
+  // Gère deux formats : items séparés (ex: ["01", "02", "03"]) ou item unique avec "|"
+  // séparateur (ex: ["01 | 02 | 03"] comme produit par certains exports Canva).
+  if (configs.length === 0) {
+    const numLineIdx = lines.findIndex((l) => {
+      // Format A : plusieurs items dont chacun est un entier 2 chiffres
+      const separateItems = l.items.filter((it) => /^\d{2}$/.test(it.str.trim()));
+      if (separateItems.length >= 2) return true;
+      // Format B : un item unique contenant les numéros séparés par "|"
+      if (l.items.length === 1) {
+        const parts = l.items[0].str.split('|').map((s) => s.trim());
+        return parts.filter((p) => /^\d{2}$/.test(p)).length >= 2;
+      }
+      return false;
+    });
+    if (numLineIdx !== -1) {
+      const numLine = lines[numLineIdx];
+      // Extraire les numéros quel que soit le format (A ou B)
+      let numItems: { str: string; cx: number }[];
+      const separateItems = numLine.items.filter((it) => /^\d{2}$/.test(it.str.trim()));
+      if (separateItems.length >= 2) {
+        numItems = separateItems.map((it) => ({ str: it.str.trim(), cx: it.cx }));
+      } else {
+        // Format B : splitter l'item unique sur "|" et recalculer les cx approximatifs
+        const raw = numLine.items[0];
+        const parts = raw.str.split('|').map((s) => s.trim()).filter((p) => /^\d{2}$/.test(p));
+        const colWidth = raw.w / parts.length;
+        numItems = parts.map((p, k) => ({ str: p, cx: raw.x + colWidth * k + colWidth / 2 }));
+      }
+
+      const titlesLine = lines[numLineIdx + 1];
+      if (titlesLine) {
+        // Extraire les titres selon le même mécanisme (séparés ou format "|")
+        let titleItems: { str: string; cx: number }[];
+        const sepTitles = titlesLine.items;
+        if (sepTitles.length >= numItems.length && !titlesLine.text.includes('|')) {
+          titleItems = sepTitles.map((it) => ({ str: it.str, cx: it.cx }));
+        } else {
+          // Format B : splitter sur "|"
+          const raw = titlesLine.items[0];
+          const parts = raw.str.split('|').map((s) => s.trim());
+          const colWidth = raw.w / Math.max(parts.length, numItems.length);
+          titleItems = parts.map((p, k) => ({ str: p, cx: raw.x + colWidth * k + colWidth / 2 }));
+        }
+        for (let k = 0; k < numItems.length; k++) {
+          const num = numItems[k].str;
+          // Trouver le titre le plus proche horizontalement
+          const targetCx = numItems[k].cx;
+          const titleItem = titleItems.reduce(
+            (best, t) => (Math.abs(t.cx - targetCx) < Math.abs(best.cx - targetCx) ? t : best),
+            titleItems[0]
+          );
+          const title = cleanGabaritString(titleItem?.str || '');
+          if (!isFilledSlot(title)) continue;
+
+          // Rassembler les lignes de description sous cette colonne par proximité horizontale (centre X)
+          const descParts: string[] = [];
+          for (let row = numLineIdx + 2; row < lines.length; row++) {
+            const rowLine = lines[row];
+            if (rowLine.text.startsWith('Page ')) break;
+            // Chercher dans les items séparés ou splitter sur "|"
+            let matchStr: string | undefined;
+            if (rowLine.items.length > 1 || !rowLine.text.includes('|')) {
+              const matchCol = rowLine.items.find((it) => Math.abs(it.cx - targetCx) < 80);
+              matchStr = matchCol?.str;
+            } else {
+              // Format "|" : extraire la colonne k
+              const parts = rowLine.items[0].str.split('|').map((s) => s.trim());
+              matchStr = parts[k];
+            }
+            if (matchStr && isFilledSlot(matchStr)) {
+              descParts.push(cleanValue(matchStr));
+            }
+          }
+
+          configs.push({
+            num,
+            title,
+            ...(descParts.length ? { description: descParts.join(' ') } : {}),
+          });
+        }
+      }
+    }
+  }
+
   if (configs.length) out.configs = configs;
 
   return Object.keys(out).length ? out : undefined;
@@ -1243,6 +1380,43 @@ function parseFeatures(lines: PdfLine[]): ParsedFiche['features'] {
       ...(description && isFilledSlot(description) ? { description } : {}),
     });
   }
+
+  // Repli : documents au format alternatif (ex: « 1) 1/7 » sur sa propre ligne ou item)
+  if (items.length === 0) {
+    let currentItem: { num: string; title: string; descLines: string[] } | null = null;
+    for (const line of lines) {
+      if (line.items.some((it) => it.size >= 16)) continue; // ignore titre principal
+      const itemMatch = line.items.find((it) => /^\d+\)\s*\d+\/\d+/.test(it.str.trim()));
+      if (itemMatch) {
+        if (currentItem && isFilledSlot(currentItem.title)) {
+          items.push({
+            num: currentItem.num,
+            title: currentItem.title,
+            ...(currentItem.descLines.length ? { description: currentItem.descLines.join(' ') } : {}),
+          });
+        }
+        const num = itemMatch.str.match(/^(\d+)\)/)?.[1] || `${items.length + 1}`;
+        currentItem = { num, title: '', descLines: [] };
+        continue;
+      }
+      if (!currentItem) continue;
+      const cleanLine = cleanGabaritString(line.text);
+      if (!cleanLine || isStaticText(cleanLine) || cleanLine.startsWith('Page ')) continue;
+      if (!currentItem.title) {
+        currentItem.title = cleanLine;
+      } else {
+        currentItem.descLines.push(cleanLine);
+      }
+    }
+    if (currentItem && isFilledSlot(currentItem.title)) {
+      items.push({
+        num: currentItem.num,
+        title: currentItem.title,
+        ...(currentItem.descLines.length ? { description: currentItem.descLines.join(' ') } : {}),
+      });
+    }
+  }
+
   if (items.length) out.items = items;
 
   return Object.keys(out).length ? out : undefined;
@@ -1449,13 +1623,15 @@ function groupTail(label: string): string {
  */
 function groupHeaderItem(line: PdfLine): PdfTextItem | null {
   for (const item of line.items) {
-    if (item.x < MARGIN_X - 2 || item.x > GROUP_ZONE_MAX_X) continue;
+    // Si la ligne est un titre unique isolé en majuscules commençant dans la marge gauche (ex: x ≈ 44)
+    // sa largeur peut s'étendre au-delà de 80 pt s'il est long (ex: "CARACTÉRISTIQUES TECHNIQUES" w ≈ 121)
+    const isSingleTitle = line.items.length === 1 && item.x >= MARGIN_X - 10 && item.x <= LABEL_ZONE_MAX_X;
+    if (!isSingleTitle && (item.x < MARGIN_X - 10 || item.x > GROUP_ZONE_MAX_X)) continue;
     if (!isUpperLabel(item.str)) continue;
     // Corps 10 dans le gabarit officiel. Les fiches dérivées tirent le bandeau
-    // en corps 8 : on l'accepte alors UNIQUEMENT s'il nomme un groupe connu,
-    // pour ne pas promouvoir en titre un texte technique quelconque en 8.
+    // en corps 7-8 : on l'accepte s'il est en majuscules dans la zone d'en-tête de groupe.
     const knownGroup = SPEC_GROUP_IDS.some((g) => g.match === groupTail(item.str));
-    if (item.size >= 8.8 || knownGroup) return item;
+    if (item.size >= 7.0 || knownGroup) return item;
   }
   return null;
 }
@@ -1731,6 +1907,8 @@ function parseSingleSpecTable(
 
 /** Détecte un marqueur textuel marquant un nouveau tableau ou une suite. */
 function isTableMarkerLine(line: PdfLine): boolean {
+  // Un groupe de spécifications intérieur en petit corps (<= 9pt) n'est pas un marqueur de découpe de tableau
+  if (line.items.length === 1 && line.items[0].size <= 9.0) return false;
   const norm = normLabel(line.text);
   if (/(?:^|\b)(TABLEAU|TABLE)\s*\d+/i.test(norm)) return true;
   if (norm.includes('CARACTERISTIQUES TECHNIQUES') || norm.includes('SPECIFICATIONS')) return true;
@@ -1739,12 +1917,46 @@ function isTableMarkerLine(line: PdfLine): boolean {
 }
 
 /**
+ * Réassocie les cellules de valeurs orphelines (staggered items) avec leur ligne
+ * de données parente (ex: cellule décalée de quelques points verticaux dans le PDF).
+ */
+function mergeStaggeredLines(lines: PdfLine[]): PdfLine[] {
+  const merged: PdfLine[] = [];
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const isOrphan = line.items.length === 1 && line.items[0].x >= SPEC_COL_MIN_X;
+    if (isOrphan) {
+      const prev = merged[merged.length - 1];
+      const next = lines[i + 1];
+
+      const prevDiff = prev ? Math.abs(prev.y - line.y) : Infinity;
+      const nextDiff = next ? Math.abs(next.y - line.y) : Infinity;
+
+      if (prev && prevDiff <= 6 && prev.items.some((it) => it.x < LABEL_ZONE_MAX_X)) {
+        prev.items.push(...line.items);
+        prev.items.sort((a, b) => a.x - b.x);
+        prev.text = joinItems(prev.items);
+        continue;
+      } else if (next && nextDiff <= 6 && next.items.some((it) => it.x < LABEL_ZONE_MAX_X)) {
+        next.items.push(...line.items);
+        next.items.sort((a, b) => a.x - b.x);
+        next.text = joinItems(next.items);
+        continue;
+      }
+    }
+    merged.push({ ...line, items: [...line.items] });
+  }
+  return merged;
+}
+
+/**
  * Découpe les lignes de la section 04 en sous-tableaux indépendants.
  * Un nouveau tableau commence dès qu'un nouvel en-tête de colonnes
  * ou un marqueur de tableau apparaît APRÈS qu'on est entré dans la zone
  * de données d'un tableau précédent.
  */
-function splitSpecTables(lines: PdfLine[]): PdfLine[][] {
+function splitSpecTables(rawLines: PdfLine[]): PdfLine[][] {
+  const lines = mergeStaggeredLines(rawLines);
   if (lines.length === 0) return [];
   const tables: PdfLine[][] = [];
   let currentTable: PdfLine[] = [];
@@ -1769,7 +1981,9 @@ function splitSpecTables(lines: PdfLine[]): PdfLine[][] {
       const hasLabelOrGroup =
         isGroupHeaderLine(line) ||
         (line.items.some((item) => item.x < LABEL_ZONE_MAX_X) && !isSpecLabelLine(line));
-      if (hasLabelOrGroup && !isHeader) {
+      // Ignorer les lignes de préambule/titre de section qui ne sont pas de vraies lignes de données
+      const isPreamble = line.items.length === 1 && line.items[0].size >= 14;
+      if (hasLabelOrGroup && !isHeader && !isPreamble) {
         inDataZone = true;
       }
     }
