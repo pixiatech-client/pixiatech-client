@@ -366,11 +366,22 @@ export async function buildProductFromMasterTemplate(
     '';
 
   // Dimensions specsList
-  const specsList = [
-    ...(moduleDim ? [{ label: 'MODULE', value: moduleDim }] : []),
-    ...(cabinetDim ? [{ label: 'CABINET', value: cabinetDim }] : []),
-    ...(depth ? [{ label: 'PROFONDEUR', value: depth }] : []),
-  ];
+  // Si le PDF fournit une specsList complète (ex: ventilateurs 3D Canva ou gabarit personnalisé),
+  // l'utiliser directement au lieu de se limiter à module/cabinet/depth.
+  const overlaySpecsList = (overlay.design?.specsList ?? []).filter(
+    (s) => isRealValue(s.label) && isRealValue(s.value)
+  );
+  const specsList =
+    overlaySpecsList.length > 0
+      ? overlaySpecsList.map((s) => ({
+          label: cleanPlaceholderText(s.label),
+          value: cleanPlaceholderText(s.value),
+        }))
+      : [
+          ...(moduleDim ? [{ label: 'MODULE', value: moduleDim }] : []),
+          ...(cabinetDim ? [{ label: 'CABINET', value: cabinetDim }] : []),
+          ...(depth ? [{ label: 'PROFONDEUR', value: depth }] : []),
+        ];
 
   // Configurations d'installation
   let configs: ProductSubItem[] = [];
@@ -456,10 +467,16 @@ export async function buildProductFromMasterTemplate(
     (m) => isRealValue(m.name) && !isPlaceholder(m.name)
   );
 
-  // Vérifier si le PDF appartient au schéma du master (ex: écran LED avec pitch, ip, cabDim...)
+  // Clés discriminantes spécifiques aux écrans LED (jamais présentes pour les ventilateurs 3D ou autres gammes)
+  const LED_DISCRIMINANT_KEYS = new Set([
+    'pitch', 'density', 'moduleRes', 'moduleDim', 'cabRes', 'cabDim',
+    'refresh', 'scan', 'transparency', 'pixelPitch', 'ledArrangement'
+  ]);
+
+  // Vérifier si le PDF appartient au schéma d'un écran LED (ex: pitch, scan, moduleDim...)
   // ou s'il s'agit d'une toute nouvelle gamme technique (ex: ventilateurs 3D avec diameter, ledCount, storage...)
   const overlayMatchesMaster = overlayModels.some((m) =>
-    Object.keys(m.specs ?? {}).some((k) => masterKeys.has(k))
+    Object.keys(m.specs ?? {}).some((k) => LED_DISCRIMINANT_KEYS.has(k))
   );
 
   if (!overlayMatchesMaster && overlay.specs?.groups && overlay.specs.groups.length > 0) {

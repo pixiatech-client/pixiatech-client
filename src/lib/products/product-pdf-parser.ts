@@ -358,7 +358,8 @@ export function cleanGabaritString(raw: string | undefined | null): string {
   t = cleanValue(stripped);
 
   // 3. Après retrait des crochets, vérifier si le reste n'est lui-même qu'un placeholder (ex: "valeur" ou "valeur valeur")
-  if (isGabaritPlaceholder(normLabel(t))) {
+  // ou juste un préfixe de numéro de section résiduel (ex: "01", "02", "03", "05")
+  if (isGabaritPlaceholder(normLabel(t)) || /^\d{1,2}$/.test(t)) {
     return '';
   }
 
@@ -628,11 +629,14 @@ function matchSectionTitle(line: PdfLine): SectionKey | null {
   }
 
   // 2. Spécifications / Matrice comparative
-  // Note : si la ligne est un en-tête de groupe intérieur ("CARACTÉRISTIQUES TECHNIQUES" en petit corps <= 9),
+  // Note : si la ligne est un en-tête de groupe intérieur ("CARACTÉRISTIQUES TECHNIQUES" en petit corps <= 9)
+  // ou une ligne de tableau multi-colonnes (ex: "Données techniques Voir les spécifications ↓" avec 2 colonnes),
   // on ne bascule pas vers une nouvelle section specs.
   const isSmallGroupTitle = line.items.length === 1 && line.items[0].size <= 9.0;
+  const isMultiColumnTableRow = line.items.length >= 2 && line.items[1].x >= 350;
   if (
     !isSmallGroupTitle &&
+    !isMultiColumnTableRow &&
     (clean.startsWith('CARACTERISTIQUES TECHNIQUES') ||
       clean.startsWith('SPECIFICATIONS TECHNIQUES') ||
       clean === 'SPECIFICATIONS' ||
@@ -662,7 +666,7 @@ function matchSectionTitle(line: PdfLine): SectionKey | null {
 
   // 4. Variantes courantes pour les autres sections
   if (clean === 'APERCU' || clean.startsWith('APERCU PRODUIT') || clean === 'OVERVIEW' || clean.includes('APERCU') || clean === 'TECHNOLOGIE') return 'overview';
-  if (clean.startsWith('CONCEPTION ARCHITECTURALE') || clean.startsWith('CONCEPTION FORMAT') || clean === 'CONCEPTION' || clean === 'DESIGN' || clean === 'CONFIGURATION') return 'design';
+  if (clean.startsWith('CONCEPTION ARCHITECTURALE') || clean.startsWith('CONCEPTION FORMAT') || clean === 'CONCEPTION' || clean === 'DESIGN') return 'design';
   if (clean.startsWith('REFERENCES') || clean.startsWith('REALISATIONS') || clean.startsWith('PROJETS') || clean === 'FIELDWORK' || clean.includes('SUR LE TERRAIN') || clean.includes('REFERENCES TERRAIN')) return 'fieldwork';
 
   // Repli strict sur item unique et coordonnées géométriques (gabarit officiel)
@@ -863,6 +867,25 @@ function parseHook(lines: PdfLine[]): string | undefined {
       .trim();
     if (isFilledSlot(text) && !isStaticText(text)) return cleanValue(text);
   }
+
+  // Repli pour les formats alternatifs (ex: Canva où le titre d'accroche est
+  // en corps >= 11pt, en tête de section, sans le grand chiffre 20pt)
+  const hookParts: string[] = [];
+  for (const line of lines.slice(0, 6)) {
+    if (isStaticText(line.text)) continue;
+    if (line.items.some((it) => it.str.includes('Audio Bluetooth') || it.str.includes('TECHNOLOGIE') || it.str.includes('Page '))) break;
+    const leftItems = line.items.filter((it) => it.x < 250 && it.size >= 11 && !isStaticText(it.str));
+    if (leftItems.length > 0) {
+      const txt = cleanValue(leftItems.map((it) => it.str).join(' '));
+      if (isFilledSlot(txt) && !isStaticText(txt) && !/^\d+\)\s/.test(txt)) {
+        hookParts.push(txt);
+      }
+    }
+  }
+  if (hookParts.length > 0) {
+    return hookParts.join(' ');
+  }
+
   return undefined;
 }
 
@@ -1088,18 +1111,21 @@ function parseMasthead(lines: PdfLine[]): Partial<ParsedFiche> {
   }
 
   // Boutons CTA du Hero (ex: "Acheter un ventilateur", "Télécharger la fiche technique")
+  // Ignorer l'en-tête du gabarit officiel ("FICHE TECHNIQUE PRODUIT · ECRAN LED" en y≈797)
   for (const line of lines) {
-    if (line.items.length >= 1 && line.items.length <= 3) {
+    if (line.y < 780 && line.items.length >= 1 && line.items.length <= 3) {
       const isCtaLine = line.items.some(it => {
         const n = normLabel(it.str);
-        return n.includes('ACHETER') || n.includes('COMMANDE') || n.includes('DEVIS') || n.includes('TELECHARGER') || n.includes('FICHE TECHNIQUE');
+        return n.includes('ACHETER') || n.includes('COMMANDE') || n.includes('DEVIS') || (n.includes('TELECHARGER') && n.includes('FICHE'));
       });
       if (isCtaLine) {
         if (!out.primaryCta && line.items[0]) {
-          out.primaryCta = cleanGabaritString(line.items[0].str);
+          const p = cleanGabaritString(line.items[0].str);
+          if (isFilledSlot(p)) out.primaryCta = p;
         }
         if (!out.secondaryCta && line.items[1]) {
-          out.secondaryCta = cleanGabaritString(line.items[1].str);
+          const s = cleanGabaritString(line.items[1].str);
+          if (isFilledSlot(s)) out.secondaryCta = s;
         }
         break;
       }
@@ -1158,9 +1184,34 @@ function parseOverview(lines: PdfLine[]): ParsedFiche['overview'] {
     break;
   }
 
+  // Repli accroche / titre pour les formats alternatifs (ex: Canva)
+  if (!out.hook) {
+    const hook = parseHook(lines);
+    if (hook) out.hook = hook;
+  }
+
   // Description : après l'accroche, jusqu'au libellé « MEDIAS DE PRESENTATION ».
   const description = parseBodyParagraph(lines, hookIndex + 1);
   if (description) out.description = description;
+
+  // Repli : description en colonne droite (ex: Canva où le titre est à gauche et la description à droite x >= 280)
+  if (!out.description) {
+    const rightParts: string[] = [];
+    for (const line of lines.slice(0, 8)) {
+      if (line.items.some((it) => it.str.includes('Audio Bluetooth'))) break;
+      for (const it of line.items) {
+        if (it.x >= 280 && it.size <= 10 && !isStaticText(it.str) && isFilledSlot(it.str)) {
+          rightParts.push(it.str.trim());
+        }
+      }
+    }
+    if (rightParts.length) {
+      const descCandidate = cleanValue(rightParts.join(' '));
+      if (isFilledSlot(descCandidate)) {
+        out.description = descCandidate;
+      }
+    }
+  }
 
   // Médias : 2 titres (video / photo) puis 2 descriptions.
   // On exige EXACTEMENT 2 colonnes : le libellé statique « MEDIAS DE
@@ -1199,6 +1250,35 @@ function parseOverview(lines: PdfLine[]): ParsedFiche['overview'] {
     }
   }
 
+  // Repli statistiques : colonnes de cartes / métriques (ex: Canva Audio Bluetooth, Lecture programmée...)
+  if (!out.stats || out.stats.length === 0) {
+    const statHeaderIdx = lines.findIndex((l) => {
+      return l.items.length === 3 && l.items.every((it) => it.size >= 11);
+    });
+    if (statHeaderIdx !== -1) {
+      const headerLine = lines[statHeaderIdx];
+      const statsPairs: { value: string; label: string }[] = [];
+      for (const col of headerLine.items) {
+        const val = cleanValue(col.str);
+        if (!isFilledSlot(val)) continue;
+        const descParts: string[] = [];
+        for (let r = statHeaderIdx + 1; r < lines.length && r < statHeaderIdx + 4; r++) {
+          const rowLine = lines[r];
+          if (/^\d+\)\s/.test(rowLine.text) || rowLine.items.some((it) => it.size >= 11)) break;
+          const match = rowLine.items.find((it) => Math.abs(it.cx - col.cx) < 60);
+          if (match && isFilledSlot(match.str)) descParts.push(cleanValue(match.str));
+        }
+        statsPairs.push({
+          value: val,
+          label: descParts.join(' '),
+        });
+      }
+      if (statsPairs.length === 3) {
+        out.stats = statsPairs;
+      }
+    }
+  }
+
   // Technologies : une ligne de liste par technologie. Le gabarit écrit le NOM
   // et la DESCRIPTION soit en deux colonnes, soit séparés par un tiret cadratin
   // selon la ligne : `splitTitleDescription` tranche les deux graphies.
@@ -1216,6 +1296,34 @@ function parseOverview(lines: PdfLine[]): ParsedFiche['overview'] {
       ...(description && isFilledSlot(description) ? { description } : {}),
     });
   }
+
+  // Repli technologies : 2 colonnes sous le sous-titre technologie (ex: Canva Gestion des contenus | Affichage multi-unités)
+  if (technologies.length === 0) {
+    const techHeaderIdx = lines.findIndex((l) => {
+      return l.items.length === 2 && l.items.every((it) => it.size >= 11 && it.y < 200);
+    });
+    if (techHeaderIdx !== -1) {
+      const headerLine = lines[techHeaderIdx];
+      for (let k = 0; k < headerLine.items.length; k++) {
+        const col = headerLine.items[k];
+        const title = cleanValue(col.str);
+        if (!isFilledSlot(title)) continue;
+        const descParts: string[] = [];
+        for (let r = techHeaderIdx + 1; r < lines.length && r < techHeaderIdx + 6; r++) {
+          const rowLine = lines[r];
+          if (rowLine.text.startsWith('Page ')) break;
+          const match = rowLine.items.find((it) => Math.abs(it.cx - col.cx) < 100);
+          if (match && isFilledSlot(match.str)) descParts.push(cleanValue(match.str));
+        }
+        technologies.push({
+          num: String(k + 1).padStart(2, '0'),
+          title,
+          ...(descParts.length ? { description: descParts.join(' ') } : {}),
+        });
+      }
+    }
+  }
+
   if (technologies.length) out.technologies = technologies;
 
   return Object.keys(out).length ? out : undefined;
@@ -1299,6 +1407,76 @@ function parseDesign(lines: PdfLine[]): ParsedFiche['design'] {
     }
   }
   if (visuals.length) out.visuals = visuals;
+
+  // Repli specsList pour les formats Canva/personnalisés :
+  // Deux colonnes verticales : labels à x≈294, valeurs à x≈454.
+  // Les valeurs d'une même ligne peuvent être sur plusieurs lignes consécutives (ex: multi-line).
+  if (!out.dimensions || out.dimensions.length === 0) {
+    // Chercher une zone de tableau à 2 colonnes : label (x≈250–360) + valeur (x≈400+)
+    const leftItems = lines
+      .filter((l) => !isStaticText(l.text) && !l.text.startsWith('Page '))
+      .flatMap((l) => l.items.filter((it) => it.x >= 250 && it.x <= 360 && it.size >= 9));
+    const rightItems = lines
+      .filter((l) => !isStaticText(l.text) && !l.text.startsWith('Page '))
+      .flatMap((l) => l.items.filter((it) => it.x >= 400 && it.size >= 7));
+
+    if (leftItems.length >= 2 && rightItems.length >= 2) {
+      // Regrouper les leftItems en clusters verticaux (lignes proches, écart <= 25pt)
+      const clusters: { yTop: number; yBot: number; parts: string[] }[] = [];
+      const sortedLeft = [...leftItems].sort((a, b) => b.y - a.y); // descending y = top→bottom
+      for (const it of sortedLeft) {
+        const existing = clusters.find(
+          (c) => it.y <= c.yTop + 5 && it.y >= c.yBot - 25
+        );
+        if (existing) {
+          existing.parts.push(it.str.trim());
+          existing.yTop = Math.max(existing.yTop, it.y);
+          existing.yBot = Math.min(existing.yBot, it.y);
+        } else {
+          clusters.push({ yTop: it.y, yBot: it.y, parts: [it.str.trim()] });
+        }
+      }
+      // Sort clusters top→bottom (highest y = top in PDF coordinate space)
+      clusters.sort((a, b) => b.yTop - a.yTop);
+
+      // Assign right items using midpoint bands between consecutive clusters.
+      // For cluster[i], its band spans from midpoint(i-1,i) down to midpoint(i,i+1).
+      // This avoids a fixed distance threshold and correctly handles closely-spaced clusters.
+      const clusterValues: { y: number; str: string }[][] = clusters.map(() => []);
+      for (const it of rightItems) {
+        let bestIdx = -1;
+        let bestDist = Infinity;
+        for (let ci = 0; ci < clusters.length; ci++) {
+          const c = clusters[ci];
+          const dist =
+            it.y >= c.yBot && it.y <= c.yTop
+              ? 0
+              : it.y > c.yTop
+              ? it.y - c.yTop
+              : c.yBot - it.y;
+          if (dist < bestDist) {
+            bestDist = dist;
+            bestIdx = ci;
+          }
+        }
+        // No hard distance threshold: each right item always goes to its nearest cluster.
+        if (bestIdx >= 0) clusterValues[bestIdx].push({ y: it.y, str: it.str.trim() });
+      }
+      const dimensions: { label: string; value: string }[] = [];
+      for (let ci = 0; ci < clusters.length; ci++) {
+        const c = clusters[ci];
+        const label = cleanValue(c.parts.join(' '));
+        if (!isFilledSlot(label) || isStaticText(label)) continue;
+        const rawItems = clusterValues[ci] ?? [];
+        const valItems = rawItems
+          .filter((v) => isFilledSlot(v.str))
+          .sort((a, b) => b.y - a.y); // top→bottom
+        const value = cleanValue(valItems.map((v) => v.str).join(' '));
+        if (isFilledSlot(value)) dimensions.push({ label, value });
+      }
+      if (dimensions.length >= 2) out.dimensions = dimensions;
+    }
+  }
 
   // Configurations : numéro (chiffres coupés) + nom + description.
   const configs: ProductSubItemDraft[] = [];
@@ -2348,6 +2526,8 @@ export function parseProductFichePages(pages: ParsedPage[]): ParsedFiche {
   if (masthead.subtitle !== undefined) fiche.subtitle = masthead.subtitle;
   if (masthead.markets !== undefined) fiche.markets = masthead.markets;
   if (masthead.badges !== undefined) fiche.badges = masthead.badges;
+  if (masthead.primaryCta !== undefined) fiche.primaryCta = masthead.primaryCta;
+  if (masthead.secondaryCta !== undefined) fiche.secondaryCta = masthead.secondaryCta;
 
   const overview = parseOverview(segments.get('overview') ?? []);
   if (overview) fiche.overview = overview;
@@ -2491,7 +2671,7 @@ export function mapParsedToProduct(parsed: ParsedFiche, fallbackName?: string): 
   if (parsed.company) product.company = parsed.company;
 
   // hero
-  if (name || parsed.subtitle || parsed.markets?.length || parsed.badges?.length || parsed.series) {
+  if (name || parsed.subtitle || parsed.markets?.length || parsed.badges?.length || parsed.series || parsed.primaryCta || parsed.secondaryCta) {
     product.hero = {
       title: name,
       ...(parsed.subtitle ? { subtitle: parsed.subtitle } : {}),
@@ -2500,6 +2680,9 @@ export function mapParsedToProduct(parsed: ParsedFiche, fallbackName?: string): 
       ...(parsed.series
         ? { breadcrumbCategoryFr: parsed.series, breadcrumbCategoryEn: parsed.series }
         : {}),
+      // Boutons CTA du hero extraits du PDF
+      ...(parsed.primaryCta ? { primaryCta: parsed.primaryCta } : {}),
+      ...(parsed.secondaryCta ? { secondaryCta: parsed.secondaryCta } : {}),
     };
   }
 
