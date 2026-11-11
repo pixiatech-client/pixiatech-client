@@ -727,6 +727,9 @@ export interface ParsedFiche {
   };
 
   cta?: { title?: string; buttonLabel?: string };
+  /** Boutons CTA du hero (libellés extraits du PDF, ex: « Acheter », « Télécharger la fiche »). */
+  primaryCta?: string;
+  secondaryCta?: string;
   seriesNavigation?: {
     previous?: { name?: string; url?: string };
     next?: { name?: string; url?: string };
@@ -1026,23 +1029,81 @@ function parseMasthead(lines: PdfLine[]): Partial<ParsedFiche> {
     return cols.length === 4 && cols.every((i) => i.size >= 10.5);
   });
   if (badgeIndex !== -1) {
-    const labels = lines[badgeIndex + 1] ? lineColumns(lines[badgeIndex + 1].items) : [];
-    if (labels.length === 4) {
-      const { pairs } = pairValueOverLabel(lines, badgeIndex, 4);
-      if (pairs.length) out.badges = pairs;
+    const { pairs } = pairValueOverLabel(lines, badgeIndex, 4);
+    if (pairs.length) {
+      out.badges = pairs;
+    } else {
+      // Repli pour les documents où les libellés sous les badges ont été scindés en plusieurs items
+      // (ex: "NOMBRE DE LED", "DIAMÈTRE D’AFFICHAGE", "PUISSANCE NOMINALE", "ENVIR" + "ONNEMENT")
+      const valueLine = lines[badgeIndex];
+      const labelLine = lines[badgeIndex + 1];
+      if (valueLine && labelLine) {
+        const vCols = lineColumns(valueLine.items);
+        if (vCols.length === 4) {
+          const grouped: string[][] = [[], [], [], []];
+          for (const item of labelLine.items) {
+            let bestIdx = 0;
+            let bestDist = Infinity;
+            vCols.forEach((v, idx) => {
+              const d = Math.abs(item.cx - v.cx);
+              if (d < bestDist) {
+                bestDist = d;
+                bestIdx = idx;
+              }
+            });
+            grouped[bestIdx].push(item.str);
+          }
+          const synthPairs = vCols.map((v, idx) => ({
+            value: cleanGabaritString(v.str),
+            label: cleanGabaritString(grouped[idx].join(' '))
+              .toUpperCase()
+              .replace(/\bENVIR\s+ONNEMENT\b/g, 'ENVIRONNEMENT')
+              .replace(/\s+/g, ' '),
+          })).filter(p => isFilledSlot(p.value) && isFilledSlot(p.label));
+          if (synthPairs.length === 4) out.badges = synthPairs;
+        }
+      }
     }
   }
 
-  // Marchés : grille de 4 items en corps 7.5, située AU-DESSUS des badges
-  // (en coordonnées PDF, « au-dessus » = Y plus grand).
+  // Marchés / tags : grille d'items en corps 7.5–9 (gabarit officiel = 4 items en 7.5,
+  // Canva = 5 items en 8-9pt comme Boutiques, Salons, Showrooms, Aéroports, Retail).
   const badgeY = badgeIndex !== -1 ? lines[badgeIndex].y : -Infinity;
   for (const line of lines) {
     if (line.y <= badgeY) continue;
+    if (line.items.length >= 3 && line.items.length <= 6 && line.items.every((i) => i.size >= 6.9 && i.size <= 9.5)) {
+      const markets = line.items.map((i) => cleanGabaritString(i.str)).filter(isFilledSlot);
+      if (markets.length >= 3 && out.markets === undefined) {
+        out.markets = markets;
+        break;
+      }
+    }
     const cols = lineColumns(line.items);
-    if (cols.length !== 4) continue;
-    if (!cols.every((i) => i.size >= 6.9 && i.size <= 8.1)) continue;
-    const markets = cols.map((i) => cleanGabaritString(i.str)).filter(isFilledSlot);
-    if (markets.length && out.markets === undefined) out.markets = markets;
+    if (cols.length >= 3 && cols.length <= 6) {
+      if (cols.every((i) => i.size >= 6.9 && i.size <= 9.5)) {
+        const markets = cols.map((i) => cleanGabaritString(i.str)).filter(isFilledSlot);
+        if (markets.length && out.markets === undefined) out.markets = markets;
+      }
+    }
+  }
+
+  // Boutons CTA du Hero (ex: "Acheter un ventilateur", "Télécharger la fiche technique")
+  for (const line of lines) {
+    if (line.items.length >= 1 && line.items.length <= 3) {
+      const isCtaLine = line.items.some(it => {
+        const n = normLabel(it.str);
+        return n.includes('ACHETER') || n.includes('COMMANDE') || n.includes('DEVIS') || n.includes('TELECHARGER') || n.includes('FICHE TECHNIQUE');
+      });
+      if (isCtaLine) {
+        if (!out.primaryCta && line.items[0]) {
+          out.primaryCta = cleanGabaritString(line.items[0].str);
+        }
+        if (!out.secondaryCta && line.items[1]) {
+          out.secondaryCta = cleanGabaritString(line.items[1].str);
+        }
+        break;
+      }
+    }
   }
   return out;
 }
@@ -1430,9 +1491,13 @@ function parseFeatures(lines: PdfLine[]): ParsedFiche['features'] {
 const SPEC_GROUP_IDS: { match: string; id: string }[] = [
   { match: 'GENERAL', id: 'general' },
   { match: 'PHYSIQUE', id: 'physical' },
+  { match: 'CARACTERISTIQUES TECHNIQUES', id: 'physical' },
+  { match: 'AFFICHAGE ET CONTENUS', id: 'display' },
   { match: 'OPTIQUE', id: 'optical' },
   { match: 'ELECTRIQUE', id: 'electrical' },
+  { match: 'ALIMENTATION', id: 'electrical' },
   { match: 'ENVIRONNEMENT', id: 'environmental' },
+  { match: 'PILOTAGE ET COMMANDE', id: 'control' },
 ];
 
 /**
@@ -1485,6 +1550,36 @@ const SPEC_LABEL_KEYS: Record<string, string> = {
   LUMINOSITE: 'brightness',
   'FREQUENCE DE RAFRAICHISSEMENT': 'refresh',
   'FREQUENCE DE BALAYAGE': 'scan',
+  // Ventilateurs holographiques 3D et fiches techniques françaises
+  ENVIRONNEMENT: 'env',
+  CONFIGURATION: 'config',
+  'DIAMETRE D AFFICHAGE MM': 'diameter',
+  'DIAMETRE D AFFICHAGE': 'diameter',
+  'RESOLUTION DECLAREE': 'resolution',
+  'NOMBRE DE LED': 'ledCount',
+  'STOCKAGE TF GO': 'storage',
+  'STOCKAGE TF': 'storage',
+  'DIMENSIONS DE L EMBALLAGE MM': 'packageDim',
+  'DIMENSIONS DE L EMBALLAGE': 'packageDim',
+  'POIDS EMBALLE KG': 'packagedWeight',
+  'POIDS EMBALLE': 'packagedWeight',
+  'FORMATS VIDEO IMAGE': 'mediaFormats',
+  'REGLAGE DE LA LUMINOSITE': 'brightness',
+  'REGLAGE DE L ANGLE': 'angleAdjust',
+  'AUDIO BLUETOOTH': 'bluetooth',
+  'PUISSANCE NOMINALE W': 'maxPower',
+  'PUISSANCE NOMINALE': 'maxPower',
+  'TENSION D ENTREE V AC': 'powerSource',
+  'TENSION D ENTREE': 'powerSource',
+  'TENSION DE SORTIE V DC': 'outputVoltage',
+  'TENSION DE SORTIE': 'outputVoltage',
+  'COURANT DE SORTIE A': 'outputCurrent',
+  'COURANT DE SORTIE': 'outputCurrent',
+  'APPLICATION MOBILE': 'appControl',
+  'GESTION PAR ORDINATEUR': 'pcControl',
+  'TELECOMMANDE MULTIFONCTION': 'remoteControl',
+  'DUPLICATION D ECRAN SANS FIL': 'screenMirroring',
+  'DUPLICATION D ECRAN': 'screenMirroring',
 };
 
 /**
@@ -1521,6 +1616,10 @@ const SPEC_LABEL_ALIASES: Record<string, string> = {
   'CONSOMMATION MOYENNE': 'avgPower',
   'TRANSPARENCE': 'transparency',
   'CERTIFICATIONS CE ROHS': 'certs',
+  'ENVIRONNEMENT 1': 'env',
+  'DIAMETRE D AFFICHAGE MM 2': 'diameter',
+  'PUISSANCE NOMINALE W 2': 'maxPower',
+  'DUPLICATION D ECRAN SANS FIL 3': 'screenMirroring',
 };
 
 /**
@@ -1913,6 +2012,10 @@ function isTableMarkerLine(line: PdfLine): boolean {
   if (/(?:^|\b)(TABLEAU|TABLE)\s*\d+/i.test(norm)) return true;
   if (norm.includes('CARACTERISTIQUES TECHNIQUES') || norm.includes('SPECIFICATIONS')) return true;
   if (/^04(\b|$)/.test(norm)) return true;
+  // Textes de préambule de section (ex: « 09 MODÈLES — DÉFILEMENT HORIZONTAL ») :
+  // ils apparaissent avant les tableaux de spécifications et ne sont pas des groupes.
+  if (/^\d+\s+MODELE/.test(norm)) return true;
+  if (norm.includes('DEFILEMENT HORIZONTAL')) return true;
   return false;
 }
 
@@ -2085,13 +2188,33 @@ function parseSpecMatrix(lines: PdfLine[]): {
   // Filtrer les groupes qui n'ont aucune ligne
   const pruned = combinedGroups.filter((g) => g.rows.length > 0);
 
-  // Si aucun modèle n'a de valeur renseignée
-  if (combinedModels.length === 0 || combinedModels.every((m) => Object.keys(m.specs).length === 0)) {
-    allWarnings.push('Matrice des caractéristiques sans aucune valeur renseignée.');
-    return { groups: [], models: [], warnings: allWarnings };
+  // Si le document contient plusieurs tableaux (multi-modèles répartis sur plusieurs pages),
+  // le message « une seule colonne » sur un bloc individuel est un faux-positif : on le supprime.
+  const filteredWarnings =
+    tableBlocks.length > 1
+      ? allWarnings.filter((w) => !w.includes('une seule colonne générée'))
+      : allWarnings;
+
+  // Incohérence documentaire : prévenir quand le texte annonce un nombre de modèles
+  // différent du compte réel.
+  const preambleText = lines
+    .slice(0, 30)
+    .map((l) => normLabel(l.text))
+    .join(' ');
+  const announcedMatch = preambleText.match(/(\d+)\s+MODELE/);
+  if (announcedMatch && combinedModels.length !== parseInt(announcedMatch[1], 10)) {
+    filteredWarnings.push(
+      `Incohérence documentaire : le document annonce ${announcedMatch[1]} modèle(s) mais ${combinedModels.length} références distinctes ont été extraites. Les ${combinedModels.length} références sont conservées en attente de validation.`
+    );
   }
 
-  return { groups: pruned, models: combinedModels, warnings: allWarnings };
+  // Si aucun modèle n'a de valeur renseignée
+  if (combinedModels.length === 0 || combinedModels.every((m) => Object.keys(m.specs).length === 0)) {
+    filteredWarnings.push('Matrice des caractéristiques sans aucune valeur renseignée.');
+    return { groups: [], models: [], warnings: filteredWarnings };
+  }
+
+  return { groups: pruned, models: combinedModels, warnings: filteredWarnings };
 }
 
 /** 05 · RÉFÉRENCES TERRAIN */

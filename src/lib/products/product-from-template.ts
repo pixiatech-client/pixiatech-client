@@ -449,26 +449,28 @@ export async function buildProductFromMasterTemplate(
     }));
   }
 
-  // Intégrer les groupes et caractéristiques découverts dans le PDF
-  if (overlay.specs?.groups && overlay.specs.groups.length > 0) {
-    for (const ovGroup of overlay.specs.groups) {
-      const existingGroup = finalGroups.find(
-        (g) => g.id === ovGroup.id || g.label.toLowerCase() === ovGroup.label.toLowerCase()
-      );
-      if (existingGroup) {
-        for (const ovRow of ovGroup.rows) {
-          if (!existingGroup.rows.some((r) => r.key === ovRow.key)) {
-            existingGroup.rows.push({ key: ovRow.key, label: ovRow.label });
-          }
-        }
-      } else {
-        finalGroups.push({
-          id: ovGroup.id,
-          label: ovGroup.label,
-          rows: ovGroup.rows.map((r) => ({ key: r.key, label: r.label })),
-        });
-      }
-    }
+  const masterKeys = new Set<string>();
+  for (const g of finalGroups) for (const r of g.rows) masterKeys.add(r.key);
+
+  const overlayModels = (overlay.specs?.models ?? []).filter(
+    (m) => isRealValue(m.name) && !isPlaceholder(m.name)
+  );
+
+  // Vérifier si le PDF appartient au schéma du master (ex: écran LED avec pitch, ip, cabDim...)
+  // ou s'il s'agit d'une toute nouvelle gamme technique (ex: ventilateurs 3D avec diameter, ledCount, storage...)
+  const overlayMatchesMaster = overlayModels.some((m) =>
+    Object.keys(m.specs ?? {}).some((k) => masterKeys.has(k))
+  );
+
+  if (!overlayMatchesMaster && overlay.specs?.groups && overlay.specs.groups.length > 0) {
+    // Nouvelle catégorie de produit : la matrice technique du PDF remplit le composant technique du template
+    finalGroups = overlay.specs.groups.map((g) => ({
+      id: g.id,
+      label: g.label,
+      rows: g.rows.map((r) => ({ key: r.key, label: r.label })),
+    }));
+    masterKeys.clear();
+    for (const g of finalGroups) for (const r of g.rows) masterKeys.add(r.key);
   }
 
   // `finalGroups` est désormais la structure FINALE, et elle ne vient que du
@@ -489,9 +491,6 @@ export async function buildProductFromMasterTemplate(
   // `model.specs` des champs dynamiques que rien n'affichait — des données
   // orphelines qui entraient dans les exports et qui rejoueraient le bug dès
   // qu'un parcours des groupes les oublierait.
-  const masterKeys = new Set<string>();
-  for (const g of finalGroups) for (const r of g.rows) masterKeys.add(r.key);
-
   const toModel = (m: ProductSpecModel): ProductSpecModel => {
     const specs: Record<string, string> = {};
     for (const [k, v] of Object.entries(m.specs ?? {})) {
@@ -507,9 +506,6 @@ export async function buildProductFromMasterTemplate(
   };
 
   let finalModels: ProductSpecModel[] = [];
-  const overlayModels = (overlay.specs?.models ?? []).filter(
-    (m) => isRealValue(m.name) && !isPlaceholder(m.name)
-  );
 
   const isMasterSystem =
     master.slug === MASTER_TEMPLATE_SLUG ||
@@ -519,8 +515,8 @@ export async function buildProductFromMasterTemplate(
   if (overlayModels.length > 0) {
     // Le nombre de variantes du produit final est déterminé EXCLUSIVEMENT par le PDF
     finalModels = overlayModels.map(toModel);
-  } else if (master.specs?.models && master.specs.models.length > 0 && !isMasterSystem && !overlay.specs) {
-    // Uniquement si aucun PDF de specs n'a été fourni et que ce n'est pas le template maître système
+  } else if (master.specs?.models && master.specs.models.length > 0 && !overlay.specs) {
+    // Uniquement si aucun PDF de specs n'a été fourni
     finalModels = master.specs.models.filter((m) => !isPlaceholder(m.name)).map(toModel);
   }
 
