@@ -7,21 +7,35 @@ import { getRegisteredSections, getSectionLabel } from './section-registry';
 
 /** Libellés statiques pour les sections non enregistrées via EditableWrapper */
 const FALLBACK_LABELS: Record<string, string> = {
-  hero: 'Hero',
-  manifesto: 'Manifeste',
+  // Page d'accueil
+  hero: 'Hero Principal',
+  manifesto: 'Manifeste & Vision',
   showreel: 'Showreel 3D',
-  markets: 'Marchés',
+  markets: 'Marchés & Solutions',
   kinetic: 'Cinétique',
-  products: 'Produits',
-  technology: 'Technologie',
-  pitch: 'Pitch',
-  projects: 'Projets',
-  process: 'Processus',
-  experience: 'Centre d\'expérience',
-  insights: 'Insights',
-  contact: 'Contact',
+  products: 'Catalogue des Écrans',
+  technology: 'Technologies Propriétaires',
+  pitch: 'Calculateur Pas de Pixel',
+  projects: 'Réalisations & Projets',
+  process: 'Méthodologie & Processus',
+  experience: 'Experience Center',
+  insights: 'Insights & Articles',
+  contact: 'Contact & Consultation',
   header: 'En-tête',
   footer: 'Pied de page',
+
+  // Fiche Produit
+  overview: 'Aperçu & Statistiques',
+  design: 'Conception & Dimensions',
+  features: 'Points Clés & Caractéristiques',
+  specs: 'Spécifications Techniques',
+  fieldwork: 'Projets Réalisés',
+  next: 'Produits & Devis',
+
+  // Page Contact
+  'contact-hero': 'Hero Contact (Introduction)',
+  info: 'Coordonnées & Formulaire',
+  faq: 'Questions Fréquentes (FAQ)',
 };
 
 function getLabel(key: string): string {

@@ -15,6 +15,11 @@ import AuroraBackground from '@/components/ui/aurora-background';
 import type { ContactInfo, ContactSubmissionPayload, PageContentConfig } from '@/lib/site-web/types';
 import type { Language } from '../../pixiatech-translations';
 import { CONTACT_REFRESH_EVENT } from '../../cms/contact-edit';
+import { EditableWrapper } from '../../cms/EditableWrapper';
+import { SectionDragDropProvider } from '../../cms/SectionDragDropManager';
+import { useCms } from '@/lib/site-web/cms-context';
+
+export const DEFAULT_CONTACT_SECTION_ORDER = ['contact-hero', 'info', 'faq'];
 
 /* Drapeau temporaire : masque l'etape "choisissez votre type de projet"
    (fieldset des categories) pour raccourcir la tablette. Passez a `true`
@@ -1840,143 +1845,173 @@ export function ContactSections({ lang }: { lang: Language }) {
 
   const stats = [hero.stat1Text, hero.stat2Text, hero.stat3Text].filter(Boolean);
 
+  const { currentPageData } = useCms();
+  const configuredOrder = currentPageData?.sectionOrder;
+  const activeOrder = useMemo(() => {
+    if (configuredOrder && Array.isArray(configuredOrder) && configuredOrder.length > 0) {
+      const validConfigured = configuredOrder.filter((k) => DEFAULT_CONTACT_SECTION_ORDER.includes(k));
+      const missing = DEFAULT_CONTACT_SECTION_ORDER.filter((k) => !validConfigured.includes(k));
+      return [...validConfigured, ...missing];
+    }
+    return DEFAULT_CONTACT_SECTION_ORDER;
+  }, [configuredOrder]);
+
+  const contactSectionsMap: Record<string, { label: string; render: () => React.ReactNode } | null> = {
+    'contact-hero': {
+      label: lang === 'FR' ? 'Hero Contact (Introduction)' : 'Contact Hero (Introduction)',
+      render: () => (
+        <div ref={pinRef} className="ct-zoom-pin" style={{ position: 'relative' }}>
+          <section
+            id="contact"
+            className="theme-dark ct-mesh ct-mesh-1 ct-zoom-hero"
+            style={{ ...TONE_DARK, ...meshVars(0), background: 'var(--black, #080808)' }}
+          >
+            <motion.div className="ct-zoom-scale" style={{ scale: heroScale, willChange: 'transform' }}>
+              <div className="ct-zoom-bg" aria-hidden="true" />
+              <div
+                className="wrap"
+                style={{
+                  position: 'relative',
+                  zIndex: 1,
+                  minHeight: '100svh',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                  padding: 'calc(var(--nav-h) + clamp(16px, 3vh, 40px)) 24px clamp(48px, 7vh, 92px)',
+                }}
+              >
+                {visibility.heroBadge && (
+                  <div style={eyebrowDark}>
+                    {lang === 'FR' ? 'PIXIATECH / CONTACT' : 'PIXIATECH / CONTACT'}
+                  </div>
+                )}
+                {visibility.heroTitle && (
+                  <h1 className="display" style={{ margin: 0, color: DARK_TEXT, maxWidth: 1020 }}>
+                    <span data-contact-key="contact.hero.titleLine1">{hero.titleLine1}</span>
+                    {hero.titleHighlight && (
+                      <>
+                        <br />
+                        <span style={{ color: ACCENT }} data-contact-key="contact.hero.titleHighlight">
+                          {hero.titleHighlight}
+                        </span>
+                      </>
+                    )}
+                  </h1>
+                )}
+                {visibility.heroSubtitle && (
+                  <p
+                    className="lede"
+                    data-reveal="true"
+                    style={{ margin: '22px 0 0', maxWidth: 660, color: DARK_BODY, fontSize: 17, lineHeight: 1.62 }}
+                  >
+                    <span data-contact-key="contact.hero.subtitle">{hero.subtitle}</span>
+                  </p>
+                )}
+
+                {visibility.heroStatsPills && stats.length > 0 && (
+                  <div
+                    data-reveal="true"
+                    style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: '14px 44px',
+                      marginTop: 26,
+                      paddingTop: 18,
+                      borderTop: `1px solid ${DARK_LINE}`,
+                    }}
+                  >
+                    {stats.map((stat) => (
+                      <span
+                        key={stat}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 10,
+                          fontFamily: 'var(--font)',
+                          fontSize: 11,
+                          letterSpacing: '.14em',
+                          textTransform: 'uppercase',
+                          fontWeight: 600,
+                          color: DARK_TEXT_2,
+                        }}
+                      >
+                        <span
+                          aria-hidden="true"
+                          style={{ width: 14, height: 2, background: ACCENT, flex: 'none' }}
+                        />
+                        {stat}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {visibility.heroCtaButton && (
+                  <div style={{ marginTop: 26 }}>
+                    <ActionButton onClick={scrollToForm}>
+                      <span data-contact-key="contact.hero.ctaButtonText">{hero.ctaButtonText}</span>
+                      <span aria-hidden="true">↓</span>
+                    </ActionButton>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </section>
+        </div>
+      ),
+    },
+    info: {
+      label: lang === 'FR' ? 'Coordonnées & Formulaire' : 'Contact Details & Form',
+      render: () => (
+        <RetailContact info={info} publicInfo={publicInfo} form={form} visibility={visibility} lang={lang} />
+      ),
+    },
+    faq: visibility.faqSection
+      ? {
+          label: lang === 'FR' ? 'Questions Fréquentes (FAQ)' : 'Frequently Asked Questions (FAQ)',
+          render: () => (
+            <section
+              id="faq"
+              className="theme-dark"
+              style={{
+                ...TONE_DARK,
+                background: 'var(--black, #080808)',
+                borderTop: '1px solid var(--dark-line-2, #161615)',
+                padding: 'clamp(72px, 9vh, 120px) 0',
+              }}
+            >
+              <div className="wrap">
+                <div style={eyebrowDark}>{faq.badge}</div>
+                <h2 className="display" style={{ margin: 0, color: DARK_TEXT, maxWidth: 780 }}>
+                  {faq.title}
+                </h2>
+                <p
+                  data-reveal="true"
+                  style={{ margin: '24px 0 52px', maxWidth: 620, color: DARK_BODY, fontSize: 16.5, lineHeight: 1.62 }}
+                >
+                  {faq.subtitle}
+                </p>
+                <FaqList faq={faq} />
+              </div>
+            </section>
+          ),
+        }
+      : null,
+  };
+
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: CONTACT_CSS }} />
-
-      {/* ── Hero : epingle, zoom au scroll (faccon topology.vc) ── */}
-      <div ref={pinRef} className="ct-zoom-pin" style={{ position: 'relative' }}>
-        <section
-          id="contact"
-          className="theme-dark ct-mesh ct-mesh-1 ct-zoom-hero"
-          style={{ ...TONE_DARK, ...meshVars(0), background: 'var(--black, #080808)' }}
-        >
-          <motion.div className="ct-zoom-scale" style={{ scale: heroScale, willChange: 'transform' }}>
-            <div className="ct-zoom-bg" aria-hidden="true" />
-            <div
-              className="wrap"
-              style={{
-                position: 'relative',
-                zIndex: 1,
-                minHeight: '100svh',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                padding: 'calc(var(--nav-h) + clamp(16px, 3vh, 40px)) 24px clamp(48px, 7vh, 92px)',
-              }}
-            >
-              {visibility.heroBadge && (
-                <div style={eyebrowDark}>
-                  {lang === 'FR' ? 'PIXIATECH / CONTACT' : 'PIXIATECH / CONTACT'}
-                </div>
-              )}
-              {visibility.heroTitle && (
-                <h1 className="display" style={{ margin: 0, color: DARK_TEXT, maxWidth: 1020 }}>
-                  <span data-contact-key="contact.hero.titleLine1">{hero.titleLine1}</span>
-                  {hero.titleHighlight && (
-                    <>
-                      <br />
-                      <span style={{ color: ACCENT }} data-contact-key="contact.hero.titleHighlight">
-                        {hero.titleHighlight}
-                      </span>
-                    </>
-                  )}
-                </h1>
-              )}
-              {visibility.heroSubtitle && (
-                <p
-                  className="lede"
-                  data-reveal="true"
-                  style={{ margin: '22px 0 0', maxWidth: 660, color: DARK_BODY, fontSize: 17, lineHeight: 1.62 }}
-                >
-                  <span data-contact-key="contact.hero.subtitle">{hero.subtitle}</span>
-                </p>
-              )}
-
-              {visibility.heroStatsPills && stats.length > 0 && (
-                <div
-                  data-reveal="true"
-                  style={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: '14px 44px',
-                    marginTop: 26,
-                    paddingTop: 18,
-                    borderTop: `1px solid ${DARK_LINE}`,
-                  }}
-                >
-                  {stats.map((stat) => (
-                    <span
-                      key={stat}
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 10,
-                        fontFamily: 'var(--font)',
-                        fontSize: 11,
-                        letterSpacing: '.14em',
-                        textTransform: 'uppercase',
-                        fontWeight: 600,
-                        color: DARK_TEXT_2,
-                      }}
-                    >
-                      <span
-                        aria-hidden="true"
-                        style={{ width: 14, height: 2, background: ACCENT, flex: 'none' }}
-                      />
-                      {stat}
-                    </span>
-                  ))}
-                </div>
-              )}
-
-              {visibility.heroCtaButton && (
-                <div style={{ marginTop: 26 }}>
-                  <ActionButton onClick={scrollToForm}>
-                    <span data-contact-key="contact.hero.ctaButtonText">{hero.ctaButtonText}</span>
-                    <span aria-hidden="true">↓</span>
-                  </ActionButton>
-                </div>
-              )}
-            </div>
-          </motion.div>
-        </section>
-      </div>
-
-      {/* ── Coordonnées dans la tablette : la section « Our fastest-ever
-          POS » des Shopify Editions Spring 2026. Le formulaire vit à
-          l'écran de la tablette (sa couleur claire est conservée), les
-          coordonnées flottent à gauche, et la souris incline l'ensemble. */}
-      <RetailContact info={info} publicInfo={publicInfo} form={form} visibility={visibility} lang={lang} />
-
-      {/* ── FAQ ────────────────────────────────────────────────
-          Retour au noir pour refermer l'alternance. */}
-      {visibility.faqSection && (
-        <section
-          id="faq"
-          className="theme-dark"
-          style={{
-            ...TONE_DARK,
-            background: 'var(--black, #080808)',
-            borderTop: '1px solid var(--dark-line-2, #161615)',
-            padding: 'clamp(72px, 9vh, 120px) 0',
-          }}
-        >
-          <div className="wrap">
-            <div style={eyebrowDark}>{faq.badge}</div>
-            <h2 className="display" style={{ margin: 0, color: DARK_TEXT, maxWidth: 780 }}>
-              {faq.title}
-            </h2>
-            <p
-              data-reveal="true"
-              style={{ margin: '24px 0 52px', maxWidth: 620, color: DARK_BODY, fontSize: 16.5, lineHeight: 1.62 }}
-            >
-              {faq.subtitle}
-            </p>
-            <FaqList faq={faq} />
-          </div>
-        </section>
-      )}
+      <SectionDragDropProvider allSectionKeys={activeOrder}>
+        {activeOrder.map((key) => {
+          const sec = contactSectionsMap[key];
+          if (!sec) return null;
+          return (
+            <EditableWrapper key={key} sectionKey={key} sectionLabel={sec.label}>
+              {sec.render()}
+            </EditableWrapper>
+          );
+        })}
+      </SectionDragDropProvider>
     </>
   );
 }

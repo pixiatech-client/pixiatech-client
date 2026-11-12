@@ -33,6 +33,17 @@ import type { Product, ProductNext } from '@/lib/products/types';
 import { attachSectionMedia } from '@/lib/products/master-template';
 
 import { EditableWrapper } from './cms/EditableWrapper';
+import { SectionDragDropProvider } from './cms/SectionDragDropManager';
+
+export const DEFAULT_PRODUCT_SECTION_ORDER = [
+  'hero',
+  'overview',
+  'design',
+  'features',
+  'specs',
+  'fieldwork',
+  'next',
+];
 
 interface ProductPageTemplateProps {
   slug: string;
@@ -58,7 +69,7 @@ function ProductView({ slug, fallbackProduct, isPreview = false }: ProductPageTe
   const [brandName] = useState<string>(DEFAULT_COMPANY_NAME);
   const [isConsultationOpen, setIsConsultationOpen] = useState<boolean>(false);
   const [activeDatasheetModel, setActiveDatasheetModel] = useState<SpecModel | null>(null);
-  const { setCurrentPageId, isEditing, setCurrentLang } = useCms();
+  const { setCurrentPageId, isEditing, setCurrentLang, currentPageData } = useCms();
   // Meme source de langue que le header (contexte i18n global, persiste).
   const { locale } = useI18n();
   const effectiveLang: Language = locale === 'en' ? 'EN' : 'FR';
@@ -176,6 +187,99 @@ function ProductView({ slug, fallbackProduct, isPreview = false }: ProductPageTe
     },
   ].filter((a): a is { id: string; label: string } => Boolean(a));
 
+  // Calcul de l'ordre actif des sections depuis le CMS (ou ordre par défaut)
+  const configuredOrder = currentPageData?.sectionOrder;
+  const activeOrder = useMemo(() => {
+    if (configuredOrder && Array.isArray(configuredOrder) && configuredOrder.length > 0) {
+      const validConfigured = configuredOrder.filter((k) => DEFAULT_PRODUCT_SECTION_ORDER.includes(k));
+      const missing = DEFAULT_PRODUCT_SECTION_ORDER.filter((k) => !validConfigured.includes(k));
+      return [...validConfigured, ...missing];
+    }
+    return DEFAULT_PRODUCT_SECTION_ORDER;
+  }, [configuredOrder]);
+
+  const productSections: Record<string, { label: string; render: () => React.ReactNode } | null> = {
+    hero: {
+      label: effectiveLang === 'FR' ? 'Hero Produit' : 'Product Hero',
+      render: () => (
+        <HeroSection
+          title={productTitle ?? slug}
+          data={product?.hero}
+          productPhotosInOverview
+          onOpenQuote={() => setIsConsultationOpen(true)}
+          lang={effectiveLang}
+          series={text(product.series)}
+        />
+      ),
+    },
+    overview: hasOverview(sectionsProduct?.overview)
+      ? {
+          label: effectiveLang === 'FR' ? 'Aperçu & Statistiques' : 'Overview & Stats',
+          render: () => (
+            <OverviewSection
+              data={sectionsProduct?.overview}
+              lang={effectiveLang}
+            />
+          ),
+        }
+      : null,
+    design: hasDesign(sectionsProduct?.design)
+      ? {
+          label: effectiveLang === 'FR' ? 'Conception & Dimensions' : 'Design & Dimensions',
+          render: () => (
+            <DesignSection
+              data={sectionsProduct?.design}
+              lang={effectiveLang}
+              hasSpecsTable={hasSpecs(product?.specs)}
+            />
+          ),
+        }
+      : null,
+    features: hasFeatures(product?.features)
+      ? {
+          label: effectiveLang === 'FR' ? 'Points Clés' : 'Key Features',
+          render: () => (
+            <FeaturesSection data={product?.features} lang={effectiveLang} />
+          ),
+        }
+      : null,
+    specs: hasSpecs(product?.specs)
+      ? {
+          label: effectiveLang === 'FR' ? 'Spécifications Techniques' : 'Technical Specs',
+          render: () => (
+            <SpecsSection
+              specs={product?.specs}
+              shopLinks={product?.shopLinks}
+              shopLinkTypes={product?.shopLinkTypes}
+              onSelectDatasheet={(model) => setActiveDatasheetModel(model)}
+              lang={effectiveLang}
+            />
+          ),
+        }
+      : null,
+    fieldwork: hasFieldwork(product?.fieldwork)
+      ? {
+          label: effectiveLang === 'FR' ? 'Projets Réalisés' : 'Field Projects',
+          render: () => (
+            <FieldworkSection data={product?.fieldwork} lang={effectiveLang} />
+          ),
+        }
+      : null,
+    next: circularNav
+      ? {
+          label: effectiveLang === 'FR' ? 'Produits & Devis' : 'Products & Quote',
+          render: () => (
+            <NextSection
+              data={circularNav}
+              productTitle={productTitle}
+              onOpenConsultation={() => setIsConsultationOpen(true)}
+              lang={effectiveLang}
+            />
+          ),
+        }
+      : null,
+  };
+
   return (
     <div className="min-h-screen bg-[#080808] text-[#f5f4f0] antialiased selection:bg-white/20 selection:text-white">
       {/* Prévisualisation administrateur : rendue uniquement si le serveur a
@@ -195,87 +299,23 @@ function ProductView({ slug, fallbackProduct, isPreview = false }: ProductPageTe
       />
 
       {/* Main Product Sections —
-          chaque section est enveloppée par EditableWrapper pour l'éditeur visuel (Point 2 & 4). */}
+          chaque section est enveloppée par EditableWrapper et ordonnée dynamiquement via SectionDragDropProvider */}
       <main>
-        {/* Section 0: Hero & Animated LED Canvas */}
-        <EditableWrapper sectionKey="hero" sectionLabel={effectiveLang === 'FR' ? 'Hero Produit' : 'Product Hero'}>
-          <HeroSection
-            title={productTitle ?? slug}
-            data={product?.hero}
-            productPhotosInOverview
-            onOpenQuote={() => setIsConsultationOpen(true)}
-            lang={effectiveLang}
-            series={text(product.series)}
-          />
-        </EditableWrapper>
-
-        {/* Section 01: Overview (Light Theme).
-            Contenu : la vidéo du template et UNE photo, celle de l'aperçu.
-            La 2e photo n'a rien à y faire : elle appartient à la section 02. */}
-        {hasOverview(sectionsProduct?.overview) && (
-          <EditableWrapper sectionKey="overview" sectionLabel={effectiveLang === 'FR' ? 'Aperçu & Statistiques' : 'Overview & Stats'}>
-            <OverviewSection
-              data={sectionsProduct?.overview}
-              lang={effectiveLang}
-            />
-          </EditableWrapper>
-        )}
-
-        {/* Section 02: Design & Architectural Dimensions (Dark Theme).
-            Reçoit son visuel via `design.visuals` (rattachement du template). */}
-        {hasDesign(sectionsProduct?.design) && (
-          <EditableWrapper sectionKey="design" sectionLabel={effectiveLang === 'FR' ? 'Conception & Dimensions' : 'Design & Dimensions'}>
-            <DesignSection
-              data={sectionsProduct?.design}
-              lang={effectiveLang}
-              hasSpecsTable={hasSpecs(product?.specs)}
-            />
-          </EditableWrapper>
-        )}
-
-        {/* Section 03: Key Features Interactive FStage (Dark Theme) */}
-        {hasFeatures(product?.features) && (
-          <EditableWrapper sectionKey="features" sectionLabel={effectiveLang === 'FR' ? 'Points Clés' : 'Key Features'}>
-            <FeaturesSection data={product?.features} lang={effectiveLang} />
-          </EditableWrapper>
-        )}
-
-        {/* Section 04: Complete Specifications Matrix (Dark Theme) */}
-        {hasSpecs(product?.specs) && (
-          <EditableWrapper sectionKey="specs" sectionLabel={effectiveLang === 'FR' ? 'Spécifications Techniques' : 'Technical Specs'}>
-<SpecsSection
-                  specs={product?.specs}
-                  shopLinks={product?.shopLinks}
-                  shopLinkTypes={product?.shopLinkTypes}
-                  onSelectDatasheet={(model) => setActiveDatasheetModel(model)}
-                  lang={effectiveLang}
-                />
-          </EditableWrapper>
-        )}
-
-        {/* Section 05: In The Field Projects (Light Theme) */}
-        {hasFieldwork(product?.fieldwork) && (
-          <EditableWrapper sectionKey="fieldwork" sectionLabel={effectiveLang === 'FR' ? 'Projets Réalisés' : 'Field Projects'}>
-            <FieldworkSection data={product?.fieldwork} lang={effectiveLang} />
-          </EditableWrapper>
-        )}
-
-        {/* Section 06: Navigation circulaire produit + CTA Banner (Dark Theme)
-            La section n'apparaît que si au moins DEUX produits sont publiés et
-            que celui-ci en fait partie : avec un seul produit (ou un produit
-            hors base publiée), les deux blocs sont masqués. Les liens pointent
-            toujours vers des produits réels de la base, jamais vers la
-            navigation déclarée dans le PDF. */}
-        {circularNav && (
-          <EditableWrapper sectionKey="next" sectionLabel={effectiveLang === 'FR' ? 'Produits & Devis' : 'Products & Quote'}>
-            <NextSection
-              data={circularNav}
-              productTitle={productTitle}
-              onOpenConsultation={() => setIsConsultationOpen(true)}
-              lang={effectiveLang}
-            />
-          </EditableWrapper>
-        )}
+        <SectionDragDropProvider allSectionKeys={activeOrder}>
+          {activeOrder.map((key) => {
+            const sec = productSections[key];
+            if (!sec) return null;
+            return (
+              <EditableWrapper
+                key={key}
+                sectionKey={key}
+                sectionLabel={sec.label}
+              >
+                {sec.render()}
+              </EditableWrapper>
+            );
+          })}
+        </SectionDragDropProvider>
       </main>
 
       {/* Site Footer */}
