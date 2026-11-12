@@ -26,9 +26,27 @@ import {
   Sparkles,
   SlidersHorizontal,
   Lock,
+  GripVertical,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { AnimatePresence, motion } from 'framer-motion';
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  useSortable,
+  horizontalListSortingStrategy,
+  sortableKeyboardCoordinates,
+  arrayMove,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { parseProductPdf } from '@/lib/products/product-pdf-parser';
 import { buildProductFromMasterTemplate } from '@/lib/products/product-from-template';
 import {
@@ -1325,6 +1343,152 @@ return (
 }
 
 /* ---------------------------------------------------------------------------
+ * SORTABLE VARIANT COLUMN (Drag-and-Drop pour la réorganisation des variantes)
+ * ------------------------------------------------------------------------- */
+
+function SortableVariantColumn({
+  variantName,
+  raw,
+  blank,
+  valid,
+  shopLinkTypes,
+  onUrlChange,
+  onClearUrl,
+  onTypeChange,
+  onDelete,
+}: {
+  variantName: string;
+  raw: string;
+  blank: boolean;
+  valid: boolean;
+  shopLinkTypes: ProductShopLinkTypes;
+  onUrlChange: (value: string) => void;
+  onClearUrl: () => void;
+  onTypeChange: (type: ShopLinkTransactionType) => void;
+  onDelete: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: variantName });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Translate.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+    zIndex: isDragging ? 20 : 'auto',
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`shrink-0 w-[300px] p-3 border-l border-neutral-300 dark:border-white/10 relative group bg-white dark:bg-[#0A0D0E] ${
+        isDragging ? 'shadow-2xl ring-2 ring-[#38E044]' : ''
+      }`}
+    >
+      {/* En-tête de colonne avec poignée Drag & Drop et bouton de suppression */}
+      <div className="flex items-start justify-between gap-2 mb-2">
+        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+          <button
+            type="button"
+            className="shrink-0 p-1 -ml-1 text-neutral-400 hover:text-neutral-600 dark:hover:text-white cursor-grab active:cursor-grabbing touch-none rounded-lg hover:bg-neutral-100 dark:hover:bg-white/5 transition-colors"
+            title="Glisser-déposer pour réorganiser cette variante"
+            aria-label={`Glisser-déposer ${variantName}`}
+            {...attributes}
+            {...listeners}
+          >
+            <GripVertical className="w-4 h-4 text-neutral-400" />
+          </button>
+          <div className="min-w-0 flex-1">
+            <p
+              className="text-[12px] font-bold text-neutral-900 dark:text-white break-words"
+              title={variantName}
+            >
+              {variantName}
+            </p>
+            <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+              {SHOP_TRANSACTION_PUBLIC_LABEL[shopLinkTypeForVariant(shopLinkTypes, variantName)]}
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={onDelete}
+          title={`Supprimer la variante « ${variantName} »`}
+          aria-label={`Supprimer la variante ${variantName}`}
+          className="shrink-0 w-7 h-7 rounded-lg inline-flex items-center justify-center border border-neutral-200 dark:border-white/10 text-neutral-400 hover:text-rose-500 hover:border-rose-500/50 hover:bg-rose-500/10 transition-colors cursor-pointer"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+        </button>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <input
+          type="url"
+          inputMode="url"
+          autoComplete="off"
+          aria-label={`Lien boutique — ${variantName}`}
+          value={raw}
+          onChange={(ev) => onUrlChange(ev.target.value)}
+          placeholder="https://boutique…"
+          aria-invalid={!blank && !valid}
+          className="flex-1 min-w-0 px-3 py-1.5 rounded-xl text-[11px] font-semibold bg-white dark:bg-zinc-800 text-neutral-900 dark:text-white border border-neutral-300 dark:border-white/10 focus:ring-2 focus:ring-[#38E044]/40 outline-none transition-all"
+        />
+        {valid && (
+          <a
+            href={normalizeShopUrl(raw)}
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Ouvrir le lien dans un nouvel onglet"
+            className="shrink-0 w-8 h-8 rounded-xl inline-flex items-center justify-center border border-neutral-300 dark:border-white/10 text-neutral-500 dark:text-neutral-300 hover:text-[#38E044] hover:border-[#38E044]/60 transition-colors"
+          >
+            <ExternalLink className="h-3.5 w-3.5" />
+          </a>
+        )}
+        {!blank && (
+          <button
+            type="button"
+            title="Retirer le lien"
+            onClick={onClearUrl}
+            className="shrink-0 w-8 h-8 rounded-xl inline-flex items-center justify-center border border-neutral-300 dark:border-white/10 text-neutral-500 dark:text-neutral-300 hover:text-rose-500 hover:border-rose-500/60 transition-colors cursor-pointer"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        )}
+      </div>
+
+      <div
+        className="mt-2 flex items-center gap-2"
+        aria-label={`Type de transaction — ${variantName}`}
+      >
+        {SHOP_TRANSACTION_TYPES.map((type) => {
+          const active = shopLinkTypeForVariant(shopLinkTypes, variantName) === type;
+          return (
+            <button
+              key={type}
+              type="button"
+              aria-pressed={active}
+              onClick={() => onTypeChange(type)}
+              className={`flex-1 px-1 py-1.5 rounded-xl text-[10px] font-bold whitespace-nowrap text-center transition-all cursor-pointer border ${
+                active
+                  ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                  : 'bg-white dark:bg-zinc-800 text-neutral-600 dark:text-neutral-300 border-neutral-300 dark:border-white/10 hover:bg-neutral-50 dark:hover:bg-white/5'
+              }`}
+            >
+              {SHOP_TRANSACTION_OPTIONS[type]}
+            </button>
+          );
+        })}
+      </div>
+      {!blank && !valid && (
+        <p className="mt-1 text-[11px] font-semibold text-rose-500">
+          Lien ignoré : saisissez une URL complète (https://…) ou un chemin interne (/boutique).
+        </p>
+      )}
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------------------
  * FORMULAIRE (création + édition/vérification)
  * ------------------------------------------------------------------------- */
 
@@ -1667,6 +1831,29 @@ function ProductForm({
   const variantNames: string[] = models
     .map((model) => model.name)
     .filter((modelName) => typeof modelName === 'string' && modelName.trim() !== '');
+
+  const variantSensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleVariantDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    setModels((prev) => {
+      const oldIndex = prev.findIndex((m) => m.name === active.id);
+      const newIndex = prev.findIndex((m) => m.name === over.id);
+      if (oldIndex === -1 || newIndex === -1) return prev;
+      return arrayMove(prev, oldIndex, newIndex);
+    });
+  };
 
   const deleteVariant = (variantName: string) => {
     setModels((prev) => prev.filter((m) => m.name !== variantName));
@@ -2634,130 +2821,54 @@ function ProductForm({
               </div>
             ) : (
               <div className="overflow-x-auto rounded-2xl border border-neutral-300 dark:border-white/10">
-                <div className="flex min-w-max">
-                  {/* Colonne de tête : elle nomme la ligne, pas une variante. */}
-                  <div className="sticky left-0 z-10 shrink-0 w-[220px] bg-white dark:bg-[#0A0D0E] border-r border-neutral-300 dark:border-white/10 p-3">
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-                      Variante
-                    </p>
-                    <p className="mt-1 text-[10px] leading-snug text-neutral-400 dark:text-neutral-500">
-                      Un contrôle par colonne. Champ vide = aucun bouton sur le
-                      site.
-                    </p>
-                  </div>
-
-                  {variantNames.map((variantName) => {
-                    const raw = shopLinks[variantName] ?? '';
-                    const blank = raw.trim() === '';
-                    const valid = !blank && isValidShopUrl(raw);
-                    return (
-                      <div
-                        key={variantName}
-                        className="shrink-0 w-[300px] p-3 border-l border-neutral-300 dark:border-white/10 relative group"
-                      >
-                        {/* En-tête de colonne avec bouton de suppression de la variante */}
-                        <div className="flex items-start justify-between gap-2 mb-2">
-                          <div className="min-w-0 flex-1">
-                            <p
-                              className="text-[12px] font-bold text-neutral-900 dark:text-white break-words"
-                              title={variantName}
-                            >
-                              {variantName}
-                            </p>
-                            <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
-                              {SHOP_TRANSACTION_PUBLIC_LABEL[shopLinkTypeForVariant(shopLinkTypes, variantName)]}
-                            </p>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => deleteVariant(variantName)}
-                            title={`Supprimer la variante « ${variantName} »`}
-                            aria-label={`Supprimer la variante ${variantName}`}
-                            className="shrink-0 w-7 h-7 rounded-lg inline-flex items-center justify-center border border-neutral-200 dark:border-white/10 text-neutral-400 hover:text-rose-500 hover:border-rose-500/50 hover:bg-rose-500/10 transition-colors cursor-pointer"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="url"
-                            inputMode="url"
-                            autoComplete="off"
-                            aria-label={`Lien boutique — ${variantName}`}
-                            value={raw}
-                            onChange={(ev) =>
-                              setShopLinks((prev) => ({ ...prev, [variantName]: ev.target.value }))
-                            }
-                            placeholder="https://boutique…"
-                            aria-invalid={!blank && !valid}
-                            className="flex-1 min-w-0 px-3 py-1.5 rounded-xl text-[11px] font-semibold bg-white dark:bg-zinc-800 text-neutral-900 dark:text-white border border-neutral-300 dark:border-white/10 focus:ring-2 focus:ring-[#38E044]/40 outline-none transition-all"
-                          />
-                          {valid && (
-                            <a
-                              href={normalizeShopUrl(raw)}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              title="Ouvrir le lien dans un nouvel onglet"
-                              className="shrink-0 w-8 h-8 rounded-xl inline-flex items-center justify-center border border-neutral-300 dark:border-white/10 text-neutral-500 dark:text-neutral-300 hover:text-[#38E044] hover:border-[#38E044]/60 transition-colors"
-                            >
-                              <ExternalLink className="h-3.5 w-3.5" />
-                            </a>
-                          )}
-                          {!blank && (
-                            <button
-                              type="button"
-                              title="Retirer le lien"
-                              onClick={() =>
-                                setShopLinks((prev) => ({ ...prev, [variantName]: '' }))
-                              }
-                              className="shrink-0 w-8 h-8 rounded-xl inline-flex items-center justify-center border border-neutral-300 dark:border-white/10 text-neutral-500 dark:text-neutral-300 hover:text-rose-500 hover:border-rose-500/60 transition-colors cursor-pointer"
-                            >
-                              <X className="h-3.5 w-3.5" />
-                            </button>
-                          )}
-                        </div>
-                        {/* Sélecteur de type de transaction : un seul choix par
-                            variante, étroitement lié au champ URL. Ne change que
-                            le libellé du bouton public, jamais sa visibilité.
-                            Style repris des boutons « Statut » (Brouillon /
-                            Publié) : choix actif en émeraude plein, choix vides
-                            en fond neutre. */}
-                        <div
-                          className="mt-2 flex items-center gap-2"
-                          aria-label={`Type de transaction — ${variantName}`}
-                        >
-                          {SHOP_TRANSACTION_TYPES.map((type) => {
-                            const active = shopLinkTypeForVariant(shopLinkTypes, variantName) === type;
-                            return (
-                              <button
-                                key={type}
-                                type="button"
-                                aria-pressed={active}
-                                onClick={() =>
-                                  setShopLinkTypes((prev) => ({ ...prev, [variantName]: type }))
-                                }
-                                className={`flex-1 px-1 py-1.5 rounded-xl text-[10px] font-bold whitespace-nowrap text-center transition-all cursor-pointer border ${
-                                  active
-                                    ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
-                                    : 'bg-white dark:bg-zinc-800 text-neutral-600 dark:text-neutral-300 border-neutral-300 dark:border-white/10 hover:bg-neutral-50 dark:hover:bg-white/5'
-                                }`}
-                              >
-                                {SHOP_TRANSACTION_OPTIONS[type]}
-                              </button>
-                            );
-                          })}
-                        </div>
-                        {!blank && !valid && (
-                          <p className="mt-1 text-[11px] font-semibold text-rose-500">
-                            Lien ignoré : saisissez une URL complète (https://…) ou un
-                            chemin interne (/boutique).
-                          </p>
-                        )}
+                <DndContext
+                  sensors={variantSensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleVariantDragEnd}
+                >
+                  <SortableContext
+                    items={variantNames}
+                    strategy={horizontalListSortingStrategy}
+                  >
+                    <div className="flex min-w-max">
+                      {/* Colonne de tête : elle nomme la ligne, pas une variante. */}
+                      <div className="sticky left-0 z-10 shrink-0 w-[220px] bg-white dark:bg-[#0A0D0E] border-r border-neutral-300 dark:border-white/10 p-3">
+                        <p className="text-[11px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                          Variante
+                        </p>
+                        <p className="mt-1 text-[10px] leading-snug text-neutral-400 dark:text-neutral-500">
+                          Glissez-déposez les colonnes pour réorganiser l’affichage. Champ vide = aucun bouton sur le site.
+                        </p>
                       </div>
-                    );
-                  })}
-                </div>
+
+                      {variantNames.map((variantName) => {
+                        const raw = shopLinks[variantName] ?? '';
+                        const blank = raw.trim() === '';
+                        const valid = !blank && isValidShopUrl(raw);
+                        return (
+                          <SortableVariantColumn
+                            key={variantName}
+                            variantName={variantName}
+                            raw={raw}
+                            blank={blank}
+                            valid={valid}
+                            shopLinkTypes={shopLinkTypes}
+                            onUrlChange={(val) =>
+                              setShopLinks((prev) => ({ ...prev, [variantName]: val }))
+                            }
+                            onClearUrl={() =>
+                              setShopLinks((prev) => ({ ...prev, [variantName]: '' }))
+                            }
+                            onTypeChange={(type) =>
+                              setShopLinkTypes((prev) => ({ ...prev, [variantName]: type }))
+                            }
+                            onDelete={() => deleteVariant(variantName)}
+                          />
+                        );
+                      })}
+                    </div>
+                  </SortableContext>
+                </DndContext>
               </div>
             )}
 
