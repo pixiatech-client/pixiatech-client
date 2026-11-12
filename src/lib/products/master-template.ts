@@ -213,40 +213,57 @@ export function createMasterTemplateSkeleton(): Product {
  * Renvoie un produit COPIÉ : rien n'est muté, et la valeur n'est écrite nulle
  * part — c'est une dérivation de rendu, pas une donnée persistée.
  *
- * Un emplacement déjà renseigné (par l'admin ou le PDF) est conservé tel quel :
- * conformément à la règle du template, la donnée explicite gagne et la
- * bibliothèque ne sert que de repli.
+ * La galerie admin est la SOURCE DE VÉRITÉ pour les photos de sections :
+ *  - gallery[0] remplace TOUJOURS overview.photo.url (le titre/description
+ *    existants sont conservés comme metadata).
+ *  - gallery[1] remplace TOUJOURS le premier slot de design.visuals.
+ *  - Si la galerie est vide, hero.image sert de repli pour overview uniquement
+ *    (compatibilité produits legacy sans galerie).
  */
 export function attachSectionMedia(product: Product): Product {
   const gallery: ProductMediaItem[] = (product.media?.photos ?? []).filter((p) =>
     Boolean(label(p?.url))
   );
 
-  // 01 / APERÇU : la photo de l'aperçu. `hero.image` est la photo principale du
-  // produit, donc son emplacement naturel quand la galerie est vide — un
-  // produit ancêtre sans galerie ne perd pas son image, elle change de zone.
+  // 01 / APERÇU ─────────────────────────────────────────────────────────────
+  // gallery[0] gagne toujours. Repli sur hero.image uniquement si galerie vide
+  // (produits importés avant l'existence de la bibliothèque).
   const overview: ProductOverview = { ...product.overview };
-  const overviewPhoto = gallery[0]?.url ?? label(product.hero?.image);
-  if (overviewPhoto && !label(overview.photo?.url)) {
+  if (gallery[0]?.url) {
     overview.photo = {
-      title: label(gallery[0]?.name) ?? label(overview.photo?.title) ?? '',
+      title: label(gallery[0].name) ?? label(overview.photo?.title) ?? '',
       description: label(overview.photo?.description) ?? '',
-      url: overviewPhoto,
+      url: gallery[0].url,
     };
+  } else {
+    const heroImage = label(product.hero?.image);
+    if (heroImage && !label(overview.photo?.url)) {
+      overview.photo = {
+        title: label(overview.photo?.title) ?? '',
+        description: label(overview.photo?.description) ?? '',
+        url: heroImage,
+      };
+    }
   }
 
-  // 02 / CONCEPTION ARCHITECTURALE : le visuel d'usinage / châssis, à sa
-  // place. `DesignSection` rend le PREMIER visuel renseigné : on n'en ajoute
-  // un second que si la section n'en a aucun, faute de quoi la photo
-  // n'apparaîtrait jamais.
+  // 02 / CONCEPTION ARCHITECTURALE ─────────────────────────────────────────
+  // gallery[1] gagne toujours pour le premier slot visuel.
+  // Les slots supplémentaires (index ≥ 1) sont préservés tels quels.
   const design: ProductDesign = { ...product.design };
   const visuals = [...(design.visuals ?? [])];
-  const designHasVisual = visuals.some((slot) => label(slot?.url));
-  if (gallery[1]?.url && !designHasVisual) {
-    visuals.push({
-      title: label(gallery[1].name) ?? '',
-      url: gallery[1].url,
-    });
+  if (gallery[1]?.url) {
+    if (visuals.length > 0) {
+      visuals[0] = {
+        ...visuals[0],
+        url: gallery[1].url,
+        title: label(gallery[1].name) ?? visuals[0].title ?? '',
+      };
+    } else {
+      visuals.push({
+        title: label(gallery[1].name) ?? '',
+        url: gallery[1].url,
+      });
+    }
   }
   design.visuals = visuals;
 

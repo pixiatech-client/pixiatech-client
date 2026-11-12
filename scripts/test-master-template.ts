@@ -109,24 +109,41 @@ function testAttachSectionMedia() {
   attachSectionMedia(source);
   check('aucune mutation du produit source', JSON.stringify(source) === before);
 
-  // ── Cas 3 : le template reste la base (section deja renseignee) ───────────
+  // ── Cas 3 : la galerie gagne toujours (source de vérité admin) ───────────
+  // La galerie media[] est la source de vérité : même si les sections avaient
+  // des URLs pré-renseignées (via PDF ou template), gallery[0] et gallery[1]
+  // les remplacent, pour que les modifications admin soient visibles sur le site.
   const filled = clone(base);
   filled.overview = { ...filled.overview, photo: { url: '/template/photo-apercu.jpg' } };
   filled.design = { ...filled.design, visuals: [{ url: '/template/visuel-conception.jpg' }] };
   const rf = attachSectionMedia(filled);
   check(
-    'photo d apercu du template conservee si deja renseignee',
-    rf.overview?.photo?.url === '/template/photo-apercu.jpg',
+    'gallery[0] remplace la photo apercu pre-renseignee (galerie = source verite)',
+    rf.overview?.photo?.url === '/uploads/t1/apercu.jpg',
     String(rf.overview?.photo?.url)
   );
   check(
-    'visuel de conception du template conserve si deja renseigne',
-    rf.design?.visuals?.[0]?.url === '/template/visuel-conception.jpg' &&
+    'gallery[1] remplace le visuel conception pre-renseigne (galerie = source verite)',
+    rf.design?.visuals?.[0]?.url === '/uploads/t1/conception.jpg' &&
       rf.design?.visuals?.length === 1,
     JSON.stringify(rf.design?.visuals?.map((v) => v.url))
   );
 
-  // ── Cas 4 : pas de galerie -> repli sur hero.image en 01 ─────────────────
+  // ── Cas 3b : métadonnées du slot conservées lors du remplacement ──────────
+  const withMeta = clone(base);
+  withMeta.overview = {
+    ...withMeta.overview,
+    photo: { url: '/old.jpg', title: 'Titre existant', description: 'Description existante' },
+  };
+  const rmeta = attachSectionMedia(withMeta);
+  check(
+    'le titre/description existants sont conserves lors du remplacement par gallery[0]',
+    rmeta.overview?.photo?.url === '/uploads/t1/apercu.jpg' &&
+      rmeta.overview?.photo?.description === 'Description existante',
+    JSON.stringify(rmeta.overview?.photo)
+  );
+
+  // ── Cas 4 : pas de galerie -> repli sur hero.image en 01 (si section vide) ─
   const heroOnly = clone(base);
   heroOnly.media = { photos: [], videos: [] };
   heroOnly.hero = { ...heroOnly.hero, image: '/uploads/t1/hero.jpg' };
@@ -137,6 +154,18 @@ function testAttachSectionMedia() {
     String(rh.overview?.photo?.url)
   );
   check('sans galerie, la section 02 ne recoit aucune photo fantome', !rh.design?.visuals?.length);
+
+  // ── Cas 4b : sans galerie, section deja renseignee -> on preserves ─────────
+  const heroWithExisting = clone(base);
+  heroWithExisting.media = { photos: [], videos: [] };
+  heroWithExisting.hero = { ...heroWithExisting.hero, image: '/uploads/t1/hero.jpg' };
+  heroWithExisting.overview = { ...heroWithExisting.overview, photo: { url: '/template/existante.jpg' } };
+  const rhe = attachSectionMedia(heroWithExisting);
+  check(
+    'sans galerie, photo existante preservee (repli hero ne surcharge pas)',
+    rhe.overview?.photo?.url === '/template/existante.jpg',
+    String(rhe.overview?.photo?.url)
+  );
 
   // ── Cas 5 : une seule photo -> rien d invente en 02 ──────────────────────
   const one = clone(base);

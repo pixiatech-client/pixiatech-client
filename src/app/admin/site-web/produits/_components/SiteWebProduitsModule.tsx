@@ -1676,6 +1676,31 @@ function ProductForm({
     }
   };
 
+  /** Ajoute une nouvelle photo à la fin de la galerie. */
+  const addPhoto = async (file: File) => {
+    if (!existing) return;
+    setUploading(true);
+    try {
+      const upload = await uploadProductPhoto(existing.slug, file);
+      const newItem: ProductMediaItem = {
+        name: upload.name,
+        url: upload.url,
+        path: upload.path,
+        size: upload.size,
+        type: 'image',
+      };
+      const next = [...mediaPhotos, newItem];
+      await persistPhotos(next, 'Nouvelle photo ajoutée à la bibliothèque.');
+      if (mediaPhotos.length === 0) {
+        setPhotoPreview(upload.url);
+      }
+    } catch (err) {
+      toast.error((err as Error).message || "Échec de l'ajout de la photo.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   // ── Catégories (taxonomie CMS) ────────────────────────────────────────────
   const [categories, setCategoriesState] = useState<ProductCategory[]>([]);
   const [groups, setGroups] = useState<ProductCategoryGroup[]>([]);
@@ -1811,6 +1836,7 @@ function ProductForm({
   };
 
   const photoInputRef = useRef<HTMLInputElement>(null);
+  const addPhotoInputRef = useRef<HTMLInputElement>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
   /** Une entrée file cachée par vignette : « Remplacer » cible l'image exacte. */
   const photoInputRefs = useRef<Record<number, HTMLInputElement | null>>({});
@@ -2543,14 +2569,25 @@ function ProductForm({
                   indépendamment. La 1re vignette est la photo principale. */}
               <section>
                 <div className="flex items-center justify-between gap-3 mb-1.5">
-                  <h2 className="text-sm font-bold text-neutral-900 dark:text-white">Bibliothèque média</h2>
-                  <span className="text-[10px] font-mono font-bold bg-neutral-100 dark:bg-white/5 text-neutral-600 dark:text-neutral-400 px-2 py-0.5 rounded-full border border-neutral-200 dark:border-white/10 uppercase tracking-wider">
-                    {mediaPhotos.length} image{mediaPhotos.length > 1 ? 's' : ''}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-sm font-bold text-neutral-900 dark:text-white">Bibliothèque média</h2>
+                    <span className="text-[10px] font-mono font-bold bg-neutral-100 dark:bg-white/5 text-neutral-600 dark:text-neutral-400 px-2 py-0.5 rounded-full border border-neutral-200 dark:border-white/10 uppercase tracking-wider">
+                      {mediaPhotos.length} image{mediaPhotos.length > 1 ? 's' : ''}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={uploading}
+                    onClick={() => addPhotoInputRef.current?.click()}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-all cursor-pointer shadow-sm disabled:opacity-50"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    Ajouter une photo
+                  </button>
                 </div>
                 <p className="text-[11px] text-neutral-400 dark:text-neutral-500 mb-3 leading-relaxed">
-                  La première image sert de photo principale. Remplacez, supprimez ou
-                  repositionnez chaque image sans toucher aux autres.
+                  La première image sert de photo principale (aperçu). Remplacez, supprimez,
+                  ajoutez ou repositionnez chaque image sans toucher aux autres.
                 </p>
                 {mediaPhotos.length === 0 ? (
                   <div className="rounded-2xl border border-dashed border-neutral-200 dark:border-white/10 px-4 py-6 text-center text-xs text-neutral-400 dark:text-neutral-500">
@@ -2643,6 +2680,18 @@ function ProductForm({
                     }}
                   />
                 ))}
+                {/* Entrée cachée pour le bouton "Ajouter une photo" de la bibliothèque */}
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  ref={addPhotoInputRef}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    e.target.value = '';
+                    if (file) void addPhoto(file);
+                  }}
+                />
               </section>
 
               {/* ── Image au survol (hero.hoverImage) ── */}
