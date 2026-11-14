@@ -18,6 +18,7 @@ const nextConfig = {
   },
   serverExternalPackages: ['ffmpeg-static', 'ffprobe-static'],
   experimental: {
+    cpus: 4,
     serverActions: {
       bodySizeLimit: '4.5mb',
     },

@@ -55,7 +55,8 @@ import {
   uploadProductHoverImage,
   deleteProductMedia,
 } from '@/lib/products/products-service';
-import { slugify, groupDisplayName, productCategoryIds, MAX_PRODUCT_NAME_LENGTH, isValidShopUrl, normalizeShopUrl, sanitizeShopLinks, normalizeShopLinkTypes, sanitizeShopLinkTypes, shopLinkTypeForVariant, type ProductSpecModel, type ProductSpecs } from '@/lib/products/types';
+import { slugify, groupDisplayName, productCategoryIds, MAX_PRODUCT_NAME_LENGTH, isValidShopUrl, normalizeShopUrl, sanitizeShopLinks, normalizeShopLinkTypes, sanitizeShopLinkTypes, shopLinkTypeForVariant, type ProductSpecModel, type ProductSpecGroup, type ProductSpecs } from '@/lib/products/types';
+import { SpecsMatrixEditor } from './SpecsMatrixEditor';
 import {
   SYSTEM_TEMPLATE_LABEL,
   SYSTEM_TEMPLATE_PROTECTED_MESSAGE,
@@ -1562,6 +1563,27 @@ function ProductForm({
       ? (pdfAnalysis?.specs?.models ?? [])
       : (pdfReanalysis?.specs?.models ?? existing?.specs?.models ?? [])
   );
+  // Groupes de spécifications (lignes de la matrice comparative)
+  const [specGroups, setSpecGroups] = useState<ProductSpecGroup[]>(() => {
+    const rawGroups = isNew
+      ? (pdfAnalysis?.specs?.groups ?? [])
+      : (pdfReanalysis?.specs?.groups ?? existing?.specs?.groups ?? []);
+    if (rawGroups.length > 0) return rawGroups;
+    const rawModels = isNew
+      ? (pdfAnalysis?.specs?.models ?? [])
+      : (pdfReanalysis?.specs?.models ?? existing?.specs?.models ?? []);
+    const keys = new Set<string>();
+    for (const m of rawModels) {
+      for (const k of Object.keys(m.specs ?? {})) keys.add(k);
+    }
+    if (keys.size > 0) {
+      return [{
+        label: 'Général',
+        rows: Array.from(keys).map((k) => ({ key: k, label: k })),
+      }];
+    }
+    return [];
+  });
   const [showAddVariantModal, setShowAddVariantModal] = useState(false);
   const [newVariantName, setNewVariantName] = useState('');
 
@@ -1575,6 +1597,20 @@ function ProductForm({
       setShopLinkTypes(normalizeShopLinkTypes(existing.shopLinkTypes));
       if (existing.specs?.models) {
         setModels(existing.specs.models);
+      }
+      if (existing.specs?.groups && existing.specs.groups.length > 0) {
+        setSpecGroups(existing.specs.groups);
+      } else if (existing.specs?.models && existing.specs.models.length > 0) {
+        const keys = new Set<string>();
+        for (const m of existing.specs.models) {
+          for (const k of Object.keys(m.specs ?? {})) keys.add(k);
+        }
+        if (keys.size > 0) {
+          setSpecGroups([{
+            label: 'Général',
+            rows: Array.from(keys).map((k) => ({ key: k, label: k })),
+          }]);
+        }
       }
     }
   }, [existing]);
@@ -2070,9 +2106,11 @@ function ProductForm({
       if (existing) {
         setPdfReanalysis(built);
         setModels(built.specs?.models ?? []);
+        setSpecGroups(built.specs?.groups ?? []);
       } else {
         setPdfAnalysis(built);
         setModels(built.specs?.models ?? []);
+        setSpecGroups(built.specs?.groups ?? []);
         // Le nom pré-rempli vient du PDF, PAS du produit construit. `built`
         // fusionne le template maître, et sa ligne 239 fait
         // `overlay.name || master.name` : quand le parser n'a rien lu, c'est
@@ -2098,7 +2136,7 @@ function ProductForm({
     try {
       const nextSpecs: ProductSpecs = {
         ...(pdfAnalysis?.specs ?? {}),
-        groups: pdfAnalysis?.specs?.groups ?? [],
+        groups: specGroups,
         models,
       };
       const product = await createProduct({
@@ -2192,6 +2230,7 @@ function ProductForm({
         // doivent rester prioritaires (ajouts/suppressions/renommages).
         body.specs = {
           ...(pdfReanalysis.specs || existing?.specs || {}),
+          groups: specGroups,
           models,
         };
       } else {
@@ -2200,6 +2239,7 @@ function ProductForm({
         // autoriser la suppression de toutes les variantes.
         body.specs = {
           ...(existing?.specs || {}),
+          groups: specGroups,
           models,
         };
       }
@@ -2824,6 +2864,35 @@ function ProductForm({
               historique, pour les produits antérieurs à ce champ.
 
               « Masqué publiquement » ne signifie pas « inexistant dans le CMS ». */}
+          {/* ── Tableau comparatif complet des caractéristiques & variantes ── */}
+          <section className="space-y-3">
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-sm font-bold text-neutral-900 dark:text-white">
+                  Tableau comparatif des caractéristiques & variantes
+                </h2>
+                <span className="text-[11px] text-neutral-400 font-medium">
+                  {variantNames.length} variante{variantNames.length > 1 ? 's' : ''}
+                </span>
+              </div>
+              <p className="text-[11px] text-neutral-400 mt-0.5">
+                Édition directe de la matrice des variantes (colonnes) et des caractéristiques techniques (lignes), exactement telle qu&apos;elle apparaît sur le site public.
+              </p>
+            </div>
+
+            <SpecsMatrixEditor
+              models={models}
+              setModels={setModels}
+              groups={specGroups}
+              setGroups={setSpecGroups}
+              onAddVariant={() => {
+                setNewVariantName('');
+                setShowAddVariantModal(true);
+              }}
+              onDeleteVariant={deleteVariant}
+            />
+          </section>
+
           {/* ── Liens boutique par variante (gestion dynamique des variantes) ── */}
           <section>
             <div className="flex items-center justify-between gap-3 mb-1.5 flex-wrap">
