@@ -100,11 +100,13 @@ export async function GET(request: Request) {
 
     const arrayBuffer = await response.arrayBuffer();
     const contentType = response.headers.get('content-type') || 'application/octet-stream';
+    const safeAscii = filename.replace(/[^\x20-\x7E]/g, '_').replace(/["\\]/g, '');
+    const encodedFilename = encodeURIComponent(filename);
 
     return new Response(arrayBuffer, {
       headers: {
         'Content-Type': contentType,
-        'Content-Disposition': `attachment; filename="${filename}"`,
+        'Content-Disposition': `attachment; filename="${safeAscii}"; filename*=UTF-8''${encodedFilename}`,
         'Access-Control-Allow-Origin': '*',
         'Cache-Control': 'no-cache',
       },

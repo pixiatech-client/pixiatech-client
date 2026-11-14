@@ -2,9 +2,28 @@
 
 import React, { useState, useRef } from 'react';
 import { format } from 'date-fns';
-import { Check, CheckCheck, Video, Paperclip, Mic, Play, Pause, Share2, Trash2, Download } from 'lucide-react';
+import {
+  Check,
+  CheckCheck,
+  Video,
+  Paperclip,
+  Mic,
+  Play,
+  Pause,
+  Share2,
+  Trash2,
+  Download,
+  FileText,
+  FileSpreadsheet,
+  Presentation,
+  Archive,
+  File,
+  ExternalLink,
+  Image as ImageIcon,
+} from 'lucide-react';
 import { cn, formatTimestamp } from '@/lib/utils';
-import { Message, MessageOption } from '@/lib/types';
+import { Message, MessageOption, MessageAttachment } from '@/lib/types';
+import { formatFileSize, getFileExtension, getAttachmentCategory } from '@/lib/chat-attachments';
 import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import { useRoles } from '@/contexts/RoleContext';
 import { useI18n } from '@/lib/i18n';
@@ -58,6 +77,167 @@ const TypewriterText = ({ content, isMine }: { content: string; isMine: boolean 
     />
   );
 };
+
+function AttachmentCard({
+  att,
+  isMine,
+  onMediaClick,
+  onDownload,
+}: {
+  att: MessageAttachment;
+  isMine: boolean;
+  onMediaClick?: (url: string, type: 'image' | 'video') => void;
+  onDownload: (url: string, filename?: string) => void;
+}) {
+  const ext = (att.extension || getFileExtension(att.name) || 'file').toUpperCase();
+  const category = getAttachmentCategory(att.extension || getFileExtension(att.name));
+
+  if (category === 'image' && att.url && !att.url.startsWith('blob:')) {
+    return (
+      <div
+        className="relative group/attimg overflow-hidden rounded-2xl bg-black/40 border border-white/10 cursor-pointer hover:opacity-95 transition-all max-w-sm mb-2"
+        onClick={(e) => {
+          e.stopPropagation();
+          onMediaClick?.(att.url, 'image');
+        }}
+      >
+        <img
+          src={att.url}
+          alt={att.name}
+          className="max-h-60 w-full object-cover hover:scale-105 transition-transform select-none"
+          loading="lazy"
+        />
+        <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/85 via-black/50 to-transparent p-2.5 flex items-center justify-between text-white">
+          <div className="min-w-0 flex-1 mr-2">
+            <p className="text-xs font-bold truncate">{att.name}</p>
+            <p className="text-[10px] text-white/70 font-mono">
+              {ext} {att.size > 0 ? `• ${formatFileSize(att.size)}` : ''}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDownload(att.url, att.name);
+            }}
+            className="h-8 w-8 bg-white/20 hover:bg-white/30 backdrop-blur-md rounded-xl flex items-center justify-center text-white transition-all active:scale-90 shrink-0"
+            title="Télécharger"
+          >
+            <Download size={14} />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const badge = (() => {
+    switch (category) {
+      case 'pdf':
+        return {
+          colorClass: 'bg-rose-500/20 text-rose-400 border-rose-500/30',
+          icon: <FileText size={20} className="text-rose-400" />,
+          label: 'PDF',
+          canPreview: true,
+        };
+      case 'word':
+        return {
+          colorClass: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+          icon: <FileText size={20} className="text-blue-400" />,
+          label: ext || 'DOCX',
+          canPreview: false,
+        };
+      case 'excel':
+        return {
+          colorClass: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+          icon: <FileSpreadsheet size={20} className="text-emerald-400" />,
+          label: ext || 'EXCEL',
+          canPreview: false,
+        };
+      case 'powerpoint':
+        return {
+          colorClass: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+          icon: <Presentation size={20} className="text-amber-400" />,
+          label: ext || 'PPTX',
+          canPreview: false,
+        };
+      case 'archive':
+        return {
+          colorClass: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
+          icon: <Archive size={20} className="text-purple-400" />,
+          label: ext || 'ARCHIVE',
+          canPreview: false,
+        };
+      case 'text':
+        return {
+          colorClass: 'bg-slate-500/20 text-slate-300 border-slate-500/30',
+          icon: <FileText size={20} className="text-slate-300" />,
+          label: 'TXT',
+          canPreview: true,
+        };
+      default:
+        return {
+          colorClass: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
+          icon: <File size={20} className="text-cyan-400" />,
+          label: ext || 'FICHIER',
+          canPreview: false,
+        };
+    }
+  })();
+
+  return (
+    <div
+      className={cn(
+        'mb-2 flex items-center gap-3 p-3 rounded-2xl border transition-all min-w-[240px] max-w-sm',
+        isMine ? 'bg-white/10 border-white/15' : 'bg-white/5 border-white/10'
+      )}
+    >
+      <div className={cn('h-11 w-11 rounded-xl flex items-center justify-center border shrink-0', badge.colorClass)}>
+        {badge.icon}
+      </div>
+
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-bold truncate text-white" title={att.name}>
+          {att.name}
+        </p>
+        <p className="text-[10px] opacity-70 font-mono font-bold uppercase tracking-wider mt-0.5">
+          {badge.label} {att.size > 0 ? `• ${formatFileSize(att.size)}` : ''}
+        </p>
+      </div>
+
+      <div className="flex items-center gap-1 shrink-0">
+        {badge.canPreview && (
+          <a
+            href={att.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className={cn(
+              'h-8 w-8 rounded-xl flex items-center justify-center transition-all active:scale-90',
+              isMine ? 'bg-white/10 hover:bg-white/20 text-white' : 'bg-white/10 hover:bg-white/20 text-white'
+            )}
+            title="Consulter"
+          >
+            <ExternalLink size={14} />
+          </a>
+        )}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDownload(att.url, att.name);
+          }}
+          className={cn(
+            'h-8 w-8 rounded-xl flex items-center justify-center transition-all active:scale-90',
+            isMine ? 'bg-white/10 hover:bg-white/20 text-white' : 'bg-white/10 hover:bg-white/20 text-white'
+          )}
+          title="Télécharger"
+        >
+          <Download size={14} />
+        </button>
+      </div>
+    </div>
+  );
+}
 
 interface MessageItemProps {
   msg: Message;
@@ -201,7 +381,23 @@ export default function MessageItem({ msg, isMine, isMiniChat, onMediaClick, oth
           >
 
 
-            {msg.type === 'video' && msg.fileUrl && !msg.fileUrl.startsWith('blob:') && (
+            {/* Multi-attachments rendering */}
+            {msg.attachments && msg.attachments.length > 0 && (
+              <div className="flex flex-col gap-1 mb-1">
+                {msg.attachments.map((att) => (
+                  <AttachmentCard
+                    key={att.id || att.url}
+                    att={att}
+                    isMine={isMine}
+                    onMediaClick={onMediaClick}
+                    onDownload={handleDownload}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Legacy Single Video */}
+            {(!msg.attachments || msg.attachments.length === 0) && msg.type === 'video' && msg.fileUrl && !msg.fileUrl.startsWith('blob:') && (
               <div 
                 className="mb-2 overflow-hidden rounded-2xl bg-black/40 cursor-pointer hover:opacity-90 transition-all relative group"
                 onClick={(e) => {
@@ -220,7 +416,8 @@ export default function MessageItem({ msg, isMine, isMiniChat, onMediaClick, oth
               </div>
             )}
             
-            {msg.type === 'image' && msg.fileUrl && !msg.fileUrl.startsWith('blob:') && (
+            {/* Legacy Single Image */}
+            {(!msg.attachments || msg.attachments.length === 0) && msg.type === 'image' && msg.fileUrl && !msg.fileUrl.startsWith('blob:') && (
               <div 
                 className="mb-2 overflow-hidden rounded-2xl bg-black/40 cursor-pointer hover:opacity-90 transition-all relative group/image"
                 onClick={(e) => {
@@ -244,38 +441,21 @@ export default function MessageItem({ msg, isMine, isMiniChat, onMediaClick, oth
               </div>
             )}
 
-            {msg.type === 'file' && msg.fileUrl && !msg.fileUrl.startsWith('blob:') && (
-              <div className={cn(
-                "mb-2 flex items-center gap-3 p-3 rounded-2xl border transition-all",
-                isMine ? "bg-white/10 border-white/10" : "bg-white/5 border-white/5"
-              )}>
-                <div className="h-10 w-10 rounded-xl bg-blue-500/20 flex items-center justify-center text-blue-400">
-                  <Paperclip size={20} />
-                </div>
-                <a 
-                  href={msg.fileUrl} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                  className="flex-1 min-w-0 hover:opacity-80 transition-opacity"
-                >
-                  <p className="text-sm font-bold truncate">{msg.content || t('chat.document')}</p>
-                  <p className="text-[10px] opacity-60 font-bold uppercase tracking-wider">PDF • 1.2 MB</p>
-                </a>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDownload(msg.fileUrl!, msg.content || 'document');
-                  }}
-                  className={cn(
-                    "h-9 w-9 rounded-xl flex items-center justify-center transition-all active:scale-90",
-                    isMine ? "bg-white/10 hover:bg-white/20 text-white" : "bg-gray-100 hover:bg-gray-200 text-gray-600"
-                  )}
-                  title={t('chat.download')}
-                >
-                  <Download size={16} />
-                </button>
-              </div>
+            {/* Legacy Single File */}
+            {(!msg.attachments || msg.attachments.length === 0) && msg.type === 'file' && msg.fileUrl && !msg.fileUrl.startsWith('blob:') && (
+              <AttachmentCard
+                att={{
+                  id: msg.id || 'legacy',
+                  name: msg.content || t('chat.document'),
+                  url: msg.fileUrl,
+                  size: msg.fileSize || 0,
+                  type: 'application/octet-stream',
+                  extension: msg.fileExtension || getFileExtension(msg.content || msg.fileUrl),
+                }}
+                isMine={isMine}
+                onMediaClick={onMediaClick}
+                onDownload={handleDownload}
+              />
             )}
 
             {msg.type === 'audio' && msg.fileUrl && !msg.fileUrl.startsWith('blob:') && (
@@ -308,9 +488,14 @@ export default function MessageItem({ msg, isMine, isMiniChat, onMediaClick, oth
               </div>
             )}
 
-            {msg.type === 'text' && (
+            {/* Text message content */}
+            {msg.content && (msg.type === 'text' || (
+              // Affiche également le texte si le message a des pièces jointes et que content n'est pas un placeholder
+              Boolean(msg.attachments && msg.attachments.length > 0 && msg.content !== msg.attachments[0]?.name && !msg.content.match(/^\[?\d+\s+(pièces jointes|fichiers)\]?$/i)) ||
+              Boolean(msg.type === 'file' && !msg.attachments && msg.content && !msg.content.includes('.') && msg.content !== 'file' && !msg.content.startsWith('['))
+            )) && (
               <div className="leading-relaxed font-medium text-[15px]">
-                {!isMine && !msg.fileUrl ? (
+                {!isMine && !msg.fileUrl && (!msg.attachments || msg.attachments.length === 0) ? (
                   <TypewriterText content={getTranslatedContent()} isMine={isMine} />
                 ) : (
                   <div dangerouslySetInnerHTML={{ __html: getTranslatedContent() }} />

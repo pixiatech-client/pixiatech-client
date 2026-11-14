@@ -649,6 +649,15 @@ export interface UserProfileChat extends UserProfile {
 export type MessageType = 'text' | 'image' | 'video' | 'file' | 'audio' | 'summary';
 export type MessageStatus = 'sent' | 'delivered' | 'seen';
 
+export interface MessageAttachment {
+  id: string;
+  name: string;
+  url: string;
+  size: number; // en octets
+  type: string; // mimeType ou catégorie
+  extension: string; // 'pdf', 'docx', 'xlsx', 'zip', etc.
+}
+
 export interface MessageOption {
   label: string;
   value: string;
@@ -667,6 +676,9 @@ export interface Message {
   content: string;
   type: MessageType;
   fileUrl?: string;
+  fileSize?: number;
+  fileExtension?: string;
+  attachments?: MessageAttachment[];
   status: MessageStatus;
   createdAt: any; 
   duration?: number; // seconds, for audio messages

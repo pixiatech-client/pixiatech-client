@@ -4,8 +4,19 @@ import React, { useState, useEffect, useRef } from 'react';
 import { X, MoreVertical, Ban, Paperclip, Video, Mic, Send, Mail, Image as ImageIcon, Trash2, StopCircle, Play, Pause, Search, Shield, Users, ChevronLeft, Phone, MessageSquare, Settings, UserX, Bell, BellOff, Eye, EyeOff, ShieldOff, ChevronDown, FileText, Download } from 'lucide-react';
 import { doc, updateDoc, onSnapshot, collection, query, orderBy, limit, addDoc, serverTimestamp, getDoc, getDocs, deleteDoc, increment, arrayUnion, writeBatch } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, listAll, deleteObject } from 'firebase/storage';
-import { firestore as db, storage } from '@/firebase/config';
-import { UserProfileChat as UserProfile, Message, MessageType, Chat } from '@/lib/types';
+import { firestore as db, storage, auth } from '@/firebase/config';
+import { UserProfileChat as UserProfile, Message, MessageType, Chat, MessageAttachment } from '@/lib/types';
+import {
+  MAX_FILE_SIZE_BYTES,
+  MAX_FILES_PER_MESSAGE,
+  MAX_TOTAL_SIZE_BYTES,
+  CHAT_FILE_INPUT_ACCEPT,
+  validateAttachmentBatch,
+  formatFileSize,
+  getFileExtension,
+  getAttachmentCategory,
+  sanitizeAttachmentFileName,
+} from '@/lib/chat-attachments';
 import { cn } from '@/lib/utils';
 import MessageItem from './MessageItem';
 import ConfirmModal from './ConfirmModal';
@@ -14,6 +25,144 @@ import { useMediaQuery } from '@/hooks/use-media-query';
 import { useI18n } from '@/lib/i18n';
 import { getAvatarUrl } from '@/lib/avatar';
 import LiquidLoader from '@/components/LiquidLoader';
+
+interface StagedAttachment {
+  id: string;
+  file: File;
+  progress: number;
+  status: 'uploading' | 'completed' | 'error';
+  error?: string;
+  previewUrl?: string;
+  result?: {
+    originalName: string;
+    url: string;
+    size: number;
+    type: string;
+    extension: string;
+  };
+  abortCtrl?: AbortController;
+}
+
+/**
+ * Téléverse un fichier avec progression réelle en direct (XHR upload progress)
+ * en priorité via l'API serveur /api/chat/upload, avec bascule de repli vers le SDK client.
+ */
+async function uploadAttachmentWithProgress(
+  file: File,
+  chatId: string,
+  onProgress: (pct: number) => void,
+  signal?: AbortSignal
+): Promise<{
+  originalName: string;
+  url: string;
+  size: number;
+  type: string;
+  extension: string;
+}> {
+  // 1. Tenter en priorité l'API serveur /api/chat/upload avec XMLHttpRequest pour progression réelle en direct
+  try {
+    const idToken = await auth.currentUser?.getIdToken().catch(() => undefined);
+    return await new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('chatId', chatId);
+
+      if (signal) {
+        signal.addEventListener('abort', () => {
+          xhr.abort();
+          reject(new Error('Téléversement annulé'));
+        });
+      }
+
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable && e.total > 0) {
+          // Progression de 0 à 95% pendant le transfert réel des octets
+          const pct = Math.min(95, Math.max(1, Math.round((e.loaded / e.total) * 95)));
+          onProgress(pct);
+        }
+      };
+
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const data = JSON.parse(xhr.responseText);
+            if (data?.success && data?.attachment) {
+              onProgress(100);
+              resolve({
+                originalName: data.attachment.name,
+                url: data.attachment.url,
+                size: data.attachment.size,
+                type: data.attachment.type,
+                extension: data.attachment.extension,
+              });
+              return;
+            }
+            reject(new Error(data?.error || 'Erreur lors du traitement du fichier'));
+          } catch {
+            reject(new Error('Réponse serveur invalide'));
+          }
+        } else {
+          try {
+            const data = JSON.parse(xhr.responseText);
+            reject(new Error(data?.error || `Erreur serveur (${xhr.status})`));
+          } catch {
+            reject(new Error(`Erreur HTTP (${xhr.status})`));
+          }
+        }
+      };
+
+      xhr.onerror = () => reject(new Error('Erreur réseau'));
+      xhr.ontimeout = () => reject(new Error('Délai d’attente dépassé'));
+
+      xhr.open('POST', '/api/chat/upload', true);
+      if (idToken) {
+        xhr.setRequestHeader('Authorization', `Bearer ${idToken}`);
+      }
+      xhr.send(formData);
+    });
+  } catch (apiErr: any) {
+    if (signal?.aborted) throw apiErr;
+    console.warn('[chat] API upload échouée, tentative client direct:', apiErr);
+
+    // 2. Repli direct Firebase Storage client avec uploadBytesResumable
+    const { uploadBytesResumable, getDownloadURL, ref } = await import('firebase/storage');
+    const { sanitizeAttachmentFileName, getFileExtension } = await import('@/lib/chat-attachments');
+    const cleanName = sanitizeAttachmentFileName(file.name);
+    const uniqueToken = `${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+    const storageRef = ref(storage, `chats/${chatId}/${uniqueToken}_${cleanName}`);
+
+    const uploadTask = uploadBytesResumable(storageRef, file);
+
+    if (signal) {
+      signal.addEventListener('abort', () => uploadTask.cancel());
+    }
+
+    return new Promise((resolve, reject) => {
+      uploadTask.on(
+        'state_changed',
+        (snapshot) => {
+          if (snapshot.totalBytes > 0) {
+            const pct = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 95);
+            onProgress(pct);
+          }
+        },
+        (error) => reject(error),
+        async () => {
+          onProgress(100);
+          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+          resolve({
+            originalName: file.name,
+            url: downloadURL,
+            size: file.size,
+            type: file.type || 'application/octet-stream',
+            extension: getFileExtension(file.name),
+          });
+        }
+      );
+    });
+  }
+}
 
 interface ChatWindowProps {
   chatId: string;
@@ -38,6 +187,18 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
   const isMobile = useMediaQuery('(max-width: 1024px)');
   const [selectedMedia, setSelectedMedia] = useState<{ url: string, type: 'image' | 'video' } | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [stagedAttachments, setStagedAttachments] = useState<StagedAttachment[]>([]);
+  const pendingAttachments = stagedAttachments.map((s) => s.file);
+  const [attachmentError, setAttachmentError] = useState<string | null>(null);
+  const [uploadProgressText, setUploadProgressText] = useState<string | null>(null);
+  const inputTextRef = useRef(inputText);
+  const stagedAttachmentsRef = useRef(stagedAttachments);
+  useEffect(() => {
+    inputTextRef.current = inputText;
+  }, [inputText]);
+  useEffect(() => {
+    stagedAttachmentsRef.current = stagedAttachments;
+  }, [stagedAttachments]);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [recordingPreview, setRecordingPreview] = useState<{blob: Blob; url: string; duration: number; mimeType: string} | null>(null);
@@ -251,72 +412,234 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !chatId) return;
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0 || !chatId) return;
     if (currentUser.permissions?.canChat === false && currentUser.role !== 'admin') return;
 
+    setAttachmentError(null);
+    const currentFiles = stagedAttachmentsRef.current.map((s) => s.file);
+    const { accepted, errors } = await validateAttachmentBatch(files, currentFiles);
+    if (errors.length > 0) {
+      setAttachmentError(errors.join(' • '));
+    }
+    if (accepted.length === 0) {
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    // Création des éléments avec progression circulaire initiale à 0%
+    const newItems: StagedAttachment[] = accepted.map((file) => {
+      const ext = getFileExtension(file.name);
+      const cat = getAttachmentCategory(ext);
+      return {
+        id: `staged_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        file,
+        progress: 1,
+        status: 'uploading',
+        previewUrl: cat === 'image' ? URL.createObjectURL(file) : undefined,
+        abortCtrl: new AbortController(),
+      };
+    });
+
+    const updated = [...stagedAttachmentsRef.current, ...newItems].slice(0, MAX_FILES_PER_MESSAGE);
+    setStagedAttachments(updated);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+
+    // Lancement immédiat du téléversement avec mise à jour continue de la jauge circulaire
+    startUploadBatch(newItems);
+  };
+
+  const removePendingAttachment = (indexToRemove: number) => {
+    setStagedAttachments((prev) => {
+      const target = prev[indexToRemove];
+      if (target) {
+        target.abortCtrl?.abort();
+        if (target.previewUrl) URL.revokeObjectURL(target.previewUrl);
+      }
+      return prev.filter((_, i) => i !== indexToRemove);
+    });
+    setAttachmentError(null);
+  };
+
+  const clearAllPendingAttachments = () => {
+    setStagedAttachments((prev) => {
+      prev.forEach((it) => {
+        it.abortCtrl?.abort();
+        if (it.previewUrl) URL.revokeObjectURL(it.previewUrl);
+      });
+      return [];
+    });
+    setIsUploading(false);
+    setUploadProgressText(null);
+    setAttachmentError(null);
+  };
+
+  const startUploadBatch = async (itemsToUpload: StagedAttachment[]) => {
     setIsUploading(true);
-    
-    let type: MessageType = 'file';
-    if (file.type.startsWith('image/')) type = 'image';
-    else if (file.type.startsWith('video/')) type = 'video';
-    else if (file.type.startsWith('audio/')) type = 'audio';
+    setUploadProgressText('Chargement en cours…');
+
+    const results = await Promise.all(
+      itemsToUpload.map(async (item) => {
+        try {
+          const res = await uploadAttachmentWithProgress(
+            item.file,
+            chatId,
+            (pct) => {
+              setStagedAttachments((prev) =>
+                prev.map((it) => (it.id === item.id ? { ...it, progress: pct } : it))
+              );
+            },
+            item.abortCtrl?.signal
+          );
+
+          setStagedAttachments((prev) =>
+            prev.map((it) =>
+              it.id === item.id ? { ...it, progress: 100, status: 'completed', result: res } : it
+            )
+          );
+
+          return { success: true, item, res };
+        } catch (err: any) {
+          if (item.abortCtrl?.signal.aborted) {
+            return { success: false, aborted: true };
+          }
+          console.error('[chat] Échec téléversement:', err);
+          setStagedAttachments((prev) =>
+            prev.map((it) =>
+              it.id === item.id ? { ...it, status: 'error', error: err?.message || 'Erreur' } : it
+            )
+          );
+          setAttachmentError(`Erreur sur "${item.file.name}" : ${err?.message || 'échec'}`);
+          return { success: false, item, error: err };
+        }
+      })
+    );
+
+    const anyFailed = results.some((r) => !r.success && !r.aborted);
+    if (anyFailed) {
+      setIsUploading(false);
+      setUploadProgressText(null);
+      return;
+    }
+
+    // Vérifier si toutes les pièces jointes actuelles sont arrivées à 100%
+    setTimeout(() => {
+      checkAndAutoTransmit();
+    }, 350);
+  };
+
+  const checkAndAutoTransmit = () => {
+    const current = stagedAttachmentsRef.current;
+    if (current.length === 0) return;
+
+    const allCompleted = current.every((it) => it.status === 'completed' && it.result);
+    if (allCompleted) {
+      const validResults = current.map((it) => it.result!);
+      transmitCompletedAttachments(validResults);
+    }
+  };
+
+  const transmitCompletedAttachments = async (
+    results: { originalName: string; url: string; size: number; type: string; extension: string }[]
+  ) => {
+    if (results.length === 0 || !chatId) return;
 
     try {
-      // Upload file to Firebase Storage
-      const storageRef = ref(storage, `chats/${chatId}/${Date.now()}_${file.name}`);
-      await uploadBytes(storageRef, file);
-      const downloadURL = await getDownloadURL(storageRef);
-      
+      const rawText = inputTextRef.current.trim();
+      let content = rawText;
+      let type: MessageType = 'file';
+
+      if (!content) {
+        content = results.length === 1 ? results[0].originalName : `${results.length} pièces jointes`;
+      }
+
+      const first = results[0];
+      const cat = getAttachmentCategory(first.extension);
+      if (results.length === 1 && cat === 'image') type = 'image';
+      else if (results.length === 1 && cat === 'video') type = 'video';
+      else type = 'file';
+
+      const attachments: MessageAttachment[] = results.map((r, idx) => ({
+        id: `att_${Date.now()}_${idx}_${Math.random().toString(36).substring(2, 6)}`,
+        name: r.originalName,
+        url: r.url,
+        size: r.size,
+        type: r.type,
+        extension: r.extension,
+      }));
+
       const msgData: Partial<Message> = {
         chatId,
         senderId: currentUser.uid,
         senderName: currentUser.displayName,
         senderRole: currentUser.role,
-        content: file.name,
+        content,
         type,
-        fileUrl: downloadURL,
         status: 'sent',
-        createdAt: serverTimestamp()
+        createdAt: serverTimestamp(),
+        fileUrl: first.url,
+        fileSize: first.size,
+        fileExtension: first.extension,
+        attachments,
       };
+
+      // Vider le staging et le texte immédiatement
+      setStagedAttachments([]);
+      setInputText('');
+      setIsUploading(false);
+      setUploadProgressText(null);
+
       await addDoc(collection(db, 'chats', chatId, 'messages'), msgData);
-      
+
       const chatSnap = await getDoc(doc(db, 'chats', chatId));
       if (chatSnap.exists()) {
         const chat = chatSnap.data() as Chat;
+        const lastMessageDisplay = !rawText
+          ? (attachments.length === 1 ? `[${attachments[0].name}]` : `[${attachments.length} fichiers]`)
+          : content;
+
         const updates: any = {
-          lastMessage: `[${type}]`,
-          lastMessageAt: serverTimestamp()
+          lastMessage: lastMessageDisplay,
+          lastMessageAt: serverTimestamp(),
         };
-        chat.participants.forEach(pId => {
+
+        chat.participants.forEach((pId) => {
           if (pId !== currentUser.uid) {
             updates[`unreadCount.${pId}`] = increment(1);
           }
         });
+
         await updateDoc(doc(db, 'chats', chatId), updates);
-        
-        chat.participants.forEach(async (pId) => {
+
+        chat.participants.forEach((pId) => {
           if (pId !== currentUser.uid) {
-             addDoc(collection(db, 'notifications'), {
+            const notifDesc = rawText
+              ? `${rawText} (${attachments.length} fichier(s))`
+              : attachments.map((a) => a.name).join(', ');
+            addDoc(collection(db, 'notifications'), {
               userId: pId,
               type: 'message',
-              title: t('chat.newFileFrom', { user: currentUser.displayName || t('chat.unknownUser') }),
-              description: file.name,
+              title: t('chat.newMessageFrom', { user: currentUser.displayName || t('chat.unknownUser') }),
+              description: notifDesc.length > 100 ? notifDesc.substring(0, 100) + '...' : notifDesc,
               href: '/admin/messages',
               read: false,
-              createdAt: serverTimestamp()
+              createdAt: serverTimestamp(),
             });
           }
         });
       }
-    } catch (error) {
-      console.error('Error uploading file:', error);
+
+      scrollToBottom();
+    } catch (err: any) {
+      console.error('[chat] Erreur de transmission:', err);
+      setAttachmentError(`Erreur lors de la transmission : ${err?.message || 'erreur réseau'}`);
+      setIsUploading(false);
     }
-    
-    setIsUploading(false);
-    if (fileInputRef.current) fileInputRef.current.value = '';
   };
+
+  // Alias rétrocompatible si un événement d'upload direct est déclenché
+  const handleFileUpload = handleFileSelect;
 
   useEffect(() => {
     scrollToBottom();
@@ -418,20 +741,33 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
       return;
     }
 
-    const content = directText || inputText;
-    if (!content.trim()) return;
+    const currentStaged = stagedAttachmentsRef.current;
+    if (currentStaged.length > 0) {
+      // S'il y a des fichiers en cours d'upload, le système auto-transmet dès qu'ils atteignent 100%
+      const allCompleted = currentStaged.every((it) => it.status === 'completed' && it.result);
+      if (allCompleted) {
+        transmitCompletedAttachments(currentStaged.map((it) => it.result!));
+      }
+      return;
+    }
+
+    if (isUploading) return;
+
+    const rawText = directText !== undefined ? directText : inputText;
+    const trimmedText = rawText.trim();
+    if (!trimmedText) return;
 
     if (!directText) setInputText('');
-    
+
     const msgData: Partial<Message> = {
       chatId,
       senderId: currentUser.uid,
       senderName: currentUser.displayName,
       senderRole: currentUser.role,
-      content,
+      content: trimmedText,
       type: 'text',
       status: 'sent',
-      createdAt: serverTimestamp()
+      createdAt: serverTimestamp(),
     };
 
     await addDoc(collection(db, 'chats', chatId, 'messages'), msgData);
@@ -441,11 +777,10 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
     if (chatSnap.exists()) {
       const chat = chatSnap.data() as Chat;
       const updates: any = {
-        lastMessage: content,
+        lastMessage: trimmedText,
         lastMessageAt: serverTimestamp()
       };
       
-      // Increment unread for all participants except sender
       chat.participants.forEach(pId => {
         if (pId !== currentUser.uid) {
           updates[`unreadCount.${pId}`] = increment(1);
@@ -454,15 +789,13 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
       
       await updateDoc(doc(db, 'chats', chatId), updates);
       
-      // Create notification for recipients (best effort, maybe only for main recipient or all)
-      // Here we notify everyone else
       chat.participants.forEach(async (pId) => {
         if (pId !== currentUser.uid) {
-           addDoc(collection(db, 'notifications'), {
+          addDoc(collection(db, 'notifications'), {
             userId: pId,
             type: 'message',
             title: t('chat.newMessageFrom', { user: currentUser.displayName || t('chat.unknownUser') }),
-            description: content.length > 100 ? content.substring(0, 100) + '...' : content,
+            description: trimmedText.length > 100 ? trimmedText.substring(0, 100) + '...' : trimmedText,
             href: '/admin/messages',
             read: false,
             createdAt: serverTimestamp()
@@ -470,6 +803,7 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
         }
       });
     }
+    scrollToBottom();
   };
 
   const handleClearHistory = async () => {
@@ -1171,9 +1505,152 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
               type="file" 
               ref={fileInputRef} 
               className="hidden" 
-              onChange={handleFileUpload}
-              accept="image/*,video/*,audio/*,.pdf,.doc,.docx"
+              multiple
+              onChange={handleFileSelect}
+              accept={CHAT_FILE_INPUT_ACCEPT}
             />
+
+            {/* Attachment error message */}
+            {attachmentError && (
+              <div className="mb-2 px-4 py-2.5 rounded-2xl bg-rose-500/20 border border-rose-500/40 text-rose-300 text-xs flex items-center justify-between gap-2 shadow-lg backdrop-blur-md">
+                <span className="truncate font-semibold">{attachmentError}</span>
+                <button
+                  type="button"
+                  onClick={() => setAttachmentError(null)}
+                  className="shrink-0 text-rose-300 hover:text-white transition-colors cursor-pointer"
+                >
+                  <X size={15} />
+                </button>
+              </div>
+            )}
+
+            {/* Staging attachments bar avec progression circulaire en direct */}
+            {stagedAttachments.length > 0 && (
+              <div className="mb-2 p-3 rounded-[24px] bg-[#0f1113]/95 backdrop-blur-2xl border border-white/10 shadow-2xl space-y-2">
+                <div className="flex items-center justify-between px-1 text-[11px] font-bold text-neutral-400">
+                  <span className="text-[#a2ff00] flex items-center gap-1.5">
+                    {isUploading ? (
+                      <>
+                        <LiquidLoader size={13} />
+                        Chargement en cours ({stagedAttachments.filter(s => s.status === 'uploading').length}/{stagedAttachments.length}) • {formatFileSize(pendingAttachments.reduce((a, b) => a + b.size, 0))}
+                      </>
+                    ) : (
+                      <>
+                        Pièces jointes ({stagedAttachments.length}/{MAX_FILES_PER_MESSAGE}) • {formatFileSize(pendingAttachments.reduce((a, b) => a + b.size, 0))} / 50 Mo
+                      </>
+                    )}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={clearAllPendingAttachments}
+                    className="text-xs text-rose-400 hover:text-rose-300 transition-colors cursor-pointer"
+                  >
+                    Tout retirer
+                  </button>
+                </div>
+                <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
+                  {stagedAttachments.map((item, idx) => {
+                    const ext = getFileExtension(item.file.name);
+                    const cat = getAttachmentCategory(ext);
+                    const isImg = cat === 'image';
+                    const isError = item.status === 'error';
+                    const isCompleted = item.status === 'completed';
+                    const isUploadingItem = item.status === 'uploading';
+                    const progress = Math.min(100, Math.max(0, item.progress));
+                    const strokeDashoffset = 94.25 - (progress / 100) * 94.25;
+
+                    return (
+                      <div
+                        key={item.id}
+                        className={cn(
+                          "group relative flex items-center gap-2.5 pl-2 pr-2 py-1.5 bg-white/5 hover:bg-white/10 border rounded-2xl shrink-0 max-w-[260px] transition-all",
+                          isError ? "border-rose-500/40 bg-rose-500/5" : isCompleted ? "border-[#a2ff00]/40 bg-[#a2ff00]/5" : "border-white/10"
+                        )}
+                      >
+                        {/* Cercle de progression circulaire (emplacement flèche) */}
+                        <div className="relative w-9 h-9 flex items-center justify-center shrink-0">
+                          <svg className="absolute inset-0 w-full h-full -rotate-90 pointer-events-none" viewBox="0 0 36 36">
+                            <circle
+                              cx="18"
+                              cy="18"
+                              r="15"
+                              fill="none"
+                              stroke="rgba(255, 255, 255, 0.12)"
+                              strokeWidth="2.5"
+                            />
+                            <circle
+                              cx="18"
+                              cy="18"
+                              r="15"
+                              fill="none"
+                              stroke={isError ? '#f43f5e' : '#a2ff00'}
+                              strokeWidth="2.5"
+                              strokeLinecap="round"
+                              strokeDasharray={94.25}
+                              strokeDashoffset={strokeDashoffset}
+                              className="transition-all duration-150 ease-out"
+                            />
+                          </svg>
+
+                          {/* Miniature ou Badge central */}
+                          {isImg ? (
+                            <img
+                              src={item.previewUrl || URL.createObjectURL(item.file)}
+                              alt=""
+                              className="w-7 h-7 rounded-full object-cover bg-black/40 shrink-0 select-none pointer-events-none"
+                            />
+                          ) : (
+                            <div className={cn(
+                              "w-7 h-7 rounded-full flex items-center justify-center font-black font-mono transition-colors",
+                              isError ? "bg-rose-500/20 text-rose-400 text-[8px]" :
+                              isCompleted ? "bg-[#a2ff00] text-black text-[10px]" :
+                              "bg-[#a2ff00]/15 text-[#a2ff00] text-[8px]"
+                            )}>
+                              {isError ? '!' : isCompleted ? '✓' : isUploadingItem && progress > 0 ? `${progress}%` : (ext.slice(0, 4) || 'FILE')}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Informations fichier et statut de chargement */}
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-semibold text-white truncate" title={item.file.name}>
+                            {item.file.name}
+                          </p>
+                          <div className="flex items-center gap-1.5 text-[10px] font-mono leading-tight">
+                            {isUploadingItem && (
+                              <span className="text-[#a2ff00] font-bold flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-[#a2ff00] animate-ping shrink-0" />
+                                Chargement en cours… {progress}%
+                              </span>
+                            )}
+                            {isCompleted && (
+                              <span className="text-[#a2ff00] font-bold flex items-center gap-1">
+                                ✓ 100% • Transmission…
+                              </span>
+                            )}
+                            {isError && (
+                              <span className="text-rose-400 font-bold truncate" title={item.error}>
+                                Échec ({item.error || 'Erreur'})
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Bouton de retrait */}
+                        <button
+                          type="button"
+                          onClick={() => removePendingAttachment(idx)}
+                          className="w-6 h-6 rounded-lg bg-white/5 hover:bg-rose-500/20 hover:text-rose-400 text-neutral-400 flex items-center justify-center transition-colors shrink-0 cursor-pointer"
+                          title="Retirer cette pièce jointe"
+                        >
+                          <X size={13} />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
             {recordingPreview ? (
               <>
                 <div className="bg-white/5 backdrop-blur-3xl border border-white/10 p-2 md:p-3 rounded-[32px] shadow-[0_20px_50px_rgba(0,0,0,0.3)] flex items-center gap-2 md:gap-4">
@@ -1273,13 +1750,24 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
                     <button 
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      disabled={isUploading || isRecording}
-                      className="h-10 w-10 flex items-center justify-center text-[#a2ff00] hover:bg-white/5 rounded-xl transition-all flex-shrink-0 ml-1"
+                      disabled={isUploading || isRecording || pendingAttachments.length >= MAX_FILES_PER_MESSAGE}
+                      className={cn(
+                        "h-10 w-10 flex items-center justify-center text-[#a2ff00] hover:bg-white/5 rounded-xl transition-all flex-shrink-0 ml-1 relative",
+                        pendingAttachments.length >= MAX_FILES_PER_MESSAGE && "opacity-40 cursor-not-allowed"
+                      )}
+                      title={`Joindre des fichiers (${pendingAttachments.length}/${MAX_FILES_PER_MESSAGE})`}
                     >
                       {isUploading ? (
                         <LiquidLoader size={20} />
                       ) : (
-                        <Paperclip size={20} />
+                        <>
+                          <Paperclip size={20} />
+                          {pendingAttachments.length > 0 && (
+                            <span className="absolute -top-1 -right-1 bg-[#a2ff00] text-black text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center shadow-md">
+                              {pendingAttachments.length}
+                            </span>
+                          )}
+                        </>
                       )}
                     </button>
 

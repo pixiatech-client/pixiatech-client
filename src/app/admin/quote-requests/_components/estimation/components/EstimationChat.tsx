@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Send, Paperclip, MoreVertical, Phone, Video, Shield, Mic, StopCircle } from 'lucide-react';
+import { X, Send, Paperclip, MoreVertical, Phone, Video, Shield, Mic, StopCircle, FileText, Download } from 'lucide-react';
 import LiquidLoader from '@/components/LiquidLoader';
 import { 
   doc, 
@@ -19,9 +19,17 @@ import {
   arrayUnion
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { firestore as db, storage } from '@/firebase/config';
+import { firestore as db, storage, auth } from '@/firebase/config';
 import { Estimation } from '../types';
 import { useAdminT } from '@/hooks/useAdminT';
+import {
+  CHAT_FILE_INPUT_ACCEPT,
+  validateSingleAttachment,
+  getFileExtension,
+  getAttachmentCategory,
+  formatFileSize,
+  sanitizeAttachmentFileName,
+} from '@/lib/chat-attachments';
 
 interface SimpleUser {
   uid: string;
@@ -247,21 +255,63 @@ export const EstimationChat: React.FC<EstimationChatProps> = ({
     const file = e.target.files?.[0];
     if (!file || !estimation) return;
 
+    // Validation préalable du fichier
+    const validation = await validateSingleAttachment(file);
+    if (!validation.valid) {
+      alert(validation.error || adt('Fichier non autorisé'));
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
     setIsUploading(true);
     
+    const ext = getFileExtension(file.name);
+    const cat = getAttachmentCategory(ext);
     let type: 'image' | 'video' | 'file' = 'file';
-    if (file.type.startsWith('image/')) type = 'image';
-    else if (file.type.startsWith('video/')) type = 'video';
+    if (cat === 'image') type = 'image';
+    else if (cat === 'video') type = 'video';
 
     try {
-      const storageRef = ref(storage, `chats/${chatId}/${Date.now()}_${file.name}`);
-      await uploadBytes(storageRef, file);
-      const downloadURL = await getDownloadURL(storageRef);
+      let downloadURL: string | null = null;
+
+      // 1. Priorité API serveur sécurisée
+      try {
+        const idToken = await auth.currentUser?.getIdToken();
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('chatId', chatId);
+
+        const headers: Record<string, string> = {};
+        if (idToken) headers['Authorization'] = `Bearer ${idToken}`;
+
+        const res = await fetch('/api/chat/upload', {
+          method: 'POST',
+          headers,
+          body: formData,
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data?.success && data?.attachment?.url) {
+            downloadURL = data.attachment.url;
+          }
+        }
+      } catch (apiErr) {
+        console.warn('[EstimationChat] Erreur API upload, repli client direct:', apiErr);
+      }
+
+      // 2. Repli client direct si l'API n'a pas répondu
+      if (!downloadURL) {
+        const cleanName = sanitizeAttachmentFileName(file.name);
+        const storageRef = ref(storage, `chats/${chatId}/${Date.now()}_${cleanName}`);
+        await uploadBytes(storageRef, file);
+        downloadURL = await getDownloadURL(storageRef);
+      }
       
       await sendMediaMessage(type, downloadURL, file.name);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error uploading file:', error);
-      alert(adt('Erreur lors de l\'envoi du fichier'));
+      alert(adt(error?.message || 'Erreur lors de l\'envoi du fichier'));
     }
     
     setIsUploading(false);
@@ -403,6 +453,48 @@ export const EstimationChat: React.FC<EstimationChatProps> = ({
             className="max-w-[300px]"
           />
         );
+      case 'file':
+        if (msg.fileUrl) {
+          const ext = getFileExtension(msg.content || '');
+          const isPdf = ext === 'pdf';
+          const downloadHref = `/api/download?url=${encodeURIComponent(msg.fileUrl)}&filename=${encodeURIComponent(msg.content || 'document')}`;
+          return (
+            <div className="flex items-center gap-3 p-2 bg-black/30 rounded-xl border border-white/10 max-w-[320px]">
+              <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center shrink-0">
+                <FileText className="w-5 h-5 text-white" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-semibold text-white truncate" title={msg.content}>
+                  {msg.content}
+                </p>
+                <p className="text-[10px] text-zinc-400 uppercase font-mono">
+                  {ext || 'DOCUMENT'}
+                </p>
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                {isPdf && (
+                  <a
+                    href={msg.fileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-1.5 rounded-lg text-zinc-300 hover:text-white hover:bg-white/10 transition-colors"
+                    title={adt('Consulter')}
+                  >
+                    <FileText className="w-4 h-4" />
+                  </a>
+                )}
+                <a
+                  href={downloadHref}
+                  className="p-1.5 rounded-lg text-zinc-300 hover:text-white hover:bg-white/10 transition-colors"
+                  title={adt('Télécharger')}
+                >
+                  <Download className="w-4 h-4" />
+                </a>
+              </div>
+            </div>
+          );
+        }
+        return <p className="text-sm leading-relaxed">{msg.content}</p>;
       default:
         return <p className="text-sm leading-relaxed">{msg.content}</p>;
     }
@@ -534,7 +626,7 @@ export const EstimationChat: React.FC<EstimationChatProps> = ({
                 ref={fileInputRef} 
                 className="hidden" 
                 onChange={handleFileUpload}
-                accept="image/*,video/*,.pdf,.doc,.docx"
+                accept={CHAT_FILE_INPUT_ACCEPT}
               />
               <div className="flex items-end gap-2">
                 <button 

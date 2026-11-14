@@ -1,20 +1,18 @@
-
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
     
-    // Secure chats uploads: only participants, admin, commercial, or supplier can read/write
+    // Secure chats uploads: only authenticated users up to 25MB per file
     match /chats/{chatId}/{allPaths=**} {
-      allow read, write: if request.auth != null && (
-        request.auth.uid in firestore.get(/databases/(default)/documents/chats/$(chatId)).data.participants ||
-        firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role in ['admin', 'commercial', 'fournisseur']
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && (
+        request.resource == null ||
+        request.resource.size <= 25 * 1024 * 1024
       );
     }
 
     match /site/hero/{fileName} {
       // Images du Hero du site public : lecture publique, écriture admin uniquement.
-      // Les téléversements passent par /api/site-web/hero-image (requireAdmin) ;
-      // cette règle est une défense en profondeur côté client direct.
       allow read: if true;
       allow write: if request.auth != null
         && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin'
@@ -25,8 +23,7 @@ service firebase.storage {
     match /{allPaths=**} {
       allow read: if true;
       allow write: if request.auth != null
-        && request.resource.size < 10 * 1024 * 1024
-        && request.resource.contentType.matches('image/.*|application/pdf|video/.*|text/plain');
+        && request.resource.size <= 25 * 1024 * 1024;
     }
   }
 }

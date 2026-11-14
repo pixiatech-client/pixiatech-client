@@ -128,6 +128,9 @@ export default function MessagesPage() {
           content: message.content,
           type: message.type || 'text',
           fileUrl: message.fileUrl || null,
+          fileSize: message.fileSize || null,
+          fileExtension: message.fileExtension || null,
+          attachments: message.attachments || null,
           status: 'sent',
           createdAt: serverTimestamp()
         });
