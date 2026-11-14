@@ -131,7 +131,19 @@ export function BoutiqueHeader({ boutiqueEnabled = true }: { boutiqueEnabled?: b
 
   const isBoutiquePage = pathname.startsWith('/boutique');
 
+  // Détecte si on est sur le domaine web public (pixiatech.com) au lieu de l'app (app.pixiatech.com).
+  // Sur pixiatech.com, la route "/" est réécrite vers /web (site vitrine), pas le configurateur.
+  // Le configurateur guidé vit sur app.pixiatech.com.
+  const WEB_HOSTNAMES = ['pixiatech.com', 'www.pixiatech.com'];
+  const isWebDomain =
+    typeof window !== 'undefined' && WEB_HOSTNAMES.includes(window.location.hostname);
+  const guidedConfigHref = isWebDomain ? 'https://app.pixiatech.com/?step=1' : '/?step=1';
+
   const handleGuidedConfig = (e: React.MouseEvent) => {
+    if (isWebDomain) {
+      // Sur le domaine web public, navigation externe vers l'app du configurateur
+      return; // laisse le href absolu s'exécuter normalement
+    }
     if (pathname === '/') {
       // Déjà sur la page configurateur : on relance le mode guidé sans navigation
       e.preventDefault();
@@ -206,7 +218,7 @@ export function BoutiqueHeader({ boutiqueEnabled = true }: { boutiqueEnabled?: b
                 </Link>
                 )}
                 <Link
-                  href="/?step=1"
+                  href={guidedConfigHref}
                   onClick={(e) => {
                     setMobileMenuOpen(false);
                     handleGuidedConfig(e);
@@ -292,7 +304,7 @@ export function BoutiqueHeader({ boutiqueEnabled = true }: { boutiqueEnabled?: b
           </Link>
           )}
           <Link
-            href="/?step=1"
+            href={guidedConfigHref}
             onClick={handleGuidedConfig}
             className={cn(
               "font-medium nav-link text-sm whitespace-nowrap",
