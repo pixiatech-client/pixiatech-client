@@ -610,7 +610,7 @@ export function MenuEditor() {
               setConfirm({
                 kind: 'delete',
                 title: 'Supprimer le méga-menu ?',
-                body: 'Le site public retombera sur le méga-menu de référence (MEGA_COLUMNS), non cliquable pour les références sans produit. Action réversible : vous pourrez ré-enregistrer un menu.',
+                body: 'Le méga-menu sera vide sur le site public (aucun produit affiché dans le menu). Action réversible : vous pourrez ré-enregistrer un menu à tout moment.',
               })
             }
             className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-neutral-100 hover:bg-[#111110] hover:text-white text-neutral-700 dark:bg-white/5 dark:hover:bg-black dark:text-neutral-100 text-xs font-bold border border-neutral-300/80 dark:border-white/15 transition-all cursor-pointer shadow-sm active:scale-95"
@@ -663,11 +663,7 @@ export function MenuEditor() {
       {columns !== null && columns.length === 0 && savedRef === null && (
         <div className="flex flex-col items-center gap-4 py-14 rounded-3xl bg-white dark:bg-zinc-900 border border-neutral-200/80 dark:border-white/10 text-center px-6">
           <p className="text-sm text-neutral-600 dark:text-neutral-300 max-w-lg">
-            <span className="font-bold">Le site utilise actuellement le menu de référence.</span> Aucun
-            méga-menu enregistré sur ce site : le public voit le menu de base (
-            <span className="font-mono">MEGA_COLUMNS</span>), dont les entrées sans produit sont grisées.
-            Initialisez depuis la référence ou partez d’un menu vide.
-          </p>
+            <span className="font-bold">Le site utilise actuellement le menu de référence.</span> Aucun méga-menu enregistré sur ce site : le public voit un <span className="font-semibold">menu vide</span> (aucun produit affiché dans la navigation). Initialisez depuis la référence ou partez d'un menu vide.</p>
           <div className="flex flex-wrap justify-center gap-3">
             <button
               type="button"

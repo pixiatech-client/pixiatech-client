@@ -52,7 +52,7 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message:
-        'Méga-menu supprimé : le site public revient au méga-menu de référence (MEGA_COLUMNS).',
+        'Méga-menu supprimé : le menu de navigation est vide sur le site public (aucun produit affiché).',
     });
   } catch (err: unknown) {
     return NextResponse.json({ success: false, error: (err as Error).message }, { status: 500 });
