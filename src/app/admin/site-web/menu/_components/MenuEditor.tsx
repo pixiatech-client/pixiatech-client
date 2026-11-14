@@ -34,16 +34,13 @@ import {
   Globe,
   Plus,
   RefreshCw,
-  RotateCcw,
   Save,
   Trash2,
   X,
 } from 'lucide-react';
-import seedData from '../../../../../../data/mega-menu-seed.json';
 import {
   emptyMegaMenu,
   generateId,
-  menuSummary,
   sanitizeMegaMenu,
 } from '@/lib/products/mega-menu';
 import { isValidSlug, type MegaMenu, type MegaMenuItem, type MegaMenuColumn, type Product } from '@/lib/products/types';
@@ -112,9 +109,6 @@ function cloneColumns(columns: MegaMenuColumn[]): MegaMenuColumn[] {
   return columns.map((c) => ({ ...c, items: c.items.map((i) => ({ ...i })) }));
 }
 
-const seedMenu = (): MegaMenuColumn[] =>
-  cloneColumns(((seedData as { menu: MegaMenu }).menu).columns);
-
 export function MenuEditor() {
   const [columns, setColumns] = useState<MegaMenuColumn[] | null>(null);
   const [products, setProducts] = useState<ProductListItem[]>([]);
@@ -128,7 +122,7 @@ export function MenuEditor() {
     fromColumnId?: string;
   }>(null);
   const [confirm, setConfirm] = useState<null | {
-    kind: 'seed' | 'empty' | 'delete' | 'dup';
+    kind: 'empty' | 'delete' | 'dup';
     title: string;
     body: string;
     product?: ProductListItem;
@@ -485,14 +479,6 @@ export function MenuEditor() {
     }
   }, [columns]);
 
-  const applySeed = useCallback(() => {
-    const next = seedMenu();
-    markDirty(next);
-    setActiveColumnId(next[0]?.id ?? '');
-    setConfirm(null);
-    setSavedNotice('Menu de référence appliqué — pensez à enregistrer.');
-  }, [markDirty]);
-
   const applyEmpty = useCallback(() => {
     const next = emptyMegaMenu().columns;
     markDirty(next);
@@ -524,16 +510,6 @@ export function MenuEditor() {
       setSaveState('error');
     }
   }, []);
-
-  const openSeedConfirm = useCallback(() => {
-    if (!columns) return;
-    const summary = menuSummary({ columns: seedMenu() });
-    setConfirm({
-      kind: 'seed',
-      title: 'Réinitialiser depuis la référence ?',
-      body: `Remplace l’ensemble du menu par la référence de base (${summary.columns} sections, ${summary.items} éléments). Toute modification non enregistrée sera perdue.`,
-    });
-  }, [columns]);
 
   const statusPill: Record<SaveState, { text: string; className: string }> = {
     idle: { text: 'Chargement…', className: 'bg-zinc-500/20 text-zinc-300' },
@@ -597,15 +573,6 @@ export function MenuEditor() {
           </button>
           <button
             type="button"
-            onClick={openSeedConfirm}
-            className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-neutral-100 hover:bg-[#111110] hover:text-white text-neutral-700 dark:bg-white/5 dark:hover:bg-black dark:text-neutral-100 text-xs font-bold border border-neutral-300/80 dark:border-white/15 transition-all cursor-pointer shadow-sm active:scale-95"
-            title="Remplacer le menu par la référence de base"
-          >
-            <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
-            <span>Réinitialiser depuis la référence</span>
-          </button>
-          <button
-            type="button"
             onClick={() =>
               setConfirm({
                 kind: 'delete',
@@ -614,10 +581,10 @@ export function MenuEditor() {
               })
             }
             className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-neutral-100 hover:bg-[#111110] hover:text-white text-neutral-700 dark:bg-white/5 dark:hover:bg-black dark:text-neutral-100 text-xs font-bold border border-neutral-300/80 dark:border-white/15 transition-all cursor-pointer shadow-sm active:scale-95"
-            title="Supprimer le menu : le public retombe sur le fallback"
+            title="Supprimer le menu : aucun produit affiché sur le site public"
           >
             <Trash2 className="w-3.5 h-3.5 text-rose-400" />
-            <span>Retour au fallback</span>
+            <span>Supprimer le menu</span>
           </button>
         </div>
         <button
@@ -663,29 +630,16 @@ export function MenuEditor() {
       {columns !== null && columns.length === 0 && savedRef === null && (
         <div className="flex flex-col items-center gap-4 py-14 rounded-3xl bg-white dark:bg-zinc-900 border border-neutral-200/80 dark:border-white/10 text-center px-6">
           <p className="text-sm text-neutral-600 dark:text-neutral-300 max-w-lg">
-            <span className="font-bold">Le site utilise actuellement le menu de référence.</span> Aucun méga-menu enregistré sur ce site : le public voit un <span className="font-semibold">menu vide</span> (aucun produit affiché dans la navigation). Initialisez depuis la référence ou partez d'un menu vide.</p>
+            <span className="font-bold">Aucun méga-menu configuré.</span> Le menu de navigation est actuellement vide sur le site public. Créez un menu pour organiser vos produits en colonnes.
+          </p>
           <div className="flex flex-wrap justify-center gap-3">
             <button
               type="button"
-              onClick={openSeedConfirm}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#38E044] hover:bg-[#2fcb3c] text-black text-xs font-extrabold transition-all cursor-pointer active:scale-95"
-            >
-              <RotateCcw className="w-4 h-4" />
-              <span>Initialiser depuis la référence</span>
-            </button>
-            <button
-              type="button"
-              onClick={() =>
-                setConfirm({
-                  kind: 'empty',
-                  title: 'Partir d’un menu vide ?',
-                  body: 'Crée une structure vide : vous ajouterez ensuite les colonnes et références.',
-                })
-              }
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-neutral-800/80 hover:bg-neutral-700 text-white text-xs font-bold border border-white/10 transition-all cursor-pointer active:scale-95"
+              onClick={applyEmpty}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#38E044] hover:bg-[#2fcb3c] text-black text-xs font-extrabold transition-all cursor-pointer active:scale-95 shadow-md"
             >
               <Plus className="w-4 h-4" />
-              <span>Créer un menu vide</span>
+              <span>Créer un méga-menu</span>
             </button>
           </div>
         </div>
@@ -877,8 +831,7 @@ export function MenuEditor() {
               <button
                 type="button"
                 onClick={() => {
-                  if (confirm.kind === 'seed') applySeed();
-                  else if (confirm.kind === 'empty') applyEmpty();
+                  if (confirm.kind === 'empty') applyEmpty();
                   else if (confirm.kind === 'delete') void deleteMenu();
                   else if (confirm.kind === 'dup' && confirm.product) {
                     addProductTo(activeColumnId, confirm.product);
