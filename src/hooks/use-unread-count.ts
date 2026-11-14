@@ -33,8 +33,9 @@ interface UseUnreadCountOptions {
  */
 export function useUnreadCount(options?: UseUnreadCountOptions): UnreadCountState {
   const { role } = options || {};
-  const { user } = useUser();
+  const { user, userProfile } = useUser();
   const uid = user?.uid;
+  const effectiveRole = role || userProfile?.role;
   const [bySource, setBySource] = useState<UnreadCountSource>({
     notifications: 0,
     chats: 0,
@@ -64,81 +65,100 @@ export function useUnreadCount(options?: UseUnreadCountOptions): UnreadCountStat
       where('read', '==', false)
     );
     unsubscribers.push(
-      onSnapshot(notifQ, (snap) => {
-        const count = snap.docs.filter(
-          (d) => (d.data() as any).type !== 'message'
-        ).length;
-        setBySource(prev => ({
-          ...prev,
-          notifications: count,
-          lastUpdate: new Date().toISOString(),
-        }));
-      })
+      onSnapshot(
+        notifQ,
+        (snap) => {
+          const count = snap.docs.filter(
+            (d) => (d.data() as any).type !== 'message'
+          ).length;
+          setBySource(prev => ({
+            ...prev,
+            notifications: count,
+            lastUpdate: new Date().toISOString(),
+          }));
+        },
+        (error) => {
+          console.warn('[useUnreadCount] Notifications error:', error?.message);
+        }
+      )
     );
 
     /**
      * 2️⃣ Chats.unreadCount — Somme de toutes les valeurs non lues par chat
-     * Chaque chat stocke un Record<string, number> avec le uid de chaque participant.
-     * On ne compte que les valeurs du uid connecté.
+     * Requête filtrée avec where('participants', 'array-contains', uid) pour respecter
+     * scrupuleusement les règles Firestore et éviter les erreurs de permissions.
      */
-    const unsubChat = onSnapshot(
+    const chatQ = query(
       collection(db, 'chats'),
-      (chatSnap) => {
-        const unreadFromChats = chatSnap.docs.reduce((acc, chatDoc) => {
-          const uc = chatDoc.data().unreadCount?.[uid] || 0;
-          return acc + uc;
-        }, 0 as number);
-        setBySource(prev => ({
-          ...prev,
-          chats: unreadFromChats,
-          lastUpdate: new Date().toISOString(),
-        }));
-      }
+      where('participants', 'array-contains', uid)
     );
-    unsubscribers.push(unsubChat);
+    unsubscribers.push(
+      onSnapshot(
+        chatQ,
+        (chatSnap) => {
+          const unreadFromChats = chatSnap.docs.reduce((acc, chatDoc) => {
+            const uc = chatDoc.data().unreadCount?.[uid] || 0;
+            return acc + uc;
+          }, 0 as number);
+          setBySource(prev => ({
+            ...prev,
+            chats: unreadFromChats,
+            lastUpdate: new Date().toISOString(),
+          }));
+        },
+        (error) => {
+          console.warn('[useUnreadCount] Chats error:', error?.message);
+        }
+      )
+    );
 
     /**
-     * 3️⃣ Disputes.unreadByClient (si source accessible)
-     * Filtre: dispute.unreadByClient === true ET dispute.clientId === uid
+     * 3️⃣ & 4️⃣ Disputes et Quotes — Uniquement pour les profils autorisés (admin/commercial)
+     * pour éviter les rejets de permission Firestore côté client.
      */
-    const unsubDispute = onSnapshot(
-      collection(db, 'disputes'),
-      (disputeSnap) => {
-        const unreadFromDisputes = disputeSnap.docs
-          .filter((d) => (d.data() as any).unreadByClient === true && (d.data() as any).clientId === uid)
-          .length;
-        setBySource(prev => ({
-          ...prev,
-          disputes: unreadFromDisputes,
-          lastUpdate: new Date().toISOString(),
-        }));
-      }
-    );
-    unsubscribers.push(unsubDispute);
+    const isStaff = effectiveRole === 'admin' || effectiveRole === 'commercial';
+    if (isStaff) {
+      try {
+        const unsubDispute = onSnapshot(
+          collection(db, 'disputes'),
+          (disputeSnap) => {
+            const unreadFromDisputes = disputeSnap.docs
+              .filter((d) => (d.data() as any).unreadByClient === true && (d.data() as any).clientId === uid)
+              .length;
+            setBySource(prev => ({
+              ...prev,
+              disputes: unreadFromDisputes,
+              lastUpdate: new Date().toISOString(),
+            }));
+          },
+          () => {}
+        );
+        unsubscribers.push(unsubDispute);
+      } catch {}
 
-    /**
-     * 4️⃣ Quotes.isRead === false (si source accessible)
-     * Filtre: quote.isRead === false ET quote.clientId === uid
-     */
-    const unsubQuotes = onSnapshot(
-      collection(db, 'quotes'),
-      (quoteSnap) => {
-        const unreadFromQuotes = quoteSnap.docs
-          .filter((d) => (d.data() as any).isRead === false && (d.data() as any).clientId === uid)
-          .length;
-        setBySource(prev => ({
-          ...prev,
-          quotes: unreadFromQuotes,
-          lastUpdate: new Date().toISOString(),
-        }));
-      }
-    );
-    unsubscribers.push(unsubQuotes);
+      try {
+        const unsubQuotes = onSnapshot(
+          collection(db, 'quotes'),
+          (quoteSnap) => {
+            const unreadFromQuotes = quoteSnap.docs
+              .filter((d) => (d.data() as any).isRead === false && (d.data() as any).clientId === uid)
+              .length;
+            setBySource(prev => ({
+              ...prev,
+              quotes: unreadFromQuotes,
+              lastUpdate: new Date().toISOString(),
+            }));
+          },
+          () => {}
+        );
+        unsubscribers.push(unsubQuotes);
+      } catch {}
+    }
 
     return () => {
       unsubscribers.forEach(unsub => unsub());
     };
-  }, [uid, role]);
+  }, [uid, effectiveRole]);
 
   // total déduit de la somme de bySource pour éviter toute incohérence
   const total = useMemo(() => {
