@@ -87,8 +87,52 @@ function AttachmentCard({
   att: MessageAttachment;
   isMine: boolean;
   onMediaClick?: (url: string, type: 'image' | 'video') => void;
-  onDownload: (url: string, filename?: string) => void;
+  onDownload: (url: string, filename?: string) => Promise<void> | void;
 }) {
+  const [isDownloading, setIsDownloading] = React.useState(false);
+  const [downloadDone, setDownloadDone] = React.useState(false);
+
+  const handleDownloadClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isDownloading) return;
+    setIsDownloading(true);
+    setDownloadDone(false);
+    try {
+      await onDownload(att.url, att.name);
+      setDownloadDone(true);
+      setTimeout(() => setDownloadDone(false), 2000);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  const DownloadBtn = ({ className }: { className: string }) => (
+    <button
+      type="button"
+      onClick={handleDownloadClick}
+      disabled={isDownloading}
+      className={cn(
+        'h-8 w-8 rounded-xl flex items-center justify-center transition-all active:scale-90 disabled:cursor-not-allowed',
+        isDownloading && 'opacity-70',
+        className
+      )}
+      title={isDownloading ? 'Téléchargement…' : 'Télécharger'}
+    >
+      {isDownloading ? (
+        <svg className="animate-spin" width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+          <circle cx={12} cy={12} r={10} strokeOpacity={0.25} />
+          <path d="M12 2a10 10 0 0 1 10 10" />
+        </svg>
+      ) : downloadDone ? (
+        <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      ) : (
+        <Download size={14} />
+      )}
+    </button>
+  );
+
   const ext = (att.extension || getFileExtension(att.name) || 'file').toUpperCase();
   const category = getAttachmentCategory(att.extension || getFileExtension(att.name));
 
@@ -114,17 +158,7 @@ function AttachmentCard({
               {ext} {att.size > 0 ? `• ${formatFileSize(att.size)}` : ''}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDownload(att.url, att.name);
-            }}
-            className="h-8 w-8 bg-white/20 hover:bg-white/30 backdrop-blur-md rounded-xl flex items-center justify-center text-white transition-all active:scale-90 shrink-0"
-            title="Télécharger"
-          >
-            <Download size={14} />
-          </button>
+          <DownloadBtn className="bg-white/20 hover:bg-white/30 backdrop-blur-md text-white shrink-0" />
         </div>
       </div>
     );
@@ -187,7 +221,7 @@ function AttachmentCard({
   return (
     <div
       className={cn(
-        'mb-2 flex items-center gap-3 p-3 rounded-2xl border transition-all min-w-[240px] max-w-sm',
+        'mb-2 flex items-center gap-3 p-3 rounded-2xl border transition-all min-w-[240px] max-w-sm group/card',
         isMine ? 'bg-white/10 border-white/15' : 'bg-white/5 border-white/10'
       )}
     >
@@ -202,6 +236,12 @@ function AttachmentCard({
         <p className="text-[10px] opacity-70 font-mono font-bold uppercase tracking-wider mt-0.5">
           {badge.label} {att.size > 0 ? `• ${formatFileSize(att.size)}` : ''}
         </p>
+        {isDownloading && (
+          <p className="text-[10px] text-cyan-400 font-bold mt-0.5 animate-pulse">Téléchargement…</p>
+        )}
+        {downloadDone && (
+          <p className="text-[10px] text-emerald-400 font-bold mt-0.5">✓ Téléchargé</p>
+        )}
       </div>
 
       <div className="flex items-center gap-1 shrink-0">
@@ -211,29 +251,13 @@ function AttachmentCard({
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className={cn(
-              'h-8 w-8 rounded-xl flex items-center justify-center transition-all active:scale-90',
-              isMine ? 'bg-white/10 hover:bg-white/20 text-white' : 'bg-white/10 hover:bg-white/20 text-white'
-            )}
+            className="h-8 w-8 rounded-xl flex items-center justify-center transition-all active:scale-90 bg-white/10 hover:bg-white/20 text-white"
             title="Consulter"
           >
             <ExternalLink size={14} />
           </a>
         )}
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onDownload(att.url, att.name);
-          }}
-          className={cn(
-            'h-8 w-8 rounded-xl flex items-center justify-center transition-all active:scale-90',
-            isMine ? 'bg-white/10 hover:bg-white/20 text-white' : 'bg-white/10 hover:bg-white/20 text-white'
-          )}
-          title="Télécharger"
-        >
-          <Download size={14} />
-        </button>
+        <DownloadBtn className="bg-white/10 hover:bg-white/20 text-white" />
       </div>
     </div>
   );
@@ -261,9 +285,28 @@ export default function MessageItem({ msg, isMine, isMiniChat, onMediaClick, oth
   const [showForwardConfirm, setShowForwardConfirm] = useState(false);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
 
-  const handleDownload = async (url: string, filename?: string) => {
+  const handleDownload = async (url: string, filename?: string): Promise<void> => {
     try {
-      const response = await fetch(`/api/download?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(filename || 'download')}`);
+      // Récupérer le token Firebase de l'utilisateur courant pour l'auth côté serveur
+      const { getAuth } = await import('firebase/auth');
+      const currentUser = getAuth().currentUser;
+      const headers: HeadersInit = {};
+      if (currentUser) {
+        try {
+          const idToken = await currentUser.getIdToken();
+          headers['Authorization'] = `Bearer ${idToken}`;
+        } catch {}
+      }
+
+      const response = await fetch(
+        `/api/download?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(filename || 'download')}`,
+        { headers }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
       const blob = await response.blob();
       const blobUrl = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -273,7 +316,9 @@ export default function MessageItem({ msg, isMine, isMiniChat, onMediaClick, oth
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(blobUrl);
-    } catch {
+    } catch (err) {
+      console.error('[download] Erreur:', err);
+      // Fallback: ouvrir directement l'URL Firebase (fonctionne si le token est dans l'URL)
       window.open(url, '_blank');
     }
   };
