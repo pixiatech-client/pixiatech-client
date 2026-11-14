@@ -7,7 +7,7 @@ import { redirect } from 'next/navigation';
 import { cache } from 'react';
 import { cookies } from 'next/headers';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
-import { requireAdminFresh, requireRole } from '@/lib/auth-guards';
+import { requireAdminFresh, requireAdminOrCommercialFresh, requireRole } from '@/lib/auth-guards';
 import { getStorage } from 'firebase-admin/storage';
 import type { DocumentReference, DocumentSnapshot, Firestore, Query } from 'firebase-admin/firestore';
 import { createHash } from 'crypto';
@@ -1495,7 +1495,7 @@ export async function getUsers({
 }
 
 export async function getSuppliers(): Promise<UserProfile[]> {
-  await requireAdminFresh();
+  await requireAdminOrCommercialFresh();
   const { adminDb } = getFirebaseAdmin();
   if (!adminDb) return [];
 

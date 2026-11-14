@@ -15,6 +15,7 @@ import { SiteBanners } from './SiteBanners';
 import { ExpandableTabs } from '@/components/ui/expandable-tabs';
 import { CookieConsentBanner } from '@/components/cookies/CookieConsentBanner';
 import { AnalyticsTracker } from '@/components/analytics/AnalyticsTracker';
+import { DynamicFavicon } from '@/components/ui/DynamicFavicon';
 import { Home, Store, ShoppingBag, User, LayoutDashboard, Package, Settings, LogOut } from 'lucide-react';
 
 function useProtectMedia() {
@@ -116,6 +117,7 @@ export function LayoutProvider({
 
   return (
     <FirebaseClientProvider>
+      <DynamicFavicon />
       <RoleProvider>
         <ThemeProvider initialThemeName={initialThemeName}>
           <ProfileProvider initialBoutiqueB2B={initialBoutiqueB2B}>

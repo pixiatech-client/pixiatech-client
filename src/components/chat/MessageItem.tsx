@@ -168,50 +168,50 @@ function AttachmentCard({
     switch (category) {
       case 'pdf':
         return {
-          colorClass: 'bg-rose-500/20 text-rose-400 border-rose-500/30',
-          icon: <FileText size={20} className="text-rose-400" />,
+          colorClass: isMine ? 'bg-rose-500/20 text-rose-400 border-rose-500/30' : 'bg-rose-50 text-rose-600 border-rose-200',
+          icon: <FileText size={20} className={isMine ? 'text-rose-400' : 'text-rose-600'} />,
           label: 'PDF',
           canPreview: true,
         };
       case 'word':
         return {
-          colorClass: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-          icon: <FileText size={20} className="text-blue-400" />,
+          colorClass: isMine ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' : 'bg-blue-50 text-blue-600 border-blue-200',
+          icon: <FileText size={20} className={isMine ? 'text-blue-400' : 'text-blue-600'} />,
           label: ext || 'DOCX',
           canPreview: false,
         };
       case 'excel':
         return {
-          colorClass: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
-          icon: <FileSpreadsheet size={20} className="text-emerald-400" />,
+          colorClass: isMine ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-emerald-50 text-emerald-600 border-emerald-200',
+          icon: <FileSpreadsheet size={20} className={isMine ? 'text-emerald-400' : 'text-emerald-600'} />,
           label: ext || 'EXCEL',
           canPreview: false,
         };
       case 'powerpoint':
         return {
-          colorClass: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-          icon: <Presentation size={20} className="text-amber-400" />,
+          colorClass: isMine ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' : 'bg-amber-50 text-amber-600 border-amber-200',
+          icon: <Presentation size={20} className={isMine ? 'text-amber-400' : 'text-amber-600'} />,
           label: ext || 'PPTX',
           canPreview: false,
         };
       case 'archive':
         return {
-          colorClass: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
-          icon: <Archive size={20} className="text-purple-400" />,
+          colorClass: isMine ? 'bg-purple-500/20 text-purple-400 border-purple-500/30' : 'bg-purple-50 text-purple-600 border-purple-200',
+          icon: <Archive size={20} className={isMine ? 'text-purple-400' : 'text-purple-600'} />,
           label: ext || 'ARCHIVE',
           canPreview: false,
         };
       case 'text':
         return {
-          colorClass: 'bg-slate-500/20 text-slate-300 border-slate-500/30',
-          icon: <FileText size={20} className="text-slate-300" />,
+          colorClass: isMine ? 'bg-slate-500/20 text-slate-300 border-slate-500/30' : 'bg-slate-100 text-slate-700 border-slate-300',
+          icon: <FileText size={20} className={isMine ? 'text-slate-300' : 'text-slate-700'} />,
           label: 'TXT',
           canPreview: true,
         };
       default:
         return {
-          colorClass: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
-          icon: <File size={20} className="text-cyan-400" />,
+          colorClass: isMine ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30' : 'bg-cyan-50 text-cyan-600 border-cyan-200',
+          icon: <File size={20} className={isMine ? 'text-cyan-400' : 'text-cyan-600'} />,
           label: ext || 'FICHIER',
           canPreview: false,
         };
@@ -220,44 +220,61 @@ function AttachmentCard({
 
   return (
     <div
+      onClick={handleDownloadClick}
       className={cn(
-        'mb-2 flex items-center gap-3 p-3 rounded-2xl border transition-all min-w-[240px] max-w-sm group/card',
-        isMine ? 'bg-white/10 border-white/15' : 'bg-white/5 border-white/10'
+        'mb-2 flex items-center gap-3 p-3 rounded-2xl border transition-all min-w-[240px] max-w-sm group/card cursor-pointer',
+        isMine
+          ? 'bg-white/10 hover:bg-white/15 border-white/15 text-white'
+          : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-900 shadow-sm'
       )}
+      title="Cliquer pour télécharger"
     >
       <div className={cn('h-11 w-11 rounded-xl flex items-center justify-center border shrink-0', badge.colorClass)}>
         {badge.icon}
       </div>
 
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-bold truncate text-white" title={att.name}>
+        <p className={cn("text-sm font-bold truncate", isMine ? "text-white" : "text-slate-900")} title={att.name}>
           {att.name}
         </p>
-        <p className="text-[10px] opacity-70 font-mono font-bold uppercase tracking-wider mt-0.5">
+        <p className={cn("text-[10px] font-mono font-bold uppercase tracking-wider mt-0.5", isMine ? "text-white/70" : "text-slate-500")}>
           {badge.label} {att.size > 0 ? `• ${formatFileSize(att.size)}` : ''}
         </p>
         {isDownloading && (
-          <p className="text-[10px] text-cyan-400 font-bold mt-0.5 animate-pulse">Téléchargement…</p>
+          <p className={cn("text-[10px] font-bold mt-0.5 animate-pulse", isMine ? "text-cyan-300" : "text-indigo-600")}>
+            Téléchargement…
+          </p>
         )}
         {downloadDone && (
-          <p className="text-[10px] text-emerald-400 font-bold mt-0.5">✓ Téléchargé</p>
+          <p className={cn("text-[10px] font-bold mt-0.5", isMine ? "text-emerald-300" : "text-emerald-600")}>
+            ✓ Téléchargé
+          </p>
         )}
       </div>
 
-      <div className="flex items-center gap-1 shrink-0">
+      <div className="flex items-center gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
         {badge.canPreview && (
           <a
             href={att.url}
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="h-8 w-8 rounded-xl flex items-center justify-center transition-all active:scale-90 bg-white/10 hover:bg-white/20 text-white"
+            className={cn(
+              "h-8 w-8 rounded-xl flex items-center justify-center transition-all active:scale-90",
+              isMine ? "bg-white/15 hover:bg-white/25 text-white" : "bg-slate-200 hover:bg-slate-300 text-slate-700"
+            )}
             title="Consulter"
           >
             <ExternalLink size={14} />
           </a>
         )}
-        <DownloadBtn className="bg-white/10 hover:bg-white/20 text-white" />
+        <DownloadBtn
+          className={cn(
+            isMine
+              ? "bg-white/20 hover:bg-white/30 text-white"
+              : "bg-[#6366f1] hover:bg-[#4f46e5] text-white shadow-sm"
+          )}
+        />
       </div>
     </div>
   );
@@ -315,11 +332,17 @@ export default function MessageItem({ msg, isMine, isMiniChat, onMediaClick, oth
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      URL.revokeObjectURL(blobUrl);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
     } catch (err) {
-      console.error('[download] Erreur:', err);
-      // Fallback: ouvrir directement l'URL Firebase (fonctionne si le token est dans l'URL)
-      window.open(url, '_blank');
+      console.warn('[download] Échec proxy /api/download, fallback vers téléchargement direct:', err);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename || 'download';
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
     }
   };
   const audioRef = useRef<HTMLAudioElement | null>(null);

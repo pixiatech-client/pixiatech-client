@@ -77,3 +77,13 @@ export async function requireAdminFresh(): Promise<AuthUser> {
   }
   return user;
 }
+
+// Nouveau guard : accepte admin ET commercial
+// Nécessite d'être créé pour lever le mismatch role sansModifier globalement requireAdminFresh()
+export async function requireAdminOrCommercialFresh(): Promise<AuthUser> {
+  const user = await requireRole('admin', 'commercial');
+  if (user.status !== 'approved') {
+    throw new AuthError('Access denied. Account not approved.', 403);
+  }
+  return user;
+}

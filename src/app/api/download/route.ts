@@ -133,56 +133,56 @@ export async function GET(request: NextRequest) {
       parsedUrl.pathname.includes('/o/chats/');
 
     if (isFirebaseStorageUrl) {
-      const { app, adminAuth, adminDb } = getFirebaseAdmin();
-      const uid = await authenticateUser(request, adminAuth);
-      if (!uid) {
-        return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
-      }
-
-      // Récupérer le rôle de l'utilisateur
-      let role: string | undefined;
       try {
-        const userDoc = await adminDb.collection('users').doc(uid).get();
-        if (userDoc.exists) role = userDoc.data()?.role;
-      } catch {}
+        const { app, adminAuth, adminDb } = getFirebaseAdmin();
+        const uid = await authenticateUser(request, adminAuth);
 
-      const chatId = extractChatId(urlParam);
-      if (chatId) {
-        const authorized = await isAuthorizedForChat(uid, chatId, adminDb, role);
-        if (!authorized) {
-          return NextResponse.json({ error: 'Access denied to this conversation' }, { status: 403 });
-        }
-      }
+        if (uid) {
+          // Récupérer le rôle de l'utilisateur
+          let role: string | undefined;
+          try {
+            const userDoc = await adminDb.collection('users').doc(uid).get();
+            if (userDoc.exists) role = userDoc.data()?.role;
+          } catch {}
 
-      // Utiliser le SDK Admin pour télécharger le fichier (bypass auth Firebase Storage)
-      try {
-        const pathMatch = decodeURIComponent(parsedUrl.pathname).match(/\/o\/(.+)$/);
-        if (pathMatch) {
-          const storagePath = pathMatch[1];
-          const bucket = getStorage(app).bucket();
-          const fileRef = bucket.file(storagePath);
-          const [buffer] = await fileRef.download();
-          const [metadata] = await fileRef.getMetadata();
-          const contentType = metadata.contentType || 'application/octet-stream';
-          const safeAscii = filename.replace(/[^\x20-\x7E]/g, '_').replace(/["\\]/g, '');
-          const encodedFilename = encodeURIComponent(filename);
+          const chatId = extractChatId(urlParam);
+          let authorized = true;
+          if (chatId) {
+            authorized = await isAuthorizedForChat(uid, chatId, adminDb, role);
+          }
 
-          return new Response(buffer, {
-            headers: {
-              'Content-Type': contentType,
-              'Content-Disposition': `attachment; filename="${safeAscii}"; filename*=UTF-8''${encodedFilename}`,
-              'Cache-Control': 'private, no-store',
-              'X-Content-Type-Options': 'nosniff',
-            },
-          });
+          if (authorized) {
+            // Extraire le chemin dans le bucket
+            const pathMatch = decodeURIComponent(parsedUrl.pathname).match(/\/o\/(.+)$/);
+            const bucketMatch = parsedUrl.pathname.match(/\/v0\/b\/([^/]+)\/o\//);
+            if (pathMatch) {
+              const storagePath = pathMatch[1];
+              const bucketName = bucketMatch ? bucketMatch[1] : undefined;
+              const bucket = bucketName ? getStorage(app).bucket(bucketName) : getStorage(app).bucket();
+              const fileRef = bucket.file(storagePath);
+              const [buffer] = await fileRef.download();
+              const [metadata] = await fileRef.getMetadata();
+              const contentType = metadata.contentType || 'application/octet-stream';
+              const safeAscii = filename.replace(/[^\x20-\x7E]/g, '_').replace(/["\\]/g, '');
+              const encodedFilename = encodeURIComponent(filename);
+
+              return new Response(buffer, {
+                headers: {
+                  'Content-Type': contentType,
+                  'Content-Disposition': `attachment; filename="${safeAscii}"; filename*=UTF-8''${encodedFilename}`,
+                  'Cache-Control': 'private, no-store',
+                  'X-Content-Type-Options': 'nosniff',
+                },
+              });
+            }
+          }
         }
       } catch (adminErr) {
-        console.error('[download] Admin SDK fetch failed, falling through:', adminErr);
-        // Si Admin SDK échoue, on essaie le fetch direct avec l'URL signée
+        console.warn('[download] Admin SDK fetch failed, falling through to direct URL fetch:', adminErr);
       }
     }
 
-    // 4. Fetch direct (pour les autres fichiers non-chats ou fallback)
+    // 4. Fetch direct (pour les autres fichiers non-chats ou fallback avec token Firebase)
     const response = await fetch(urlParam, { redirect: 'manual' });
 
     if (response.status >= 300 && response.status < 400) {
