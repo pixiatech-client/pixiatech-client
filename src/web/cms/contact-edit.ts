@@ -32,7 +32,7 @@ export const CONTACT_REFRESH_EVENT = 'pixia:contact-content-saved';
 
 const HERO_FIELDS = ['titleLine1', 'titleHighlight', 'subtitle', 'ctaButtonText'] as const;
 const INFO_FIELDS = ['addressValue', 'phone1', 'phone2', 'emailValue'] as const;
-const FAQ_PARTS = ['question', 'answer'] as const;
+const FAQ_PARTS = ['category', 'question', 'subtitle', 'answer'] as const;
 
 /**
  * Clés de contenu dont la VALEUR est détenue par `contactInfo`. Écrire dans

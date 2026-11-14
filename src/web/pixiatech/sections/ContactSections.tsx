@@ -1691,6 +1691,7 @@ function RetailContact({
 /* ──────────────────────────────  FAQ  ────────────────────────────── */
 
 function FaqList({ faq }: { faq: PageContentConfig['faq'] }) {
+  const { isEditing } = useCms();
   const items = useMemo(() => (faq.items ?? []).filter((i) => i.visible), [faq.items]);
   // `undefined` = l'utilisateur n'a encore rien choisi : on affiche alors le
   // premier item, y compris quand le contenu CMS arrive après le premier rendu.
@@ -1715,6 +1716,7 @@ function FaqList({ faq }: { faq: PageContentConfig['faq'] }) {
             >
               <span>
                 <span
+                  data-contact-key={`contact.faq.${item.id}.category`}
                   style={{
                     display: 'block',
                     fontFamily: 'var(--font)',
@@ -1726,10 +1728,18 @@ function FaqList({ faq }: { faq: PageContentConfig['faq'] }) {
                     marginBottom: 10,
                   }}
                 >
-                  {item.category}
+                  {item.category || (isEditing ? 'CATÉGORIE' : '')}
                 </span>
-                <span className="ct-faq-q" data-contact-key={`contact.faq.${item.id}.question`}>
-                  {item.question}
+                <span
+                  className="ct-faq-q"
+                  data-contact-key={`contact.faq.${item.id}.question`}
+                  style={{
+                    display: 'inline-block',
+                    minWidth: isEditing ? 120 : undefined,
+                    minHeight: isEditing ? '1.2em' : undefined,
+                  }}
+                >
+                  {item.question || (isEditing ? 'Cliquez pour saisir le titre / la question…' : '')}
                 </span>
               </span>
               <span className="ct-faq-plus" aria-hidden="true">
@@ -1737,12 +1747,28 @@ function FaqList({ faq }: { faq: PageContentConfig['faq'] }) {
               </span>
             </button>
             {expanded && (
-              <div
-                id={`ct-faq-panel-${item.id}`}
-                data-contact-key={`contact.faq.${item.id}.answer`}
-                style={{ padding: '0 0 28px', maxWidth: 760, color: DARK_BODY, fontSize: 15.5, lineHeight: 1.65 }}
-              >
-                {item.answer}
+              <div id={`ct-faq-panel-${item.id}`} style={{ padding: '0 0 28px', maxWidth: 760 }}>
+                {item.subtitle && (
+                  <p
+                    data-contact-key={`contact.faq.${item.id}.subtitle`}
+                    style={{
+                      margin: '0 0 14px',
+                      fontSize: 13,
+                      fontWeight: 700,
+                      letterSpacing: '.06em',
+                      textTransform: 'uppercase',
+                      color: 'var(--accent, #C3F910)',
+                    }}
+                  >
+                    {item.subtitle}
+                  </p>
+                )}
+                <div
+                  data-contact-key={`contact.faq.${item.id}.answer`}
+                  style={{ color: DARK_BODY, fontSize: 15.5, lineHeight: 1.65 }}
+                >
+                  {item.answer}
+                </div>
               </div>
             )}
           </div>

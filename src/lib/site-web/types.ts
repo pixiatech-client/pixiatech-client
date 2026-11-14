@@ -72,6 +72,7 @@ export interface FaqItemConfig {
   id: string;
   category: string;
   question: string;
+  subtitle?: string;
   answer: string;
   visible: boolean;
 }
