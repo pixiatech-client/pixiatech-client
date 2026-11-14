@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useRegisterCmsSection } from '@/web/cms/useRegisterCmsSection';
 import { useRouter, usePathname } from 'next/navigation';
-import { CATALOG_PRODUCTS, MEGA_COLUMNS, type CatalogProduct } from './pixiatech-catalog';
+import { CATALOG_PRODUCTS, type CatalogProduct } from './pixiatech-catalog';
 import { Language } from '../pixiatech-translations';
 import { useI18n } from '@/lib/i18n';
 import { SearchModal } from './SearchModal';
@@ -114,26 +114,10 @@ function buildMenuModel(
           .filter((m) => m.label),
       }));
   } else {
-    columns = MEGA_COLUMNS.map((col, ci) => ({
-      id: `legacy-col-${ci}`,
-      titleEn: col.titleEn,
-      titleFr: col.titleFr,
-      items: col.slugs
-        .map((slug) =>
-          makeModel(
-            {
-              id: `legacy-${slug}`,
-              label: legacyBySlug.get(slug)?.name ?? slug,
-              productSlug: productBySlug.has(slug) ? slug : null,
-              catalogSlug: slug,
-              visible: true,
-            },
-            productBySlug,
-            legacyBySlug
-          )
-        )
-        .filter((m) => m.label),
-    }));
+    // Pas de menu Firestore configuré → méga-menu vide.
+    // On ne tombe plus sur MEGA_COLUMNS (fallback legacy codé en dur) pour
+    // éviter d'afficher des produits "fantômes" quand l'admin a vidé le menu.
+    columns = [];
   }
   const flat = columns.flatMap((c) => c.items);
   return { columns, flat };
