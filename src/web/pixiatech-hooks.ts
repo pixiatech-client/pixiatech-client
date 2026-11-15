@@ -42,10 +42,16 @@ export function useRevealObserver(
 
     const observer = new IntersectionObserver(
       (entries) => {
+        let batchIndex = 0;
         for (const entry of entries) {
           if (entry.isIntersecting) {
-            (entry.target as HTMLElement).classList.add('is-revealed');
+            const target = entry.target as HTMLElement;
+            if (!target.style.transitionDelay && batchIndex > 0) {
+              target.style.transitionDelay = `${Math.min(batchIndex * 60, 480)}ms`;
+            }
+            target.classList.add('is-revealed');
             observer.unobserve(entry.target);
+            batchIndex++;
           }
         }
       },

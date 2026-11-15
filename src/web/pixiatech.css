@@ -9,25 +9,188 @@
   color: var(--ink);
 }
 
-/* ---- scroll reveal ---- */
+/* ==========================================================================
+   GSAP-INSPIRED MOTION DESIGN & ANIMATION ENGINE (EMIL KOWALSKI / APPLE UI)
+   ========================================================================== */
+
+:root {
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-in-out-cubic: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-smooth: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* ---- 1. Scroll Reveal Cinématographique Haute Fidélité ---- */
 #pixia-web [data-reveal='true'] {
   opacity: 0;
-  transform: translateY(26px);
-  transition: opacity 0.7s cubic-bezier(0.2, 0.7, 0.2, 1),
-    transform 0.9s cubic-bezier(0.2, 0.7, 0.2, 1);
-  will-change: opacity, transform;
+  transform: translate3d(0, 28px, 0);
+  filter: blur(5px);
+  transition: opacity 0.85s var(--ease-out-expo),
+              transform 1.05s var(--ease-out-expo),
+              filter 0.85s var(--ease-out-expo);
+  will-change: opacity, transform, filter;
+  backface-visibility: hidden;
 }
 
 #pixia-web [data-reveal='true'].is-revealed {
   opacity: 1;
-  transform: none;
+  transform: translate3d(0, 0, 0);
+  filter: blur(0px);
 }
 
+/* Staggering séquentiel fluide pour les groupes et listes d'éléments */
+#pixia-web [data-reveal-group] > [data-reveal='true']:nth-child(1),
+#pixia-web .stagger-children > [data-reveal='true']:nth-child(1) { transition-delay: 0.04s; }
+#pixia-web [data-reveal-group] > [data-reveal='true']:nth-child(2),
+#pixia-web .stagger-children > [data-reveal='true']:nth-child(2) { transition-delay: 0.10s; }
+#pixia-web [data-reveal-group] > [data-reveal='true']:nth-child(3),
+#pixia-web .stagger-children > [data-reveal='true']:nth-child(3) { transition-delay: 0.16s; }
+#pixia-web [data-reveal-group] > [data-reveal='true']:nth-child(4),
+#pixia-web .stagger-children > [data-reveal='true']:nth-child(4) { transition-delay: 0.22s; }
+#pixia-web [data-reveal-group] > [data-reveal='true']:nth-child(5),
+#pixia-web .stagger-children > [data-reveal='true']:nth-child(5) { transition-delay: 0.28s; }
+#pixia-web [data-reveal-group] > [data-reveal='true']:nth-child(6),
+#pixia-web .stagger-children > [data-reveal='true']:nth-child(6) { transition-delay: 0.34s; }
+#pixia-web [data-reveal-group] > [data-reveal='true']:nth-child(7),
+#pixia-web .stagger-children > [data-reveal='true']:nth-child(7) { transition-delay: 0.40s; }
+#pixia-web [data-reveal-group] > [data-reveal='true']:nth-child(8),
+#pixia-web .stagger-children > [data-reveal='true']:nth-child(8) { transition-delay: 0.46s; }
+
+/* ---- 2. Micro-interactions & Retours Tactiles Boutons ---- */
+#pixia-web .btn,
+#pixia-web .btn-solid,
+#pixia-web .btn-ink,
+#pixia-web .btn-outline,
+#pixia-web .hero-cta1,
+#pixia-web .hero-cta2,
+#pixia-web .chip,
+#pixia-web a[data-text-key='primaryCta'],
+#pixia-web a[data-text-key='secondaryCta'] {
+  position: relative;
+  transition: transform 0.22s var(--ease-out-expo),
+              background-color 0.25s ease,
+              color 0.25s ease,
+              border-color 0.25s ease,
+              box-shadow 0.28s var(--ease-out-expo),
+              gap 0.25s var(--ease-out-expo) !important;
+  will-change: transform;
+}
+
+/* Retour tactile instantané sur clic (Emil Kowalski : 100-140ms scale) */
+#pixia-web .btn:active,
+#pixia-web .btn-solid:active,
+#pixia-web .btn-ink:active,
+#pixia-web .btn-outline:active,
+#pixia-web .hero-cta1:active,
+#pixia-web .hero-cta2:active,
+#pixia-web .chip:active,
+#pixia-web a[data-text-key='primaryCta']:active,
+#pixia-web a[data-text-key='secondaryCta']:active {
+  transform: scale(0.97) !important;
+  transition-duration: 0.1s !important;
+}
+
+/* Élévation & Lueur néon sur hover des boutons principaux */
+#pixia-web .hero-cta1:hover,
+#pixia-web .btn-solid:hover,
+#pixia-web .btn-ink:hover,
+#pixia-web a[data-text-key='primaryCta']:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 28px rgba(195, 249, 16, 0.42),
+              0 8px 24px rgba(0, 0, 0, 0.3) !important;
+}
+
+#pixia-web .hero-cta2:hover,
+#pixia-web .btn-outline:hover,
+#pixia-web a[data-text-key='secondaryCta']:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 20px rgba(195, 249, 16, 0.22);
+}
+
+/* ---- 3. Cartes de Produits & Marchés : Lévitation Aérienne ---- */
+#pixia-web .card,
+#pixia-web .mkt-card,
+#pixia-web .article-card {
+  transition: transform 0.45s var(--ease-out-expo),
+              box-shadow 0.45s var(--ease-out-expo),
+              border-color 0.3s ease !important;
+  will-change: transform, box-shadow;
+}
+
+#pixia-web .card:hover,
+#pixia-web .mkt-card:hover,
+#pixia-web .article-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.55),
+              0 0 22px rgba(195, 249, 16, 0.14) !important;
+  border-color: rgba(195, 249, 16, 0.35) !important;
+}
+
+#pixia-web .card .card-media img,
+#pixia-web .mkt-card img,
+#pixia-web .article-card img,
+#pixia-web .card img {
+  transition: transform 0.75s var(--ease-out-expo), filter 0.5s ease !important;
+  will-change: transform;
+}
+
+#pixia-web .card:hover .card-media img,
+#pixia-web .mkt-card:hover img,
+#pixia-web .article-card:hover img,
+#pixia-web .card:hover img {
+  transform: scale(1.045);
+}
+
+/* ---- 4. Dots & Indicateurs Télémétriques (Hero 01/02/03) ---- */
+#pixia-web .hero-dot {
+  transition: all 0.32s var(--ease-out-expo) !important;
+}
+#pixia-web .hero-dot.on {
+  transform: scale(1.08);
+  box-shadow: 0 0 14px var(--accent, #C3F910) !important;
+}
+#pixia-web .hero-dot:hover:not(.on) {
+  transform: scale(1.05);
+  border-color: rgba(195, 249, 16, 0.7) !important;
+}
+
+/* ---- 5. Liens de Navigation avec Underline Morphing ---- */
+#pixia-web .nav-link,
+#pixia-web .link-ul {
+  position: relative;
+  transition: color 0.25s ease;
+}
+
+#pixia-web .link-acc {
+  transition: color 0.25s ease, transform 0.25s var(--ease-out-expo);
+  display: inline-flex;
+  align-items: center;
+}
+#pixia-web .link-acc:hover {
+  transform: translateX(4px);
+}
+
+/* Accessibilité : Mode Réduction de Mouvement */
 @media (prefers-reduced-motion: reduce) {
   #pixia-web [data-reveal='true'] {
-    opacity: 1;
-    transform: none;
-    transition: none;
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+    transition: none !important;
+  }
+  #pixia-web .card:hover,
+  #pixia-web .mkt-card:hover,
+  #pixia-web .article-card:hover,
+  #pixia-web .btn:hover,
+  #pixia-web .hero-cta1:hover,
+  #pixia-web .hero-cta2:hover {
+    transform: none !important;
+    box-shadow: none !important;
+  }
+  #pixia-web .card img,
+  #pixia-web .mkt-card img {
+    transform: none !important;
   }
 }
 
