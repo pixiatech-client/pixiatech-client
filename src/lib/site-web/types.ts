@@ -26,6 +26,22 @@ export interface SmtpConfig {
   enabled: boolean;
 }
 
+export interface ContactMessageReply {
+  id: string;
+  subject: string;
+  message: string;
+  sentAt: string;
+  sentBy?: string;
+  recipientEmail: string;
+}
+
+export interface AutoResponderConfig {
+  enabled: boolean;
+  subject: string;
+  template: string;
+  updatedAt?: string;
+}
+
 export interface ContactMessage {
   id: string;
   name: string;
@@ -37,9 +53,17 @@ export interface ContactMessage {
   message: string;
   consent: boolean;
   createdAt: string;
-  status: 'unread' | 'read' | 'replied' | 'archived';
+  status: 'unread' | 'read' | 'replied' | 'archived' | 'trash';
   emailDeliveryStatus: 'sent' | 'simulated' | 'failed' | 'disabled';
   deliveryNote?: string;
+  updatedAt?: string;
+  trashedAt?: string;
+  archivedAt?: string;
+  replies?: ContactMessageReply[];
+  lastRepliedAt?: string;
+  autoReplySent?: boolean;
+  autoReplySentAt?: string;
+  autoReplyError?: string;
 }
 
 export interface ContactSubmissionPayload {

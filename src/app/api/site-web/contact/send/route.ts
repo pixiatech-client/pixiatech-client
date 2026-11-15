@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSmtpConfig, getContactInfo, saveMessage } from '@/lib/site-web/firestore';
+import { getSmtpConfig, getContactInfo, saveMessage, getAutoResponderConfig } from '@/lib/site-web/firestore';
 import { getTransporter } from '@/lib/site-web/transport';
 import { rateLimitExceeded } from '@/lib/rate-limit';
 import type { ContactMessage, ContactSubmissionPayload } from '@/lib/site-web/types';
@@ -113,6 +113,67 @@ Date: ${new Date().toLocaleString('fr-FR')}
       deliveryNote = 'Message stocké localement. Configurez le SMTP dans la console d\'administration pour un envoi en direct.';
     }
 
+    // ---- Répondeur automatique sécurisé (si configuré et activé) ----
+    let autoReplySent = false;
+    let autoReplySentAt: string | undefined = undefined;
+    let autoReplyError: string | undefined = undefined;
+
+    try {
+      const autoConfig = await getAutoResponderConfig();
+      if (autoConfig.enabled && smtpConfig.enabled && smtpConfig.host && smtpConfig.user) {
+        const transporter = getTransporter(smtpConfig);
+        if (transporter) {
+          const clientName = payload.name.trim();
+          const clientEmail = payload.email.trim();
+          const originalSubject = payload.subject ? payload.subject.trim() : 'Demande de contact';
+
+          const renderTemplate = (text: string) =>
+            text
+              .replace(/\{\{\s*client_name\s*\}\}/gi, clientName)
+              .replace(/\{\{\s*client_email\s*\}\}/gi, clientEmail)
+              .replace(/\{\{\s*subject\s*\}\}/gi, originalSubject);
+
+          const autoSubject = renderTemplate(autoConfig.subject || 'Nous avons bien reçu votre demande – Pixiatech');
+          const autoBody = renderTemplate(autoConfig.template);
+
+          const autoHtml = `
+            <div style="font-family: Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 650px; margin: 0 auto; background: #0c0d12; color: #f8fafc; border-radius: 12px; border: 1px solid #1e293b; overflow: hidden;">
+              <div style="background: #11141c; padding: 24px; border-bottom: 1px solid #1e293b;">
+                <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: #38E044; font-weight: 800; background: rgba(56, 224, 68, 0.1); padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(56, 224, 68, 0.2);">
+                  PIXIATECH
+                </span>
+                <h1 style="color: #ffffff; font-size: 20px; font-weight: 700; margin: 16px 0 4px 0;">${autoSubject}</h1>
+                <p style="color: #94a3b8; font-size: 12px; margin: 0;">Confirmation automatique de prise en charge</p>
+              </div>
+              <div style="padding: 24px;">
+                <div style="font-size: 14.5px; line-height: 1.7; color: #f1f5f9; white-space: pre-wrap; margin-bottom: 24px;">
+${autoBody}
+                </div>
+                <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #1e293b; font-size: 11px; color: #64748b; text-align: center;">
+                  PIXIATECH — Solutions d'affichage dynamique & murs LED • <a href="https://pixiatech.com" style="color: #38E044; text-decoration: none;">pixiatech.com</a>
+                </div>
+              </div>
+            </div>
+          `;
+
+          await transporter.sendMail({
+            from: smtpConfig.fromEmail || smtpConfig.user,
+            to: clientEmail,
+            replyTo: smtpConfig.fromEmail || smtpConfig.user,
+            subject: autoSubject,
+            text: autoBody,
+            html: autoHtml,
+          });
+
+          autoReplySent = true;
+          autoReplySentAt = new Date().toISOString();
+        }
+      }
+    } catch (autoErr: unknown) {
+      console.error('[siteWeb send] Autoresponder error:', autoErr);
+      autoReplyError = (autoErr as Error).message || 'Erreur d’envoi répondeur automatique';
+    }
+
     const newMessage: ContactMessage = {
       id: messageId,
       name: payload.name.trim(),
@@ -127,6 +188,9 @@ Date: ${new Date().toLocaleString('fr-FR')}
       status: 'unread',
       emailDeliveryStatus: deliveryStatus,
       deliveryNote,
+      autoReplySent,
+      autoReplySentAt,
+      autoReplyError,
     };
 
     await saveMessage(newMessage);

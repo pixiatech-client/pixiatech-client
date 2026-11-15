@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { Building2, Inbox, Mail, RefreshCw } from 'lucide-react';
+import { Bot, Building2, Inbox, Mail, RefreshCw } from 'lucide-react';
 import { InboxTab } from './_components/InboxTab';
 import { PublicInfoTab } from './_components/PublicInfoTab';
 import { SmtpTab } from './_components/SmtpTab';
+import { AutoResponderTab } from './_components/AutoResponderTab';
 import {
   BACKOFFICE_BADGE,
   BACKOFFICE_HEADER,
@@ -17,22 +18,20 @@ import {
 /**
  * Module Contact du back-office PixiaTech Web.
  *
- * Remplace l'ancien éditeur visuel de la page Contact par trois onglets
- * d'administration alignés sur le langage visuel du module Produits :
- *   1. SMTP & envoi        → `siteWeb/smtp`
- *   2. Boîte de réception  → `siteWebMessages`
- *   3. Coordonnées publiques → `siteWeb/contactInfo` (lu par la page publique)
- *
- * La logique métier (Firestore, Nodemailer, routes API) est inchangée : seule
- * l'interface est refaite.
+ * Quatre rubriques d'administration :
+ *   1. SMTP & envoi            → `siteWeb/smtp`
+ *   2. Boîte de réception      → `siteWebMessages`
+ *   3. Coordonnées publiques   → `siteWeb/contactInfo`
+ *   4. Répondeur automatique   → `siteWeb/autoresponder`
  */
 
-type ContactTab = 'smtp' | 'inbox' | 'info';
+type ContactTab = 'smtp' | 'inbox' | 'info' | 'autoresponder';
 
 const TABS: { id: ContactTab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: 'smtp', label: 'SMTP & envoi', icon: Mail },
   { id: 'inbox', label: 'Boîte de réception', icon: Inbox },
   { id: 'info', label: 'Coordonnées publiques', icon: Building2 },
+  { id: 'autoresponder', label: 'Répondeur automatique', icon: Bot },
 ];
 
 export function ContactAdmin() {
@@ -118,6 +117,7 @@ export function ContactAdmin() {
         <InboxTab refreshToken={refreshToken} onUnreadChange={setUnreadCount} />
       )}
       {activeTab === 'info' && <PublicInfoTab refreshToken={refreshToken} onSaved={handleRefresh} />}
+      {activeTab === 'autoresponder' && <AutoResponderTab refreshToken={refreshToken} />}
     </div>
   );
 }

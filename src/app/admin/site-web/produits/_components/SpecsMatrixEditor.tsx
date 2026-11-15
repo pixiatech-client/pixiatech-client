@@ -13,7 +13,7 @@
  *  - Défilement horizontal avec boutons gauche/droite et compteur de modèles
  */
 
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useMemo } from 'react';
 import {
   Plus,
   Trash2,
@@ -27,6 +27,23 @@ import {
   X,
   Search,
 } from 'lucide-react';
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+  sortableKeyboardCoordinates,
+  arrayMove,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import type { ProductSpecModel, ProductSpecGroup } from '@/lib/products/types';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -106,7 +123,7 @@ function GroupLabelEditor({
 
   if (editing) {
     return (
-      <div className="flex items-center gap-1 flex-1 min-w-0">
+      <div className="flex items-center gap-1 shrink-0">
         <input
           autoFocus
           value={draft}
@@ -119,7 +136,7 @@ function GroupLabelEditor({
             }
           }}
           onBlur={commit}
-          className="flex-1 min-w-0 bg-white dark:bg-white/5 border border-[#38E044]/60 rounded-lg px-2 py-0.5 text-xs font-bold text-neutral-900 dark:text-white focus:outline-none"
+          className="w-44 sm:w-64 bg-white dark:bg-white/5 border border-[#38E044]/60 rounded-lg px-2 py-0.5 text-xs font-bold text-neutral-900 dark:text-white focus:outline-none"
         />
         <button
           type="button"
@@ -143,8 +160,8 @@ function GroupLabelEditor({
   }
 
   return (
-    <div className="flex items-center gap-1.5 flex-1 min-w-0">
-      <span className="text-xs font-bold uppercase tracking-wider text-[#38E044] dark:text-[#38E044] truncate">
+    <div className="flex items-center gap-1.5 shrink-0">
+      <span className="text-xs font-bold uppercase tracking-wider text-[#38E044] dark:text-[#38E044] truncate max-w-[280px]">
         {label || 'GÉNÉRAL'}
       </span>
       <button
@@ -263,6 +280,242 @@ function RowLabelEditor({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Helper ID de groupe stable pour le Drag & Drop
+// ─────────────────────────────────────────────────────────────────────────────
+
+function getGroupId(group: ProductSpecGroup, idx: number): string {
+  if (group.id) return group.id;
+  return `grp_${group.label.toLowerCase().replace(/[^a-z0-9]/g, '_') || 'cat'}_${idx}`;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Sous-composant : Section de groupe triable (Drag & Drop vertical)
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface SortableGroupTbodyProps {
+  id: string;
+  group: ProductSpecGroup;
+  gi: number;
+  models: ProductSpecModel[];
+  collapsed: boolean;
+  toggleGroup: (gi: number) => void;
+  renameGroup: (gi: number, next: string) => void;
+  deleteGroup: (gi: number) => void;
+  addingRowForGroup: number | null;
+  setAddingRowForGroup: (val: number | null) => void;
+  newRowLabel: string;
+  setNewRowLabel: (val: string) => void;
+  addRow: (gi: number) => void;
+  visibleRows: ProductSpecGroup['rows'];
+  renameRow: (gi: number, ri: number, next: string) => void;
+  deleteRow: (gi: number, ri: number, rowKey: string) => void;
+  updateCell: (modelName: string, rowKey: string, val: string) => void;
+  ROW_LABEL_W: number;
+  COL_W: number;
+  disableDrag?: boolean;
+}
+
+function SortableGroupTbody({
+  id,
+  group,
+  gi,
+  models,
+  collapsed,
+  toggleGroup,
+  renameGroup,
+  deleteGroup,
+  addingRowForGroup,
+  setAddingRowForGroup,
+  newRowLabel,
+  setNewRowLabel,
+  addRow,
+  visibleRows,
+  renameRow,
+  deleteRow,
+  updateCell,
+  ROW_LABEL_W,
+  COL_W,
+  disableDrag = false,
+}: SortableGroupTbodyProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id, disabled: disableDrag });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Translate.toString(transform),
+    transition,
+    opacity: isDragging ? 0.35 : 1,
+    position: isDragging ? 'relative' : undefined,
+    zIndex: isDragging ? 30 : undefined,
+  };
+
+  return (
+    <tbody
+      ref={setNodeRef}
+      style={style}
+      className={`border-b last:border-b-0 border-neutral-200 dark:border-white/10 ${
+        isDragging ? 'ring-2 ring-[#38E044] bg-[#38E044]/5 shadow-xl' : ''
+      }`}
+    >
+      {/* ── Ligne d'en-tête de catégorie/groupe ── */}
+      <tr className="group bg-neutral-100/80 dark:bg-[#121619] border-b border-neutral-200 dark:border-white/10">
+        <td
+          colSpan={models.length + 1}
+          className="sticky left-0 px-3 py-2 border-l-4 border-l-[#38E044]"
+        >
+          <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap">
+            <button
+              type="button"
+              onClick={() => toggleGroup(gi)}
+              className="shrink-0 p-1 text-neutral-400 hover:text-neutral-700 dark:hover:text-white cursor-pointer"
+              title={collapsed ? 'Développer' : 'Réduire'}
+            >
+              {collapsed ? (
+                <ChevronDown className="w-3.5 h-3.5" />
+              ) : (
+                <ChevronUp className="w-3.5 h-3.5" />
+              )}
+            </button>
+
+            {/* Poignée Drag & Drop vertical */}
+            <button
+              type="button"
+              className={`shrink-0 p-1 -ml-1 text-neutral-400 hover:text-neutral-700 dark:hover:text-white rounded-lg hover:bg-neutral-200 dark:hover:bg-white/10 transition-colors ${
+                disableDrag
+                  ? 'cursor-not-allowed opacity-40'
+                  : 'cursor-grab active:cursor-grabbing touch-none'
+              }`}
+              title={
+                disableDrag
+                  ? 'Désactivez la recherche pour réorganiser les catégories'
+                  : 'Glisser-déposer pour réorganiser cette catégorie verticalement'
+              }
+              aria-label={`Glisser-déposer la catégorie ${group.label}`}
+              {...attributes}
+              {...listeners}
+            >
+              <GripVertical className="w-3.5 h-3.5 shrink-0 text-neutral-400 hover:text-[#38E044] transition-colors" />
+            </button>
+
+            <GroupLabelEditor
+              label={group.label}
+              onRename={(next) => renameGroup(gi, next)}
+              onDelete={() => deleteGroup(gi)}
+            />
+
+            {/* Bouton Caractéristique placé immédiatement à gauche à côté de la catégorie */}
+            <button
+              type="button"
+              onClick={() => {
+                setAddingRowForGroup(gi);
+                setNewRowLabel('');
+              }}
+              className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-white dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-600 dark:text-neutral-300 hover:border-[#38E044]/60 hover:text-[#38E044] transition-colors cursor-pointer shadow-2xs"
+              title="Ajouter une caractéristique dans cette catégorie"
+            >
+              <Plus className="w-3 h-3" />
+              <span>Caractéristique</span>
+            </button>
+          </div>
+        </td>
+      </tr>
+
+      {/* ── Ligne d'ajout d'une nouvelle caractéristique ── */}
+      {!collapsed && addingRowForGroup === gi && (
+        <tr className="bg-[#38E044]/5 border-b border-neutral-200 dark:border-white/10">
+          <td
+            className="sticky left-0 bg-[#38E044]/10 dark:bg-[#38E044]/[0.06] px-3 py-2 border-r border-neutral-200 dark:border-white/10"
+            style={{ width: ROW_LABEL_W }}
+          >
+            <div className="flex items-center gap-1.5">
+              <input
+                autoFocus
+                value={newRowLabel}
+                onChange={(e) => setNewRowLabel(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') addRow(gi);
+                  if (e.key === 'Escape') {
+                    setAddingRowForGroup(null);
+                    setNewRowLabel('');
+                  }
+                }}
+                placeholder="ex. Luminosité (nits)…"
+                className="flex-1 min-w-0 px-2 py-1 rounded-lg border border-[#38E044]/50 bg-white dark:bg-zinc-900 text-xs text-neutral-900 dark:text-white focus:outline-none focus:border-[#38E044]"
+              />
+              <button
+                type="button"
+                onClick={() => addRow(gi)}
+                className="p-1 text-[#38E044] hover:text-[#2fcb3c] cursor-pointer"
+                title="Valider"
+              >
+                <Check className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setAddingRowForGroup(null);
+                  setNewRowLabel('');
+                }}
+                className="p-1 text-neutral-400 hover:text-rose-500 cursor-pointer"
+                title="Annuler"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </td>
+          {models.map((m) => (
+            <td
+              key={m.name}
+              className="px-3 py-2 border-r last:border-r-0 border-neutral-200 dark:border-white/10 text-[11px] text-neutral-300 dark:text-neutral-600 text-center"
+            >
+              —
+            </td>
+          ))}
+        </tr>
+      )}
+
+      {/* ── Lignes de données des caractéristiques ── */}
+      {!collapsed &&
+        visibleRows.map((row, ri) => (
+          <tr
+            key={`${gi}-${row.key}`}
+            className="group/row border-b last:border-b-0 border-neutral-200 dark:border-white/10 hover:bg-neutral-50/60 dark:hover:bg-white/[0.02] transition-colors"
+          >
+            {/* Label de la caractéristique */}
+            <td
+              className="sticky left-0 bg-white dark:bg-[#0A0D0E] group-hover/row:bg-neutral-50/90 dark:group-hover/row:bg-[#0E1214] border-r border-neutral-200 dark:border-white/10 px-3 py-1.5 transition-colors shadow-[4px_0_12px_-4px_rgba(0,0,0,0.06)] dark:shadow-[4px_0_12px_-4px_rgba(0,0,0,0.5)]"
+              style={{ width: ROW_LABEL_W }}
+            >
+              <RowLabelEditor
+                label={row.label}
+                onRename={(next) => renameRow(gi, ri, next)}
+                onDelete={() => deleteRow(gi, ri, row.key)}
+              />
+            </td>
+
+            {/* Cellules par variante */}
+            {models.map((m) => {
+              const raw = m.specs[row.key] ?? '';
+              return (
+                <td
+                  key={m.name}
+                  className="border-r last:border-r-0 border-neutral-200 dark:border-white/10 px-2 py-1"
+                  style={{ width: COL_W }}
+                >
+                  <EditableCell
+                    value={raw}
+                    onChange={(val) => updateCell(m.name, row.key, val)}
+                    placeholder="—"
+                  />
+                </td>
+              );
+            })}
+          </tr>
+        ))}
+    </tbody>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Composant principal : SpecsMatrixEditor
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -280,6 +533,55 @@ export function SpecsMatrixEditor({
 
   // Filtre de recherche dans les caractéristiques
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Sensors pour le Drag & Drop vertical des catégories
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  // Assurer la présence d'IDs stables pour les groupes existants
+  useEffect(() => {
+    let needsUpdate = false;
+    const updated = groups.map((g, idx) => {
+      if (!g.id) {
+        needsUpdate = true;
+        return {
+          ...g,
+          id: `grp_${g.label.toLowerCase().replace(/[^a-z0-9]/g, '_') || 'cat'}_${Date.now()}_${idx}`,
+        };
+      }
+      return g;
+    });
+    if (needsUpdate) {
+      setGroups(updated);
+    }
+  }, [groups, setGroups]);
+
+  // IDs pour SortableContext
+  const groupIds = useMemo(
+    () => groups.map((g, idx) => getGroupId(g, idx)),
+    [groups]
+  );
+
+  // Gestion de la fin du glisser-déposer d'une catégorie
+  const handleGroupDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = groupIds.indexOf(String(active.id));
+    const newIndex = groupIds.indexOf(String(over.id));
+
+    if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
+      setGroups((prev) => arrayMove(prev, oldIndex, newIndex));
+    }
+  };
 
   // États locaux d'ajout
   const [addingRowForGroup, setAddingRowForGroup] = useState<number | null>(null);
@@ -365,7 +667,8 @@ export function SpecsMatrixEditor({
   const addGroup = () => {
     const trimmed = newGroupLabel.trim();
     if (!trimmed) return;
-    setGroups((prev) => [...prev, { label: trimmed, rows: [] }]);
+    const newId = `grp_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+    setGroups((prev) => [...prev, { id: newId, label: trimmed, rows: [] }]);
     setNewGroupLabel('');
     setAddingGroup(false);
   };
@@ -527,232 +830,131 @@ export function SpecsMatrixEditor({
         ref={scrollRef}
         className="overflow-x-auto rounded-2xl border border-neutral-200 dark:border-white/10 bg-white dark:bg-[#0A0D0E] shadow-sm scroll-smooth"
       >
-        <table
-          className="border-collapse w-full"
-          style={{ minWidth: ROW_LABEL_W + models.length * COL_W }}
+        <DndContext
+          id="specs-matrix-groups-dnd"
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleGroupDragEnd}
         >
-          {/* ── En-tête : MODÈLES (variantes) ── */}
-          <thead>
-            <tr className="bg-neutral-50 dark:bg-[#0E1214] border-b border-neutral-200 dark:border-white/10">
-              <th
-                className="sticky left-0 z-20 bg-neutral-50 dark:bg-[#0E1214] border-r border-neutral-200 dark:border-white/10 px-4 py-3 text-left shadow-[4px_0_12px_-4px_rgba(0,0,0,0.1)] dark:shadow-[4px_0_12px_-4px_rgba(0,0,0,0.6)]"
-                style={{ width: ROW_LABEL_W, minWidth: ROW_LABEL_W }}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-extrabold uppercase tracking-widest text-neutral-500 dark:text-neutral-400">
-                    Caractéristique
-                  </span>
-                  <span className="text-[10px] text-neutral-400 dark:text-neutral-600 font-medium">
-                    (Édition)
-                  </span>
-                </div>
-              </th>
-
-              {models.map((model) => (
+          <table
+            className="border-collapse w-full"
+            style={{ minWidth: ROW_LABEL_W + models.length * COL_W }}
+          >
+            {/* ── En-tête : MODÈLES (variantes) ── */}
+            <thead>
+              <tr className="bg-neutral-50 dark:bg-[#0E1214] border-b border-neutral-200 dark:border-white/10">
                 <th
-                  key={model.name}
-                  className="px-3 py-3 text-left border-r last:border-r-0 border-neutral-200 dark:border-white/10"
-                  style={{ width: COL_W, minWidth: COL_W }}
+                  className="sticky left-0 z-20 bg-neutral-50 dark:bg-[#0E1214] border-r border-neutral-200 dark:border-white/10 px-4 py-3 text-left shadow-[4px_0_12px_-4px_rgba(0,0,0,0.1)] dark:shadow-[4px_0_12px_-4px_rgba(0,0,0,0.6)]"
+                  style={{ width: ROW_LABEL_W, minWidth: ROW_LABEL_W }}
                 >
-                  <div className="flex items-center justify-between gap-1 group/th">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <span
-                          className="text-xs font-bold text-neutral-900 dark:text-white truncate"
-                          title={model.name}
-                        >
-                          {model.name}
-                        </span>
-                        {model.tag && (
-                          <span className="shrink-0 text-[9px] font-bold uppercase tracking-wider text-[#38E044] px-1 py-0.2 rounded bg-[#38E044]/10">
-                            {model.tag}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {onDeleteVariant && (
-                      <button
-                        type="button"
-                        onClick={() => onDeleteVariant(model.name)}
-                        className="shrink-0 p-1 rounded opacity-0 group-hover/th:opacity-100 text-neutral-400 hover:text-rose-500 transition-opacity cursor-pointer"
-                        title={`Supprimer la variante « ${model.name} »`}
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    )}
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-extrabold uppercase tracking-widest text-neutral-500 dark:text-neutral-400">
+                      Caractéristique
+                    </span>
+                    <span className="text-[10px] text-neutral-400 dark:text-neutral-600 font-medium">
+                      (Édition)
+                    </span>
                   </div>
                 </th>
-              ))}
-            </tr>
-          </thead>
 
-          {/* ── Corps : Groupes et caractéristiques ── */}
-          <tbody>
-            {groups.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={models.length + 1}
-                  className="p-8 text-center text-xs text-neutral-400 dark:text-neutral-500"
-                >
-                  Aucun groupe de spécifications. Cliquez sur &quot;Ajouter une catégorie&quot; ci-dessous.
-                </td>
-              </tr>
-            ) : (
-              groups.map((group, gi) => {
-                const collapsed = collapsedGroups.has(gi);
-                const visibleRows = filterQuery
-                  ? group.rows.filter((r) =>
-                      r.label.toLowerCase().includes(filterQuery)
-                    )
-                  : group.rows;
-
-                // Si recherche active et aucune ligne correspondante dans ce groupe, masquer le groupe
-                if (filterQuery && visibleRows.length === 0) return null;
-
-                return (
-                  <React.Fragment key={`group-${gi}`}>
-                    {/* ── Ligne d'en-tête de catégorie/groupe ── */}
-                    <tr className="group bg-neutral-100/80 dark:bg-[#121619] border-b border-neutral-200 dark:border-white/10">
-                      <td
-                        colSpan={models.length + 1}
-                        className="sticky left-0 px-3 py-2 border-l-4 border-l-[#38E044]"
-                      >
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => toggleGroup(gi)}
-                            className="shrink-0 p-1 text-neutral-400 hover:text-neutral-700 dark:hover:text-white cursor-pointer"
-                            title={collapsed ? 'Développer' : 'Réduire'}
+                {models.map((model) => (
+                  <th
+                    key={model.name}
+                    className="px-3 py-3 text-left border-r last:border-r-0 border-neutral-200 dark:border-white/10"
+                    style={{ width: COL_W, minWidth: COL_W }}
+                  >
+                    <div className="flex items-center justify-between gap-1 group/th">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className="text-xs font-bold text-neutral-900 dark:text-white truncate"
+                            title={model.name}
                           >
-                            {collapsed ? (
-                              <ChevronDown className="w-3.5 h-3.5" />
-                            ) : (
-                              <ChevronUp className="w-3.5 h-3.5" />
-                            )}
-                          </button>
-                          <GripVertical className="w-3.5 h-3.5 shrink-0 text-neutral-300 dark:text-neutral-600" />
-                          <GroupLabelEditor
-                            label={group.label}
-                            onRename={(next) => renameGroup(gi, next)}
-                            onDelete={() => deleteGroup(gi)}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setAddingRowForGroup(gi);
-                              setNewRowLabel('');
-                            }}
-                            className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-white dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-600 dark:text-neutral-300 hover:border-[#38E044]/60 hover:text-[#38E044] transition-colors cursor-pointer shadow-2xs"
-                            title="Ajouter une caractéristique dans cette catégorie"
-                          >
-                            <Plus className="w-3 h-3" />
-                            <span>Caractéristique</span>
-                          </button>
+                            {model.name}
+                          </span>
+                          {model.tag && (
+                            <span className="shrink-0 text-[9px] font-bold uppercase tracking-wider text-[#38E044] px-1 py-0.2 rounded bg-[#38E044]/10">
+                              {model.tag}
+                            </span>
+                          )}
                         </div>
-                      </td>
-                    </tr>
+                      </div>
 
-                    {/* ── Ligne d'ajout d'une nouvelle caractéristique ── */}
-                    {!collapsed && addingRowForGroup === gi && (
-                      <tr className="bg-[#38E044]/5 border-b border-neutral-200 dark:border-white/10">
-                        <td
-                          className="sticky left-0 bg-[#38E044]/10 dark:bg-[#38E044]/[0.06] px-3 py-2 border-r border-neutral-200 dark:border-white/10"
-                          style={{ width: ROW_LABEL_W }}
+                      {onDeleteVariant && (
+                        <button
+                          type="button"
+                          onClick={() => onDeleteVariant(model.name)}
+                          className="shrink-0 p-1 rounded opacity-0 group-hover/th:opacity-100 text-neutral-400 hover:text-rose-500 transition-opacity cursor-pointer"
+                          title={`Supprimer la variante « ${model.name} »`}
                         >
-                          <div className="flex items-center gap-1.5">
-                            <input
-                              autoFocus
-                              value={newRowLabel}
-                              onChange={(e) => setNewRowLabel(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') addRow(gi);
-                                if (e.key === 'Escape') {
-                                  setAddingRowForGroup(null);
-                                  setNewRowLabel('');
-                                }
-                              }}
-                              placeholder="ex. Luminosité (nits)…"
-                              className="flex-1 min-w-0 px-2 py-1 rounded-lg border border-[#38E044]/50 bg-white dark:bg-zinc-900 text-xs text-neutral-900 dark:text-white focus:outline-none focus:border-[#38E044]"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => addRow(gi)}
-                              className="p-1 text-[#38E044] hover:text-[#2fcb3c] cursor-pointer"
-                              title="Valider"
-                            >
-                              <Check className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setAddingRowForGroup(null);
-                                setNewRowLabel('');
-                              }}
-                              className="p-1 text-neutral-400 hover:text-rose-500 cursor-pointer"
-                              title="Annuler"
-                            >
-                              <X className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </td>
-                        {models.map((m) => (
-                          <td
-                            key={m.name}
-                            className="px-3 py-2 border-r last:border-r-0 border-neutral-200 dark:border-white/10 text-[11px] text-neutral-300 dark:text-neutral-600 text-center"
-                          >
-                            —
-                          </td>
-                        ))}
-                      </tr>
-                    )}
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </th>
+                ))}
+              </tr>
+            </thead>
 
-                    {/* ── Lignes de données des caractéristiques ── */}
-                    {!collapsed &&
-                      visibleRows.map((row, ri) => (
-                        <tr
-                          key={`${gi}-${row.key}`}
-                          className="group/row border-b last:border-b-0 border-neutral-200 dark:border-white/10 hover:bg-neutral-50/60 dark:hover:bg-white/[0.02] transition-colors"
-                        >
-                          {/* Label de la caractéristique */}
-                          <td
-                            className="sticky left-0 bg-white dark:bg-[#0A0D0E] group-hover/row:bg-neutral-50/90 dark:group-hover/row:bg-[#0E1214] border-r border-neutral-200 dark:border-white/10 px-3 py-1.5 transition-colors shadow-[4px_0_12px_-4px_rgba(0,0,0,0.06)] dark:shadow-[4px_0_12px_-4px_rgba(0,0,0,0.5)]"
-                            style={{ width: ROW_LABEL_W }}
-                          >
-                            <RowLabelEditor
-                              label={row.label}
-                              onRename={(next) => renameRow(gi, ri, next)}
-                              onDelete={() => deleteRow(gi, ri, row.key)}
-                            />
-                          </td>
+            {/* ── Corps : Groupes et caractéristiques triables (Drag & Drop) ── */}
+            <SortableContext
+              items={groupIds}
+              strategy={verticalListSortingStrategy}
+            >
+              {groups.length === 0 ? (
+                <tbody>
+                  <tr>
+                    <td
+                      colSpan={models.length + 1}
+                      className="p-8 text-center text-xs text-neutral-400 dark:text-neutral-500"
+                    >
+                      Aucun groupe de spécifications. Cliquez sur &quot;Ajouter une catégorie&quot; ci-dessous.
+                    </td>
+                  </tr>
+                </tbody>
+              ) : (
+                groups.map((group, gi) => {
+                  const groupId = getGroupId(group, gi);
+                  const collapsed = collapsedGroups.has(gi);
+                  const visibleRows = filterQuery
+                    ? group.rows.filter((r) =>
+                        r.label.toLowerCase().includes(filterQuery)
+                      )
+                    : group.rows;
 
-                          {/* Cellules par variante */}
-                          {models.map((m) => {
-                            const raw = m.specs[row.key] ?? '';
-                            return (
-                              <td
-                                key={m.name}
-                                className="border-r last:border-r-0 border-neutral-200 dark:border-white/10 px-2 py-1"
-                                style={{ width: COL_W }}
-                              >
-                                <EditableCell
-                                  value={raw}
-                                  onChange={(val) =>
-                                    updateCell(m.name, row.key, val)
-                                  }
-                                  placeholder="—"
-                                />
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      ))}
-                  </React.Fragment>
-                );
-              })
-            )}
-          </tbody>
-        </table>
+                  // Si recherche active et aucune ligne correspondante dans ce groupe, masquer le groupe
+                  if (filterQuery && visibleRows.length === 0) return null;
+
+                  return (
+                    <SortableGroupTbody
+                      key={groupId}
+                      id={groupId}
+                      group={group}
+                      gi={gi}
+                      models={models}
+                      collapsed={collapsed}
+                      toggleGroup={toggleGroup}
+                      renameGroup={renameGroup}
+                      deleteGroup={deleteGroup}
+                      addingRowForGroup={addingRowForGroup}
+                      setAddingRowForGroup={setAddingRowForGroup}
+                      newRowLabel={newRowLabel}
+                      setNewRowLabel={setNewRowLabel}
+                      addRow={addRow}
+                      visibleRows={visibleRows}
+                      renameRow={renameRow}
+                      deleteRow={deleteRow}
+                      updateCell={updateCell}
+                      ROW_LABEL_W={ROW_LABEL_W}
+                      COL_W={COL_W}
+                      disableDrag={Boolean(filterQuery)}
+                    />
+                  );
+                })
+              )}
+            </SortableContext>
+          </table>
+        </DndContext>
       </div>
 
       {/* ── Ajout d'une catégorie / groupe de spécifications ── */}

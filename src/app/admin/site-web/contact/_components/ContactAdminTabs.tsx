@@ -60,7 +60,7 @@ export const ERROR_BANNER =
   'flex items-center gap-3 px-5 py-3.5 rounded-2xl bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 text-rose-800 dark:text-rose-300 text-xs font-semibold';
 
 /** Pastille d'état dans un onglet. */
-export function tabPillClass(active: boolean, tone: 'neutral' | 'amber' | 'emerald' | 'sky' = 'neutral') {
+export function tabPillClass(active: boolean, tone: 'neutral' | 'amber' | 'emerald' | 'sky' | 'rose' = 'neutral') {
   const activeTone =
     tone === 'amber'
       ? 'bg-amber-600 text-white shadow-sm'
@@ -68,7 +68,9 @@ export function tabPillClass(active: boolean, tone: 'neutral' | 'amber' | 'emera
         ? 'bg-emerald-600 text-white shadow-sm'
         : tone === 'sky'
           ? 'bg-sky-600 text-white shadow-sm'
-          : 'bg-neutral-900 dark:bg-white text-white dark:text-black shadow-sm';
+          : tone === 'rose'
+            ? 'bg-rose-600 text-white shadow-sm'
+            : 'bg-neutral-900 dark:bg-white text-white dark:text-black shadow-sm';
   const idleTone =
     tone === 'amber'
       ? 'text-amber-800 hover:bg-amber-50 dark:text-amber-300 dark:hover:bg-amber-500/10'
@@ -76,6 +78,8 @@ export function tabPillClass(active: boolean, tone: 'neutral' | 'amber' | 'emera
         ? 'text-emerald-800 hover:bg-emerald-50 dark:text-emerald-300 dark:hover:bg-emerald-500/10'
         : tone === 'sky'
           ? 'text-sky-800 hover:bg-sky-50 dark:text-sky-300 dark:hover:bg-sky-500/10'
-          : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-white/5';
+          : tone === 'rose'
+            ? 'text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-500/10'
+            : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-white/5';
   return `px-3.5 py-1.5 rounded-xl transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${active ? activeTone : idleTone}`;
 }

@@ -1422,7 +1422,7 @@ export async function cleanupAnonymousUsers() {
 
 
 export async function getUsers({
-  limit = 6,
+  limit,
   startAfterId = null,
   searchTerm = '',
   userStatus = null,
@@ -1431,7 +1431,7 @@ export async function getUsers({
   startAfterId?: string | null;
   searchTerm?: string;
   userStatus?: 'pending' | 'approved' | null;
-}): Promise<{ users: UserProfile[]; lastId: string | null, totalCount: number }> {
+} = {}): Promise<{ users: UserProfile[]; lastId: string | null, totalCount: number }> {
   await requireAdminFresh();
   const { adminDb } = getFirebaseAdmin();
   if (!adminDb) {
@@ -1465,9 +1465,11 @@ export async function getUsers({
 
     // Sort in memory (newest first, fallback to 0 if missing)
     users.sort((a, b) => {
-      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-      return dateB - dateA;
+      const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      const validA = Number.isNaN(timeA) ? 0 : timeA;
+      const validB = Number.isNaN(timeB) ? 0 : timeB;
+      return validB - validA;
     });
 
     if (searchTerm) {
@@ -1478,6 +1480,8 @@ export async function getUsers({
       );
     }
 
+    const totalCount = users.length;
+
     // Apply pagination slice in memory based on startAfterId
     let startIndex = 0;
     if (startAfterId && !searchTerm) {
@@ -1485,8 +1489,13 @@ export async function getUsers({
       if (idx !== -1) startIndex = idx + 1;
     }
 
-    const paginatedUsers = users.slice(startIndex, startIndex + limit);
-    return { users: paginatedUsers, lastId: null, totalCount: 0 };
+    const paginatedUsers = limit && limit > 0
+      ? users.slice(startIndex, startIndex + limit)
+      : (startIndex > 0 ? users.slice(startIndex) : users);
+
+    const lastId = paginatedUsers.length > 0 ? paginatedUsers[paginatedUsers.length - 1].uid : null;
+
+    return { users: paginatedUsers, lastId, totalCount };
 
   } catch (error) {
     console.error("Error fetching users:", error);

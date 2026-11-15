@@ -61,7 +61,7 @@ export function UserManager() {
   const fetchUsers = useCallback(async () => {
     setIsLoading(true);
     try {
-      const result = await getUsers({ limit: ITEMS_PER_PAGE });
+      const result = await getUsers();
       setUsers(result.users);
       setTotalCount(result.totalCount);
     } catch (error) {
@@ -69,17 +69,24 @@ export function UserManager() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [ta]);
 
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
 
+  // Réinitialiser la pagination à la première page lorsqu'un filtre ou une recherche change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, roleFilter, statusFilter]);
+
   // Adapt Firebase UserProfile to local User type
   const adaptUser = useCallback((profile: UserProfile): User => {
     const roleId = profile.role;
-    const mappedStatus = profile.status === 'approved' ? UserStatus.APPROVED
-      : profile.status === 'pending' ? UserStatus.PENDING
+    const rawStatus = (profile.status as string) || '';
+    const mappedStatus = rawStatus === 'approved' ? UserStatus.APPROVED
+      : rawStatus === 'suspended' ? UserStatus.SUSPENDED
+      : rawStatus === 'rejected' ? UserStatus.REJECTED
       : UserStatus.PENDING;
     return {
       id: profile.uid,
@@ -137,6 +144,13 @@ export function UserManager() {
   }, [filteredUsers, currentPage]);
 
   const totalPages = Math.max(1, Math.ceil(filteredUsers.length / ITEMS_PER_PAGE));
+
+  // Ajuster la page courante si elle dépasse le nombre total de pages
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(Math.max(1, totalPages));
+    }
+  }, [currentPage, totalPages]);
 
   // Handlers
   const handleAddUser = () => {

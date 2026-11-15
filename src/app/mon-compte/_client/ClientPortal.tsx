@@ -24,6 +24,7 @@ import { mapApiOrders, mapApiInvoice, mapApiInvoices, mapApiDisputes } from './l
 import { Header } from './components/Header';
 import { Navigation } from './components/Navigation';
 import { NoticeBanner } from './components/NoticeBanner';
+import { PixiaFooterCredit } from '@/components/PixiaFooterCredit';
 import { DashboardView } from './components/views/DashboardView';
 import { OrdersView } from './components/views/OrdersView';
 import { InvoicesView } from './components/views/InvoicesView';
@@ -761,6 +762,8 @@ export function ClientPortal({ initialTab, initialDisputeId }: ClientPortalProps
           </div>
         </div>
       </footer>
+
+      <PixiaFooterCredit />
 
       {/* Modals */}
       <SiretVerificationModal

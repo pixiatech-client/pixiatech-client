@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useRegisterCmsSection } from '@/web/cms/useRegisterCmsSection';
 import { Language } from '../pixiatech-translations';
 import { OrbCanvas } from '../components/OrbCanvas';
+import { PixiaFooterCredit } from '@/components/PixiaFooterCredit';
 
 interface PixiaFooterProps {
   companyName?: string;
@@ -486,6 +487,9 @@ export const PixiaFooter: React.FC<PixiaFooterProps> = ({
           </a>
         </div>
       </div>
+
+      {/* ── Sub-footer Crédits Promedia Audiovisuelle & Copyright ── */}
+      <PixiaFooterCredit background="transparent" />
     </footer>
   );
 };

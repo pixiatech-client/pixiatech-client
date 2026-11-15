@@ -9,7 +9,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   try {
     const { id } = await params;
     const { status } = await request.json();
-    if (!status || !['unread', 'read', 'replied', 'archived'].includes(status)) {
+    if (!status || !['unread', 'read', 'replied', 'archived', 'trash'].includes(status)) {
       return NextResponse.json({ success: false, message: 'Statut invalide.' }, { status: 400 });
     }
     const updated = await patchMessageStatus(id, status as ContactMessage['status']);
