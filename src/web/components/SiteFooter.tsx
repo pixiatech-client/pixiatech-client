@@ -3,7 +3,6 @@
 import React from 'react';
 import { translations, Language } from '../data/translations';
 import { OrbCanvas } from './OrbCanvas';
-import { PixiaFooterCredit } from '@/components/PixiaFooterCredit';
 
 interface SiteFooterProps {
   companyName: string;
@@ -158,8 +157,6 @@ export const SiteFooter: React.FC<SiteFooterProps> = ({
         />
       </div>
 
-      {/* ── Sub-footer Crédits Promedia Audiovisuelle & Copyright ── */}
-      <PixiaFooterCredit background="transparent" />
     </footer>
   );
 };

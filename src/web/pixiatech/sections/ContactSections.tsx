@@ -5,7 +5,6 @@ import {
   motion,
   useMotionValue,
   useReducedMotion,
-  useScroll,
   useSpring,
   useTransform,
 } from 'framer-motion';
@@ -343,16 +342,13 @@ const CONTACT_CSS = `
 /* Carte selectionnee : le lime plein est deja la couleur, le voile s'eteint. */
 .ct-chip[aria-pressed='true'] { --ct-mesh-op: 0; }
 
-/* ── Hero : zoom au scroll (faccon topology.vc) ─────────────────────────
-   La section est epinglee (sticky) plein ecran ; contenu + voile mesh
-   grandissent de 1 → 1.18 pendant que la section suivante, opaque et au-dessus
-   (z-index inline), glisse par-dessus. Sur mobile on renonce a l'epingle : la
-   section reprend le flux normal, avec juste le zoom leger a la sortie. */
-.ct-zoom-pin { height: calc(100svh + 62vh); }
+/* ── Hero : scroll fluide (sans zoom ni épingle sticky) ─────────────────────
+   Section plein écran en flux normal. Le mesh décoratif anime en ambient,
+   sans aucun couplage au scrollYProgress. */
+.ct-zoom-pin { /* wrapper flux normal — plus de hauteur extra */ }
 .ct-zoom-hero {
-  position: sticky;
-  top: 0;
-  height: 100svh;
+  position: relative;
+  min-height: 100svh;
   overflow: hidden;
 }
 .ct-zoom-scale { position: relative; min-height: 100svh; }
@@ -1787,11 +1783,6 @@ export function ContactSections({ lang }: { lang: Language }) {
   // seulement. C'est ce qui empêche l'adresse ou le téléphone de diverger
   // entre le module Contact et l'éditeur de page.
   const [contactInfo, setContactInfo] = useState<ContactInfo | null>(null);
-  const pinRef = useRef<HTMLDivElement>(null);
-  const reduceMotion = useReducedMotion();
-  const { scrollYProgress } = useScroll({ target: pinRef, offset: ['start start', 'end start'] });
-  const zoom = useTransform(scrollYProgress, [0, 1], [1, 1.18]);
-  const heroScale = reduceMotion ? 1 : zoom;
 
   useEffect(() => {
     let alive = true;
@@ -1886,13 +1877,13 @@ export function ContactSections({ lang }: { lang: Language }) {
     'contact-hero': {
       label: lang === 'FR' ? 'Hero Contact (Introduction)' : 'Contact Hero (Introduction)',
       render: () => (
-        <div ref={pinRef} className="ct-zoom-pin" style={{ position: 'relative' }}>
+        <div className="ct-zoom-pin" style={{ position: 'relative' }}>
           <section
             id="contact"
             className="theme-dark ct-mesh ct-mesh-1 ct-zoom-hero"
             style={{ ...TONE_DARK, ...meshVars(0), background: 'var(--black, #080808)' }}
           >
-            <motion.div className="ct-zoom-scale" style={{ scale: heroScale, willChange: 'transform' }}>
+            <div className="ct-zoom-scale">
               <div className="ct-zoom-bg" aria-hidden="true" />
               <div
                 className="wrap"
@@ -1980,7 +1971,7 @@ export function ContactSections({ lang }: { lang: Language }) {
                   </div>
                 )}
               </div>
-            </motion.div>
+            </div>
           </section>
         </div>
       ),
