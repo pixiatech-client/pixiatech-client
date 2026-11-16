@@ -63,7 +63,6 @@ import { VersionUpdateDialog } from '@/components/VersionUpdateDialog';
 import { APP_VERSION } from '@/lib/build-info';
 import { isVersionNewer } from '@/lib/version';
 import LiquidLoader from '@/components/LiquidLoader';
-import { PixiaFooterCredit } from '@/components/PixiaFooterCredit';
 
 const mapRoleToUserRoleEnum = (role: string | undefined): UserRoleEnum => {
   switch (role) {
@@ -775,10 +774,6 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
         )}>
           {children}
         </main>
-
-        {!pathname?.startsWith('/admin/site-web/showreel') && pathname !== '/admin/messages' && (
-          <PixiaFooterCredit />
-        )}
       </div>
 
       {/* ── Calculatrice flottante (toujours au premier plan, draggable) ── */}

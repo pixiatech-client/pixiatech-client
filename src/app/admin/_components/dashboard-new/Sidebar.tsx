@@ -1140,29 +1140,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
 
             {!isCompact ? (
-              <>
-                <div
-                  onClick={onCheckUpdate}
-                  role={onCheckUpdate ? 'button' : undefined}
-                  tabIndex={onCheckUpdate ? 0 : undefined}
-                  className={`mt-2 px-2 text-center text-[11px] font-medium text-slate-400 dark:text-slate-500 opacity-90 select-none whitespace-nowrap transition-colors ${onCheckUpdate ? 'cursor-pointer hover:text-blue-500 dark:hover:text-blue-400 hover:opacity-100' : ''
-                    }`}
-                  title={onCheckUpdate ? "Cliquer pour vérifier les mises à jour" : `© ${new Date().getFullYear()} PixiaTech — Version ${APP_VERSION}`}
-                >
-                  © {new Date().getFullYear()} PixiaTech | <span className="font-mono">Version {APP_VERSION}</span>
-                </div>
-                <div className="mt-1 px-2 text-center text-[10px] text-slate-400 dark:text-slate-500 opacity-90 select-none">
-                  Créé par{' '}
-                  <a
-                    href="https://promedia-audiovisuelle.com/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-semibold text-slate-600 dark:text-slate-300 hover:text-emerald-500 transition-colors pointer-events-auto"
-                  >
-                    Promedia Audiovisuelle
-                  </a>
-                </div>
-              </>
+              <div
+                onClick={onCheckUpdate}
+                role={onCheckUpdate ? 'button' : undefined}
+                tabIndex={onCheckUpdate ? 0 : undefined}
+                className={`mt-2 px-2 text-center text-[11px] font-medium text-slate-400 dark:text-slate-500 opacity-90 select-none whitespace-nowrap transition-colors ${onCheckUpdate ? 'cursor-pointer hover:text-blue-500 dark:hover:text-blue-400 hover:opacity-100' : ''
+                  }`}
+                title={onCheckUpdate ? "Cliquer pour vérifier les mises à jour" : `© ${new Date().getFullYear()} PixiaTech — Version ${APP_VERSION}`}
+              >
+                © {new Date().getFullYear()} PixiaTech | <span className="font-mono">Version {APP_VERSION}</span>
+              </div>
             ) : (
               <div
                 onClick={onCheckUpdate}
