@@ -251,6 +251,7 @@ function AllProductsView({
           <EditableWrapper sectionKey="products_hero" sectionLabel="Catalogue — En-tête">
           <div
             data-text-key="eyebrow"
+            data-reveal="true"
             style={{
               fontSize: 10.5,
               letterSpacing: '.24em',
@@ -266,6 +267,7 @@ function AllProductsView({
 
           <h1
             className="display"
+            data-reveal="true"
             style={{
               margin: '0 0 20px',
               fontSize: 'clamp(40px, 5.5vw, 90px)',
@@ -283,6 +285,7 @@ function AllProductsView({
           <p
             className="lede"
             data-text-key="desc"
+            data-reveal="true"
             style={{
               marginBottom: 48,
               maxWidth: 560,
@@ -469,6 +472,7 @@ function AllProductsView({
 
           {/* Products grid */}
           <div
+            data-reveal-group="true"
             style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fill, minmax(min(430px, 100%), 1fr))',
@@ -482,6 +486,7 @@ function AllProductsView({
                 <article
                   key={p.key}
                   className="card"
+                  data-reveal="true"
                   onMouseEnter={() => setHovered(p.key)}
                   onMouseLeave={() => setHovered(null)}
                   onClick={() => {

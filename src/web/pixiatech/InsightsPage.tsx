@@ -132,7 +132,7 @@ export function PixiaInsightsPage() {
           <div className="wrap">
             {/* 1. En-tête éditorial */}
             <EditableWrapper sectionKey="insights_hero" sectionLabel="Ressources — En-tête">
-              <div className="eyebrow" data-text-key="eyebrow">{t.eyebrow}</div>
+              <div className="eyebrow" data-text-key="eyebrow" data-reveal="true">{t.eyebrow}</div>
               <h1 className="display" data-reveal="true" style={{ marginBottom: 20, color: 'var(--ink)' }}>
                 <span data-text-key="h1Line1">{t.h1Line1}</span>
                 <br />
@@ -265,6 +265,7 @@ export function PixiaInsightsPage() {
             {/* 4. Grille d'articles */}
             <EditableWrapper sectionKey="insights_grid" sectionLabel="Ressources — Grille d'Articles">
               <div
+                data-reveal-group="true"
                 style={{
                   display: 'grid',
                   gridTemplateColumns: 'repeat(auto-fit,minmax(min(300px,100%),1fr))',

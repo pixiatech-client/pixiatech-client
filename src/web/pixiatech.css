@@ -142,7 +142,90 @@
   transform: scale(1.045);
 }
 
-/* ---- 4. Dots & Indicateurs Télémétriques (Hero 01/02/03) ---- */
+/* ---- 4. Page Ressources / Insights : Cartes Éditoriales & Zoom Haute Définition ---- */
+#pixia-web .art {
+  transition: transform 0.45s var(--ease-out-expo),
+              color 0.3s ease !important;
+  will-change: transform;
+}
+#pixia-web .art:hover {
+  transform: translateY(-5px);
+}
+#pixia-web .art .art-img {
+  overflow: hidden;
+  border-radius: 4px;
+}
+#pixia-web .art .slot-img,
+#pixia-web .art img {
+  transition: transform 0.75s var(--ease-out-expo), filter 0.5s ease !important;
+  will-change: transform;
+}
+#pixia-web .art:hover .slot-img,
+#pixia-web .art:hover img {
+  transform: scale(1.055);
+}
+#pixia-web .art:hover .art-t {
+  color: var(--accent, #C3F910) !important;
+}
+
+/* Category Chips interactifs */
+#pixia-web .chip {
+  transition: transform 0.25s var(--ease-spring),
+              background-color 0.25s ease,
+              color 0.25s ease,
+              border-color 0.25s ease,
+              box-shadow 0.25s ease !important;
+  cursor: pointer;
+}
+#pixia-web .chip:hover:not(.on) {
+  transform: translateY(-2px);
+  border-color: var(--ink, #111110) !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+}
+#pixia-web .chip.on {
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.16);
+}
+
+/* ---- 5. Page Contact : Cartes de coordonnées & Console ---- */
+#pixia-web .ct-coord-card {
+  transition: transform 0.35s var(--ease-out-expo),
+              border-color 0.3s ease,
+              background-color 0.3s ease,
+              box-shadow 0.35s var(--ease-out-expo) !important;
+  will-change: transform, box-shadow;
+}
+#pixia-web .ct-coord-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(var(--accent-rgb, 195, 249, 16), 0.65) !important;
+  background-color: rgba(var(--accent-rgb, 195, 249, 16), 0.07) !important;
+  box-shadow: 0 16px 32px -8px rgba(0, 0, 0, 0.6),
+              0 0 20px rgba(195, 249, 16, 0.18) !important;
+}
+
+/* Formulaire Contact : Inputs lissés et focalisés */
+#pixia-web .ct-input,
+#pixia-web .ct-area {
+  border-radius: 4px;
+  transition: border-color 0.25s var(--ease-out-expo),
+              background-color 0.25s ease,
+              box-shadow 0.28s var(--ease-out-expo) !important;
+}
+#pixia-web .ct-input:focus,
+#pixia-web .ct-area:focus {
+  border-color: var(--accent, #C3F910) !important;
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb, 195, 249, 16), 0.28),
+              0 8px 24px rgba(0, 0, 0, 0.45) !important;
+}
+
+/* Accordéon FAQ Contact : Révélation douce */
+#pixia-web .ct-faq-btn {
+  transition: background-color 0.25s ease, color 0.25s ease, padding 0.25s ease;
+}
+#pixia-web .ct-faq-btn:hover .ct-faq-q {
+  color: var(--accent, #C3F910) !important;
+}
+
+/* ---- 6. Dots & Indicateurs Télémétriques (Hero 01/02/03) ---- */
 #pixia-web .hero-dot {
   transition: all 0.32s var(--ease-out-expo) !important;
 }

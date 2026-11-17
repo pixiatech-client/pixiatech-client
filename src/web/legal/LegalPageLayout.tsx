@@ -159,22 +159,22 @@ export function LegalPageLayout({ pageData, pageKey, isCookiePage = false }: Leg
           {/* Hero Header */}
           <EditableWrapper sectionKey="header" sectionLabel="En-tête de la page">
             <header className="mb-14 pb-10 border-b border-[#1f1f1f]">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#121210] border border-[#262624] text-[11px] font-mono text-[#C3F910] tracking-wider mb-6">
+              <div data-reveal="true" className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#121210] border border-[#262624] text-[11px] font-mono text-[#C3F910] tracking-wider mb-6">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#C3F910] animate-pulse" />
                 {mergedHeader.badge}
               </div>
 
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white mb-4">
+              <h1 data-reveal="true" className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white mb-4">
                 {mergedHeader.title}
               </h1>
 
-              <p className="text-base sm:text-lg text-[#a3a3a3] max-w-3xl leading-relaxed">
+              <p data-reveal="true" className="text-base sm:text-lg text-[#a3a3a3] max-w-3xl leading-relaxed">
                 {mergedHeader.subtitle}
               </p>
 
               {/* Special interactive banner for Cookie Management */}
               {isCookiePage && (
-                <div className="mt-8 p-5 sm:p-6 rounded-2xl bg-gradient-to-r from-[#12140d] via-[#10100f] to-[#0c0c0b] border border-[#C3F910]/30 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+                <div data-reveal="true" className="mt-8 p-5 sm:p-6 rounded-2xl bg-gradient-to-r from-[#12140d] via-[#10100f] to-[#0c0c0b] border border-[#C3F910]/30 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
                   <div className="space-y-1.5">
                     <div className="flex items-center gap-2 text-sm font-bold text-white">
                       <SlidersHorizontal className="w-4 h-4 text-[#C3F910]" />
@@ -269,6 +269,7 @@ export function LegalPageLayout({ pageData, pageKey, isCookiePage = false }: Leg
                   >
                     <section
                       id={secKey}
+                      data-reveal="true"
                       className="scroll-mt-32 p-6 sm:p-8 rounded-2xl bg-[#0c0c0b] border border-[#1a1a19] hover:border-[#272725] transition-colors relative"
                     >
                       {/* Section Badge */}

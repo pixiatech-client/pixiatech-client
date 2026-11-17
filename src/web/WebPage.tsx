@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { PixiaHeader } from './pixiatech/PixiaHeader';
+import { RevealRoot } from './pixiatech/RevealRoot';
 import { HeroSection } from './components/HeroSection';
 import { OverviewSection } from './components/OverviewSection';
 import { DesignSection } from './components/DesignSection';
@@ -103,7 +104,7 @@ function WebPageView({ seedProduct }: { seedProduct?: Product } = {}) {
   }, [locale]);
 
   return (
-    <div className="min-h-screen bg-[#080808] text-[#f5f4f0] antialiased selection:bg-white/20 selection:text-white">
+    <RevealRoot className="min-h-screen bg-[#080808] text-[#f5f4f0] antialiased selection:bg-white/20 selection:text-white">
       {/* Sticky Blur Header */}
       <PixiaHeader
         companyName={brandName}
@@ -209,6 +210,6 @@ function WebPageView({ seedProduct }: { seedProduct?: Product } = {}) {
 
       {/* Floating Back to Top Button */}
       <BackToTopButton lang={lang} />
-    </div>
+    </RevealRoot>
   );
 }

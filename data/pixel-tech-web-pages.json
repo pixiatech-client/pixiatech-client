@@ -2293,6 +2293,120 @@
           "product_desc": "Une solution LED de nouvelle génération, conçue pour offrir une qualité d'image exceptionnelle et une fiabilité optimale, en intérieur comme en extérieur. Teste"
         }
       }
+    },
+    "insights": {
+      "id": "insights",
+      "name": "Ressources & Guides",
+      "slug": "/insights",
+      "updatedAt": "2026-11-17T20:32:23.367Z",
+      "sections": {
+        "insights_hero": {
+          "eyebrow": "PIXIATECH / INSIGHTS",
+          "h1Line1": "Notes sur la lumière,",
+          "h1Line2": "les pixels et l'espace.",
+          "lede": "Guides, notes techniques et observations terrain de l'équipe d'ingénierie PixiaTech.",
+          "_elements": {},
+          "_i18n": {
+            "eyebrow": {
+              "fr": {
+                "value": "PIXIATECH / INSIGHTS",
+                "status": "source"
+              },
+              "en": {
+                "value": "PIXIATECH / INSIGHTS",
+                "status": "translated"
+              }
+            },
+            "h1Line1": {
+              "fr": {
+                "value": "Notes sur la lumière,",
+                "status": "source"
+              },
+              "en": {
+                "value": "Notes on light,",
+                "status": "translated"
+              }
+            },
+            "h1Line2": {
+              "fr": {
+                "value": "les pixels et l'espace.",
+                "status": "source"
+              },
+              "en": {
+                "value": "pixels and space.",
+                "status": "translated"
+              }
+            },
+            "lede": {
+              "fr": {
+                "value": "Guides, notes techniques et observations terrain de l'équipe d'ingénierie PixiaTech.",
+                "status": "source"
+              },
+              "en": {
+                "value": "Guides, technical notes and field observations from the PixiaTech engineering team.",
+                "status": "translated"
+              }
+            }
+          }
+        }
+      }
+    },
+    "products": {
+      "id": "products",
+      "name": "Tous les Produits",
+      "slug": "/products",
+      "updatedAt": "2026-11-17T20:32:23.371Z",
+      "sections": {
+        "products_hero": {
+          "eyebrow": "PIXIATECH / TOUS LES PRODUITS",
+          "h1Line1": "Trouvez l'écran",
+          "h1Line2": "fait pour votre espace.",
+          "desc": "Le catalogue complet PixiaTech — installation fixe, location, transparent, cinétique et créatif.",
+          "_elements": {},
+          "_i18n": {
+            "eyebrow": {
+              "fr": {
+                "value": "PIXIATECH / TOUS LES PRODUITS",
+                "status": "source"
+              },
+              "en": {
+                "value": "PIXIATECH / ALL PRODUCTS",
+                "status": "translated"
+              }
+            },
+            "h1Line1": {
+              "fr": {
+                "value": "Trouvez l'écran",
+                "status": "source"
+              },
+              "en": {
+                "value": "Find the display",
+                "status": "translated"
+              }
+            },
+            "h1Line2": {
+              "fr": {
+                "value": "fait pour votre espace.",
+                "status": "source"
+              },
+              "en": {
+                "value": "built for your space.",
+                "status": "translated"
+              }
+            },
+            "desc": {
+              "fr": {
+                "value": "Le catalogue complet PixiaTech — installation fixe, location, transparent, cinétique et créatif.",
+                "status": "source"
+              },
+              "en": {
+                "value": "The complete PixiaTech display catalog — fixed installation, rental, transparent, kinetic and creative systems.",
+                "status": "translated"
+              }
+            }
+          }
+        }
+      }
     }
   },
   "updatedAt": "2026-11-08T13:50:15.314Z"

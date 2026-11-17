@@ -1490,7 +1490,7 @@ function RetailContact({
       <div className="wrap">
         {/* En-tête façon Shopify : Titre showroom & consultation */}
         {visibility.contactInfoCard && (
-          <header className="ct-retail-head">
+          <header className="ct-retail-head" data-reveal="true">
             <div className="ct-retail-head-title">
               <div style={eyebrowDark}>{info.hqBadge}</div>
               <h2 className="display" style={{ margin: 0, color: DARK_TEXT, fontSize: 'clamp(30px, 3.4vw, 48px)', maxWidth: 720 }}>
@@ -1507,6 +1507,7 @@ function RetailContact({
         <div
           className="ct-stage"
           id="contact-form"
+          data-reveal="true"
           style={{
             scrollMarginTop: 'calc(var(--nav-h) + 32px)',
           }}
@@ -1585,16 +1586,16 @@ function RetailContact({
 
         {/* Console de coordonnées réelles sous la tablette */}
         {visibility.contactInfoCard && (
-<div className="ct-coords-console">
+          <div className="ct-coords-console" data-reveal-group="true">
             {visibility.infoCompanyRow && publicInfo.companyName && (
-              <div className="ct-coord-card">
+              <div className="ct-coord-card" data-reveal="true">
                 <span className="ct-coord-label">{lang === 'FR' ? 'Entreprise' : 'Company'}</span>
                 <span className="ct-coord-value">{publicInfo.companyName}</span>
                 {publicInfo.tagline && <span className="ct-coord-sub">{publicInfo.tagline}</span>}
               </div>
             )}
             {visibility.infoAddressRow && (
-              <div className="ct-coord-card">
+              <div className="ct-coord-card" data-reveal="true">
                 <span className="ct-coord-label">{info.addressLabel}</span>
                 <span className="ct-coord-value">
                   <span data-contact-key="contact.info.addressValue">{displayAddress}</span>{' '}
@@ -1611,7 +1612,7 @@ function RetailContact({
               </div>
             )}
             {visibility.infoPhonesRow && (
-              <div className="ct-coord-card">
+              <div className="ct-coord-card" data-reveal="true">
                 <span className="ct-coord-label">{info.phonesLabel}</span>
                 <span className="ct-coord-value">
                   <a
@@ -1637,7 +1638,7 @@ function RetailContact({
               </div>
             )}
             {visibility.infoEmailRow && (
-              <div className="ct-coord-card">
+              <div className="ct-coord-card" data-reveal="true">
                 <span className="ct-coord-label">{info.emailLabel}</span>
                 <span className="ct-coord-value">
                   <a
@@ -1651,7 +1652,7 @@ function RetailContact({
               </div>
             )}
             {visibility.infoSupportEmailRow && publicInfo.supportEmail && (
-              <div className="ct-coord-card">
+              <div className="ct-coord-card" data-reveal="true">
                 <span className="ct-coord-label">{lang === 'FR' ? 'Assistance' : 'Support'}</span>
                 <span className="ct-coord-value">
                   <a href={`mailto:${publicInfo.supportEmail}`} className="ct-link">
@@ -1661,7 +1662,7 @@ function RetailContact({
               </div>
             )}
             {visibility.infoWhatsappRow && (
-              <div className="ct-coord-card">
+              <div className="ct-coord-card" data-reveal="true">
                 <span className="ct-coord-label">{info.whatsappLabel}</span>
                 <span className="ct-coord-value">
                   <a href={whatsappHref} target="_blank" rel="noreferrer" className="ct-link">
@@ -1672,7 +1673,7 @@ function RetailContact({
               </div>
             )}
             {visibility.infoWorkingHoursRow && (
-              <div className="ct-coord-card">
+              <div className="ct-coord-card" data-reveal="true">
                 <span className="ct-coord-label">{info.hoursLabel.replace(':', '')}</span>
                 <span className="ct-coord-value">{info.hoursValue}</span>
               </div>
@@ -1698,11 +1699,11 @@ function FaqList({ faq }: { faq: PageContentConfig['faq'] }) {
   if (!items.length) return null;
 
   return (
-    <div style={{ borderTop: `1px solid ${DARK_LINE_2}` }}>
+    <div data-reveal-group="true" style={{ borderTop: `1px solid ${DARK_LINE_2}` }}>
       {items.map((item) => {
         const expanded = open === item.id;
         return (
-          <div key={item.id} style={{ borderBottom: `1px solid ${DARK_LINE_2}` }}>
+          <div key={item.id} data-reveal="true" style={{ borderBottom: `1px solid ${DARK_LINE_2}` }}>
             <button
               type="button"
               className="ct-faq-btn"
@@ -1898,12 +1899,12 @@ export function ContactSections({ lang }: { lang: Language }) {
                 }}
               >
                 {visibility.heroBadge && (
-                  <div style={eyebrowDark}>
+                  <div data-reveal="true" style={eyebrowDark}>
                     {lang === 'FR' ? 'PIXIATECH / CONTACT' : 'PIXIATECH / CONTACT'}
                   </div>
                 )}
                 {visibility.heroTitle && (
-                  <h1 className="display" style={{ margin: 0, color: DARK_TEXT, maxWidth: 1020 }}>
+                  <h1 className="display" data-reveal="true" style={{ margin: 0, color: DARK_TEXT, maxWidth: 1020 }}>
                     <span data-contact-key="contact.hero.titleLine1">{hero.titleLine1}</span>
                     {hero.titleHighlight && (
                       <>
@@ -1963,7 +1964,7 @@ export function ContactSections({ lang }: { lang: Language }) {
                 )}
 
                 {visibility.heroCtaButton && (
-                  <div style={{ marginTop: 26 }}>
+                  <div data-reveal="true" style={{ marginTop: 26 }}>
                     <ActionButton onClick={scrollToForm}>
                       <span data-contact-key="contact.hero.ctaButtonText">{hero.ctaButtonText}</span>
                       <span aria-hidden="true">↓</span>
@@ -1997,8 +1998,8 @@ export function ContactSections({ lang }: { lang: Language }) {
               }}
             >
               <div className="wrap">
-                <div style={eyebrowDark}>{faq.badge}</div>
-                <h2 className="display" style={{ margin: 0, color: DARK_TEXT, maxWidth: 780 }}>
+                <div style={eyebrowDark} data-reveal="true">{faq.badge}</div>
+                <h2 className="display" data-reveal="true" style={{ margin: 0, color: DARK_TEXT, maxWidth: 780 }}>
                   {faq.title}
                 </h2>
                 <p

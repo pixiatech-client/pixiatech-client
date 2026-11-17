@@ -188,7 +188,7 @@ const INTERNAL_PAGES = [
 export const FloatingElementToolbar: React.FC<{
   onOpenImageModal?: (element: HTMLElement) => void;
 }> = ({ onOpenImageModal }) => {
-  const { isEditing, isAdmin, currentPageData, currentLang, updateSectionField, saveCurrentPage } = useCms();
+  const { isEditing, isAdmin, currentPageData, currentLang, updateSectionField, updateElementStyle, saveCurrentPage } = useCms();
 
   const [selected, setSelected] = useState<SelectedElement | null>(getSelectedElement());
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
@@ -343,7 +343,7 @@ export const FloatingElementToolbar: React.FC<{
     [sectionData, selected]
   );
 
-  /** Écrit le style de l'élément, l'applique immédiatement, puis sauvegarde via PUT */
+  /** Écrit le style de l'élément via le contexte (synchrone via pagesRef), l'applique immédiatement, puis sauvegarde via PUT */
   const commit = useCallback(
     (patch: Partial<ElementStyle>) => {
       if (!selected) return;
@@ -352,16 +352,13 @@ export const FloatingElementToolbar: React.FC<{
       const elementKey = selected.elementKey;
       const clickableElementKey = selected.clickableElementKey;
 
-      const currentSections = (currentPageData?.sections || {}) as Record<string, Record<string, unknown>>;
-      const currentSection = currentSections[sectionKey] || {};
-      const currentBag = (currentSection._elements as Record<string, ElementStyle>) || {};
-
-      const nextStyle: ElementStyle = { ...currentBag[elementKey], ...patch };
-      const nextBag: Record<string, ElementStyle> = { ...currentBag, [elementKey]: nextStyle };
+      // Utilise updateElementStyle du contexte (lit depuis pagesRef synchrone,
+      // jamais périmé) pour éviter d'écraser des modifications concurrentes.
+      const nextStyle = updateElementStyle(sectionKey, elementKey, patch as Record<string, unknown>) as ElementStyle;
 
       // Si un conteneur cliquable parent existe (ex: a ou button englobant un span), on synchronise aussi sa clé
       if (clickableElementKey && clickableElementKey !== elementKey) {
-        nextBag[clickableElementKey] = { ...currentBag[clickableElementKey], ...patch };
+        updateElementStyle(sectionKey, clickableElementKey, patch as Record<string, unknown>);
       }
 
       // Rendu immédiat dans le DOM avec identifiant de style dynamique
@@ -374,8 +371,6 @@ export const FloatingElementToolbar: React.FC<{
         applyElementStyle(selected.clickableEl, nextStyle, normalizeLang(currentLang), clickStyledId);
       }
 
-      updateSectionField(sectionKey, '_elements', nextBag);
-
       if (saveTimer.current) clearTimeout(saveTimer.current);
       setSaveState('saving');
       saveTimer.current = setTimeout(() => {
@@ -385,7 +380,7 @@ export const FloatingElementToolbar: React.FC<{
         });
       }, SAVE_DEBOUNCE_MS);
     },
-    [selected, currentPageData, currentLang, updateSectionField, saveCurrentPage]
+    [selected, currentLang, updateElementStyle, saveCurrentPage]
   );
 
   const switchPaletteStateTab = useCallback(
@@ -460,10 +455,14 @@ export const FloatingElementToolbar: React.FC<{
 
   const bumpFontSize = useCallback(
     (delta: number) => {
-      const current = parseFloat(style.fontSize || '') || 16;
+      // Si aucune taille n'est encore stockée, lire la taille réelle du DOM
+      const stored = parseFloat(style.fontSize || '') || 0;
+      const current = stored > 0
+        ? stored
+        : (selected?.el ? parseFloat(window.getComputedStyle(selected.el).fontSize) || 16 : 16);
       commit({ fontSize: `${Math.max(8, Math.min(160, current + delta))}px` });
     },
-    [commit, style.fontSize]
+    [commit, style.fontSize, selected]
   );
 
   // Sauvegarde et restauration de sélection pour éviter de la perdre au clic sur la barre d'outils
@@ -592,13 +591,22 @@ export const FloatingElementToolbar: React.FC<{
     const elementKey = selected.elementKey;
     const clickableElementKey = selected.clickableElementKey;
 
-    const currentSections = (currentPageData?.sections || {}) as Record<string, Record<string, unknown>>;
-    const currentSection = currentSections[sectionKey] || {};
-    const currentBag = { ...((currentSection._elements as Record<string, ElementStyle>) || {}) };
-
-    delete currentBag[elementKey];
-    if (clickableElementKey) {
-      delete currentBag[clickableElementKey];
+    // Suppression des styles via le contexte synchrone (pagesRef) pour éviter une lecture périmée
+    // On écrase avec un objet vide → updateElementStyle supprime la clé si vide
+    const keysToDelete: Record<string, undefined> = {};
+    // On ne peut pas "supprimer" via patch seul, on passe par updateSectionField après avoir vidé le bag
+    // Pour chaque clé de style connue, on met undefined
+    const styleKeys: (keyof ElementStyle)[] = [
+      'fontSize', 'fontWeight', 'fontStyle', 'textDecoration', 'textAlign', 'color',
+      'backgroundColor', 'borderRadius', 'borderColor', 'borderWidth', 'borderStyle',
+      'padding', 'width', 'offsetX', 'offsetY', 'hover', 'active', 'buttonEffect',
+    ];
+    for (const k of styleKeys) {
+      (keysToDelete as Record<string, unknown>)[k] = undefined;
+    }
+    updateElementStyle(sectionKey, elementKey, keysToDelete as Record<string, unknown>);
+    if (clickableElementKey && clickableElementKey !== elementKey) {
+      updateElementStyle(sectionKey, clickableElementKey, keysToDelete as Record<string, unknown>);
     }
 
     const targets = [selected.el, selected.clickableEl].filter(Boolean) as HTMLElement[];
@@ -624,7 +632,6 @@ export const FloatingElementToolbar: React.FC<{
       }
     }
 
-    updateSectionField(sectionKey, '_elements', currentBag);
     if (saveTimer.current) clearTimeout(saveTimer.current);
     setSaveState('saving');
     saveTimer.current = setTimeout(() => {
@@ -633,7 +640,7 @@ export const FloatingElementToolbar: React.FC<{
         setTimeout(() => setSaveState('idle'), 2500);
       });
     }, SAVE_DEBOUNCE_MS);
-  }, [selected, currentPageData, updateSectionField, saveCurrentPage]);
+  }, [selected, updateElementStyle, saveCurrentPage]);
 
   const switchEffectsPreviewState = useCallback(
     (state: 'normal' | 'hover' | 'active') => {
@@ -826,7 +833,7 @@ export const FloatingElementToolbar: React.FC<{
                 <span className="font-mono text-[11px] font-bold">A−</span>
               </button>
               <span className="font-mono text-[10px] text-[#B9B7B1] min-w-[32px] text-center font-bold">
-                {style.fontSize || '16px'}
+                {style.fontSize || (selected?.el ? `${Math.round(parseFloat(window.getComputedStyle(selected.el).fontSize) || 16)}px` : '16px')}
               </span>
               <button
                 type="button"

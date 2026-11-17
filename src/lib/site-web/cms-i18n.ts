@@ -54,6 +54,11 @@ export function getCmsFieldTranslation(
     if (stored && typeof stored.value === 'string' && stored.value.length > 0) {
       return stored;
     }
+    // Si stored existe (même vide), l'utilisateur a explicitement effacé le champ → retourner vide avec statut pour
+    // permettre à getCmsText de respecter l'intention (ne pas appliquer le fallback composant)
+    if (stored && typeof stored.value === 'string') {
+      return stored; // value peut être '' mais c'est une suppression volontaire
+    }
     // Fallback rétrocompatible : lire la racine du champ plat existant
     const rootVal = sec?.[fieldKey];
     if (typeof rootVal === 'string' && rootVal.length > 0) {
@@ -85,11 +90,21 @@ export function getCmsText(
     return translation.value;
   }
 
+  // Suppression volontaire : si le statut indique que l'utilisateur a édité le champ (source/manual),
+  // ne pas appliquer le fallback du composant — respecter le vide intentionnel.
+  if (translation.status !== 'missing') {
+    return '';
+  }
+
   // Si langue cible vide, repli sur la source FR pour éviter un blanc non traduit
   if (normLang !== CMS_SOURCE_LANG) {
     const sourceTrans = getCmsFieldTranslation(section, fieldKey, CMS_SOURCE_LANG);
     if (sourceTrans.value && sourceTrans.value.trim().length > 0) {
       return sourceTrans.value;
+    }
+    // Même logique pour la source : suppression volontaire en FR → ne pas fallback
+    if (sourceTrans.status !== 'missing') {
+      return '';
     }
   }
 

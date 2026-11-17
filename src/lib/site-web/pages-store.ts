@@ -32,17 +32,12 @@ function readJsonDb(): CmsDb {
 }
 
 function writeJsonDb(db: CmsDb): boolean {
-  // En mode développement Next.js, écrire dans data/ déclenche le watcher
-  // HMR de Turbopack/Webpack et provoque un rechargement complet de la page,
-  // faisant perdre l'état d'édition CMS en cours. On ne persiste le JSON
-  // local qu'en production (Cloud Run) où il sert de fallback de démarrage.
-  if (process.env.NODE_ENV === 'development') return true;
   try {
     fs.mkdirSync(path.dirname(DATA_FILE), { recursive: true });
     fs.writeFileSync(DATA_FILE, JSON.stringify(db, null, 2), 'utf-8');
     return true;
   } catch (err) {
-    console.warn('[pages-store] JSON write failed (attendu en production Cloud Run):', err);
+    console.warn('[pages-store] JSON write failed:', err);
     return false;
   }
 }
@@ -190,20 +185,19 @@ async function firestoreSetSettings(settings: CmsBackendSettings): Promise<boole
  * Firestore est la source de vérité ; le JSON local est un fallback.
  */
 export async function readCmsDbAsync(): Promise<CmsDb> {
+  const jsonDb = readJsonDb();
   const [firestorePages, firestoreSettings] = await Promise.all([
     firestoreGetAllPages(),
     firestoreGetSettings(),
   ]);
 
-  if (Object.keys(firestorePages).length > 0 || firestoreSettings !== null) {
-    return {
-      pages: firestorePages,
-      settings: firestoreSettings || undefined,
-    };
-  }
-
-  // Firestore vide → on relit le JSON local (migration initiale)
-  return readJsonDb();
+  return {
+    pages: {
+      ...(jsonDb.pages || {}),
+      ...firestorePages,
+    },
+    settings: firestoreSettings || jsonDb.settings || undefined,
+  };
 }
 
 /**
@@ -223,38 +217,39 @@ export function writeCmsDb(db: CmsDb): boolean {
 // ─── Pages ────────────────────────────────────────────────────────────────────
 
 export async function getCmsPages(): Promise<Record<string, CmsPageData>> {
+  const jsonPages = readJsonDb().pages || {};
   const [firestorePages] = await Promise.all([firestoreGetAllPages()]);
-  if (Object.keys(firestorePages).length > 0) return firestorePages;
-  return readJsonDb().pages || {};
+  return {
+    ...jsonPages,
+    ...firestorePages,
+  };
 }
 
 export async function getCmsPage(pageId: string): Promise<CmsPageData | null> {
-  // Priorité Firestore
-  const firestorePage = await firestoreGetPage(pageId);
-  if (firestorePage) return firestorePage;
-
-  // Fallback JSON local (migration initiale / dev local sans Firestore)
   const jsonPage = readJsonDb().pages?.[pageId] || null;
-  if (jsonPage) {
-    // Opportuniste : on migre la page dans Firestore si on en a une localement
-    console.log(`[pages-store] Migration JSON→Firestore de la page "${pageId}"`);
-    void firestoreSetPage(pageId, jsonPage);
+  const firestorePage = await firestoreGetPage(pageId);
+  if (firestorePage) {
+    if (jsonPage) {
+      return {
+        ...jsonPage,
+        ...firestorePage,
+        sections: {
+          ...((jsonPage.sections as Record<string, unknown> | undefined) || {}),
+          ...((firestorePage.sections as Record<string, unknown> | undefined) || {}),
+        },
+      };
+    }
+    return firestorePage;
   }
   return jsonPage;
 }
 
 /**
  * Sauvegarde une page.
- * Écrit TOUJOURS dans Firestore (persistance garantie).
- * Tente aussi le JSON local en best-effort (utile en dev local).
+ * Écrit dans Firestore ET dans le JSON local pour une persistance résiliente.
  */
 export async function saveCmsPage(pageId: string, page: CmsPageData): Promise<CmsDb> {
   const existing = await getCmsPage(pageId);
-  // Fusion AU NIVEAU DES SECTIONS : un PUT qui ne transporte pas une section
-  // existante (état client périmé, second onglet, requête partielle) ne doit
-  // jamais l'effacer. Remplacement au niveau page = perte de données
-  // silencieuse ; ici on ne supprime une section que si la section envoyée
-  // contient explicitement une valeur (jamais via omission).
   const mergedSections = {
     ...((existing?.sections as Record<string, unknown> | undefined) || {}),
     ...((page.sections as Record<string, unknown> | undefined) || {}),
@@ -269,14 +264,16 @@ export async function saveCmsPage(pageId: string, page: CmsPageData): Promise<Cm
   // Nettoie récursivement toute valeur undefined pour Firestore
   const merged: CmsPageData = JSON.parse(JSON.stringify(rawMerged));
 
-  // Écriture Firestore (source de vérité)
-  const ok = await firestoreSetPage(pageId, merged);
-  if (!ok) {
-    console.error(`[pages-store] ÉCHEC Firestore pour la page "${pageId}"`);
-    throw new Error(`Échec de l'écriture Firestore pour la page "${pageId}".`);
+  // 1. Écriture Firestore (si dispo)
+  let firestoreOk = false;
+  try {
+    firestoreOk = await firestoreSetPage(pageId, merged);
+  } catch (err) {
+    console.warn(`[pages-store] Firestore setPage failed for "${pageId}":`, err);
   }
 
-  // Écriture JSON local (best-effort, échoue silencieusement en Cloud Run)
+  // 2. Écriture JSON local (persistance locale / fallback / dev)
+  let jsonOk = false;
   try {
     const jsonDb = readJsonDb();
     const nextDb: CmsDb = {
@@ -284,9 +281,14 @@ export async function saveCmsPage(pageId: string, page: CmsPageData): Promise<Cm
       pages: { ...(jsonDb.pages || {}), [pageId]: merged },
       updatedAt: new Date().toISOString(),
     };
-    writeJsonDb(nextDb);
-  } catch {
-    // ignoré en production
+    jsonOk = writeJsonDb(nextDb);
+  } catch (err) {
+    console.warn(`[pages-store] JSON write failed for "${pageId}":`, err);
+  }
+
+  if (!firestoreOk && !jsonOk) {
+    console.error(`[pages-store] ÉCHEC Firestore ET JSON pour la page "${pageId}"`);
+    throw new Error(`Échec de la sauvegarde pour la page "${pageId}".`);
   }
 
   return {
