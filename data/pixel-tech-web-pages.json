@@ -4,7 +4,7 @@
       "id": "home",
       "name": "home",
       "slug": "/home",
-      "updatedAt": "2026-11-17T21:16:22.777Z",
+      "updatedAt": "2026-11-17T21:39:05.618Z",
       "sections": {
         "pixia-web": {
           "text_1790257213042": "sdsdsdsdÉDITEUR DIRECT : CLIQUEZ SUR UN TEXTE OU UNE IMAGE",
@@ -541,18 +541,6 @@
             "div:2/section:1/div:1/h2:1/span:1": {
               "color": "#e60505"
             },
-            "titleLine3": {
-              "color": "#e9683d",
-              "fontSize": "50px",
-              "backgroundColor": "transparent",
-              "width": "630px"
-            },
-            "titleLine2": {
-              "color": "#e9683d",
-              "fontSize": "50px",
-              "offsetX": -220,
-              "offsetY": 0
-            },
             "badge": {
               "offsetX": -48,
               "offsetY": 0,
@@ -566,7 +554,7 @@
               "offsetY": 0
             },
             "title": {
-              "width": "968px",
+              "width": "1353px",
               "offsetX": 116,
               "offsetY": 0,
               "color": "#e9683d"
@@ -2492,5 +2480,5 @@
       }
     }
   },
-  "updatedAt": "2026-11-17T21:16:25.004Z"
+  "updatedAt": "2026-11-17T21:39:09.669Z"
 }
