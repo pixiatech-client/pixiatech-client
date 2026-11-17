@@ -379,9 +379,12 @@ export const VisualInPlaceEditor: React.FC = () => {
         box-shadow: 0 0 15px rgba(195, 249, 16, 0.3) !important;
       }
       /* En mode édition CMS : tous les éléments de contenu data-reveal doivent être visibles et éditables immédiatement */
-      #pixia-web [data-reveal="true"] {
+      #pixia-web [data-reveal="true"]:not([data-cms-offset]) {
         opacity: 1 !important;
         transform: none !important;
+      }
+      #pixia-web [data-reveal="true"][data-cms-offset] {
+        opacity: 1 !important;
       }
       /* Mode édition CMS : déverrouiller tous les conteneurs et textes du footer pour inspection et édition */
       body.cms-editing #site-footer,

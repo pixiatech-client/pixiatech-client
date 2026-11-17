@@ -4,7 +4,7 @@
       "id": "home",
       "name": "home",
       "slug": "/home",
-      "updatedAt": "2026-11-08T13:50:15.184Z",
+      "updatedAt": "2026-11-17T21:16:22.777Z",
       "sections": {
         "pixia-web": {
           "text_1790257213042": "sdsdsdsdÉDITEUR DIRECT : CLIQUEZ SUR UN TEXTE OU UNE IMAGE",
@@ -325,7 +325,7 @@
           },
           "minHeight": 773,
           "paddingBottom": 55,
-          "slideImage1": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FECRAN_LED_VENTE_SUR_MESURE_1oubk.webp?alt=media",
+          "slideImage1": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2Fa7444871-7002-4900-b1b3-7473744525e8_vawmr.png?alt=media",
           "_elements": {
             "div:2/section:1/div:7/div:1/div:3/span:2": {
               "text": "PROJETS INTERNATIONAUX 11"
@@ -369,12 +369,12 @@
               "fontStyle": "normal"
             },
             "slideImage1": {
-              "src": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FECRAN_LED_VENTE_SUR_MESURE_1oubk.webp?alt=media",
+              "src": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2Fa7444871-7002-4900-b1b3-7473744525e8_vawmr.png?alt=media",
               "mediaType": "image",
               "overlay": {
                 "enabled": true,
                 "color": "#080808",
-                "opacity": 86,
+                "opacity": 70,
                 "gradientEnabled": false,
                 "gradientStartColor": "#000000",
                 "gradientStartOpacity": 45,
@@ -384,8 +384,19 @@
               }
             },
             "slideImage3": {
-              "src": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2Fdeaaf996-b057-4335-845d-4677516ac285__2__22m8w.webp?alt=media",
-              "mediaType": "image"
+              "src": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2Fdeaaf996-b057-4335-845d-4677516ac285__2__q8ftz.webp?alt=media",
+              "mediaType": "image",
+              "overlay": {
+                "enabled": true,
+                "color": "#000000",
+                "opacity": 70,
+                "gradientEnabled": false,
+                "gradientStartColor": "#000000",
+                "gradientStartOpacity": 45,
+                "gradientEndColor": "#000000",
+                "gradientEndOpacity": 85,
+                "gradientDirection": "to bottom"
+              }
             },
             "title": {
               "fontSize": "62px",
@@ -394,7 +405,18 @@
             },
             "slideImage2": {
               "src": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FECRAN_LED_LOCATION__2___2___2___2___2___2__etc9v.webp?alt=media",
-              "mediaType": "image"
+              "mediaType": "image",
+              "overlay": {
+                "enabled": true,
+                "color": "#000000",
+                "opacity": 70,
+                "gradientEnabled": false,
+                "gradientStartColor": "#000000",
+                "gradientStartOpacity": 45,
+                "gradientEndColor": "#000000",
+                "gradientEndOpacity": 85,
+                "gradientDirection": "to bottom"
+              }
             },
             "section:1/div:5/div:1/div:3/span:2": {
               "backgroundColor": "transparent",
@@ -405,17 +427,41 @@
               "backgroundColor": "transparent"
             },
             "primaryCta": {
+              "hover": {
+                "color": "#f5f4f0",
+                "backgroundColor": "transparent"
+              },
               "buttonEffect": {
-                "type": "lift",
+                "type": "glow",
                 "intensity": 60,
                 "duration": 300,
                 "color": "#C3F910",
                 "amplitude": 4
-              }
+              },
+              "backgroundColor": "transparent",
+              "color": "#f5f4f0",
+              "borderStyle": "solid",
+              "borderRadius": "12px",
+              "borderWidth": "2px"
+            },
+            "secondaryCta": {
+              "hover": {
+                "backgroundColor": "transparent",
+                "color": "#faf5f5"
+              },
+              "buttonEffect": {
+                "type": "signature",
+                "intensity": 60,
+                "duration": 300,
+                "color": "#C3F910",
+                "amplitude": 4
+              },
+              "borderRadius": "12px",
+              "borderStyle": "solid"
             }
           },
           "slideImage2": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FECRAN_LED_LOCATION__2___2___2___2___2___2__etc9v.webp?alt=media",
-          "slideImage3": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2Fdeaaf996-b057-4335-845d-4677516ac285__2__22m8w.webp?alt=media",
+          "slideImage3": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2Fdeaaf996-b057-4335-845d-4677516ac285__2__q8ftz.webp?alt=media",
           "title": "TECHNOLOGIES03 D’AFFICHAGE 01",
           "badge": "PIXIATECH / VISUAL TECHNOLOGY ",
           "description": "Spécialisée dans la vente d’écrans professionnels et de technologies d’affichage LED, Micro LED et OLED, pour les entreprises, les commerces, l’architecture et l’événementiel",
@@ -484,10 +530,6 @@
             },
             "nav:1/div:1/a:4": {
               "text_fr": "ENGAGEMENTS"
-            },
-            "nav:1/a:1": {
-              "fontSize": "38px",
-              "fontWeight": "700"
             }
           }
         },
@@ -502,7 +544,8 @@
             "titleLine3": {
               "color": "#e9683d",
               "fontSize": "50px",
-              "backgroundColor": "transparent"
+              "backgroundColor": "transparent",
+              "width": "630px"
             },
             "titleLine2": {
               "color": "#e9683d",
@@ -510,14 +553,8 @@
               "offsetX": -220,
               "offsetY": 0
             },
-            "title": {
-              "color": "#e9683d",
-              "fontSize": "50px",
-              "offsetX": -848,
-              "offsetY": -328
-            },
             "badge": {
-              "offsetX": 0,
+              "offsetX": -48,
               "offsetY": 0,
               "fontSize": "14px"
             },
@@ -525,14 +562,20 @@
               "fontSize": "20px",
               "fontWeight": "400",
               "width": "809px",
-              "offsetX": 4,
+              "offsetX": -92,
               "offsetY": 0
+            },
+            "title": {
+              "width": "968px",
+              "offsetX": 116,
+              "offsetY": 0,
+              "color": "#e9683d"
             }
           },
           "paddingTop": 0,
           "overlayColor": "#d50b0b",
           "overlayOpacity": 85,
-          "minHeight": 334,
+          "minHeight": 574,
           "marginBottom": 0,
           "paddingBottom": 0,
           "visible": true,
@@ -1583,10 +1626,6 @@
               "width": "959px",
               "color": "#ff9900"
             },
-            "tech_coldled_image": {
-              "src": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2F6766e48f-c4ff-464d-8f80-06d8be171aab__2__kejb3.webp?alt=media",
-              "mediaType": "image"
-            },
             "tech_solidskin_image": {
               "src": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2Fe04d1b87-6c5c-46ae-b3ce-fa2978731c40__2__lvn1h.webp?alt=media",
               "mediaType": "image"
@@ -1607,6 +1646,31 @@
             "tech_infinite_image": {
               "src": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2F9f059472-2817-41ae-814f-da912a5bdbe9__2__3lfyl.webp?alt=media",
               "mediaType": "image"
+            },
+            "tech_coldled_desc": {
+              "color": "#ffffff",
+              "backgroundColor": "transparent",
+              "width": "435px"
+            },
+            "tech_coldled_image": {
+              "src": "/uploads/products/armk2/back.jpg",
+              "mediaType": "image",
+              "overlay": {
+                "enabled": true,
+                "color": "#000000",
+                "opacity": 0,
+                "gradientEnabled": true,
+                "gradientStartColor": "#000000",
+                "gradientStartOpacity": 0,
+                "gradientEndColor": "#000000",
+                "gradientEndOpacity": 0,
+                "gradientDirection": "to top"
+              }
+            },
+            "tech_coldled_name": {
+              "backgroundColor": "transparent",
+              "width": "277px",
+              "fontWeight": "700"
             }
           },
           "_i18n": {
@@ -1620,17 +1684,17 @@
             },
             "tech_coldled_desc": {
               "fr": {
-                "value": "Conseil, livraison, installation et mise en service : nous prenons en charge les étapes techniques pour simplifier votre projet, jusqu’à la diffusion de vos premiers contenus.",
+                "value": "Conseil, livraison, installation et mise en service : nous prenons en charge les étapes techniques pour simplifier votre projet, jusqu’à la diffusion de vos premiers contenus.dsqsdqsd",
                 "status": "source",
-                "updatedAt": "2026-11-06T22:32:56.064Z",
-                "sourceText": "Conseil, livraison, installation et mise en service : nous prenons en charge les étapes techniques pour simplifier votre projet, jusqu’à la diffusion de vos premiers contenus."
+                "updatedAt": "2026-11-17T15:19:21.657Z",
+                "sourceText": "Conseil, livraison, installation et mise en service : nous prenons en charge les étapes techniques pour simplifier votre projet, jusqu’à la diffusion de vos premiers contenus.dsqsdqsd"
               }
             },
             "tech_coldled_name": {
               "fr": {
                 "value": "UN PROJET CLÉ EN MAIN",
                 "status": "source",
-                "updatedAt": "2026-11-06T22:33:19.032Z",
+                "updatedAt": "2026-11-17T11:25:24.201Z",
                 "sourceText": "UN PROJET CLÉ EN MAIN"
               }
             },
@@ -1716,7 +1780,7 @@
             }
           },
           "tech_solidskin_desc": "Vos équipements sont contrôlés et leur configuration vérifiée avant leur déploiement. Chaque installation est préparée pour offrir un affichage adapté à votre environnement et à votre utilisation.",
-          "tech_coldled_desc": "Conseil, livraison, installation et mise en service : nous prenons en charge les étapes techniques pour simplifier votre projet, jusqu’à la diffusion de vos premiers contenus.",
+          "tech_coldled_desc": "Conseil, livraison, installation et mise en service : nous prenons en charge les étapes techniques pour simplifier votre projet, jusqu’à la diffusion de vos premiers contenus.dsqsdqsd",
           "tech_coldled_name": "UN PROJET CLÉ EN MAIN",
           "tech_armorled_name": "UN BUDGET TRANSPARENT",
           "tech_solidskin_name": "LA QUALITÉ AVANT LA LIVRAISON",
@@ -1726,7 +1790,7 @@
           "tech_infinite_desc": "Vos équipements achetés bénéficient d’une garantie de 2 ans, selon les conditions applicables. Après la mise en service, nous restons votre interlocuteur pour l’assistance technique et le SAV.",
           "tech_infinite_name": "GARANTIE 2 ANS & ASSISTANCE",
           "tech_solidskin_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2Fe04d1b87-6c5c-46ae-b3ce-fa2978731c40__2__lvn1h.webp?alt=media",
-          "tech_coldled_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2F6766e48f-c4ff-464d-8f80-06d8be171aab__2__kejb3.webp?alt=media",
+          "tech_coldled_image": "/uploads/products/armk2/back.jpg",
           "tech_armorled_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2F2f8ed08b-d78d-4283-9273-b227a5b96dea_13gjc.webp?alt=media",
           "tech_infinite_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2F9f059472-2817-41ae-814f-da912a5bdbe9__2__3lfyl.webp?alt=media",
           "tech_cbsf_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2Ff820cc21-5b77-4b45-abb0-da8059e2b0ec__2__8vlv7.webp?alt=media",
@@ -2296,58 +2360,77 @@
     },
     "insights": {
       "id": "insights",
-      "name": "Ressources & Guides",
+      "name": "insights",
       "slug": "/insights",
-      "updatedAt": "2026-11-17T20:32:23.367Z",
+      "updatedAt": "2026-11-17T21:15:49.577Z",
       "sections": {
         "insights_hero": {
-          "eyebrow": "PIXIATECH / INSIGHTS",
-          "h1Line1": "Notes sur la lumière,",
-          "h1Line2": "les pixels et l'espace.",
-          "lede": "Guides, notes techniques et observations terrain de l'équipe d'ingénierie PixiaTech.",
-          "_elements": {},
           "_i18n": {
             "eyebrow": {
               "fr": {
-                "value": "PIXIATECH / INSIGHTS",
-                "status": "source"
-              },
-              "en": {
-                "value": "PIXIATECH / INSIGHTS",
-                "status": "translated"
-              }
-            },
-            "h1Line1": {
-              "fr": {
-                "value": "Notes sur la lumière,",
-                "status": "source"
-              },
-              "en": {
-                "value": "Notes on light,",
-                "status": "translated"
+                "value": "PIXIATECH / NOS CONSEILS ",
+                "status": "source",
+                "updatedAt": "2026-10-22T10:25:53.777Z",
+                "sourceText": "PIXIATECH / NOS CONSEILS "
               }
             },
             "h1Line2": {
               "fr": {
                 "value": "les pixels et l'espace.",
-                "status": "source"
-              },
-              "en": {
-                "value": "pixels and space.",
-                "status": "translated"
-              }
-            },
-            "lede": {
-              "fr": {
-                "value": "Guides, notes techniques et observations terrain de l'équipe d'ingénierie PixiaTech.",
-                "status": "source"
-              },
-              "en": {
-                "value": "Guides, technical notes and field observations from the PixiaTech engineering team.",
-                "status": "translated"
+                "status": "source",
+                "updatedAt": "2026-11-17T20:04:50.914Z",
+                "sourceText": "les pixels et l'espace."
               }
             }
+          },
+          "eyebrow": "PIXIATECH / NOS CONSEILS ",
+          "_elements": {},
+          "h1Line2": "les pixels et l'espace."
+        },
+        "header": {
+          "_elements": {
+            "nav:1/div:1/a:2": {
+              "text_fr": "Nos conseils"
+            },
+            "nav:1/div:1/a:2/a:1/span:1": {
+              "backgroundColor": "transparent"
+            },
+            "nav:1/div:1/a:2/a:1": {
+              "backgroundColor": "transparent"
+            }
           }
+        },
+        "insights_featured": {
+          "_i18n": {
+            "featured_title": {
+              "fr": {
+                "value": "Configurateur guidé LED : personnalisez votre projet et obtenez une estimation gratuite",
+                "status": "source",
+                "updatedAt": "2026-11-17T18:15:15.568Z",
+                "sourceText": "Configurateur guidé LED : personnalisez votre projet et obtenez une estimation gratuite"
+              }
+            },
+            "featured_desc": {
+              "fr": {
+                "value": "Vente ou location : laissez-vous guider étape par étape, choisissez les dimensions et les options de votre écran LED, puis obtenez une estimation instantanée et gratuite de votre projet.",
+                "status": "source",
+                "updatedAt": "2026-11-17T18:14:48.389Z",
+                "sourceText": "Vente ou location : laissez-vous guider étape par étape, choisissez les dimensions et les options de votre écran LED, puis obtenez une estimation instantanée et gratuite de votre projet."
+              }
+            }
+          },
+          "featured_title": "Configurateur guidé LED : personnalisez votre projet et obtenez une estimation gratuite",
+          "_elements": {
+            "featured_title": {
+              "offsetX": 0,
+              "offsetY": 0
+            },
+            "div:1/a:1": {
+              "offsetX": 0,
+              "offsetY": 0
+            }
+          },
+          "featured_desc": "Vente ou location : laissez-vous guider étape par étape, choisissez les dimensions et les options de votre écran LED, puis obtenez une estimation instantanée et gratuite de votre projet."
         }
       }
     },
@@ -2409,5 +2492,5 @@
       }
     }
   },
-  "updatedAt": "2026-11-08T13:50:15.314Z"
+  "updatedAt": "2026-11-17T21:16:25.004Z"
 }

@@ -371,6 +371,8 @@ export const FloatingElementToolbar: React.FC<{
         applyElementStyle(selected.clickableEl, nextStyle, normalizeLang(currentLang), clickStyledId);
       }
 
+      updateCoords();
+
       if (saveTimer.current) clearTimeout(saveTimer.current);
       setSaveState('saving');
       saveTimer.current = setTimeout(() => {
@@ -380,7 +382,7 @@ export const FloatingElementToolbar: React.FC<{
         });
       }, SAVE_DEBOUNCE_MS);
     },
-    [selected, currentLang, updateElementStyle, saveCurrentPage]
+    [selected, currentLang, updateElementStyle, saveCurrentPage, updateCoords]
   );
 
   const switchPaletteStateTab = useCallback(
@@ -559,31 +561,66 @@ export const FloatingElementToolbar: React.FC<{
 
     const startX = e.clientX;
     const el = selected.el;
+
+    if (window.getComputedStyle(el).display === 'inline') {
+      el.style.setProperty('display', 'inline-block', 'important');
+    }
+
     const startWidth = el.offsetWidth;
+    const startOffsetX = style.offsetX ?? 0;
+    const startOffsetY = style.offsetY ?? 0;
 
     const handleMove = (moveEvent: MouseEvent) => {
       const dx = moveEvent.clientX - startX;
-      const newWidth = Math.max(40, side === 'right' ? startWidth + dx : startWidth - dx);
-      el.style.width = `${newWidth}px`;
-      el.style.maxWidth = `${newWidth}px`;
-      el.style.boxSizing = 'border-box';
+      if (side === 'right') {
+        const newWidth = Math.max(40, startWidth + dx);
+        el.style.setProperty('width', `${newWidth}px`, 'important');
+        el.style.setProperty('max-width', `${newWidth}px`, 'important');
+        el.style.boxSizing = 'border-box';
+      } else {
+        const newWidth = Math.max(40, startWidth - dx);
+        const deltaW = startWidth - newWidth;
+        const newOffsetX = startOffsetX + deltaW;
+        el.style.setProperty('width', `${newWidth}px`, 'important');
+        el.style.setProperty('max-width', `${newWidth}px`, 'important');
+        el.style.boxSizing = 'border-box';
+        el.style.setProperty('transform', `translate(${newOffsetX}px, ${startOffsetY}px)`, 'important');
+        el.setAttribute('data-cms-offset', '1');
+      }
+      updateCoords();
     };
 
     const handleUp = (upEvent: MouseEvent) => {
       window.removeEventListener('mousemove', handleMove);
       window.removeEventListener('mouseup', handleUp);
       const dx = upEvent.clientX - startX;
-      const finalWidth = Math.max(40, side === 'right' ? startWidth + dx : startWidth - dx);
-      commit({ width: `${finalWidth}px` });
+      if (side === 'right') {
+        const finalWidth = Math.max(40, startWidth + dx);
+        commit({ width: `${finalWidth}px` });
+      } else {
+        const finalWidth = Math.max(40, startWidth - dx);
+        const deltaW = startWidth - finalWidth;
+        const finalOffsetX = startOffsetX + deltaW;
+        commit({ width: `${finalWidth}px`, offsetX: finalOffsetX });
+      }
+      updateCoords();
     };
 
     window.addEventListener('mousemove', handleMove);
     window.addEventListener('mouseup', handleUp);
-  }, [selected, commit]);
+  }, [selected, style.offsetX, style.offsetY, commit, updateCoords]);
 
   const resetPosition = useCallback(() => {
     commit({ offsetX: 0, offsetY: 0 });
-  }, [commit]);
+    if (selected?.el) {
+      selected.el.style.removeProperty('transform');
+      selected.el.removeAttribute('data-cms-offset');
+      if (window.getComputedStyle(selected.el).display === 'inline-block' && !style.width && !style.padding) {
+        selected.el.style.removeProperty('display');
+      }
+    }
+    updateCoords();
+  }, [commit, selected, style.width, style.padding, updateCoords]);
 
   const resetElementStyles = useCallback(() => {
     if (!selected) return;
@@ -623,7 +660,12 @@ export const FloatingElementToolbar: React.FC<{
       target.style.borderWidth = '';
       target.style.borderStyle = '';
       target.style.padding = '';
-      target.style.transform = '';
+      target.style.removeProperty('display');
+      target.style.removeProperty('transform');
+      target.style.removeProperty('width');
+      target.style.removeProperty('max-width');
+      target.style.removeProperty('box-sizing');
+      target.removeAttribute('data-cms-offset');
       target.removeAttribute('data-cms-preview-state');
       const sId = target.getAttribute('data-cms-styled-id');
       if (sId) {
@@ -987,7 +1029,7 @@ export const FloatingElementToolbar: React.FC<{
             title="Décalage horizontal / vertical (nudge)"
           >
             <Move className="w-3 h-3" />
-            {style.offsetX || 0},{style.offsetY || 0}
+            X:{style.offsetX || 0} Y:{style.offsetY || 0}
           </span>
           <button
             type="button"

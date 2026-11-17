@@ -105,7 +105,7 @@ export type ElementStyle = {
 };
 
 /** Marque les transform posés par l'éditeur, pour ne toucher qu'aux nôtres. */
-const OFFSET_MARK = 'data-cms-el-offset';
+const OFFSET_MARK = 'data-cms-offset';
 
 export const EMPTY_ELEMENT_STYLE: ElementStyle = {};
 
@@ -730,16 +730,24 @@ export function applyElementStyle(el: HTMLElement, style: ElementStyle, lang?: s
   if (style.textDecoration !== undefined) el.style.textDecoration = style.textDecoration;
   if (style.textAlign !== undefined) el.style.textAlign = style.textAlign;
   if (style.padding !== undefined) el.style.padding = style.padding;
-  if (style.width !== undefined) {
+  if (style.width !== undefined && style.width !== '') {
     const w = style.width.trim();
-    el.style.width = style.width;
+    if (typeof window !== 'undefined' && window.getComputedStyle(el).display === 'inline') {
+      el.style.setProperty('display', 'inline-block', 'important');
+    }
+    el.style.setProperty('width', style.width, 'important');
     // Mobile-safe : la valeur enregistrée reste la référence desktop, mais la
     // largeur ne peut jamais dépasser le conteneur (better-layout #10 :
     // « no fixed widths on text containers »). Sur desktop le conteneur est
     // plus large que la valeur → `min(valeur, 100%)` = valeur, rendu identique.
     // Sur mobile, le texte wrapp dans la largeur disponible au lieu d'être coupé.
-    el.style.maxWidth = /^(?:\d+(?:\.\d+)?)(?:px|%)$/.test(w) ? `min(${w}, 100%)` : style.width;
+    const maxW = /^(?:\d+(?:\.\d+)?)(?:px|%)$/.test(w) ? `min(${w}, 100%)` : style.width;
+    el.style.setProperty('max-width', maxW, 'important');
     el.style.boxSizing = 'border-box';
+  } else if (style.width === '') {
+    el.style.removeProperty('width');
+    el.style.removeProperty('max-width');
+    el.style.removeProperty('box-sizing');
   }
 
   // Propriétés qui peuvent être surchargées par hover/active :
@@ -836,11 +844,17 @@ export function applyElementStyle(el: HTMLElement, style: ElementStyle, lang?: s
   const x = style.offsetX ?? 0;
   const y = style.offsetY ?? 0;
   if (x !== 0 || y !== 0) {
-    el.style.transform = `translate(${x}px, ${y}px)`;
+    if (typeof window !== 'undefined' && window.getComputedStyle(el).display === 'inline') {
+      el.style.setProperty('display', 'inline-block', 'important');
+    }
+    el.style.setProperty('transform', `translate(${x}px, ${y}px)`, 'important');
     el.setAttribute(OFFSET_MARK, '1');
   } else if (el.hasAttribute(OFFSET_MARK)) {
     el.style.removeProperty('transform');
     el.removeAttribute(OFFSET_MARK);
+    if (!style.width && !style.padding && el.style.display === 'inline-block') {
+      el.style.removeProperty('display');
+    }
   }
 
   // Gestion des styles dynamiques (états Normal/Hover/Active dans le stylesheet)
