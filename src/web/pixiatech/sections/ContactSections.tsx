@@ -9,7 +9,7 @@ import {
   useTransform,
 } from 'framer-motion';
 import { trackFormSubmit } from '@/lib/analytics/tracker';
-import { DEFAULT_PAGE_CONTENT } from '@/lib/site-web/defaultPageContent';
+import { DEFAULT_CONTACT_INFO, DEFAULT_PAGE_CONTENT } from '@/lib/site-web/defaultPageContent';
 import AuroraBackground from '@/components/ui/aurora-background';
 import type { ContactInfo, ContactSubmissionPayload, PageContentConfig } from '@/lib/site-web/types';
 import type { Language } from '../../pixiatech-translations';
@@ -1587,11 +1587,13 @@ function RetailContact({
         {/* Console de coordonnées réelles sous la tablette */}
         {visibility.contactInfoCard && (
           <div className="ct-coords-console" data-reveal-group="true">
-            {visibility.infoCompanyRow && publicInfo.companyName && (
+            {visibility.infoCompanyRow && (
               <div className="ct-coord-card" data-reveal="true">
                 <span className="ct-coord-label">{lang === 'FR' ? 'Entreprise' : 'Company'}</span>
-                <span className="ct-coord-value">{publicInfo.companyName}</span>
-                {publicInfo.tagline && <span className="ct-coord-sub">{publicInfo.tagline}</span>}
+                <span className="ct-coord-value">{publicInfo.companyName || DEFAULT_CONTACT_INFO.companyName}</span>
+                {(publicInfo.tagline || DEFAULT_CONTACT_INFO.tagline) && (
+                  <span className="ct-coord-sub">{publicInfo.tagline || DEFAULT_CONTACT_INFO.tagline}</span>
+                )}
               </div>
             )}
             {visibility.infoAddressRow && (
@@ -1651,12 +1653,12 @@ function RetailContact({
                 </span>
               </div>
             )}
-            {visibility.infoSupportEmailRow && publicInfo.supportEmail && (
+            {visibility.infoSupportEmailRow && (
               <div className="ct-coord-card" data-reveal="true">
                 <span className="ct-coord-label">{lang === 'FR' ? 'Assistance' : 'Support'}</span>
                 <span className="ct-coord-value">
-                  <a href={`mailto:${publicInfo.supportEmail}`} className="ct-link">
-                    {publicInfo.supportEmail}
+                  <a href={`mailto:${publicInfo.supportEmail || DEFAULT_CONTACT_INFO.supportEmail}`} className="ct-link">
+                    {publicInfo.supportEmail || DEFAULT_CONTACT_INFO.supportEmail}
                   </a>
                 </span>
               </div>
@@ -1783,7 +1785,7 @@ export function ContactSections({ lang }: { lang: Language }) {
   // (libellés, titres) : les valeurs affichées viennent d'ici, et d'ici
   // seulement. C'est ce qui empêche l'adresse ou le téléphone de diverger
   // entre le module Contact et l'éditeur de page.
-  const [contactInfo, setContactInfo] = useState<ContactInfo | null>(null);
+  const [contactInfo, setContactInfo] = useState<ContactInfo>(DEFAULT_CONTACT_INFO);
 
   useEffect(() => {
     let alive = true;

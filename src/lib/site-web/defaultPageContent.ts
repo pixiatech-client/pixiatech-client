@@ -1,4 +1,4 @@
-import type { PageContentConfig } from './types';
+import type { ContactInfo, PageContentConfig } from './types';
 
 export const DEFAULT_PAGE_CONTENT: PageContentConfig = {
   visibility: {
@@ -226,4 +226,21 @@ export const DEFAULT_PAGE_CONTENT: PageContentConfig = {
     locationBadge: 'Showroom Saint-Ouen (93400)',
     warrantyText: 'Garantie constructeur 3 à 5 ans',
   },
+};
+
+export const DEFAULT_CONTACT_INFO: ContactInfo = {
+  companyName: 'PIXIATECH',
+  tagline: "Solutions d'affichage dynamique, murs d'images LED & technologies visuelles avancées",
+  address: '20-24 avenue Henri Barbusse',
+  postalCode: '93000',
+  city: 'Bobigny',
+  country: 'France',
+  primaryEmail: 'contact@pixiatech.com',
+  supportEmail: 'support@pixiatech.com',
+  phone1: '+33 7 71 59 31 66',
+  phone2: '+33 7 71 59 31 66',
+  whatsappNumber: '+337771593166',
+  workingHours: 'Lundi au Vendredi de 09h00 à 18h00 (CET)',
+  responseTimeCommitment: 'Réponse sous 2 heures ouvrées',
+  googleMapsUrl: 'https://www.google.com/maps/search/?api=1&query=20-24+avenue+Henri+Barbusse+93000+Bobigny+France',
 };

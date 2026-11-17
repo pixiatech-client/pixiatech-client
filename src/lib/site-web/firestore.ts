@@ -1,5 +1,5 @@
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
-import { DEFAULT_PAGE_CONTENT } from './defaultPageContent';
+import { DEFAULT_CONTACT_INFO, DEFAULT_PAGE_CONTENT } from './defaultPageContent';
 import type {
   AutoResponderConfig,
   ContactInfo,
@@ -12,22 +12,7 @@ import type {
 const SITE_WEB_COLLECTION = 'siteWeb';
 const MESSAGES_COLLECTION = 'siteWebMessages';
 
-export const DEFAULT_CONTACT_INFO: ContactInfo = {
-  companyName: 'PIXIATECH',
-  tagline: "Solutions d'affichage dynamique, murs d'images LED & technologies visuelles avancées",
-  address: '5 Rue la fontaine',
-  postalCode: '93400',
-  city: 'Saint-Ouen-sur-Seine',
-  country: 'France',
-  primaryEmail: 'contact@pixiatech.com',
-  supportEmail: 'support@pixiatech.com',
-  phone1: '+33 7 56 81 66 26',
-  phone2: '+33 7 71 59 31 66',
-  whatsappNumber: '+33756816626',
-  workingHours: 'Lundi au Vendredi : 09:00 - 18:00 (CET / Paris)',
-  responseTimeCommitment: 'Réponse sous 2 heures ouvrées',
-  googleMapsUrl: 'https://www.google.com/maps/search/?api=1&query=5+Rue+la+fontaine+93400+Saint-Ouen-sur-Seine+France',
-};
+export { DEFAULT_CONTACT_INFO } from './defaultPageContent';
 
 export function defaultSmtpConfig(): SmtpConfig {
   return {

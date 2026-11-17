@@ -33,12 +33,32 @@ export function useRevealObserver(
     const el = root.current;
     if (!el) return;
 
-    const targets = Array.from(el.querySelectorAll<HTMLElement>('[data-reveal="true"]'));
+    const revealTarget = (target: HTMLElement, delayMs?: number) => {
+      if (delayMs !== undefined && !target.style.transitionDelay) {
+        target.style.transitionDelay = `${delayMs}ms`;
+      }
+      target.classList.add('is-revealed');
+    };
 
     if (immediate) {
-      targets.forEach((t) => t.classList.add('is-revealed'));
-      return;
+      el.querySelectorAll<HTMLElement>('[data-reveal="true"]').forEach((t) => revealTarget(t));
+      const mutationObs = new MutationObserver((mutations) => {
+        for (const m of mutations) {
+          if (m.type === 'childList') {
+            m.addedNodes.forEach((node) => {
+              if (node instanceof HTMLElement) {
+                if (node.matches('[data-reveal="true"]')) revealTarget(node);
+                node.querySelectorAll<HTMLElement>('[data-reveal="true"]').forEach((t) => revealTarget(t));
+              }
+            });
+          }
+        }
+      });
+      mutationObs.observe(el, { childList: true, subtree: true });
+      return () => mutationObs.disconnect();
     }
+
+    const observedSet = new WeakSet<HTMLElement>();
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -58,8 +78,30 @@ export function useRevealObserver(
       { threshold, rootMargin },
     );
 
-    targets.forEach((t) => observer.observe(t));
-    return () => observer.disconnect();
+    const observeNewTargets = () => {
+      const targets = el.querySelectorAll<HTMLElement>('[data-reveal="true"]');
+      targets.forEach((t) => {
+        if (!observedSet.has(t)) {
+          observedSet.add(t);
+          if (t.classList.contains('is-revealed')) {
+            return;
+          }
+          observer.observe(t);
+        }
+      });
+    };
+
+    observeNewTargets();
+
+    const mutationObs = new MutationObserver(() => {
+      observeNewTargets();
+    });
+    mutationObs.observe(el, { childList: true, subtree: true });
+
+    return () => {
+      observer.disconnect();
+      mutationObs.disconnect();
+    };
   }, [root, threshold, rootMargin, immediate, trigger]);
 }
 
