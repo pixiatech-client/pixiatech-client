@@ -540,12 +540,33 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
             color: var(--accent, #C3F910);
           }
           .nav-desktop-cta { display: none !important; }
+          .nav-desktop-action { display: inline-flex !important; }
           @media (min-width: 1560px) {
             .nav-desktop-cta { display: inline-flex !important; }
           }
           @media (max-width: 1240px) {
             .nav-desktop-links { display: none !important; }
             .nav-burger-btn { display: inline-flex !important; }
+          }
+          /* Sur mobile (<= 900px) : masquer les actions secondaires de la navbar.
+             Seuls le Logo PIXIATECH à gauche et le Burger à droite restent affichés. */
+          @media (max-width: 900px) {
+            .nav-desktop-action { display: none !important; }
+            .nav-desktop-cta { display: none !important; }
+          }
+          @keyframes pxtSlideDown {
+            0% {
+              opacity: 0;
+              transform: translateY(-20px);
+            }
+            100% {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+          .nav-mobile {
+            animation: pxtSlideDown 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            will-change: transform, opacity;
           }
         `}</style>
 
@@ -743,6 +764,7 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
               type="button"
               aria-label="Administration"
               title="Administration"
+              className="nav-desktop-action no-acc"
               onClick={() => {
                 setMegaOpen(false);
                 setMobileMenuOpen(false);
@@ -772,6 +794,7 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
             <button
               data-cms-ignore
               type="button"
+              className="nav-desktop-action no-acc"
               onClick={() => pickLang(activeLang === 'FR' ? 'EN' : 'FR')}
               title={activeLang === 'FR' ? 'Passer en anglais' : 'Switch to French'}
               aria-label={activeLang === 'FR' ? 'Passer en anglais' : 'Switch to French'}
@@ -804,6 +827,7 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
             </button>
 
             <div
+              className="nav-desktop-action"
               style={{
                 width: 1,
                 height: 18,
@@ -817,6 +841,7 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
               type="button"
               aria-label={activeLang === 'FR' ? 'Recherche' : 'Search'}
               title={activeLang === 'FR' ? 'Recherche (⌘K)' : 'Search (⌘K)'}
+              className="nav-desktop-action no-acc"
               onClick={() => {
                 setMegaOpen(false);
                 setSearchOpen(true);
@@ -1214,6 +1239,158 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
               color: '#f5f4f0',
             }}
           >
+            {/* Langue & Espace Admin (en tête de menu mobile) */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                paddingBottom: 14,
+                marginBottom: 14,
+                borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Globe size={14} color={accentColor} />
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontFamily: 'var(--font-mono)',
+                    letterSpacing: '.16em',
+                    color: '#8A8880',
+                    textTransform: 'uppercase',
+                    fontWeight: 700,
+                  }}
+                >
+                  {activeLang === 'FR' ? 'LANGUE' : 'LANGUAGE'}
+                </span>
+              </div>
+              <div
+                style={{
+                  display: 'inline-flex',
+                  background: 'rgba(255, 255, 255, 0.07)',
+                  borderRadius: 9999,
+                  padding: 3,
+                  border: '1px solid rgba(255, 255, 255, 0.12)',
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => pickLang('FR')}
+                  style={{
+                    padding: '5px 14px',
+                    borderRadius: 9999,
+                    border: 0,
+                    cursor: 'pointer',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    letterSpacing: '.06em',
+                    background: activeLang === 'FR' ? accentColor : 'transparent',
+                    color: activeLang === 'FR' ? '#080808' : '#A3A3A3',
+                    transition: 'all .2s ease',
+                  }}
+                >
+                  FR
+                </button>
+                <button
+                  type="button"
+                  onClick={() => pickLang('EN')}
+                  style={{
+                    padding: '5px 14px',
+                    borderRadius: 9999,
+                    border: 0,
+                    cursor: 'pointer',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    letterSpacing: '.06em',
+                    background: activeLang === 'EN' ? accentColor : 'transparent',
+                    color: activeLang === 'EN' ? '#080808' : '#A3A3A3',
+                    transition: 'all .2s ease',
+                  }}
+                >
+                  EN
+                </button>
+              </div>
+            </div>
+
+            {/* Redirection Application / Espace Client */}
+            <a
+              href="https://app.pixiatech.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '13px 16px',
+                borderRadius: 10,
+                background: 'linear-gradient(135deg, rgba(195, 249, 16, 0.12) 0%, rgba(255, 255, 255, 0.03) 100%)',
+                border: '1px solid rgba(195, 249, 16, 0.32)',
+                color: '#FFFFFF',
+                textDecoration: 'none',
+                marginBottom: 12,
+                transition: 'all .25s ease',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div
+                  style={{
+                    width: 34,
+                    height: 34,
+                    borderRadius: 8,
+                    background: 'rgba(195, 249, 16, 0.18)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: accentColor,
+                    flexShrink: 0,
+                  }}
+                >
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                    <polyline points="15 3 21 3 21 9" />
+                    <line x1="10" y1="14" x2="21" y2="3" />
+                  </svg>
+                </div>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#FFFFFF', letterSpacing: '.04em' }}>
+                    {activeLang === 'FR' ? 'ACCÉDER À L’APPLICATION' : 'ACCESS CLIENT APP'}
+                  </div>
+                  <div style={{ fontSize: 11, color: '#A0A09C' }}>
+                    app.pixiatech.com
+                  </div>
+                </div>
+              </div>
+              <span style={{ color: accentColor, fontSize: 16, fontWeight: 800 }}>→</span>
+            </a>
+
+            {/* Accès rapide Espace Administration */}
+            <button
+              type="button"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                router.push('/admin');
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                width: '100%',
+                padding: '9px 14px',
+                marginBottom: 14,
+                background: 'rgba(255, 255, 255, 0.03)',
+                border: '1px solid rgba(255, 255, 255, 0.07)',
+                borderRadius: 8,
+                color: '#A8A6A0',
+                fontSize: 12,
+                cursor: 'pointer',
+                textAlign: 'left',
+              }}
+            >
+              <Shield size={14} color={accentColor} />
+              <span>{activeLang === 'FR' ? 'Espace Administration' : 'Admin Console'}</span>
+            </button>
+
             {/* Search Input trigger */}
             <button
               type="button"
@@ -1226,14 +1403,15 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                 alignItems: 'center',
                 gap: 12,
                 width: '100%',
-                background: 'transparent',
-                border: '1px solid rgba(245,244,240,.25)',
+                background: 'rgba(255,255,255,.04)',
+                border: '1px solid rgba(255,255,255,.14)',
+                borderRadius: 8,
                 color: '#B9B7B1',
                 padding: '12px 14px',
                 marginBottom: 18,
                 cursor: 'pointer',
                 fontSize: 13,
-                letterSpacing: '.08em',
+                letterSpacing: '.04em',
               }}
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#B9B7B1" strokeWidth="1.6">
@@ -1458,19 +1636,72 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                     window.location.href = START_PROJECT_URL;
                   }}
                   style={{
-                    marginTop: 20,
-                    padding: '14px',
-                    background: 'transparent',
-                    border: '1px solid #f5f4f0',
-                    color: '#f5f4f0',
-                    fontWeight: 700,
-                    letterSpacing: '.1em',
+                    marginTop: 24,
+                    width: '100%',
+                    padding: '15px 20px',
+                    background: accentColor,
+                    border: '1px solid ' + accentColor,
+                    borderRadius: 8,
+                    color: '#080808',
+                    fontWeight: 800,
+                    fontSize: 13,
+                    letterSpacing: '.12em',
                     textTransform: 'uppercase',
                     cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 10,
+                    boxShadow: '0 4px 18px rgba(195, 249, 16, 0.28)',
                   }}
                 >
-                  {activeLang === 'FR' ? 'Démarrer un projet' : 'Start a Project'}
+                  <span>{activeLang === 'FR' ? 'Démarrer un projet' : 'Start a Project'}</span>
+                  <span style={{ fontSize: 16 }}>→</span>
                 </button>
+
+                {/* Direct Contacts Strip on mobile */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 12 }}>
+                  <a
+                    href="https://wa.me/337771593166"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      padding: '11px 12px',
+                      background: 'rgba(255, 255, 255, 0.04)',
+                      border: '1px solid rgba(255, 255, 255, 0.09)',
+                      borderRadius: 8,
+                      color: '#C9C7C1',
+                      fontSize: 11.5,
+                      fontWeight: 600,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 7,
+                      textDecoration: 'none',
+                    }}
+                  >
+                    <span style={{ color: '#25D366', fontSize: 13 }}>●</span> WhatsApp
+                  </a>
+                  <a
+                    href="tel:+33771593166"
+                    style={{
+                      padding: '11px 12px',
+                      background: 'rgba(255, 255, 255, 0.04)',
+                      border: '1px solid rgba(255, 255, 255, 0.09)',
+                      borderRadius: 8,
+                      color: '#C9C7C1',
+                      fontSize: 11.5,
+                      fontWeight: 600,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 7,
+                      textDecoration: 'none',
+                    }}
+                  >
+                    <span style={{ color: accentColor }}>✆</span> +33 7 71 59 31 66
+                  </a>
+                </div>
 
                 {/* All products quick list */}
                 <div
@@ -1628,6 +1859,35 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                     </div>
                   </div>
                 ))}
+
+                <div style={{ marginTop: 20 }}>
+                  <a
+                    href={webLink('/products')}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setMobileMenuOpen(false);
+                      router.push(webLink('/products'));
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    style={{
+                      display: 'block',
+                      width: '100%',
+                      padding: '13px 16px',
+                      background: 'rgba(255,255,255,0.06)',
+                      border: '1px solid rgba(255,255,255,0.14)',
+                      borderRadius: 8,
+                      textAlign: 'center',
+                      color: accentColor,
+                      fontSize: 12,
+                      fontFamily: 'var(--font-mono)',
+                      fontWeight: 700,
+                      letterSpacing: '.14em',
+                      textDecoration: 'none',
+                    }}
+                  >
+                    {activeLang === 'FR' ? 'VOIR TOUS LES PRODUITS →' : 'VIEW ALL PRODUCTS →'}
+                  </a>
+                </div>
               </div>
             )}
           </div>

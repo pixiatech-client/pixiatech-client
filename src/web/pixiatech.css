@@ -449,3 +449,20 @@
   }
 }
 
+/* ── Mobile Polish pour les pages éditoriales & Ressources ── */
+@media (max-width: 768px) {
+  #pixia-web .art-h1,
+  #pixia-web .art-header h1 {
+    font-size: clamp(26px, 7.5vw, 38px) !important;
+    line-height: 1.15 !important;
+    overflow-wrap: break-word !important;
+    word-break: break-word !important;
+  }
+  #pixia-web .art-grid {
+    grid-template-columns: 1fr !important;
+  }
+  #pixia-web .read {
+    padding: 36px clamp(16px, 4vw, 24px) !important;
+  }
+}
+

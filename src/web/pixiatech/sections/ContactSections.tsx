@@ -840,6 +840,44 @@ const CONTACT_CSS = `
   z-index: 1;
 }
 
+@media (max-width: 768px) {
+  .ct-device-3d {
+    transform: none !important;
+  }
+  .ct-stage {
+    perspective: none !important;
+    padding: 0 0 16px !important;
+  }
+  .ct-retail-head {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 16px !important;
+    margin-bottom: 28px !important;
+  }
+  .ct-coords-console {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+    margin-top: 36px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .ct-device {
+    padding: 10px !important;
+    border-radius: 20px !important;
+  }
+  .ct-device-screen .ct-form-shell {
+    padding: 12px !important;
+  }
+  .ct-btn, .ct-btn-solid {
+    width: 100% !important;
+    justify-content: center !important;
+    min-height: 48px !important;
+    padding: 14px 20px !important;
+    font-size: 13px !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ct-input, .ct-area, .ct-chip, .ct-link, .ct-check, .ct-btn,
   .ct-faq-q, .ct-faq-plus, .ct-row-label { transition: none; }
