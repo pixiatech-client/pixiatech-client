@@ -156,7 +156,14 @@ export function BoutiqueHeader({ boutiqueEnabled = true }: { boutiqueEnabled?: b
   const isMobile = useMediaQuery('(max-width: 767px)');
 
   return (
-    <header className="fixed top-0 z-30 w-full pt-2">
+    <header
+      className={cn(
+        "fixed top-0 z-40 w-full pt-2 pb-2 transition-all duration-300",
+        // Effet miroir glossy & verre dépoli
+        "bg-gradient-to-b from-[#F8FAFC]/95 via-[#F8FAFC]/90 to-[#F8FAFC]/85 backdrop-blur-2xl supports-[backdrop-filter]:bg-[#F8FAFC]/80",
+        isBoutiquePage ? "" : "border-b border-gray-200/50 shadow-xs"
+      )}
+    >
       <nav className="max-w-7xl mx-4 lg:mx-auto bg-black rounded-full px-6 lg:px-8 py-2.5 flex items-center justify-between shadow-2xl">
         {/* Hamburger - mobile only */}
         <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>

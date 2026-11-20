@@ -522,7 +522,7 @@ export default function BoutiquePage() {
           </div>
         </div>
       )}
-      <div className="sticky top-[64px] z-20 w-full bg-[#F8FAFC]/80 backdrop-blur-md transition-all border-b border-gray-200/50 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)]">
+      <div className="sticky top-[68px] z-30 w-full bg-gradient-to-b from-[#F8FAFC]/85 via-[#F8FAFC]/90 to-[#F8FAFC]/95 backdrop-blur-2xl supports-[backdrop-filter]:bg-[#F8FAFC]/85 transition-all border-b border-gray-200/80 shadow-[0_12px_32px_-6px_rgba(0,0,0,0.07),0_4px_12px_-2px_rgba(0,0,0,0.03)]">
         <div className="max-w-7xl mx-4 lg:mx-auto flex flex-col md:flex-row md:items-center justify-between gap-3 py-3">
           <nav className="relative flex items-center bg-gray-100 p-1 rounded-[16px] border border-gray-200/80 overflow-x-auto scrollbar-hide shrink-0 max-w-full">
             {[

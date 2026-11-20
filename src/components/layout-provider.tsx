@@ -125,7 +125,7 @@ export function LayoutProvider({
           <div className={cn("flex flex-col min-h-dvh", isFrontendPage ? "bg-[#F8FAFC]" : "bg-background")}>
             {isFrontendPage && !isMonComptePage && <BoutiqueHeader boutiqueEnabled={initialBoutiqueEnabled} />}
             {isFrontendPage ? (
-              <div className={`flex flex-col flex-1 ${isMonComptePage ? '' : 'pt-[72px]'} ${showBottomNav ? 'pb-20' : ''} bg-[#F8FAFC]`}>
+              <div className={`flex flex-col flex-1 ${isMonComptePage ? '' : 'pt-[68px]'} ${showBottomNav ? 'pb-20' : ''} bg-[#F8FAFC]`}>
                 <SiteBanners />
                 <main
                   className={cn(
