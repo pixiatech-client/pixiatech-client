@@ -127,6 +127,9 @@ const GREETING_HOLD_MS = 3400; // délai d'affichage après la frappe
 const GREETING_FADE_MS = 600; // fondu de sortie de la bulle
 const TYPE_MS = 42; // cadence de frappe, caractère par caractère
 
+/** Ancre Hero du site public. Valeur par défaut : le comportement `/web` exact. */
+const DEFAULT_HERO_SELECTOR = '[data-cms-section="hero"], #hero, section.hero';
+
 /* Textes d'origine déplacés dans `@/lib/pixia-greeting` (partagés avec l'éditeur admin). */
 
 /* -------------------------------------------------------------------------- */
@@ -199,7 +202,7 @@ function isCmsEditing(): boolean {
  * Le bouton masqué applique `translate-y-4` : on retire ce décalage pour viser
  * la position qu'il occupera une fois visible. Rien n'est modifié sur le bouton.
  */
-function readBackToTop(): { cx: number; top: number } {
+function readBackToTop(bottomInset = 0): { cx: number; top: number } {
   const docW = document.documentElement.clientWidth;
   const docH = document.documentElement.clientHeight;
   const el = document.getElementById('back-to-top-btn');
@@ -220,12 +223,16 @@ function readBackToTop(): { cx: number; top: number } {
       top: rect.top - (Number.isFinite(shiftY) ? shiftY : 0),
     };
   }
-  // Repli (aucun bouton monté sur la page) : mêmes classes que le composant
-  // `BackToTopButton` — `bottom-6 right-6` (1,5 rem) et `w-12 h-12` (3 rem)
-  // puis `sm:w-[52px] sm:h-[52px]`.
+  // Repli (aucun bouton monté sur la page — cas des pages applicatives) :
+  // mêmes classes que `BackToTopButton` — `bottom-6 right-6` (1,5 rem) et
+  // `w-12 h-12` (3 rem) puis `sm:w-[52px] sm:h-[52px]`. `bottomInset` relève
+  // uniquement l'icône au-dessus de la barre d'onglets fixe de l'application.
   const rem = rootRem();
   const w = docW < 640 ? 3 * rem : 52;
-  return { cx: docW - 1.5 * rem - w / 2, top: docH - 1.5 * rem - w };
+  return {
+    cx: docW - 1.5 * rem - w / 2,
+    top: docH - 1.5 * rem - w - bottomInset,
+  };
 }
 
 /* -------------------------------------------------------------------------- */
@@ -233,11 +240,22 @@ function readBackToTop(): { cx: number; top: number } {
 /* -------------------------------------------------------------------------- */
 
 interface PixiaGlobalAnimationProps {
-  /** Le composant n'agit que sur les pages du site public. */
+  /** Monter l'enveloppe visuelle (site public OU pages applicatives). */
   active?: boolean;
+  /** Ancre du Hero. Défaut = sélecteur du site public ; l'application, qui
+   *  n'a pas de Hero CMS, passe `main` pour obtenir la même courbe de scroll. */
+  heroSelector?: string;
+  /** Décalage vertical supplémentaire de l'icône dockée quand la page possède
+   *  une barre d'onglets fixe (application mobile). Sans effet sur `/web`, où
+   *  l'icône reste ancrée sur `#back-to-top-btn`. */
+  dockBottomInset?: number;
 }
 
-export function PixiaGlobalAnimation({ active = false }: PixiaGlobalAnimationProps) {
+export function PixiaGlobalAnimation({
+  active = false,
+  heroSelector = DEFAULT_HERO_SELECTOR,
+  dockBottomInset = 0,
+}: PixiaGlobalAnimationProps) {
   const pathname = usePathname();
   const { locale } = useI18n();
 
@@ -357,9 +375,7 @@ export function PixiaGlobalAnimation({ active = false }: PixiaGlobalAnimationPro
     let hero = heroRef.current;
     if (hero && !hero.isConnected) hero = null;
     if (!hero) {
-      hero = document.querySelector<HTMLElement>(
-        '[data-cms-section="hero"], #hero, section.hero'
-      );
+      hero = document.querySelector<HTMLElement>(heroSelector);
     }
     heroRef.current = hero;
 
@@ -386,7 +402,7 @@ export function PixiaGlobalAnimation({ active = false }: PixiaGlobalAnimationPro
     const curY = dragRect.top + dragRect.height / 2;
 
     /* --- Cible RÉELLE : centre du contenu de l'icône, au-dessus du bouton --- */
-    const anchor = readBackToTop();
+    const anchor = readBackToTop(dockBottomInset);
     const headH = ICON_HEAD_H * D;
     // Jamais coupée par un bord (zoom, petite fenêtre, barre de défilement) :
     // on borne le centre de la tête à l'intérieur de la zone visible.
@@ -529,7 +545,7 @@ export function PixiaGlobalAnimation({ active = false }: PixiaGlobalAnimationPro
       root.dataset.pixiaChatOpen = chat ? 'true' : 'false';
       root.dataset.pixiaDocked = isDocked ? 'true' : 'false';
     }
-  }, [greeting, reduceMotion]);
+  }, [greeting, reduceMotion, heroSelector, dockBottomInset]);
 
   /**
    * Toujours la DERNIÈRE version d'`apply`.
@@ -691,9 +707,7 @@ export function PixiaGlobalAnimation({ active = false }: PixiaGlobalAnimationPro
     let timer: number | undefined;
     const probe = () => {
       if (cancelled) return;
-      const el = document.querySelector<HTMLElement>(
-        '[data-cms-section="hero"], #hero, section.hero'
-      );
+      const el = document.querySelector<HTMLElement>(heroSelector);
       if (el) {
         heroRef.current = el;
         setHeroFound(true);
@@ -708,7 +722,7 @@ export function PixiaGlobalAnimation({ active = false }: PixiaGlobalAnimationPro
       cancelled = true;
       if (timer) window.clearTimeout(timer);
     };
-  }, [active, pathname, schedule, clearGreetingTimers]);
+  }, [active, pathname, schedule, clearGreetingTimers, heroSelector]);
 
   /* --- Nouvelle page : le robot repart de sa position de repos --- */
   useEffect(() => {

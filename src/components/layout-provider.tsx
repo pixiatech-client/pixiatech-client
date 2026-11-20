@@ -153,9 +153,14 @@ export function LayoutProvider({
               </div>
             )}
             {(isFrontendPage || isWebPage) && <FloatingChatWrapper />}
-            {/* Mascotte Pixia globale : animation pilotée par le scroll sur les
-                pages du site public uniquement (`/web` + pages légales). */}
-            <PixiaGlobalAnimation active={isWebPage} />
+            {/* Une seule enveloppe visuelle Pixia pour le site ET l'application.
+                Le moteur conversationnel reste porté par FloatingChatWrapper →
+                WizardBotFlow (props, API, auth, historique inchangés). */}
+            <PixiaGlobalAnimation
+              active={isWebPage || isFrontendPage}
+              heroSelector={isFrontendPage ? 'main' : undefined}
+              dockBottomInset={isFrontendPage && showBottomNav ? 64 : 0}
+            />
           </div>
           </CartProvider>
           </ProfileProvider>

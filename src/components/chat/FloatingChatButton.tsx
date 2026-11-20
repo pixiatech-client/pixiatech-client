@@ -189,133 +189,137 @@ export function FloatingChatButton({ allProducts, settings, laborSettings, deliv
 
   return (
     <>
-      {/* Container used to define the boundaries for dragging */}
-      <div ref={constraintsRef} className="fixed inset-0 pointer-events-none z-[100]" />
+      {/* L'animation globale Pixia est désormais la seule enveloppe visuelle.
+          Sous relais, l'ancien robot, sa bulle et son conteneur de drag ne
+          sont plus montés : un seul robot, un seul salut, un seul système
+          d'événements de scroll. Le moteur WizardBotFlow reste inchangé. */}
+      {!takeover && (
+        <>
+          {/* Container used to define the boundaries for dragging */}
+          <div ref={constraintsRef} className="fixed inset-0 pointer-events-none z-[100]" />
 
-      <motion.div
-        drag
-        dragConstraints={constraintsRef}
-        dragElastic={0.1}
-        dragMomentum={true}
-        whileHover={{ cursor: "grab", scale: 1.05 }}
-        whileDrag={{ cursor: "grabbing", scale: 1.08 }}
-        className={cn(
-          "fixed pointer-events-auto touch-none will-change-transform transition-[bottom,left,right] duration-500 ease-out",
-          elevated ? "z-[290]" : "z-[101]",
-          // L'animation globale de Pixia porte la mascotte : ce robot se retire
-          // entièrement (chat ouvert compris) — la fermeture reste celle de
-          // WizardBotFlow, ce qui évite une croix en double.
-          takeover && "hidden",
-          isMobile ? "bottom-24 left-2" : shifted ? "bottom-[38%] right-[440px]" : "bottom-[38%] right-12"
-        )}
-        style={{ touchAction: "none" }}
-      >
-        {/* Bulle d'accueil du robot (version application) : mêmes styles et
-            mêmes timings que la mascotte du site — frappe caractère par
-            caractère, maintien, puis fondu linéaire de 600 ms. Apparition
-            instantanée, non bloquante (aucun événement pointeur), masquée dès
-            que le chat s'ouvre. Placée à gauche du robot (tête au centre) ou,
-            sur mobile, au-dessus — comme la mascotte du site. */}
-        {/* `width: max-content` + `max-width` (comme la bulle `position: fixed`
-            du site) : sans cela, la bulle positionnée en `right: 100%` dans le
-            petit conteneur du robot est réduite par le calcul « shrink-to-fit »
-            à la largeur de son plus long mot (bulle étroite et haute).
-            Sur mobile le robot est collé au bord gauche : la bulle est alignée
-            sur son bord gauche (équivalent du « clamp » du site, 12 px de marge)
-            et bornée à 70vw — elle ne peut donc pas sortir de l'écran. */}
-        <div
-          className="pointer-events-none absolute z-10 max-w-[min(280px,70vw)]"
-          style={
-            isMobile
-              ? { width: 'max-content', bottom: '100%', left: 0, marginBottom: 12 }
-              : { width: 'max-content', right: '100%', top: '50%', transform: 'translateY(-50%)', marginRight: 12 }
-          }
-        >
-          {bubbleMounted && !isOpen && (
+          <motion.div
+            drag
+            dragConstraints={constraintsRef}
+            dragElastic={0.1}
+            dragMomentum={true}
+            whileHover={{ cursor: "grab", scale: 1.05 }}
+            whileDrag={{ cursor: "grabbing", scale: 1.08 }}
+            className={cn(
+              "fixed pointer-events-auto touch-none will-change-transform transition-[bottom,left,right] duration-500 ease-out",
+              elevated ? "z-[290]" : "z-[101]",
+              isMobile ? "bottom-24 left-2" : shifted ? "bottom-[38%] right-[440px]" : "bottom-[38%] right-12"
+            )}
+            style={{ touchAction: "none" }}
+          >
+            {/* Bulle d'accueil du robot (version application) : mêmes styles et
+                mêmes timings que la mascotte du site — frappe caractère par
+                caractère, maintien, puis fondu linéaire de 600 ms. Apparition
+                instantanée, non bloquante (aucun événement pointeur), masquée dès
+                que le chat s'ouvre. Placée à gauche du robot (tête au centre) ou,
+                sur mobile, au-dessus — comme la mascotte du site. */}
+            {/* `width: max-content` + `max-width` (comme la bulle `position: fixed`
+                du site) : sans cela, la bulle positionnée en `right: 100%` dans le
+                petit conteneur du robot est réduite par le calcul « shrink-to-fit »
+                à la largeur de son plus long mot (bulle étroite et haute).
+                Sur mobile le robot est collé au bord gauche : la bulle est alignée
+                sur son bord gauche (équivalent du « clamp » du site, 12 px de marge)
+                et bornée à 70vw — elle ne peut donc pas sortir de l'écran. */}
             <div
-              data-pixia-app-bubble
-              style={{
-                padding: '14px 18px',
-                borderRadius: '18px',
-                background: 'rgba(225, 255, 170, 0.97)',
-                color: '#0f1a00',
-                fontFamily: 'Satoshi, "Helvetica Neue", Helvetica, Arial, sans-serif',
-                fontSize: '14px',
-                lineHeight: 1.45,
-                fontWeight: 600,
-                boxShadow: '0 20px 45px rgba(0,0,0,0.35)',
-                border: '1px solid rgba(195, 249, 16, 0.6)',
-                willChange: 'opacity',
-                pointerEvents: 'none',
-                opacity: bubbleFading ? 0 : 1,
-                transition: `opacity ${GREET_FADE_MS}ms linear`,
-              }}
+              className="pointer-events-none absolute z-10 max-w-[min(280px,70vw)]"
+              style={
+                isMobile
+                  ? { width: 'max-content', bottom: '100%', left: 0, marginBottom: 12 }
+                  : { width: 'max-content', right: '100%', top: '50%', transform: 'translateY(-50%)', marginRight: 12 }
+              }
             >
-              {greetText}
-              {greetText.length > 0 && greetText.length < greetingRef.current.length && (
-                <span aria-hidden="true">|</span>
+              {bubbleMounted && !isOpen && (
+                <div
+                  data-pixia-app-bubble
+                  style={{
+                    padding: '14px 18px',
+                    borderRadius: '18px',
+                    background: 'rgba(225, 255, 170, 0.97)',
+                    color: '#0f1a00',
+                    fontFamily: 'Satoshi, "Helvetica Neue", Helvetica, Arial, sans-serif',
+                    fontSize: '14px',
+                    lineHeight: 1.45,
+                    fontWeight: 600,
+                    boxShadow: '0 20px 45px rgba(0,0,0,0.35)',
+                    border: '1px solid rgba(195, 249, 16, 0.6)',
+                    willChange: 'opacity',
+                    pointerEvents: 'none',
+                    opacity: bubbleFading ? 0 : 1,
+                    transition: `opacity ${GREET_FADE_MS}ms linear`,
+                  }}
+                >
+                  {greetText}
+                  {greetText.length > 0 && greetText.length < greetingRef.current.length && (
+                    <span aria-hidden="true">|</span>
+                  )}
+                </div>
               )}
             </div>
-          )}
-        </div>
 
-        <motion.button
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-          onPointerDown={handlePointerDown}
-          onPointerUp={handlePointerUp}
-          className={cn(
-            "transition-all duration-300 relative cursor-grab active:cursor-grabbing",
-            isOpen
-              ? "h-14 w-14 rounded-full flex items-center justify-center bg-[#1a1d21] text-white rotate-90 shadow-2xl"
-              : "h-28 sm:h-44 w-28 sm:w-44 flex items-center justify-center bg-transparent"
-          )}
-        >
-          <AnimatePresence mode="wait">
-            {isOpen ? (
-              <motion.div
-                key="close"
-                initial={{ opacity: 0, rotate: -90 }}
-                animate={{ opacity: 1, rotate: 0 }}
-                exit={{ opacity: 0, rotate: 90 }}
-              >
-                <X size={28} />
-              </motion.div>
-            ) : (
-              <motion.div
-                key="open"
-                initial={{ opacity: 0, scale: 0.5 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.5 }}
-                className="w-full h-full relative"
-              >
-                <div className="w-full h-full">
-                  <video
-                    ref={videoRef}
-                    src="/bot-avatars/pixia_robot.webm"
-                    poster="/bot-avatars/010.webp"
-                    autoPlay
-                    muted
-                    playsInline
-                    className="w-full h-full object-contain select-none"
-                    style={{ background: 'transparent', display: 'block' }}
-                    onTimeUpdate={() => {
-                      const v = videoRef.current;
-                      if (v && v.duration > 0 && v.currentTime >= v.duration - 0.04) {
-                        v.currentTime = 0.04;
-                      }
-                    }}
-                    onEnded={(e) => {
-                      (e.target as HTMLVideoElement).currentTime = 0.04;
-                      (e.target as HTMLVideoElement).play();
-                    }}
-                  />
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.button>
-      </motion.div>
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onPointerDown={handlePointerDown}
+              onPointerUp={handlePointerUp}
+              className={cn(
+                "transition-all duration-300 relative cursor-grab active:cursor-grabbing",
+                isOpen
+                  ? "h-14 w-14 rounded-full flex items-center justify-center bg-[#1a1d21] text-white rotate-90 shadow-2xl"
+                  : "h-28 sm:h-44 w-28 sm:w-44 flex items-center justify-center bg-transparent"
+              )}
+            >
+              <AnimatePresence mode="wait">
+                {isOpen ? (
+                  <motion.div
+                    key="close"
+                    initial={{ opacity: 0, rotate: -90 }}
+                    animate={{ opacity: 1, rotate: 0 }}
+                    exit={{ opacity: 0, rotate: 90 }}
+                  >
+                    <X size={28} />
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="open"
+                    initial={{ opacity: 0, scale: 0.5 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.5 }}
+                    className="w-full h-full relative"
+                  >
+                    <div className="w-full h-full">
+                      <video
+                        ref={videoRef}
+                        src="/bot-avatars/pixia_robot.webm"
+                        poster="/bot-avatars/010.webp"
+                        autoPlay
+                        muted
+                        playsInline
+                        className="w-full h-full object-contain select-none"
+                        style={{ background: 'transparent', display: 'block' }}
+                        onTimeUpdate={() => {
+                          const v = videoRef.current;
+                          if (v && v.duration > 0 && v.currentTime >= v.duration - 0.04) {
+                            v.currentTime = 0.04;
+                          }
+                        }}
+                        onEnded={(e) => {
+                          (e.target as HTMLVideoElement).currentTime = 0.04;
+                          (e.target as HTMLVideoElement).play();
+                        }}
+                      />
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.button>
+          </motion.div>
+        </>
+      )}
 
       <AnimatePresence>
         {isOpen && (
