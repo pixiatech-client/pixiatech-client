@@ -40,7 +40,7 @@ export function BoutiqueHeader({
   const [resellerDone, setResellerDone] = useState(false);
   const [resellerError, setResellerError] = useState('');
   const [espaceTab, setEspaceTab] = useState<'membre' | 'revendeur'>('membre');
-  const [guidedActive, setGuidedActive] = useState(() => typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('step'));
+  const [guidedActive, setGuidedActive] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const resellerRef = useRef<HTMLDivElement>(null);
 
@@ -61,7 +61,12 @@ export function BoutiqueHeader({
   }, []);
 
   useEffect(() => {
-    setGuidedActive(pathname === '/' && new URLSearchParams(window.location.search).has('step'));
+    const syncFromUrl = () => {
+      setGuidedActive(pathname === '/' && new URLSearchParams(window.location.search).has('step'));
+    };
+    syncFromUrl();
+    window.addEventListener('popstate', syncFromUrl);
+    return () => window.removeEventListener('popstate', syncFromUrl);
   }, [pathname]);
 
   useEffect(() => {
