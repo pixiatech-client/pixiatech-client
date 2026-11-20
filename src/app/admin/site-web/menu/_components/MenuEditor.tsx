@@ -35,6 +35,7 @@ import {
   Plus,
   RefreshCw,
   Save,
+  SlidersHorizontal,
   Trash2,
   X,
 } from 'lucide-react';
@@ -249,7 +250,7 @@ export function MenuEditor() {
   );
 
   const patchColumn = useCallback(
-    (columnId: string, patch: Partial<Pick<MegaMenuColumn, 'titleEn' | 'titleFr'>>) => {
+    (columnId: string, patch: Partial<Pick<MegaMenuColumn, 'titleEn' | 'titleFr' | 'descFr' | 'descEn'>>) => {
       if (!columns) return;
       markDirty(columns.map((c) => (c.id === columnId ? { ...c, ...patch } : c)));
     },
@@ -869,7 +870,7 @@ function ColumnCard(props: {
   bySlug: Map<string, ProductListItem>;
   isActive: boolean;
   onSelect: () => void;
-  onPatchColumn: (patch: Partial<Pick<MegaMenuColumn, 'titleEn' | 'titleFr'>>) => void;
+  onPatchColumn: (patch: Partial<Pick<MegaMenuColumn, 'titleEn' | 'titleFr' | 'descFr' | 'descEn'>>) => void;
   onRemoveColumn: () => void;
   onMoveColumn: (dir: -1 | 1) => void;
   onPatchItem: (itemId: string, patch: Partial<MegaMenuItem>) => void;
@@ -980,6 +981,19 @@ function ColumnCard(props: {
         </div>
       </div>
 
+      <div className="px-3 py-1.5 bg-neutral-100/60 dark:bg-white/[0.02] border-b border-neutral-200 dark:border-white/10 flex items-center gap-2">
+        <span className="text-[10px] font-mono font-bold uppercase text-neutral-400 shrink-0">
+          Desc. commune :
+        </span>
+        <input
+          type="text"
+          value={column.descFr ?? ''}
+          onChange={(e) => onPatchColumn({ descFr: e.target.value })}
+          placeholder="Description commune héritée par les produits sans description propre..."
+          className="w-full min-w-0 px-2 py-0.5 text-xs bg-transparent rounded border border-transparent focus:border-emerald-500/50 focus:outline-none text-neutral-700 dark:text-neutral-300 placeholder:text-neutral-400 placeholder:italic"
+        />
+      </div>
+
       <div className="p-3">
         <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
           <div className="space-y-2">
@@ -991,6 +1005,7 @@ function ColumnCard(props: {
                   key={item.id}
                   item={item}
                   product={item.productSlug ? (bySlug.get(item.productSlug) ?? null) : null}
+                  columnDescFr={column.descFr ?? ''}
                   onPatch={(patch) => onPatchItem(item.id, patch)}
                   onToggle={() => onToggleItem(item.id)}
                   onRemove={() => onRemoveItem(item.id)}
@@ -1014,11 +1029,13 @@ function ColumnCard(props: {
 function ItemRow(props: {
   item: MegaMenuItem;
   product: ProductListItem | null;
+  columnDescFr?: string;
   onPatch: (patch: Partial<MegaMenuItem>) => void;
   onToggle: () => void;
   onRemove: () => void;
 }) {
-  const { item, product, onPatch, onToggle, onRemove } = props;
+  const { item, product, columnDescFr, onPatch, onToggle, onRemove } = props;
+  const [expanded, setExpanded] = useState(false);
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: item.id,
   });
@@ -1028,93 +1045,246 @@ function ItemRow(props: {
   const slugInvalid = !!item.productSlug && !isValidSlug(item.productSlug);
   const masked = item.visible === false;
 
+  const displayImg = (item.customImg && item.customImg.trim()) || product?.img;
+
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className={`flex items-center gap-2 rounded-xl border bg-neutral-50 dark:bg-white/[0.03] px-2.5 py-2 transition-opacity ${
+      className={`rounded-xl border bg-neutral-50 dark:bg-white/[0.03] p-2.5 transition-opacity ${
         isDragging ? 'opacity-40 z-40 shadow-lg' : ''
       } ${masked ? 'border-amber-500/40' : 'border-neutral-200 dark:border-white/10'}`}
     >
-      <span
-        className="text-neutral-400 cursor-grab active:cursor-grabbing"
-        {...attributes}
-        {...listeners}
-        title="Glisser (également entre sections)"
-      >
-        <GripVertical className="w-4 h-4" />
-      </span>
-      {product?.img ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={product.img}
-          alt=""
-          loading="lazy"
-          className="w-16 h-16 shrink-0 rounded-lg object-cover bg-white dark:bg-zinc-800 border border-neutral-200 dark:border-white/10"
-          onError={(e) => {
-            (e.currentTarget as HTMLImageElement).style.display = 'none';
-          }}
-        />
-      ) : (
-        <div className="w-16 h-16 shrink-0 rounded-lg bg-neutral-200/70 dark:bg-white/5 border border-neutral-200 dark:border-white/10 flex items-center justify-center text-neutral-400">
-          <ImageIcon className="w-5 h-5" />
-        </div>
-      )}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <input
-            type="text"
-            value={item.label}
-            onChange={(e) => onPatch({ label: e.target.value })}
-            className="w-full min-w-0 px-2 py-1 text-xs font-bold bg-transparent rounded-lg border border-transparent focus:border-emerald-500/50 focus:outline-none text-neutral-900 dark:text-white"
-            placeholder="Libellé affiché"
-            aria-label="Libellé"
+      <div className="flex items-center gap-2">
+        <span
+          className="text-neutral-400 cursor-grab active:cursor-grabbing"
+          {...attributes}
+          {...listeners}
+          title="Glisser (également entre sections)"
+        >
+          <GripVertical className="w-4 h-4" />
+        </span>
+        {displayImg ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={displayImg}
+            alt=""
+            loading="lazy"
+            className="w-16 h-16 shrink-0 rounded-lg object-cover bg-white dark:bg-zinc-800 border border-neutral-200 dark:border-white/10"
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).style.display = 'none';
+            }}
           />
-          <button
-            type="button"
-            onClick={onToggle}
-            className={`shrink-0 p-1.5 rounded-lg transition-colors cursor-pointer ${
-              masked
-                ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
-                : 'bg-neutral-100 dark:bg-white/5 text-neutral-400 hover:text-white'
-            }`}
-            title={masked ? 'Masqué — cliquer pour rendre visible' : 'Visible — cliquer pour masquer'}
-            aria-label="Basculer la visibilité"
-          >
-            {masked ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-          </button>
-          <button
-            type="button"
-            onClick={onRemove}
-            className="shrink-0 p-1.5 rounded-lg bg-neutral-100 dark:bg-white/5 text-neutral-500 hover:text-rose-400 cursor-pointer transition-colors"
-            aria-label="Retirer l'élément"
-          >
-            <X className="w-3.5 h-3.5" />
-          </button>
-        </div>
-        <div className="flex items-center gap-2 px-2 mt-1">
-          <input
-            type="text"
-            value={item.productSlug ?? ''}
-            onChange={(e) => onPatch({ productSlug: e.target.value === '' ? null : e.target.value })}
-            className={`w-40 px-2 py-1 text-[11px] font-mono bg-transparent rounded-lg border focus:outline-none text-neutral-600 dark:text-neutral-300 ${
-              slugInvalid
-                ? 'border-rose-500/60 text-rose-500'
-                : 'border-neutral-200 dark:border-white/10 focus:border-emerald-500/50'
-            }`}
-            placeholder="productSlug (référence Firestore)"
-            aria-label="productSlug"
-          />
-          <span className={`px-1.5 py-0.5 rounded-md text-[9px] font-mono font-bold border uppercase ${badge.className}`}>
-            {badge.text}
-          </span>
-        </div>
-        {item.catalogSlug && item.catalogSlug !== (item.productSlug ?? '') && (
-          <div className="px-2 mt-1 text-[10px] font-mono text-neutral-400">
-            catalogSlug (legacy) : {item.catalogSlug}
+        ) : (
+          <div className="w-16 h-16 shrink-0 rounded-lg bg-neutral-200/70 dark:bg-white/5 border border-neutral-200 dark:border-white/10 flex items-center justify-center text-neutral-400">
+            <ImageIcon className="w-5 h-5" />
           </div>
         )}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              value={item.label}
+              onChange={(e) => onPatch({ label: e.target.value })}
+              className="w-full min-w-0 px-2 py-1 text-xs font-bold bg-transparent rounded-lg border border-transparent focus:border-emerald-500/50 focus:outline-none text-neutral-900 dark:text-white"
+              placeholder="Libellé affiché"
+              aria-label="Libellé"
+            />
+            <button
+              type="button"
+              onClick={() => setExpanded(!expanded)}
+              className={`shrink-0 p-1.5 rounded-lg transition-colors cursor-pointer ${
+                expanded || item.descFr || item.environment || item.customUrl || item.customImg
+                  ? 'bg-[#38E044]/20 text-[#38E044]'
+                  : 'bg-neutral-100 dark:bg-white/5 text-neutral-400 hover:text-white'
+              }`}
+              title="Personnaliser les informations de présentation (environnement, description, lien, image)"
+              aria-label="Personnaliser"
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={onToggle}
+              className={`shrink-0 p-1.5 rounded-lg transition-colors cursor-pointer ${
+                masked
+                  ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
+                  : 'bg-neutral-100 dark:bg-white/5 text-neutral-400 hover:text-white'
+              }`}
+              title={masked ? 'Masqué — cliquer pour rendre visible' : 'Visible — cliquer pour masquer'}
+              aria-label="Basculer la visibilité"
+            >
+              {masked ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+            </button>
+            <button
+              type="button"
+              onClick={onRemove}
+              className="shrink-0 p-1.5 rounded-lg bg-neutral-100 dark:bg-white/5 text-neutral-500 hover:text-rose-400 cursor-pointer transition-colors"
+              aria-label="Retirer l'élément"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          <div className="flex items-center gap-2 px-2 mt-1 flex-wrap">
+            <input
+              type="text"
+              value={item.productSlug ?? ''}
+              onChange={(e) => onPatch({ productSlug: e.target.value === '' ? null : e.target.value })}
+              className={`w-40 px-2 py-1 text-[11px] font-mono bg-transparent rounded-lg border focus:outline-none text-neutral-600 dark:text-neutral-300 ${
+                slugInvalid
+                  ? 'border-rose-500/60 text-rose-500'
+                  : 'border-neutral-200 dark:border-white/10 focus:border-emerald-500/50'
+              }`}
+              placeholder="productSlug"
+              aria-label="productSlug"
+            />
+            <span className={`px-1.5 py-0.5 rounded-md text-[9px] font-mono font-bold border uppercase ${badge.className}`}>
+              {badge.text}
+            </span>
+            {item.environment && (
+              <span className="px-1.5 py-0.5 rounded-md text-[9px] font-mono font-bold bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/30 uppercase">
+                {item.environment === 'indoor'
+                  ? 'Intérieur'
+                  : item.environment === 'outdoor'
+                  ? 'Extérieur'
+                  : 'Int. & Ext.'}
+              </span>
+            )}
+            {item.descFr && item.descFr.trim() ? (
+              <span className="px-1.5 py-0.5 rounded-md text-[9px] font-mono font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                Desc. individuelle
+              </span>
+            ) : columnDescFr && columnDescFr.trim() ? (
+              <span className="px-1.5 py-0.5 rounded-md text-[9px] font-mono font-bold bg-neutral-500/15 text-neutral-500 dark:text-neutral-400 border border-neutral-500/30">
+                Desc. commune
+              </span>
+            ) : null}
+            {item.customUrl && item.customUrl.trim() ? (
+              <span className="px-1.5 py-0.5 rounded-md text-[9px] font-mono font-bold bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30">
+                Lien custom
+              </span>
+            ) : null}
+            {item.customImg && item.customImg.trim() ? (
+              <span className="px-1.5 py-0.5 rounded-md text-[9px] font-mono font-bold bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30">
+                Img custom
+              </span>
+            ) : null}
+          </div>
+          {item.catalogSlug && item.catalogSlug !== (item.productSlug ?? '') && (
+            <div className="px-2 mt-1 text-[10px] font-mono text-neutral-400">
+              catalogSlug (legacy) : {item.catalogSlug}
+            </div>
+          )}
+        </div>
       </div>
+
+      {expanded && (
+        <div className="mt-3 pt-3 border-t border-neutral-200 dark:border-white/10 space-y-3 px-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mb-1">
+                Environnement
+              </label>
+              <select
+                value={item.environment ?? ''}
+                onChange={(e) =>
+                  onPatch({
+                    environment: (e.target.value === '' ? null : e.target.value) as 'indoor' | 'outdoor' | 'both' | null,
+                  })
+                }
+                className="w-full px-2.5 py-1.5 text-xs rounded-lg bg-white dark:bg-zinc-800 border border-neutral-200 dark:border-white/10 text-neutral-800 dark:text-white focus:outline-none focus:border-emerald-500/50"
+              >
+                <option value="">Non spécifié / hérité</option>
+                <option value="indoor">Intérieur</option>
+                <option value="outdoor">Extérieur</option>
+                <option value="both">Intérieur et extérieur</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mb-1">
+                Titre du panneau de présentation (si différent)
+              </label>
+              <input
+                type="text"
+                value={item.previewTitleFr ?? ''}
+                onChange={(e) => onPatch({ previewTitleFr: e.target.value || null })}
+                placeholder={item.label || product?.name || 'Identique au nom affiché'}
+                className="w-full px-2.5 py-1.5 text-xs rounded-lg bg-white dark:bg-zinc-800 border border-neutral-200 dark:border-white/10 text-neutral-800 dark:text-white focus:outline-none focus:border-emerald-500/50"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mb-1">
+                Lien de destination personnalisé
+              </label>
+              <input
+                type="text"
+                value={item.customUrl ?? ''}
+                onChange={(e) => onPatch({ customUrl: e.target.value || null })}
+                placeholder={item.productSlug ? `/product/${item.productSlug}` : '/web/products'}
+                className="w-full px-2.5 py-1.5 text-xs font-mono rounded-lg bg-white dark:bg-zinc-800 border border-neutral-200 dark:border-white/10 text-neutral-800 dark:text-white focus:outline-none focus:border-emerald-500/50"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mb-1">
+                Image de présentation (URL personnalisée)
+              </label>
+              <input
+                type="text"
+                value={item.customImg ?? ''}
+                onChange={(e) => onPatch({ customImg: e.target.value || null })}
+                placeholder="https://... (par défaut : image principale Firestore)"
+                className="w-full px-2.5 py-1.5 text-xs font-mono rounded-lg bg-white dark:bg-zinc-800 border border-neutral-200 dark:border-white/10 text-neutral-800 dark:text-white focus:outline-none focus:border-emerald-500/50"
+              />
+            </div>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                Description individuelle
+              </label>
+              {item.descFr && item.descFr.trim() ? (
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                    ● Mode B (description individuelle active)
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => onPatch({ descFr: null })}
+                    className="text-[10px] underline text-neutral-400 hover:text-rose-400 cursor-pointer"
+                  >
+                    Revenir à la commune
+                  </button>
+                </div>
+              ) : columnDescFr && columnDescFr.trim() ? (
+                <span className="text-[10px] text-sky-600 dark:text-sky-400 font-medium">
+                  ● Mode A (utilise la description commune de la section)
+                </span>
+              ) : (
+                <span className="text-[10px] text-neutral-400">
+                  (Optionnel — hérite de la section ou fiche produit)
+                </span>
+              )}
+            </div>
+            <textarea
+              value={item.descFr ?? ''}
+              onChange={(e) => onPatch({ descFr: e.target.value || null })}
+              rows={2}
+              placeholder={
+                columnDescFr && columnDescFr.trim()
+                  ? `Texte commun hérité : « ${columnDescFr.slice(0, 80)}… » (saisir pour remplacer)`
+                  : 'Saisissez une description propre à ce produit pour le panneau du méga-menu...'
+              }
+              className="w-full px-2.5 py-1.5 text-xs rounded-lg bg-white dark:bg-zinc-800 border border-neutral-200 dark:border-white/10 text-neutral-800 dark:text-white focus:outline-none focus:border-emerald-500/50 resize-y"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

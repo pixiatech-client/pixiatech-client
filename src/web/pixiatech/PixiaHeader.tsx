@@ -50,17 +50,26 @@ interface MenuItemModel {
   clickable: boolean;
   productSlug: string | null;
   catalogSlug: string | null;
+  customUrl: string | null;
+  customImg: string | null;
   product: ProductRecord | null;
   legacy: CatalogProduct | null;
   img: string | null;
   descEn: string;
   descFr: string;
+  /** Titre affiché dans le panneau de prévisualisation (override item > label) */
+  previewTitle: string;
+  /** Tag d'environnement : 'indoor' | 'outdoor' | 'both' | '' */
+  environment: 'indoor' | 'outdoor' | 'both' | '';
 }
 
 interface MenuColumnModel {
   id: string;
   titleEn: string;
   titleFr: string;
+  /** Description commune à tous les items de la colonne (fallback si item n'a pas de desc individuelle) */
+  descFr: string;
+  descEn: string;
   items: MenuItemModel[];
 }
 
@@ -71,11 +80,40 @@ function productImg(p: ProductRecord | null): string | null {
 function makeModel(
   item: MegaMenuItem,
   productBySlug: Map<string, ProductRecord>,
-  legacyBySlug: Map<string, CatalogProduct>
+  legacyBySlug: Map<string, CatalogProduct>,
+  columnDescFr: string,
+  columnDescEn: string,
 ): MenuItemModel {
   const product = item.productSlug ? productBySlug.get(item.productSlug) ?? null : null;
   const legacy = item.catalogSlug ? legacyBySlug.get(item.catalogSlug) ?? null : null;
-  const clickable = !!product && product.status === 'published';
+  const clickable = Boolean((product && product.status === 'published') || (item.customUrl && item.customUrl.trim()));
+  // Description : priorité item > colonne commune > produit Firestore
+  const descFr =
+    (item.descFr && item.descFr.trim()) ||
+    columnDescFr ||
+    product?.description?.shortFr ||
+    legacy?.shortDescFr ||
+    '';
+  const descEn =
+    (item.descEn && item.descEn.trim()) ||
+    columnDescEn ||
+    product?.description?.shortEn ||
+    legacy?.shortDescEn ||
+    '';
+  // Titre de prévisualisation : override item > label
+  const activeLangGuard = typeof window !== 'undefined' ? undefined : undefined; // SSR-safe, calculé à l'usage
+  void activeLangGuard;
+  const previewTitle =
+    item.previewTitleFr?.trim() ||
+    item.label ||
+    product?.name ||
+    legacy?.name ||
+    '';
+  // Environnement affiché à côté du nom
+  const environment: 'indoor' | 'outdoor' | 'both' | '' =
+    item.environment === 'indoor' || item.environment === 'outdoor' || item.environment === 'both'
+      ? item.environment
+      : '';
   return {
     id: item.id,
     label: item.label || product?.name || legacy?.name || '',
@@ -85,9 +123,13 @@ function makeModel(
     catalogSlug: item.catalogSlug ?? null,
     product,
     legacy,
-    img: productImg(product) ?? legacy?.img ?? null,
-    descEn: product?.description?.shortEn ?? legacy?.shortDescEn ?? '',
-    descFr: product?.description?.shortFr ?? legacy?.shortDescFr ?? '',
+    img: (item.customImg && item.customImg.trim()) || productImg(product) || legacy?.img || null,
+    customUrl: item.customUrl?.trim() || null,
+    customImg: item.customImg?.trim() || null,
+    descEn,
+    descFr,
+    previewTitle,
+    environment,
   };
 }
 
@@ -107,10 +149,12 @@ function buildMenuModel(
         id: c.id || 'col',
         titleEn: c.titleEn ?? '',
         titleFr: c.titleFr ?? '',
+        descFr: c.descFr ?? '',
+        descEn: c.descEn ?? '',
         items: c.items
           .filter((i) => i && typeof i === 'object')
           .filter((i) => i.visible !== false)
-          .map((i) => makeModel(i, productBySlug, legacyBySlug))
+          .map((i) => makeModel(i, productBySlug, legacyBySlug, c.descFr ?? '', c.descEn ?? ''))
           .filter((m) => m.label),
       }));
   } else {
@@ -308,21 +352,31 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
     model.flat.find((m) => m.id === hoveredItemId) ?? model.flat.find((m) => m.clickable) ?? null;
 
   const preview = hoveredItem;
-  const previewName = preview?.label ?? '';
+  const previewName = preview?.previewTitle ?? preview?.label ?? '';
   const previewImgRaw = preview?.img ?? null;
   useEffect(() => setPreviewImgFailed(false), [previewImgRaw]);
   const previewImg = previewImgRaw && !previewImgFailed ? previewImgRaw : null;
   const previewPitch = preview?.legacy?.pitch ?? '';
   const previewDesc = activeLang === 'FR' ? preview?.descFr ?? '' : preview?.descEn ?? '';
 
-  const navigateTo = (target: { clickable: boolean; productSlug: string | null }) => {
-    if (!target.clickable || !target.productSlug) return;
+  const navigateTo = (target: { clickable: boolean; productSlug: string | null; customUrl?: string | null }) => {
+    if (!target.clickable) return;
     setMegaOpen(false);
     setMobileMenuOpen(false);
     setSearchOpen(false);
-    trackProductClick(target.productSlug);
-    router.push(webLink(`/product/${target.productSlug}`));
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (target.customUrl) {
+      if (target.customUrl.startsWith('http://') || target.customUrl.startsWith('https://')) {
+        window.open(target.customUrl, '_blank', 'noopener,noreferrer');
+      } else {
+        router.push(webLink(target.customUrl));
+      }
+      return;
+    }
+    if (target.productSlug) {
+      trackProductClick(target.productSlug);
+      router.push(webLink(`/product/${target.productSlug}`));
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   const navigateBySlug = (slug: string) => {
@@ -1043,9 +1097,16 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                               fontFamily: 'var(--font-mono)',
                               color: isHovered ? '#fff' : '#7A7A76',
                               letterSpacing: '.1em',
+                              textTransform: 'uppercase',
                             }}
                           >
-                            {m.tag || (m.clickable ? '' : activeLang === 'FR' ? 'INDISPONIBLE' : 'UNAVAILABLE')}
+                            {m.environment === 'indoor'
+                              ? activeLang === 'FR' ? 'INTÉRIEUR' : 'INDOOR'
+                              : m.environment === 'outdoor'
+                              ? activeLang === 'FR' ? 'EXTÉRIEUR' : 'OUTDOOR'
+                              : m.environment === 'both'
+                              ? activeLang === 'FR' ? 'INT. & EXT.' : 'IN & OUT'
+                              : m.tag || (m.clickable ? '' : activeLang === 'FR' ? 'INDISPONIBLE' : 'UNAVAILABLE')}
                           </span>
                         </div>
                       );
@@ -1140,9 +1201,31 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                       color: '#7A7A76',
                       marginBottom: 6,
                       fontFamily: 'var(--font-mono)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
                     }}
                   >
-                    {activeLang === 'FR' ? 'SÉRIE SÉLECTIONNÉE' : 'FEATURED SERIES'}
+                    <span>{activeLang === 'FR' ? 'SÉRIE SÉLECTIONNÉE' : 'FEATURED SERIES'}</span>
+                    {preview?.environment && (
+                      <span
+                        style={{
+                          color: accentColor,
+                          background: 'rgba(255,255,255,0.06)',
+                          padding: '2px 6px',
+                          borderRadius: 4,
+                          fontSize: 9.5,
+                          letterSpacing: '.12em',
+                          textTransform: 'uppercase',
+                        }}
+                      >
+                        {preview.environment === 'indoor'
+                          ? activeLang === 'FR' ? 'INTÉRIEUR' : 'INDOOR'
+                          : preview.environment === 'outdoor'
+                          ? activeLang === 'FR' ? 'EXTÉRIEUR' : 'OUTDOOR'
+                          : activeLang === 'FR' ? 'INT. & EXT.' : 'IN & OUT'}
+                      </span>
+                    )}
                   </div>
 
                   <div style={{ fontSize: 20, fontWeight: 800, color: '#F5F4F0', marginBottom: 6 }}>

@@ -8,8 +8,8 @@
 import { isValidSlug, type MegaMenu, type MegaMenuItem, type MegaMenuColumn } from './types';
 
 const ALLOWED_MENU_KEYS = ['columns', 'updatedAt'];
-const ALLOWED_COLUMN_KEYS = ['id', 'titleEn', 'titleFr', 'items'];
-const ALLOWED_ITEM_KEYS = ['id', 'label', 'catalogSlug', 'productSlug', 'visible'];
+const ALLOWED_COLUMN_KEYS = ['id', 'titleEn', 'titleFr', 'items', 'descFr', 'descEn'];
+const ALLOWED_ITEM_KEYS = ['id', 'label', 'catalogSlug', 'productSlug', 'customUrl', 'customImg', 'visible', 'previewTitleFr', 'previewTitleEn', 'descFr', 'descEn', 'environment'];
 const PRODUCT_DATA_HINT =
   'Seules les références (catalogSlug / productSlug) sont admises — aucune donnée produit dans le menu.';
 
@@ -82,6 +82,18 @@ function sanitizeItem(raw: unknown, columnLabel: string, index: number): MegaMen
     catalogSlug: catalogSlug ?? null,
   };
   if (typeof item.visible === 'boolean') parsed.visible = item.visible;
+  if (typeof item.customUrl === 'string') parsed.customUrl = item.customUrl.trim() || null;
+  if (typeof item.customImg === 'string') parsed.customImg = item.customImg.trim() || null;
+  // Champs de présentation individuels (optionnels)
+  if (typeof item.previewTitleFr === 'string') parsed.previewTitleFr = item.previewTitleFr.trim() || null;
+  if (typeof item.previewTitleEn === 'string') parsed.previewTitleEn = item.previewTitleEn.trim() || null;
+  if (typeof item.descFr === 'string') parsed.descFr = item.descFr.trim() || null;
+  if (typeof item.descEn === 'string') parsed.descEn = item.descEn.trim() || null;
+  if (item.environment === 'indoor' || item.environment === 'outdoor' || item.environment === 'both') {
+    parsed.environment = item.environment;
+  } else if (item.environment === null) {
+    parsed.environment = null;
+  }
   return parsed;
 }
 
@@ -117,6 +129,8 @@ function sanitizeColumn(raw: unknown, index: number): MegaMenuColumn {
     titleEn: str(col.titleEn, `${columnLabel} : titleEn`, false),
     titleFr: str(col.titleFr, `${columnLabel} : titleFr`, false),
     items: uniqueItems,
+    ...(typeof col.descFr === 'string' && col.descFr.trim() ? { descFr: col.descFr.trim() } : {}),
+    ...(typeof col.descEn === 'string' && col.descEn.trim() ? { descEn: col.descEn.trim() } : {}),
   };
 }
 

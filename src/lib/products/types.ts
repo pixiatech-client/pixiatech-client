@@ -480,14 +480,43 @@ export interface MegaMenuItem {
   label: string;
   catalogSlug?: string | null;
   productSlug?: string | null;
+  /** URL de destination personnalisée (si vide, lien standard vers /product/[slug]). */
+  customUrl?: string | null;
+  /** Image de présentation personnalisée (si vide, image principale du produit). */
+  customImg?: string | null;
   /** Affichage public : absent ou true = visible, false = masqué de l'admin et du site. */
   visible?: boolean;
+  /**
+   * Surcharge du titre affiché dans le panneau de prévisualisation du méga-menu.
+   * Si absent, le label de l'item est utilisé comme titre.
+   */
+  previewTitleFr?: string | null;
+  previewTitleEn?: string | null;
+  /**
+   * Description individuelle de l'item dans le panneau de droite.
+   * Priorité 1. Si absent, on tombe sur la description commune de la colonne.
+   * Priorité 2. Si absent, on tombe sur product.description.shortFr/En.
+   */
+  descFr?: string | null;
+  descEn?: string | null;
+  /**
+   * Environnement affiché à côté du nom du produit dans le méga-menu.
+   * 'indoor' | 'outdoor' | 'both' | null = non renseigné
+   */
+  environment?: 'indoor' | 'outdoor' | 'both' | null;
 }
 
 export interface MegaMenuColumn {
   id: string;
   titleEn: string;
   titleFr: string;
+  /**
+   * Description commune à tous les items de la colonne qui n'ont pas
+   * de description individuelle. Priorité 2 (après descFr/En de l'item,
+   * avant la description du produit Firestore).
+   */
+  descFr?: string | null;
+  descEn?: string | null;
   items: MegaMenuItem[];
 }
 
