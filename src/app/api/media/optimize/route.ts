@@ -371,6 +371,23 @@ async function cleanupFiles(files: string[]) {
 }
 
 export async function POST(request: NextRequest) {
+  // SEC-02: Admin-only gate — video encoding with FFmpeg is a CPU-heavy server
+  // operation. Only authenticated admin/commercial users may trigger this endpoint.
+  const sessionCookie = request.cookies.get('session')?.value;
+  if (!sessionCookie) {
+    return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
+  }
+  try {
+    const { adminAuth, adminDb } = getFirebaseAdmin();
+    const decoded = await adminAuth.verifySessionCookie(sessionCookie, false);
+    const userDoc = await adminDb.collection('users').doc(decoded.uid).get();
+    if (!userDoc.exists || !['admin', 'commercial'].includes(userDoc.data()?.role ?? '')) {
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 403 });
+    }
+  } catch {
+    return NextResponse.json({ error: 'Session invalide' }, { status: 401 });
+  }
+
   if (rateLimitExceeded(request, 24, 120)) {
     return NextResponse.json({ error: 'Trop de requêtes de compression, veuillez réessayer plus tard' }, { status: 429 });
   }

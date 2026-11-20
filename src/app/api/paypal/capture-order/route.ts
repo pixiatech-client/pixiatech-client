@@ -21,20 +21,40 @@ import {
   paypalCaptureAlreadyUsed,
 } from '@/lib/stock-reservation';
 
-// Lightweight auth gate: at least one valid session cookie must be present.
-// This blocks anonymous abuse of the capture endpoint (order creation, customer
-// upsert, magic link email). PayPal orderId alone is NOT sufficient auth because
-// it can leak through logs, network traces, or be guessed.
+// SEC-05: Cryptographically validate the client_session JWT (HS256 via jose) rather
+// than merely checking cookie presence. The admin session cookie is verified via
+// Firebase Admin SDK. If neither resolves, return 401.
 async function requireAuthenticatedSession(req: NextRequest): Promise<NextResponse | null> {
-  const clientSession = req.cookies.get('client_session')?.value;
-  const adminSession = req.cookies.get('session')?.value;
-  if (!clientSession && !adminSession) {
+  const clientSessionCookie = req.cookies.get('client_session')?.value;
+  const adminSessionCookie = req.cookies.get('session')?.value;
+
+  if (!clientSessionCookie && !adminSessionCookie) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-  // We do a presence check here; downstream server-side code already uses Admin SDK
-  // with its own authorization. Returning 401 if neither cookie exists blocks
-  // the anonymous attack vector without disrupting legitimate clients.
-  return null;
+
+  // Validate client JWT if present
+  if (clientSessionCookie) {
+    try {
+      const { decrypt } = await import('@/lib/auth');
+      const payload = await decrypt(clientSessionCookie);
+      if (payload?.customerId) return null; // valid customer session
+    } catch {
+      // invalid JWT — fall through to try admin session
+    }
+  }
+
+  // Validate admin Firebase session cookie if present
+  if (adminSessionCookie) {
+    try {
+      const { adminAuth } = getFirebaseAdmin();
+      await adminAuth.verifySessionCookie(adminSessionCookie, false);
+      return null; // valid admin session
+    } catch {
+      // invalid admin session — fall through
+    }
+  }
+
+  return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 }
 
 function buildWelcomeEmailHtml(linkUrl: string, expiresInMinutes: number): string {

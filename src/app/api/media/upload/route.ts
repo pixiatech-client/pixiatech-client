@@ -8,6 +8,7 @@ import {
 } from '@/lib/media-upload-diag';
 import { stageFile, deleteStagedSource, sweepStaging } from '@/lib/media-stage';
 import { rateLimitExceeded } from '@/lib/rate-limit';
+import { getFirebaseAdmin } from '@/lib/firebase-admin';
 
 const MAX_VIDEO_SIZE = 100 * 1024 * 1024;
 
@@ -34,6 +35,23 @@ function verifyMagicBytes(buffer: Buffer, declaredMime: string): boolean {
  * l'en-tête `x-source-upload-id`. DELETE libère la source temporaire.
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  // SEC-02: Admin-only gate — raw video staging consumes disk and spawns FFmpeg.
+  // Only authenticated admin/commercial users may trigger this endpoint.
+  const sessionCookie = request.cookies.get('session')?.value;
+  if (!sessionCookie) {
+    return NextResponse.json({ error: 'Non authentifié', uploadId: 'n/a' }, { status: 401 });
+  }
+  try {
+    const { adminAuth, adminDb } = getFirebaseAdmin();
+    const decoded = await adminAuth.verifySessionCookie(sessionCookie, false);
+    const userDoc = await adminDb.collection('users').doc(decoded.uid).get();
+    if (!userDoc.exists || !['admin', 'commercial'].includes(userDoc.data()?.role ?? '')) {
+      return NextResponse.json({ error: 'Non autorisé', uploadId: 'n/a' }, { status: 403 });
+    }
+  } catch {
+    return NextResponse.json({ error: 'Session invalide', uploadId: 'n/a' }, { status: 401 });
+  }
+
   if (rateLimitExceeded(request, 40, 200)) {
     return NextResponse.json({ error: 'Trop de téléversements, veuillez réessayer plus tard' }, { status: 429 });
   }

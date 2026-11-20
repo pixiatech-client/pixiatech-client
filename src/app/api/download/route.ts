@@ -133,52 +133,65 @@ export async function GET(request: NextRequest) {
       parsedUrl.pathname.includes('/o/chats/');
 
     if (isFirebaseStorageUrl) {
+      // SEC-03: Chat attachments MUST be served via Admin SDK with auth check only.
+      // Any failure (unauthenticated, unauthorized, Admin SDK error) results in 401/403.
+      // We never fall through to the public fetch for /chats/ paths.
+      let uid: string | null = null;
       try {
         const { app, adminAuth, adminDb } = getFirebaseAdmin();
-        const uid = await authenticateUser(request, adminAuth);
+        uid = await authenticateUser(request, adminAuth);
 
-        if (uid) {
-          // Récupérer le rôle de l'utilisateur
-          let role: string | undefined;
-          try {
-            const userDoc = await adminDb.collection('users').doc(uid).get();
-            if (userDoc.exists) role = userDoc.data()?.role;
-          } catch {}
-
-          const chatId = extractChatId(urlParam);
-          let authorized = true;
-          if (chatId) {
-            authorized = await isAuthorizedForChat(uid, chatId, adminDb, role);
-          }
-
-          if (authorized) {
-            // Extraire le chemin dans le bucket
-            const pathMatch = decodeURIComponent(parsedUrl.pathname).match(/\/o\/(.+)$/);
-            const bucketMatch = parsedUrl.pathname.match(/\/v0\/b\/([^/]+)\/o\//);
-            if (pathMatch) {
-              const storagePath = pathMatch[1];
-              const bucketName = bucketMatch ? bucketMatch[1] : undefined;
-              const bucket = bucketName ? getStorage(app).bucket(bucketName) : getStorage(app).bucket();
-              const fileRef = bucket.file(storagePath);
-              const [buffer] = await fileRef.download();
-              const [metadata] = await fileRef.getMetadata();
-              const contentType = metadata.contentType || 'application/octet-stream';
-              const safeAscii = filename.replace(/[^\x20-\x7E]/g, '_').replace(/["\\]/g, '');
-              const encodedFilename = encodeURIComponent(filename);
-
-              return new Response(buffer, {
-                headers: {
-                  'Content-Type': contentType,
-                  'Content-Disposition': `attachment; filename="${safeAscii}"; filename*=UTF-8''${encodedFilename}`,
-                  'Cache-Control': 'private, no-store',
-                  'X-Content-Type-Options': 'nosniff',
-                },
-              });
-            }
-          }
+        if (!uid) {
+          return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
         }
+
+        // Récupérer le rôle de l'utilisateur
+        let role: string | undefined;
+        try {
+          const userDoc = await adminDb.collection('users').doc(uid).get();
+          if (userDoc.exists) role = userDoc.data()?.role;
+        } catch {}
+
+        const chatId = extractChatId(urlParam);
+        let authorized = true;
+        if (chatId) {
+          authorized = await isAuthorizedForChat(uid, chatId, adminDb, role);
+        }
+
+        if (!authorized) {
+          return NextResponse.json({ error: 'Accès non autorisé à cette pièce jointe' }, { status: 403 });
+        }
+
+        // Extraire le chemin dans le bucket
+        const pathMatch = decodeURIComponent(parsedUrl.pathname).match(/\/o\/(.+)$/);
+        const bucketMatch = parsedUrl.pathname.match(/\/v0\/b\/([^/]+)\/o\//);
+        if (pathMatch) {
+          const storagePath = pathMatch[1];
+          const bucketName = bucketMatch ? bucketMatch[1] : undefined;
+          const bucket = bucketName ? getStorage(app).bucket(bucketName) : getStorage(app).bucket();
+          const fileRef = bucket.file(storagePath);
+          const [buffer] = await fileRef.download();
+          const [metadata] = await fileRef.getMetadata();
+          const contentType = metadata.contentType || 'application/octet-stream';
+          const safeAscii = filename.replace(/[^\x20-\x7E]/g, '_').replace(/["\\]/g, '');
+          const encodedFilename = encodeURIComponent(filename);
+
+          return new Response(buffer, {
+            headers: {
+              'Content-Type': contentType,
+              'Content-Disposition': `attachment; filename="${safeAscii}"; filename*=UTF-8''${encodedFilename}`,
+              'Cache-Control': 'private, no-store',
+              'X-Content-Type-Options': 'nosniff',
+            },
+          });
+        }
+
+        // Chemin introuvable dans l'URL
+        return NextResponse.json({ error: 'Chemin de fichier invalide' }, { status: 400 });
       } catch (adminErr) {
-        console.warn('[download] Admin SDK fetch failed, falling through to direct URL fetch:', adminErr);
+        console.error('[download] Admin SDK error for chat attachment:', adminErr);
+        // SEC-03: Never fall through to public fetch for chat paths — return 502 instead.
+        return NextResponse.json({ error: 'Erreur lors de la récupération du fichier' }, { status: 502 });
       }
     }
 

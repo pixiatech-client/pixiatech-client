@@ -1,6 +1,7 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
 import { rateLimitExceeded } from '@/lib/rate-limit';
+import { getFirebaseAdmin } from '@/lib/firebase-admin';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,7 +25,24 @@ interface GeminiRequest {
   responseMimeType?: string;
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  // SEC-01: Admin-only gate — this endpoint uses the server GEMINI_API_KEY and
+  // must only be accessible to authenticated admin users.
+  const sessionCookie = request.cookies.get('session')?.value;
+  if (!sessionCookie) {
+    return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
+  }
+  try {
+    const { adminAuth, adminDb } = getFirebaseAdmin();
+    const decoded = await adminAuth.verifySessionCookie(sessionCookie, false);
+    const userDoc = await adminDb.collection('users').doc(decoded.uid).get();
+    if (!userDoc.exists || !['admin', 'commercial'].includes(userDoc.data()?.role ?? '')) {
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 403 });
+    }
+  } catch {
+    return NextResponse.json({ error: 'Session invalide' }, { status: 401 });
+  }
+
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     return NextResponse.json({ error: 'GEMINI_API_KEY is not configured' }, { status: 500 });

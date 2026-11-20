@@ -16,6 +16,26 @@ const ALLOWED_MIME: Record<string, string> = {
 };
 
 /**
+ * SEC-04: Strip potentially executable content from SVG files.
+ * Removes <script>, event handlers (on*=), and javascript: href/xlink:href attributes
+ * before persisting to Firebase Storage.
+ */
+function sanitizeSvg(svgContent: string): string {
+  return svgContent
+    // Remove all <script> blocks (including CDATA)
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    // Remove standalone <script ... /> self-closing tags
+    .replace(/<script[^>]*\/>/gi, '')
+    // Remove inline event handlers (on* attributes)
+    .replace(/\s+on\w+\s*=\s*(['"])[^'"]*\1/gi, '')
+    .replace(/\s+on\w+\s*=\s*[^\s>]+/gi, '')
+    // Remove javascript: in href / xlink:href / action
+    .replace(/(href|xlink:href|action)\s*=\s*(['"])\s*javascript:[^'"]*\2/gi, '')
+    // Remove <use> with external SVG references (potential SSRF)
+    .replace(/<use[^>]+xlink:href\s*=\s*(['"])[^#][^'"]*\1[^>]*>/gi, '');
+}
+
+/**
  * Upload d'image CMS vers Firebase Storage (admin uniquement).
  *
  * Remplace l'ancien mécanisme fs.writeFileSync qui écrivait dans
@@ -79,6 +99,13 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // SEC-04: Sanitize SVG before storing to prevent XSS via embedded scripts.
+  let finalBuffer = buffer;
+  if (contentType === 'image/svg+xml') {
+    const sanitized = sanitizeSvg(buffer.toString('utf8'));
+    finalBuffer = Buffer.from(sanitized, 'utf8');
+  }
+
   // Construit le nom de fichier dans Firebase Storage
   // Préserve le nom original (sans extension dupliquée) et ajoute un suffixe unique
   const rawName = body.filename
@@ -92,7 +119,7 @@ export async function POST(request: NextRequest) {
     const bucket = getStorage(app).bucket();
     const file = bucket.file(storagePath);
 
-    await file.save(buffer, {
+    await file.save(finalBuffer, {
       metadata: { contentType },
       public: false,
     });
