@@ -35,7 +35,7 @@ export default function LayoutSelector({
   return (
     <button
       type="button"
-      className={`layout-selector layout-mode-${value}`}
+      className={`layout-selector layout-mode-${value} relative flex items-center justify-center size-11 rounded-[10px] border border-gray-200/80 bg-white shadow-xs text-gray-500 hover:text-gray-800 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 shrink-0 cursor-pointer`}
       onClick={handleClick}
       aria-label={
         value === 1

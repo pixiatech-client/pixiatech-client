@@ -33,16 +33,14 @@
   -webkit-tap-highlight-color: transparent;
   -webkit-appearance: none;
 
-  box-shadow:
-    0 1px 2px 0 rgba(0, 0, 0, 0.05),
-    0 1px 3px 0 rgba(0, 0, 0, 0.03); /* shadow-sm des voisins */
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 
   transform: scale(var(--scale, 1)) translateZ(0);
 
   transition:
-    background-color 250ms ease,
-    border-color 250ms ease,
-    box-shadow 250ms ease,
+    background-color 200ms ease,
+    border-color 200ms ease,
+    box-shadow 200ms ease,
     transform 160ms ease;
 }
 
@@ -51,8 +49,8 @@
    ========================================================= */
 
 .layout-selector:hover {
-  border-color: rgba(229, 231, 235, 1); /* gray-200 */
-  background-color: #fcfcfd;
+  border-color: rgba(209, 213, 219, 1);
+  background-color: #f9fafb;
 }
 
 .layout-selector:active {
@@ -71,10 +69,12 @@
 .layout-selector-icon {
   position: relative;
 
-  width: 22px;
-  height: 22px;
+  width: 17px;
+  height: 17px;
 
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* =========================================================
@@ -91,7 +91,7 @@
   grid-template-columns: repeat(2, 1fr);
   grid-template-rows: repeat(2, 1fr);
 
-  gap: 3px;
+  gap: 2.5px;
 
   transition:
     opacity 300ms ease,
