@@ -224,10 +224,8 @@ export default function CartPage() {
   const total = calc.total;
   const discount = promo ? subtotal - totalAfterDiscount : 0;
   return (
-    <div className="w-full min-h-[100dvh] bg-[#F5F5F5]" style={{ backgroundColor: '#F5F5F5' }}>
-
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 lg:px-10 py-8">
+    <div className="w-full min-h-[100dvh] bg-[#F8FAFC]">
+      <main className="max-w-7xl mx-4 lg:mx-auto py-8">
         {items.length === 0 ? (
           <div className="text-center py-20">
             <ShoppingBag size={48} className="mx-auto text-gray-300 mb-4" />

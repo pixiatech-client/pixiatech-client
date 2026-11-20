@@ -649,7 +649,7 @@ export default function ProductDetailPage() {
 
   if (loading) {
     return (
-      <div className="w-full min-h-[100dvh] flex items-center justify-center bg-[#F5F5F5]" style={{ backgroundColor: '#F5F5F5' }}>
+      <div className="w-full min-h-[100dvh] flex items-center justify-center bg-[#F8FAFC]">
         <LiquidLoader size={110} />
       </div>
     );
@@ -657,7 +657,7 @@ export default function ProductDetailPage() {
 
   if (!product) {
     return (
-      <div className="w-full min-h-[100dvh] flex items-center justify-center bg-[#F5F5F5]" style={{ backgroundColor: '#F5F5F5' }}>
+      <div className="w-full min-h-[100dvh] flex items-center justify-center bg-[#F8FAFC]">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">{t('product.notFound')}</h1>
           <button onClick={() => router.push('/boutique')} className="px-4 py-2 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:bg-blue-600 transition-all">{t('product.backToShop')}</button>
@@ -667,7 +667,7 @@ export default function ProductDetailPage() {
   }
 
   return (
-    <div className="w-full min-h-[100dvh] bg-[#F5F5F5]" style={{ backgroundColor: '#F5F5F5' }}>
+    <div className="w-full min-h-[100dvh] bg-[#F8FAFC]">
       {lightboxOpen && (
         <Lightbox
           items={mediaItems}
@@ -678,7 +678,7 @@ export default function ProductDetailPage() {
         />
       )}
 
-      <main className={`max-w-7xl mx-auto px-6 md:px-12 lg:px-16 pb-16 ${showRentalContent || showQuoteForm ? 'pt-6' : 'pt-24'}`}>
+      <main className={`max-w-7xl mx-4 lg:mx-auto pb-16 ${showRentalContent || showQuoteForm ? 'pt-6' : 'pt-24'}`}>
         <div className="lg:mr-[450px]">
             {showRentalContent ? (
             <div className="max-w-2xl">
@@ -1295,7 +1295,7 @@ export default function ProductDetailPage() {
             </section>
 
             {/* Mobile purchase info */}
-            <div className="lg:hidden flex flex-col mb-6" style={{ backgroundColor: '#F5F5F5' }}>
+            <div className="lg:hidden flex flex-col mb-6 bg-[#F8FAFC]">
               <span className="text-xs font-bold uppercase tracking-widest text-blue-500 mb-2">{product.category}</span>
               <h1 className="text-xl font-bold text-gray-900 mb-2">{product.name}</h1>
               {product.description && product.description.length <= 60 && (

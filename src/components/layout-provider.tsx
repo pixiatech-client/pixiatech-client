@@ -129,7 +129,8 @@ export function LayoutProvider({
                 <SiteBanners />
                 <main
                   className={cn(
-                    'flex-1 flex items-start justify-center w-full bg-[#F8FAFC]',
+                    'flex-1 flex w-full bg-[#F8FAFC]',
+                    isBoutiquePage ? 'flex-col items-stretch' : 'items-start justify-center',
                     isHomePage && 'px-4 pb-4 pt-8 md:px-6 md:pb-6 md:pt-8',
                     !isHomePage && !isQuotePage && !isBoutiquePage && !isMonComptePage && !isContactPage && 'px-4 pb-4 md:px-6 md:pb-6',
                   )}

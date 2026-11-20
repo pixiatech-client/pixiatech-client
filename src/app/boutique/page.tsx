@@ -462,7 +462,7 @@ export default function BoutiquePage() {
   };
 
   return (
-    <div className="w-full min-h-[100dvh] bg-[#F5F5F5]" style={{ backgroundColor: '#F5F5F5' }}>
+    <div className="w-full min-h-[100dvh] bg-[#F8FAFC]">
       <FilterDrawer
         open={filterOpen}
         onClose={() => setFilterOpen(false)}
@@ -480,7 +480,7 @@ export default function BoutiquePage() {
       />
 
       {quoteDeclinedId && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 lg:px-10 mt-4 p-6 bg-white rounded-2xl border border-gray-200/70 shadow-sm">
+        <div className="max-w-7xl mx-4 lg:mx-auto mt-4 p-6 bg-white rounded-2xl border border-gray-200/70 shadow-sm">
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
               <ShoppingBag className="w-6 h-6 text-amber-600" />
@@ -522,8 +522,8 @@ export default function BoutiquePage() {
           </div>
         </div>
       )}
-      <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-2 md:gap-3 px-4 sm:px-6 md:px-8 lg:px-10 py-2 md:py-4 border-b border-gray-200/40">
-        <nav className="relative flex items-center space-x-1 bg-gray-200/40 p-1 sm:p-1.5 rounded-full overflow-x-auto scrollbar-hide">
+      <div className="max-w-7xl mx-4 lg:mx-auto flex flex-col md:flex-row md:items-center justify-between gap-3 py-3 border-b border-gray-200/40">
+        <nav className="relative flex items-center space-x-1 bg-gray-200/40 p-1 sm:p-1.5 rounded-full overflow-x-auto scrollbar-hide shrink-0 max-w-full">
           {[
             { id: 'all', label: t('boutique.products') },
             { id: 'sale', label: t('boutique.sale') },
@@ -642,11 +642,12 @@ export default function BoutiquePage() {
               setSearchOpen(true);
               setTimeout(() => searchInputRef.current?.focus(), 100);
             }}
-            className={`relative flex items-center justify-center size-9 rounded-full border border-transparent hover:border-gray-200 bg-white shadow-sm transition-all duration-300 ${
-              searchQuery ? 'text-gray-900 border-gray-300 scale-110' : 'text-gray-400 hover:text-gray-600 hover:scale-110'
+            aria-label={t('boutique.search')}
+            className={`relative flex items-center justify-center size-11 rounded-xl border border-transparent hover:border-gray-200 bg-white shadow-sm transition-all duration-300 ${
+              searchQuery ? 'text-gray-900 border-gray-300 scale-105' : 'text-gray-400 hover:text-gray-600 hover:scale-105'
             } active:scale-95 shrink-0`}
           >
-            <Search size={14} />
+            <Search size={15} />
             {searchQuery && (
               <span className="absolute -top-1 -right-1 size-4 bg-gray-900 text-white text-[9px] font-bold flex items-center justify-center rounded-full">!</span>
             )}
@@ -654,9 +655,10 @@ export default function BoutiquePage() {
           <LayoutSelector value={layout} onChange={setLayout} />
           <button
             onClick={() => setFilterOpen(true)}
-            className="relative flex items-center justify-center size-9 rounded-full border border-transparent hover:border-gray-200 bg-white shadow-sm text-gray-400 hover:text-gray-600 hover:scale-110 active:scale-95 transition-all duration-300 shrink-0"
+            aria-label={t('boutique.filters')}
+            className="relative flex items-center justify-center size-11 rounded-xl border border-transparent hover:border-gray-200 bg-white shadow-sm text-gray-400 hover:text-gray-600 hover:scale-105 active:scale-95 transition-all duration-300 shrink-0"
           >
-            <SlidersHorizontal size={14} />
+            <SlidersHorizontal size={15} />
             {activeFilterCount > 0 && (
               <span className="absolute -top-1 -right-1 size-4 bg-gray-900 text-white text-[9px] font-bold flex items-center justify-center rounded-full">{activeFilterCount}</span>
             )}
@@ -671,7 +673,7 @@ export default function BoutiquePage() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.97 }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 lg:px-10 pt-4"
+            className="max-w-7xl mx-4 lg:mx-auto pt-4"
           >
             <div className="relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-gray-400 pointer-events-none" />
@@ -694,7 +696,7 @@ export default function BoutiquePage() {
         )}
       </AnimatePresence>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 lg:px-10 py-6">
+      <main className="max-w-7xl mx-4 lg:mx-auto py-6">
         {loading ? (
           <div className="min-h-[calc(100dvh-160px)] flex items-center justify-center px-4">
             <LiquidLoader size={150} />
