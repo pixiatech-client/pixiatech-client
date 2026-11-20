@@ -6,14 +6,11 @@
  * Usage minimal :
  *   <FullscreenToggle />
  *
- * Usage avec classes personnalisées :
- *   <FullscreenToggle className="h-10 w-10 rounded-lg bg-white" />
- *
- * Usage avec tooltip personnalisé :
- *   <FullscreenToggle labelEnter="Plein écran" labelExit="Quitter" />
+ * Usage avec couleur de survol personnalisée :
+ *   <FullscreenToggle hoverColor="#FF2E93" />
  *
  * Compatible : Next.js, React 18+, Tailwind CSS.
- * Dépendances : aucune (SVG custom inline — aucune lib externe requise).
+ * Dépendances : aucune (SVG custom inline — zéro lib externe).
  * Copier-coller friendly : aucune dépendance interne au projet.
  */
 
@@ -24,7 +21,15 @@ import React, { useState, useEffect, useCallback } from 'react';
  * Les coins pointent vers l'extérieur (entrer en plein écran).
  * Un réticule central s'allume au survol ("dans lui une couleur").
  */
-function IconExpand({ size = 20, className = '' }: { size?: number; className?: string }) {
+function IconExpand({
+  size = 20,
+  strokeColor,
+  isHovered,
+}: {
+  size?: number;
+  strokeColor: string;
+  isHovered: boolean;
+}) {
   const s = 5; // longueur des branches en L
   const p = 3; // padding depuis le bord du SVG
   const dim = 20;
@@ -34,11 +39,14 @@ function IconExpand({ size = 20, className = '' }: { size?: number; className?: 
       height={size}
       viewBox={`0 0 ${dim} ${dim}`}
       fill="none"
-      stroke="currentColor"
+      stroke={strokeColor}
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className={className}
+      style={{
+        transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+        transform: isHovered ? 'scale(1.1)' : 'scale(1)',
+      }}
       aria-hidden="true"
     >
       {/* Coin haut-gauche */}
@@ -55,7 +63,14 @@ function IconExpand({ size = 20, className = '' }: { size?: number; className?: 
         cx="10"
         cy="10"
         r="1.5"
-        className="fill-current stroke-none opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+        fill={strokeColor}
+        stroke="none"
+        style={{
+          transition: 'opacity 0.2s ease, transform 0.2s ease',
+          opacity: isHovered ? 1 : 0,
+          transform: isHovered ? 'scale(1)' : 'scale(0.5)',
+          transformOrigin: 'center',
+        }}
       />
     </svg>
   );
@@ -66,7 +81,15 @@ function IconExpand({ size = 20, className = '' }: { size?: number; className?: 
  * Les coins pointent vers l'intérieur (quitter le plein écran).
  * Un réticule central s'allume au survol ("dans lui une couleur").
  */
-function IconCompress({ size = 20, className = '' }: { size?: number; className?: string }) {
+function IconCompress({
+  size = 20,
+  strokeColor,
+  isHovered,
+}: {
+  size?: number;
+  strokeColor: string;
+  isHovered: boolean;
+}) {
   const s = 5;
   const p = 3;
   const dim = 20;
@@ -77,11 +100,14 @@ function IconCompress({ size = 20, className = '' }: { size?: number; className?
       height={size}
       viewBox={`0 0 ${dim} ${dim}`}
       fill="none"
-      stroke="currentColor"
+      stroke={strokeColor}
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className={className}
+      style={{
+        transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+        transform: isHovered ? 'scale(1.1)' : 'scale(1)',
+      }}
       aria-hidden="true"
     >
       {/* Coin haut-gauche (pointe vers l'intérieur ↘) */}
@@ -98,7 +124,14 @@ function IconCompress({ size = 20, className = '' }: { size?: number; className?
         cx="10"
         cy="10"
         r="1.5"
-        className="fill-current stroke-none opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+        fill={strokeColor}
+        stroke="none"
+        style={{
+          transition: 'opacity 0.2s ease, transform 0.2s ease',
+          opacity: isHovered ? 1 : 0,
+          transform: isHovered ? 'scale(1)' : 'scale(0.5)',
+          transformOrigin: 'center',
+        }}
       />
     </svg>
   );
@@ -107,10 +140,12 @@ function IconCompress({ size = 20, className = '' }: { size?: number; className?
 export interface FullscreenToggleProps {
   /** Classes Tailwind supplémentaires appliquées au bouton */
   className?: string;
-  /** Classe de couleur appliquée à l'icône (défaut : 'text-gray-400 group-hover:text-purple-600 transition-all duration-200 group-hover:scale-105') */
-  iconClassName?: string;
   /** Taille de l'icône en px (défaut : 20) */
   iconSize?: number;
+  /** Couleur au survol — distincte des autres boutons du header (défaut : #FF2E93 Rose Néon / Fuchsia Laser) */
+  hoverColor?: string;
+  /** Couleur par défaut au repos (défaut : #9CA3AF gris) */
+  defaultColor?: string;
   /** Tooltip affiché en mode normal */
   labelEnter?: string;
   /** Tooltip affiché en mode plein écran */
@@ -122,15 +157,17 @@ export interface FullscreenToggleProps {
 }
 
 export function FullscreenToggle({
-  className,
-  iconClassName,
+  className = '',
   iconSize = 20,
+  hoverColor = '#FF2E93', // Rose Fuchsia Néon unique & éclatant (différent de bleu, indigo, vert et orange)
+  defaultColor = '#9CA3AF',
   labelEnter = 'Plein écran',
   labelExit = 'Quitter le plein écran',
   target,
   onChange,
 }: FullscreenToggleProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
 
   // Synchronise l'état avec les changements natifs (touche Échap, etc.)
   useEffect(() => {
@@ -153,35 +190,44 @@ export function FullscreenToggle({
   }, [target]);
 
   const label = isFullscreen ? labelExit : labelEnter;
+  const activeColor = isHovered ? hoverColor : defaultColor;
 
   return (
     <button
       type="button"
       onClick={toggle}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       title={label}
       aria-label={label}
       aria-pressed={isFullscreen}
       className={[
-        // Styles par défaut — surchargeable via className
         'group relative flex items-center justify-center',
         'h-11 w-11 rounded-xl',
-        'bg-white hover:bg-gray-100',
-        'shadow-sm transition-all duration-200 cursor-pointer',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500',
-        className ?? '',
+        'bg-white shadow-sm transition-all duration-200 cursor-pointer',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-500',
+        className,
       ]
         .filter(Boolean)
         .join(' ')}
+      style={{
+        boxShadow: isHovered
+          ? `0 0 14px rgba(255, 46, 147, 0.25), 0 2px 6px rgba(0, 0, 0, 0.08)`
+          : undefined,
+        borderColor: isHovered ? 'rgba(255, 46, 147, 0.35)' : undefined,
+      }}
     >
       {isFullscreen ? (
         <IconCompress
           size={iconSize}
-          className={iconClassName ?? "text-gray-400 group-hover:text-purple-600 transition-all duration-200 group-hover:scale-105"}
+          strokeColor={activeColor}
+          isHovered={isHovered}
         />
       ) : (
         <IconExpand
           size={iconSize}
-          className={iconClassName ?? "text-gray-400 group-hover:text-purple-600 transition-all duration-200 group-hover:scale-105"}
+          strokeColor={activeColor}
+          isHovered={isHovered}
         />
       )}
       <span className="sr-only">{label}</span>
