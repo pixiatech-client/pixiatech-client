@@ -54,6 +54,86 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 
     const db = await saveCmsPage(pageId, pageToSave);
     const page = db.pages?.[pageId];
+
+    // Synchronisation bidirectionnelle avec le magasin d'articles (siteWebArticles Firestore & JSON)
+    if (pageId.startsWith('article__')) {
+      const articleSlug = pageId.replace('article__', '');
+      try {
+        const { saveArticle } = await import('@/lib/site-web/articles-store');
+        const headerSec = (pageToSave.sections?.article_header as Record<string, unknown>) || {};
+        const coverSec = (pageToSave.sections?.article_cover as Record<string, unknown>) || {};
+        const bodySec = (pageToSave.sections?.article_body as Record<string, unknown>) || {};
+
+        const patch: Record<string, unknown> = {};
+        if (typeof headerSec.title === 'string' && headerSec.title) {
+          patch.title = headerSec.title;
+          patch.titleFr = headerSec.title;
+        }
+        if (typeof headerSec.desc === 'string' && headerSec.desc) {
+          patch.desc = headerSec.desc;
+          patch.descFr = headerSec.desc;
+        }
+        if (typeof headerSec.category === 'string' && headerSec.category) {
+          patch.category = headerSec.category;
+        }
+        if (typeof coverSec.cover_image === 'string' && coverSec.cover_image) {
+          patch.img = coverSec.cover_image;
+        }
+        if (typeof bodySec.product_name === 'string' && bodySec.product_name) {
+          patch.relatedProductName = bodySec.product_name;
+        }
+        if (Object.keys(patch).length > 0) {
+          await saveArticle(articleSlug, patch);
+        }
+      } catch (syncErr) {
+        console.warn(`[pageId route] sync to article-store error for ${articleSlug}:`, syncErr);
+      }
+    } else if (pageId === 'insights') {
+      try {
+        const { getArticles, saveArticle } = await import('@/lib/site-web/articles-store');
+        const featSec = (pageToSave.sections?.insights_featured as Record<string, unknown>) || {};
+        const gridSec = (pageToSave.sections?.insights_grid as Record<string, unknown>) || {};
+        const allArticles = await getArticles();
+        const featArticle = allArticles.find((a) => a.featured) || allArticles[0];
+
+        if (featArticle && featSec) {
+          const patch: Record<string, unknown> = {};
+          if (typeof featSec.featured_title === 'string' && featSec.featured_title) {
+            patch.title = featSec.featured_title;
+            patch.titleFr = featSec.featured_title;
+          }
+          if (typeof featSec.featured_desc === 'string' && featSec.featured_desc) {
+            patch.desc = featSec.featured_desc;
+            patch.descFr = featSec.featured_desc;
+          }
+          if (typeof featSec.featured_image === 'string' && featSec.featured_image) {
+            patch.img = featSec.featured_image;
+          }
+          if (Object.keys(patch).length > 0) {
+            await saveArticle(featArticle.slug, patch);
+          }
+        }
+
+        for (const a of allArticles) {
+          const cardTitle = gridSec[`card_${a.slug}_title`];
+          const cardImg = gridSec[`card_${a.slug}_image`];
+          if (cardTitle || cardImg) {
+            const cardPatch: Record<string, unknown> = {};
+            if (typeof cardTitle === 'string' && cardTitle) {
+              cardPatch.title = cardTitle;
+              cardPatch.titleFr = cardTitle;
+            }
+            if (typeof cardImg === 'string' && cardImg) {
+              cardPatch.img = cardImg;
+            }
+            await saveArticle(a.slug, cardPatch);
+          }
+        }
+      } catch (syncErr) {
+        console.warn('[pageId route] sync insights to article-store error:', syncErr);
+      }
+    }
+
     return NextResponse.json({
       success: true,
       message: `Page '${pageId}' synchronisée avec succès dans le CMS Site Web.`,

@@ -537,8 +537,14 @@ export const VisualInPlaceEditor: React.FC = () => {
       }
 
       if (!sectionKey) return;
-      // Déjà en cours d'édition : laisser passer le clic (placement du curseur).
-      if (target.isContentEditable) return;
+      // Déjà en cours d'édition : laisser passer le clic (placement du curseur),
+      // mais empêcher impérativement toute navigation si l'élément se trouve dans un <a>.
+      if (target.isContentEditable) {
+        if (target.closest('a') || (e.target as HTMLElement)?.closest('a')) {
+          e.preventDefault();
+        }
+        return;
+      }
 
       // En mode édition : intercepter TOUT clic dans une section éditable
       // pour éviter l'exécution d'actions interactives ou de navigations
@@ -549,6 +555,10 @@ export const VisualInPlaceEditor: React.FC = () => {
       const clickableParent =
         (target.closest('a, button, [role="button"]') as HTMLElement | null) ||
         (target.tagName === 'A' || target.tagName === 'BUTTON' ? target : null);
+
+      if (clickableParent && clickableParent.tagName === 'A') {
+        e.preventDefault();
+      }
 
       const sectionRoot = getSectionNode(sectionKey);
       const elementKey = resolveElementKey(target, sectionRoot);
@@ -620,6 +630,9 @@ export const VisualInPlaceEditor: React.FC = () => {
 
       const handleEditKey = (ev: KeyboardEvent) => {
         ev.stopPropagation();
+        if (ev.key === ' ' || ev.code === 'Space') {
+          ev.stopPropagation();
+        }
         if (ev.key === 'Enter') {
           const computedWs = typeof window !== 'undefined' ? window.getComputedStyle(target).whiteSpace : '';
           const isMultiLine =
@@ -635,11 +648,19 @@ export const VisualInPlaceEditor: React.FC = () => {
         }
       };
 
+      const handleEditKeyUp = (ev: KeyboardEvent) => {
+        ev.stopPropagation();
+        if (ev.key === ' ' || ev.code === 'Space') {
+          ev.stopPropagation();
+        }
+      };
+
       const onBlur = () => {
         target.contentEditable = 'false';
         target.style.pointerEvents = originalPointerEvents;
         target.removeEventListener('blur', onBlur);
         target.removeEventListener('keydown', handleEditKey, true);
+        target.removeEventListener('keyup', handleEditKeyUp, true);
         if (!target.isConnected) return;
 
         const newText = target.innerText.replace(/[\n\r]+$/, '');
@@ -674,6 +695,7 @@ export const VisualInPlaceEditor: React.FC = () => {
       };
 
       target.addEventListener('keydown', handleEditKey, true);
+      target.addEventListener('keyup', handleEditKeyUp, true);
       target.addEventListener('blur', onBlur);
     };
 

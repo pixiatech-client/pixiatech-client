@@ -10,6 +10,7 @@ import { getAllInsightArticles } from '../data/insights-articles-content';
 import type { Language } from '../pixiatech-translations';
 import { useI18n } from '@/lib/i18n';
 import { useCms } from '@/lib/site-web/cms-context';
+import { getCmsText } from '@/lib/site-web/cms-i18n';
 import { EditableWrapper } from '../cms/EditableWrapper';
 import { ArticleEditorModal } from '../cms/ArticleEditorModal';
 import { Edit3 } from 'lucide-react';
@@ -282,7 +283,7 @@ function parseMarkdownContent(content: string): {
 
 export function PixiaInsightDetailPage({ article }: InsightDetailPageProps) {
   const { locale } = useI18n();
-  const { setCurrentPageId, isAdmin, isEditing } = useCms();
+  const { pages, setCurrentPageId, isAdmin, isEditing } = useCms();
   const lang: Language = locale === 'en' ? 'EN' : 'FR';
   const [scrollProgress, setScrollProgress] = useState(0);
   const [activeTocId, setActiveTocId] = useState<string>('');
@@ -391,6 +392,30 @@ export function PixiaInsightDetailPage({ article }: InsightDetailPageProps) {
     return all[idx + 1];
   }, [currentArticle.slug]);
 
+  const articlePageData = pages[`article__${currentArticle.slug}`]?.sections || {};
+  const headerData = (articlePageData.article_header as Record<string, unknown>) || {};
+  const coverData = (articlePageData.article_cover as Record<string, unknown>) || {};
+  const bodyData = (articlePageData.article_body as Record<string, unknown>) || {};
+  const nextData = (articlePageData.article_next as Record<string, unknown>) || {};
+
+  const headerCategory = getCmsText(headerData, 'category', lang, categoryLabel(currentArticle.category, lang));
+  const headerTitle = getCmsText(headerData, 'title', lang, titleOf(currentArticle, lang));
+  const headerDesc = getCmsText(headerData, 'desc', lang, descOf(currentArticle, lang) || '');
+  const headerMeta = getCmsText(headerData, 'meta_row', lang, `PIXIATECH · ${dateOf(currentArticle, lang)} · ${readOf(currentArticle.read, lang)}`);
+  const coverImg = (coverData['cover_image'] as string) || currentArticle.img;
+
+  const relBadge = getCmsText(bodyData, 'product_badge', lang, lang === 'FR' ? 'PRODUIT ASSOCIÉ' : 'RELATED PRODUCT');
+  const relName = getCmsText(bodyData, 'product_name', lang, relatedProduct?.name || '');
+  const relDesc = getCmsText(bodyData, 'product_desc', lang, relatedProduct?.desc || '');
+  const relCta = getCmsText(bodyData, 'product_cta', lang, lang === 'FR' ? 'VOIR LE PRODUIT' : 'VIEW PRODUCT');
+
+  const nextEyebrow = getCmsText(nextData, 'next_eyebrow', lang, lang === 'FR' ? 'RESSOURCE SUIVANTE' : 'NEXT INSIGHT');
+  const nextCat = nextArticle ? getCmsText(nextData, 'next_cat', lang, categoryLabel(nextArticle.category, lang)) : '';
+  const nextTitle = nextArticle ? getCmsText(nextData, 'next_title', lang, titleOf(nextArticle, lang)) : '';
+  const nextMeta = nextArticle ? getCmsText(nextData, 'next_meta', lang, `${readOf(nextArticle.read, lang)} · ${dateOf(nextArticle, lang)}`) : '';
+  const nextCta = getCmsText(nextData, 'next_cta', lang, lang === 'FR' ? "LIRE L'ARTICLE →" : 'READ FULL INSIGHT →');
+  const nextImg = nextArticle ? ((nextData['next_image'] as string) || nextArticle.img) : '';
+
   const content =
     lang === 'FR' ? currentArticle.contentFr ?? currentArticle.content : currentArticle.content;
   const faqs = lang === 'FR' ? currentArticle.faqsFr ?? currentArticle.faqs : currentArticle.faqs;
@@ -484,7 +509,10 @@ export function PixiaInsightDetailPage({ article }: InsightDetailPageProps) {
               }}
             >
               <a
-                href="/web/insights"
+                href={isEditing ? undefined : "/web/insights"}
+                onClick={(e) => {
+                  if (isEditing) e.preventDefault();
+                }}
                 data-link-key="back_link"
                 style={{
                   color: 'var(--muted,#8a8880)',
@@ -501,7 +529,7 @@ export function PixiaInsightDetailPage({ article }: InsightDetailPageProps) {
                 data-text-key="category"
                 style={{ color: 'var(--body,#4a4a46)' }}
               >
-                {categoryLabel(currentArticle.category, lang)}
+                {headerCategory}
               </span>
             </div>
 
@@ -519,11 +547,11 @@ export function PixiaInsightDetailPage({ article }: InsightDetailPageProps) {
                 maxWidth: 960,
               }}
             >
-              {titleOf(currentArticle, lang)}
+              {headerTitle}
             </h1>
 
             {/* Lead */}
-            {descOf(currentArticle, lang) && (
+            {headerDesc && (
               <p
                 className="pretty"
                 data-text-key="desc"
@@ -535,7 +563,7 @@ export function PixiaInsightDetailPage({ article }: InsightDetailPageProps) {
                   margin: '0 0 24px',
                 }}
               >
-                {descOf(currentArticle, lang)}
+                {headerDesc}
               </p>
             )}
 
@@ -556,11 +584,7 @@ export function PixiaInsightDetailPage({ article }: InsightDetailPageProps) {
                 marginBottom: 0,
               }}
             >
-              <span style={{ fontWeight: 700 }}>PIXIATECH</span>
-              <span>·</span>
-              <span>{dateOf(currentArticle, lang)}</span>
-              <span>·</span>
-              <span>{readOf(currentArticle.read, lang)}</span>
+              <span>{headerMeta}</span>
             </div>
           </div>
         </EditableWrapper>
@@ -587,8 +611,8 @@ export function PixiaInsightDetailPage({ article }: InsightDetailPageProps) {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 data-image-key="cover_image"
-                src={currentArticle.img}
-                alt={titleOf(currentArticle, lang)}
+                src={coverImg}
+                alt={headerTitle}
                 style={{
                   width: '100%',
                   height: '100%',
@@ -694,6 +718,7 @@ export function PixiaInsightDetailPage({ article }: InsightDetailPageProps) {
             {intro.map((p, i) => (
               <p
                 key={i}
+                data-text-key={`intro_p_${i}`}
                 className="pretty"
                 style={{
                   fontSize: 'clamp(16px,1.15vw,18px)',
@@ -702,7 +727,7 @@ export function PixiaInsightDetailPage({ article }: InsightDetailPageProps) {
                   margin: '0 0 20px',
                 }}
               >
-                {p}
+                {getCmsText(bodyData, `intro_p_${i}`, lang, p)}
               </p>
             ))}
 
@@ -727,29 +752,33 @@ export function PixiaInsightDetailPage({ article }: InsightDetailPageProps) {
                     >
                       <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                     </svg>
-                    <span>{lang === 'FR' ? 'PRODUIT ASSOCIÉ' : 'RELATED PRODUCT'}</span>
+                    <span>{relBadge}</span>
                   </div>
 
                   <h3
                     className="article-related-product-title"
                     data-text-key="product_name"
                   >
-                    {relatedProduct.name}
+                    {relName}
                   </h3>
 
                   <p
                     className="article-related-product-desc pretty"
                     data-text-key="product_desc"
                   >
-                    {relatedProduct.desc}
+                    {relDesc}
                   </p>
 
                   <a
                     className="article-related-product-btn"
                     data-element-key="product_cta_button"
-                    href={`/web/product/${relatedProduct.slug}`}
+                    data-text-key="product_cta"
+                    href={isEditing ? undefined : `/web/product/${relatedProduct.slug}`}
+                    onClick={(e) => {
+                      if (isEditing) e.preventDefault();
+                    }}
                   >
-                    <span>{lang === 'FR' ? 'VOIR LE PRODUIT' : 'VIEW PRODUCT'}</span>
+                    <span>{relCta}</span>
                     <span className="btn-arrow" aria-hidden="true">→</span>
                   </a>
                 </div>
@@ -757,8 +786,9 @@ export function PixiaInsightDetailPage({ article }: InsightDetailPageProps) {
                 <div className="article-related-product-media">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={relatedProduct.img}
-                    alt={relatedProduct.name}
+                    data-image-key="product_image"
+                    src={(bodyData['product_image'] as string) || relatedProduct.img}
+                    alt={relName}
                     loading="lazy"
                     onError={(e) => {
                       const target = e.currentTarget;
@@ -851,6 +881,7 @@ export function PixiaInsightDetailPage({ article }: InsightDetailPageProps) {
                   style={{ scrollMarginTop: 110, marginBottom: 48, paddingTop: 36 }}
                 >
                   <h2
+                    data-text-key={`sec_${section.id}_title`}
                     style={{
                       fontSize: 'clamp(22px,2.2vw,30px)',
                       fontWeight: 800,
@@ -862,7 +893,7 @@ export function PixiaInsightDetailPage({ article }: InsightDetailPageProps) {
                       paddingTop: idx === 0 && relatedProduct ? 0 : 32,
                     }}
                   >
-                    {section.title}
+                    {getCmsText(bodyData, `sec_${section.id}_title`, lang, section.title)}
                   </h2>
 
                   {/* FAQ – interactive accordions */}
@@ -890,7 +921,9 @@ export function PixiaInsightDetailPage({ article }: InsightDetailPageProps) {
                               outline: 'none',
                             }}
                           >
-                            <span>{faq.question}</span>
+                            <span data-text-key={`faq_${fi}_q`}>
+                              {getCmsText(bodyData, `faq_${fi}_q`, lang, faq.question)}
+                            </span>
                             <span
                               style={{
                                 fontSize: 22,
@@ -904,6 +937,7 @@ export function PixiaInsightDetailPage({ article }: InsightDetailPageProps) {
                             </span>
                           </summary>
                           <p
+                            data-text-key={`faq_${fi}_a`}
                             style={{
                               margin: '14px 0 0',
                               fontSize: 15.5,
@@ -913,7 +947,7 @@ export function PixiaInsightDetailPage({ article }: InsightDetailPageProps) {
                               paddingTop: 12,
                             }}
                           >
-                            {faq.answer}
+                            {getCmsText(bodyData, `faq_${fi}_a`, lang, faq.answer)}
                           </p>
                         </details>
                       ))}
@@ -926,6 +960,7 @@ export function PixiaInsightDetailPage({ article }: InsightDetailPageProps) {
                           return (
                             <h3
                               key={pi}
+                              data-text-key={`sec_${section.id}_h3_${pi}`}
                               style={{
                                 fontSize: 'clamp(18px,1.6vw,22px)',
                                 fontWeight: 700,
@@ -935,7 +970,7 @@ export function PixiaInsightDetailPage({ article }: InsightDetailPageProps) {
                                 margin: '14px 0 4px',
                               }}
                             >
-                              {item.text}
+                              {getCmsText(bodyData, `sec_${section.id}_h3_${pi}`, lang, item.text)}
                             </h3>
                           );
                         }
@@ -944,6 +979,7 @@ export function PixiaInsightDetailPage({ article }: InsightDetailPageProps) {
                           return (
                             <blockquote
                               key={pi}
+                              data-text-key={`sec_${section.id}_quote_${pi}`}
                               style={{
                                 margin: '8px 0',
                                 padding: '18px 0 18px 20px',
@@ -955,7 +991,7 @@ export function PixiaInsightDetailPage({ article }: InsightDetailPageProps) {
                                 background: 'transparent',
                               }}
                             >
-                              "{item.text}"
+                              "{getCmsText(bodyData, `sec_${section.id}_quote_${pi}`, lang, item.text)}"
                             </blockquote>
                           );
                         }
@@ -985,16 +1021,24 @@ export function PixiaInsightDetailPage({ article }: InsightDetailPageProps) {
                               >
                                 {item.num}
                               </span>
-                              <span style={{ fontSize: 15.5, lineHeight: 1.65 }}>
-                                {item.text}
+                              <span
+                                data-text-key={`sec_${section.id}_list_${pi}`}
+                                style={{ fontSize: 15.5, lineHeight: 1.65 }}
+                              >
+                                {getCmsText(bodyData, `sec_${section.id}_list_${pi}`, lang, item.text)}
                               </span>
                             </div>
                           );
                         }
 
                         return (
-                          <p key={pi} className="pretty" style={{ margin: 0 }}>
-                            {item.text}
+                          <p
+                            key={pi}
+                            data-text-key={`sec_${section.id}_p_${pi}`}
+                            className="pretty"
+                            style={{ margin: 0 }}
+                          >
+                            {getCmsText(bodyData, `sec_${section.id}_p_${pi}`, lang, item.text)}
                           </p>
                         );
                       })}
@@ -1026,6 +1070,7 @@ export function PixiaInsightDetailPage({ article }: InsightDetailPageProps) {
                 }}
               >
                 <div
+                  data-text-key="next_eyebrow"
                   style={{
                     fontSize: 10.5,
                     letterSpacing: '.24em',
@@ -1035,11 +1080,14 @@ export function PixiaInsightDetailPage({ article }: InsightDetailPageProps) {
                     marginBottom: 22,
                   }}
                 >
-                  {lang === 'FR' ? 'RESSOURCE SUIVANTE' : 'NEXT INSIGHT'}
+                  {nextEyebrow}
                 </div>
 
                 <a
-                  href={`/web/insights/${nextArticle.slug}`}
+                  href={isEditing ? undefined : `/web/insights/${nextArticle.slug}`}
+                  onClick={(e) => {
+                    if (isEditing) e.preventDefault();
+                  }}
                   className="art"
                   style={{
                     display: 'grid',
@@ -1063,14 +1111,16 @@ export function PixiaInsightDetailPage({ article }: InsightDetailPageProps) {
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
+                      data-image-key="next_image"
                       className="slot-img"
-                      src={nextArticle.img}
-                      alt={titleOf(nextArticle, lang)}
+                      src={nextImg}
+                      alt={nextTitle}
                     />
                   </div>
 
                   <div>
                     <div
+                      data-text-key="next_cat"
                       style={{
                         fontSize: 10.5,
                         letterSpacing: '.2em',
@@ -1080,10 +1130,11 @@ export function PixiaInsightDetailPage({ article }: InsightDetailPageProps) {
                         marginBottom: 10,
                       }}
                     >
-                      {categoryLabel(nextArticle.category, lang)}
+                      {nextCat}
                     </div>
 
                     <h3
+                      data-text-key="next_title"
                       className="art-t pretty"
                       style={{
                         fontSize: 'clamp(20px,1.9vw,28px)',
@@ -1093,10 +1144,11 @@ export function PixiaInsightDetailPage({ article }: InsightDetailPageProps) {
                         margin: '0 0 14px',
                       }}
                     >
-                      {titleOf(nextArticle, lang)}
+                      {nextTitle}
                     </h3>
 
                     <div
+                      data-text-key="next_meta"
                       style={{
                         fontSize: 11,
                         letterSpacing: '.15em',
@@ -1105,10 +1157,11 @@ export function PixiaInsightDetailPage({ article }: InsightDetailPageProps) {
                         marginBottom: 20,
                       }}
                     >
-                      {readOf(nextArticle.read, lang)} · {dateOf(nextArticle, lang)}
+                      {nextMeta}
                     </div>
 
                     <span
+                      data-text-key="next_cta"
                       style={{
                         display: 'inline-flex',
                         alignItems: 'center',
@@ -1122,7 +1175,7 @@ export function PixiaInsightDetailPage({ article }: InsightDetailPageProps) {
                         paddingBottom: 2,
                       }}
                     >
-                      {lang === 'FR' ? "LIRE L'ARTICLE →" : 'READ FULL INSIGHT →'}
+                      {nextCta}
                     </span>
                   </div>
                 </a>

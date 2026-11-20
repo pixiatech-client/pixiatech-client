@@ -105,6 +105,9 @@ export function PixiaInsightsPage() {
   }, []);
 
   const heroData = (pages['insights']?.sections?.insights_hero as Record<string, unknown>) || {};
+  const featuredData = (pages['insights']?.sections?.insights_featured as Record<string, unknown>) || {};
+  const gridData = (pages['insights']?.sections?.insights_grid as Record<string, unknown>) || {};
+
   const t = {
     eyebrow: getCmsText(heroData, 'eyebrow', lang, 'PIXIATECH / INSIGHTS'),
     h1Line1: getCmsText(heroData, 'h1Line1', lang, lang === 'FR' ? 'Notes sur la lumière,' : 'Notes on light,'),
@@ -123,6 +126,12 @@ export function PixiaInsightsPage() {
   const featured = liveArticles.find((a) => a.featured) ?? liveArticles[0];
   const grid = useMemo(() => liveArticles.filter((a) => !a.featured), [liveArticles]);
   const visible = chip === 'All' ? grid : grid.filter((a) => a.chip === chip);
+
+  const featuredCategory = featured ? getCmsText(featuredData, 'featured_category', lang, categoryLabel(featured.category, lang)) : '';
+  const featuredTitle = featured ? getCmsText(featuredData, 'featured_title', lang, titleOf(featured, lang)) : '';
+  const featuredDesc = featured ? getCmsText(featuredData, 'featured_desc', lang, (lang === 'FR' ? featured.descFr ?? featured.desc : featured.desc) || '') : '';
+  const featuredMeta = featured ? getCmsText(featuredData, 'featured_meta', lang, `${readOf(featured.read, lang)} · ${lang === 'FR' && featured.dateFr ? featured.dateFr : featured.date}`) : '';
+  const featuredImg = featured ? ((featuredData['featured_image'] as string) || (featuredData['img'] as string) || featured.img) : '';
 
   return (
     <RevealRoot className="xer-site" style={{ background: 'var(--paper)' }}>
@@ -196,7 +205,10 @@ export function PixiaInsightsPage() {
 
                   <a
                     className="art g-lead"
-                    href={`/web/insights/${featured.slug}`}
+                    href={isEditing ? undefined : `/web/insights/${featured.slug}`}
+                    onClick={(e) => {
+                      if (isEditing) e.preventDefault();
+                    }}
                     data-reveal="true"
                     style={{
                       display: 'grid',
@@ -216,8 +228,8 @@ export function PixiaInsightsPage() {
                         <img
                           data-image-key="featured_image"
                           className="slot-img"
-                          src={featured.img}
-                          alt={titleOf(featured, lang)}
+                          src={featuredImg}
+                          alt={featuredTitle}
                         />
                       </div>
                     </div>
@@ -226,7 +238,7 @@ export function PixiaInsightsPage() {
                         data-text-key="featured_category"
                         style={{ fontSize: 10.5, letterSpacing: '.2em', color: 'var(--accent)', marginBottom: 16 }}
                       >
-                        {categoryLabel(featured.category, lang)}
+                        {featuredCategory}
                       </div>
                       <div
                         data-text-key="featured_title"
@@ -239,22 +251,22 @@ export function PixiaInsightsPage() {
                           marginBottom: 18,
                         }}
                       >
-                        {titleOf(featured, lang)}
+                        {featuredTitle}
                       </div>
-                      {featured.desc && (
+                      {featuredDesc && (
                         <p
                           data-text-key="featured_desc"
                           className="pretty"
                           style={{ margin: '0 0 24px', fontSize: 16, lineHeight: 1.6, color: 'var(--body)' }}
                         >
-                          {lang === 'FR' ? featured.descFr ?? featured.desc : featured.desc}
+                          {featuredDesc}
                         </p>
                       )}
                       <div
                         data-text-key="featured_meta"
                         style={{ fontSize: 11, letterSpacing: '.16em', color: 'var(--muted)' }}
                       >
-                        {readOf(featured.read, lang)} · {lang === 'FR' && featured.dateFr ? featured.dateFr : featured.date}
+                        {featuredMeta}
                       </div>
                     </div>
                   </a>
@@ -272,68 +284,78 @@ export function PixiaInsightsPage() {
                   gap: '32px 28px',
                 }}
               >
-                {visible.map((a) => (
-                  <div key={a.slug} style={{ position: 'relative' }}>
-                    {isAdmin && isEditing && (
-                      <div style={{ position: 'absolute', top: 8, right: 8, zIndex: 10 }}>
-                        <a
-                          href={`/web/insights/${a.slug}`}
-                          className="inline-flex items-center gap-1 px-2 py-1 bg-[#080808]/90 text-[#C3F910] border border-[#C3F910] rounded text-[11px] font-mono font-bold hover:bg-[#C3F910] hover:text-[#080808] transition-all shadow-md"
-                          title={`Éditer l'article « ${titleOf(a, lang)} »`}
-                        >
-                          <Edit3 className="w-3 h-3" />
-                          <span>Éditer</span>
-                        </a>
-                      </div>
-                    )}
+                {visible.map((a) => {
+                  const cardCat = getCmsText(gridData, `card_${a.slug}_cat`, lang, categoryLabel(a.category, lang));
+                  const cardTitle = getCmsText(gridData, `card_${a.slug}_title`, lang, titleOf(a, lang));
+                  const cardMeta = getCmsText(gridData, `card_${a.slug}_meta`, lang, `${readOf(a.read, lang)} · ${lang === 'FR' && a.dateFr ? a.dateFr : a.date}`);
+                  const cardImg = (gridData[`card_${a.slug}_image`] as string) || a.img;
 
-                    <a
-                      className="art"
-                      href={`/web/insights/${a.slug}`}
-                      data-reveal="true"
-                      style={{ color: 'var(--ink)', textDecoration: 'none', display: 'block' }}
-                    >
-                      <div style={{ marginBottom: 20 }}>
-                        <div style={{ position: 'relative', height: 280, overflow: 'hidden' }}>
-                          <div className="art-img" style={{ position: 'absolute', inset: 0 }}>
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              data-image-key={`card_${a.slug}_image`}
-                              className="slot-img"
-                              src={a.img}
-                              alt={titleOf(a, lang)}
-                            />
+                  return (
+                    <div key={a.slug} style={{ position: 'relative' }}>
+                      {isAdmin && isEditing && (
+                        <div style={{ position: 'absolute', top: 8, right: 8, zIndex: 10 }}>
+                          <a
+                            href={`/web/insights/${a.slug}`}
+                            className="inline-flex items-center gap-1 px-2 py-1 bg-[#080808]/90 text-[#C3F910] border border-[#C3F910] rounded text-[11px] font-mono font-bold hover:bg-[#C3F910] hover:text-[#080808] transition-all shadow-md"
+                            title={`Éditer l'article « ${cardTitle} »`}
+                          >
+                            <Edit3 className="w-3 h-3" />
+                            <span>Éditer</span>
+                          </a>
+                        </div>
+                      )}
+
+                      <a
+                        className="art"
+                        href={isEditing ? undefined : `/web/insights/${a.slug}`}
+                        onClick={(e) => {
+                          if (isEditing) e.preventDefault();
+                        }}
+                        data-reveal="true"
+                        style={{ color: 'var(--ink)', textDecoration: 'none', display: 'block' }}
+                      >
+                        <div style={{ marginBottom: 20 }}>
+                          <div style={{ position: 'relative', height: 280, overflow: 'hidden' }}>
+                            <div className="art-img" style={{ position: 'absolute', inset: 0 }}>
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                data-image-key={`card_${a.slug}_image`}
+                                className="slot-img"
+                                src={cardImg}
+                                alt={cardTitle}
+                              />
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <div
-                        data-text-key={`card_${a.slug}_cat`}
-                        style={{ fontSize: 10.5, letterSpacing: '.2em', color: 'var(--accent)', marginBottom: 10 }}
-                      >
-                        {categoryLabel(a.category, lang)}
-                      </div>
-                      <div
-                        data-text-key={`card_${a.slug}_title`}
-                        className="art-t pretty"
-                        style={{
-                          fontSize: 23,
-                          fontWeight: 700,
-                          lineHeight: 1.2,
-                          letterSpacing: '-.01em',
-                          marginBottom: 12,
-                        }}
-                      >
-                        {titleOf(a, lang)}
-                      </div>
-                      <div
-                        data-text-key={`card_${a.slug}_meta`}
-                        style={{ fontSize: 11, letterSpacing: '.16em', color: 'var(--muted)' }}
-                      >
-                        {readOf(a.read, lang)} · {lang === 'FR' && a.dateFr ? a.dateFr : a.date}
-                      </div>
-                    </a>
-                  </div>
-                ))}
+                        <div
+                          data-text-key={`card_${a.slug}_cat`}
+                          style={{ fontSize: 10.5, letterSpacing: '.2em', color: 'var(--accent)', marginBottom: 10 }}
+                        >
+                          {cardCat}
+                        </div>
+                        <div
+                          data-text-key={`card_${a.slug}_title`}
+                          className="art-t pretty"
+                          style={{
+                            fontSize: 23,
+                            fontWeight: 700,
+                            lineHeight: 1.2,
+                            letterSpacing: '-.01em',
+                            marginBottom: 12,
+                          }}
+                        >
+                          {cardTitle}
+                        </div>
+                        <div
+                          data-text-key={`card_${a.slug}_meta`}
+                          style={{ fontSize: 11, letterSpacing: '.16em', color: 'var(--muted)' }}
+                        >
+                          {cardMeta}
+                        </div>
+                      </a>
+                    </div>
+                  );
+                })}
               </div>
             </EditableWrapper>
           </div>
