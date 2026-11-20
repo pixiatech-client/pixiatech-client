@@ -1,7 +1,7 @@
 // Auto-généré par scripts/write-build-info.mjs au moment du build.
 // Régénéré à chaque `next build` via le script "prebuild". Peut être committé
 // (sert de valeur par défaut pour `next dev`), la compilation l'actualise toujours.
-export const APP_VERSION = "0.1.151";
-export const BUILD_COMMIT = "5bad0d1";
-export const BUILD_TIME = "2026-11-20T22:16:10.109Z";
-export const BUILD_SIGNATURE = "0.1.151-5bad0d1-2026-11-20T22:16:10.109Z";
+export const APP_VERSION = "0.1.152";
+export const BUILD_COMMIT = "087e3c3";
+export const BUILD_TIME = "2026-11-20T22:23:50.757Z";
+export const BUILD_SIGNATURE = "0.1.152-087e3c3-2026-11-20T22:23:50.757Z";
