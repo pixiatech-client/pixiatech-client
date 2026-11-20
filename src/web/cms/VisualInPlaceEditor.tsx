@@ -598,10 +598,10 @@ export const VisualInPlaceEditor: React.FC = () => {
         sectionKey,
         elementKey,
         clickableElementKey,
-        linkKey: getElementLinkKey(target) || target.getAttribute('data-slide-field'),
-        clickableLinkKey: clickableParent
-          ? getElementLinkKey(clickableParent) || clickableParent.getAttribute('data-slide-field')
-          : null,
+        // Seul `data-cms-link-key` désigne une destination. `data-slide-field`
+        // sert uniquement à distinguer la sélection d'un slide à l'autre.
+        linkKey: getElementLinkKey(target),
+        clickableLinkKey: clickableParent ? getElementLinkKey(clickableParent) : null,
         kind: resolvedKind,
       });
 
