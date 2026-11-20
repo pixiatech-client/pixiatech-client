@@ -8,6 +8,7 @@ export function SiteBanners() {
 
   const isHomepage = pathname === '/';
   const isBoutique = pathname.startsWith('/boutique');
+  const isBoutiqueIndex = pathname === '/boutique';
   const isMonCompte = pathname.startsWith('/mon-compte');
   const isAdmin = pathname.startsWith('/admin');
 
@@ -16,7 +17,7 @@ export function SiteBanners() {
   return (
     <div className="space-y-2" data-banners="root">
       {isHomepage && <SystemMessageBanner location="homepage" />}
-      {isBoutique && <SystemMessageBanner location="boutique" />}
+      {isBoutique && !isBoutiqueIndex && <SystemMessageBanner location="boutique" />}
       {isMonCompte && <SystemMessageBanner location="client-area" />}
     </div>
   );

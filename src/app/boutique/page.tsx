@@ -12,6 +12,7 @@ import type { Product } from '@/lib/boutique-data';
 import { PriceDisplay, ActionButton, isProductMoreInfo } from '@/components/boutique/ProductActionButton';
 import LayoutSelector, { type LayoutMode } from '@/components/boutique/LayoutSelector';
 import { BoutiqueHeader } from '@/components/boutique-header';
+import { SystemMessageBanner } from '@/components/system-message-banner';
 import LiquidLoader from '@/components/LiquidLoader';
 import { useI18n } from '@/lib/i18n';
 import { calculatePromotionPercent } from '@/lib/pricing-engine';
@@ -68,7 +69,7 @@ function FilterDrawer({ open, onClose, categories, selectedCategories, onCategor
         <>
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40" onClick={onClose}
+            className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50" onClick={onClose}
           />
           {isMobile ? (
             <motion.div
@@ -321,6 +322,26 @@ export default function BoutiquePage() {
     if (isMobile) setLayout(1);
   }, [isMobile]);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
+  const [headerHeight, setHeaderHeight] = useState<number>(0);
+
+  useEffect(() => {
+    if (!headerRef.current) return;
+    const updateHeight = () => {
+      if (headerRef.current) {
+        setHeaderHeight(headerRef.current.offsetHeight);
+      }
+    };
+    updateHeight();
+    const ro = new ResizeObserver(updateHeight);
+    ro.observe(headerRef.current);
+    window.addEventListener('resize', updateHeight);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', updateHeight);
+    };
+  }, []);
+
   const [displayCount, setDisplayCount] = useState(12);
   const [quoteDeclinedId, setQuoteDeclinedId] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<Product[]>([]);
@@ -480,14 +501,19 @@ export default function BoutiquePage() {
         activeCount={activeFilterCount}
       />
 
-      {/* ── ZONE SUPÉRIEURE FIGÉE UNIFIÉE (Barre 1 + Barre 2 solidaires) ── */}
-      <div className="sticky top-0 z-40 w-full flex flex-col">
+      {/* ── ZONE SUPÉRIEURE FIGÉE UNIFIÉE (Barre 1 + Barre 2 solidaires et 100% fixes) ── */}
+      <div
+        ref={headerRef}
+        className="fixed top-0 left-0 right-0 z-40 w-full flex flex-col pointer-events-none"
+      >
         {/* 1. Navigation principale noire PIXIATECH */}
-        <BoutiqueHeader isFixed={false} />
+        <div className="pointer-events-auto w-full">
+          <BoutiqueHeader isFixed={false} />
+        </div>
 
         {/* 2. Deuxième barre : Produits, filtres et contrôles avec effet Verre Dépoli Glassmorphism */}
         <div
-          className="w-full transition-all"
+          className="pointer-events-auto w-full transition-all"
           style={{
             background: 'rgba(255, 255, 255, 0.72)',
             backdropFilter: 'blur(18px) saturate(160%)',
@@ -681,51 +707,59 @@ export default function BoutiquePage() {
         </div>
       </div>
 
-      {quoteDeclinedId && (
-        <div className="max-w-7xl mx-4 lg:mx-auto mt-4 p-6 bg-white rounded-2xl border border-gray-200/70 shadow-sm">
-          <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
-              <ShoppingBag className="w-6 h-6 text-amber-600" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="text-lg font-bold text-gray-900">{t('boutique.declinedTitle')}</h3>
-              <p className="text-sm text-gray-500 mt-1">{t('boutique.declinedDesc')}</p>
-              {suggestions.length > 0 && (
-                <div className="flex gap-3 mt-4">
-                  {suggestions.map((p) => (
-                    <a key={p.id} href={`/boutique/produit/${p.id}`}
-                      className="flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors group flex-1 min-w-0">
-                      {p.image ? (
-                        <img src={p.image} alt={p.name} className="w-12 h-12 rounded-lg object-cover bg-gray-200 flex-shrink-0" />
-                      ) : (
-                        <img src="/no-product.webp" alt={p.name} className="w-12 h-12 rounded-lg object-cover bg-gray-200 flex-shrink-0" />
-                      )}
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-gray-900 truncate group-hover:text-gray-600 transition-colors">{p.name}</p>
-                        <p className="text-xs font-bold text-gray-700 mt-0.5">
-                          {p.price > 0 ? (
-                            `${p.price} €`
-                          ) : (
-                            p.priceDisplay === 'free' ? t('boutique.free') :
-                            p.priceDisplay === 'multiprice' ? t('boutique.multipleRates') :
-                            p.priceDisplay === 'quote' ? t('boutique.onQuote') :
-                            '0 €'
-                          )}
-                        </p>
-                      </div>
-                    </a>
-                  ))}
-                </div>
-              )}
-            </div>
-            <button onClick={() => setQuoteDeclinedId(null)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0">
-              <X className="w-4 h-4" />
-            </button>
-          </div>
+      <main
+        className="max-w-7xl mx-4 lg:mx-auto pt-[200px] md:pt-[152px] pb-8"
+        style={{
+          paddingTop: headerHeight ? `${headerHeight + 16}px` : undefined,
+        }}
+      >
+        <div className="mb-4">
+          <SystemMessageBanner location="boutique" />
         </div>
-      )}
 
-      <main className="max-w-7xl mx-4 lg:mx-auto py-6">
+        {quoteDeclinedId && (
+          <div className="mb-6 p-6 bg-white rounded-2xl border border-gray-200/70 shadow-sm">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
+                <ShoppingBag className="w-6 h-6 text-amber-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-lg font-bold text-gray-900">{t('boutique.declinedTitle')}</h3>
+                <p className="text-sm text-gray-500 mt-1">{t('boutique.declinedDesc')}</p>
+                {suggestions.length > 0 && (
+                  <div className="flex gap-3 mt-4">
+                    {suggestions.map((p) => (
+                      <a key={p.id} href={`/boutique/produit/${p.id}`}
+                        className="flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors group flex-1 min-w-0">
+                        {p.image ? (
+                          <img src={p.image} alt={p.name} className="w-12 h-12 rounded-lg object-cover bg-gray-200 flex-shrink-0" />
+                        ) : (
+                          <img src="/no-product.webp" alt={p.name} className="w-12 h-12 rounded-lg object-cover bg-gray-200 flex-shrink-0" />
+                        )}
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-gray-900 truncate group-hover:text-gray-600 transition-colors">{p.name}</p>
+                          <p className="text-xs font-bold text-gray-700 mt-0.5">
+                            {p.price > 0 ? (
+                              `${p.price} €`
+                            ) : (
+                              p.priceDisplay === 'free' ? t('boutique.free') :
+                              p.priceDisplay === 'multiprice' ? t('boutique.multipleRates') :
+                              p.priceDisplay === 'quote' ? t('boutique.onQuote') :
+                              '0 €'
+                            )}
+                          </p>
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <button onClick={() => setQuoteDeclinedId(null)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
         {loading ? (
           <div className="min-h-[calc(100dvh-160px)] flex items-center justify-center px-4">
             <LiquidLoader size={150} />
