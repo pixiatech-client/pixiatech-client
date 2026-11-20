@@ -27,6 +27,8 @@ import {
   SlidersHorizontal,
   Lock,
   GripVertical,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -65,7 +67,24 @@ import {
   isSystemTemplateSlug,
   partitionDeletableProducts,
 } from '@/lib/products/system-template';
-import type { Product, ProductCategory, ProductCategoryGroup, ProductMediaItem, ProductShopLinkTypes, ProductShopLinks, ShopLinkTransactionType } from '@/lib/products/types';
+import type {
+  Product,
+  ProductCategory,
+  ProductCategoryGroup,
+  ProductMediaItem,
+  ProductShopLinkTypes,
+  ProductShopLinks,
+  ShopLinkTransactionType,
+  ProductCharacteristic,
+  ProductVariant,
+  ProductFieldwork,
+  ProductFieldworkProject,
+  ProductButtons,
+  ProductDescription,
+  ProductSeo,
+  ProductEnvironment,
+  SellingMode,
+} from '@/lib/products/types';
 
 interface SiteWebProduitsModuleProps {
   initial?: Product[];
@@ -1745,6 +1764,47 @@ function ProductForm({
   const [showAddVariantModal, setShowAddVariantModal] = useState(false);
   const [newVariantName, setNewVariantName] = useState('');
 
+  // Section active pour l'éditeur interactif des données extraites (null = aucune ouverte)
+  type SummarySectionKey =
+    | 'series'
+    | 'environment'
+    | 'sellingModes'
+    | 'characteristics'
+    | 'variants'
+    | 'specs'
+    | 'fieldwork'
+    | 'buttons'
+    | 'description'
+    | 'seo';
+
+  const [activeSummarySection, setActiveSummarySection] = useState<SummarySectionKey | null>(null);
+
+  // Données canoniques administrables directement depuis l'espace centralisé
+  const [series, setSeries] = useState<string>(existing?.series ?? '');
+  const [company, setCompany] = useState<string>(existing?.company ?? '');
+  const [environment, setEnvironment] = useState<ProductEnvironment>(existing?.environment ?? 'indoor');
+  const [sellingModes, setSellingModes] = useState<SellingMode[]>(
+    existing?.sellingModes && existing.sellingModes.length > 0 ? existing.sellingModes : ['sale']
+  );
+  const [characteristics, setCharacteristics] = useState<ProductCharacteristic[]>(
+    existing?.characteristics ?? []
+  );
+  const [variants, setVariants] = useState<ProductVariant[]>(
+    existing?.variants ?? []
+  );
+  const [fieldwork, setFieldwork] = useState<ProductFieldwork>(
+    existing?.fieldwork ?? { eyebrow: '', title: '', projects: [] }
+  );
+  const [buttons, setButtons] = useState<ProductButtons>(
+    existing?.buttons ?? { study: '', datasheet: '' }
+  );
+  const [description, setDescription] = useState<ProductDescription>(
+    existing?.description ?? { shortFr: '', detailedFr: '', keywords: [] }
+  );
+  const [seo, setSeo] = useState<ProductSeo>(
+    existing?.seo ?? { title: '', description: '' }
+  );
+
   // Synchronisation avec existing lors d'une sauvegarde ou d'un changement de produit
   useEffect(() => {
     if (existing) {
@@ -1755,6 +1815,16 @@ function ProductForm({
       setMediaPhotos(existing.media?.photos ?? []);
       setShopLinks(existing.shopLinks ?? {});
       setShopLinkTypes(normalizeShopLinkTypes(existing.shopLinkTypes));
+      setSeries(existing.series ?? '');
+      setCompany(existing.company ?? '');
+      setEnvironment(existing.environment ?? 'indoor');
+      setSellingModes(existing.sellingModes && existing.sellingModes.length > 0 ? existing.sellingModes : ['sale']);
+      setCharacteristics(existing.characteristics ?? []);
+      setVariants(existing.variants ?? []);
+      setFieldwork(existing.fieldwork ?? { eyebrow: '', title: '', projects: [] });
+      setButtons(existing.buttons ?? { study: '', datasheet: '' });
+      setDescription(existing.description ?? { shortFr: '', detailedFr: '', keywords: [] });
+      setSeo(existing.seo ?? { title: '', description: '' });
       if (existing.specs?.models) {
         setModels(existing.specs.models);
       }
@@ -2132,6 +2202,63 @@ function ProductForm({
           : existing ?? { name: cleanName }
       );
 
+  const summaryCards: {
+    key: SummarySectionKey;
+    label: string;
+    value: string;
+  }[] = [
+    {
+      key: 'series',
+      label: 'SÉRIE',
+      value: cleanName || series || 'Non renseignée',
+    },
+    {
+      key: 'environment',
+      label: 'ENVIRONNEMENT',
+      value: ENVIRONMENT_LABEL[environment] || environment,
+    },
+    {
+      key: 'sellingModes',
+      label: 'MODES DE VENTE',
+      value: sellingModes.map((m) => (m === 'sale' ? 'Vente' : 'Location')).join(' · ') || 'Aucun',
+    },
+    {
+      key: 'characteristics',
+      label: 'CARACTÉRISTIQUES',
+      value: `${characteristics.length} caractéristique${characteristics.length > 1 ? 's' : ''}`,
+    },
+    {
+      key: 'variants',
+      label: 'VARIANTES & RÉFÉRENCES',
+      value: `${variants.length} variante${variants.length > 1 ? 's' : ''}`,
+    },
+    {
+      key: 'specs',
+      label: 'MATRICE COMPARATIVE',
+      value: `${models.length} modèle${models.length > 1 ? 's' : ''}`,
+    },
+    {
+      key: 'fieldwork',
+      label: 'PROJETS RÉALISÉS',
+      value: `${fieldwork?.projects?.length ?? 0} projet${(fieldwork?.projects?.length ?? 0) > 1 ? 's' : ''}`,
+    },
+    {
+      key: 'buttons',
+      label: 'BOUTONS',
+      value: buttons?.study || buttons?.datasheet ? 'Pré-remplis' : 'Non configurés',
+    },
+    {
+      key: 'description',
+      label: 'DESCRIPTION',
+      value: description?.shortFr ? 'Pré-remplie' : 'Non renseignée',
+    },
+    {
+      key: 'seo',
+      label: 'RÉFÉRENCEMENT',
+      value: seo?.description || seo?.title ? 'Description prête' : 'Non configuré',
+    },
+  ];
+
   // Avertissements d'import + visuels à joindre, pour l'analyse courante
   // (nouveau produit ou réanalyse) et pour les données déjà enregistrées.
   const diagnostics = importDiagnostics(
@@ -2269,10 +2396,30 @@ function ProductForm({
         setPdfReanalysis(built);
         setModels(built.specs?.models ?? []);
         setSpecGroups(built.specs?.groups ?? []);
+        if (built.series) setSeries(built.series);
+        if (built.company) setCompany(built.company);
+        if (built.environment) setEnvironment(built.environment);
+        if (built.sellingModes?.length) setSellingModes(built.sellingModes);
+        if (built.characteristics?.length) setCharacteristics(built.characteristics);
+        if (built.variants?.length) setVariants(built.variants);
+        if (built.fieldwork?.projects?.length) setFieldwork(built.fieldwork);
+        if (built.buttons) setButtons(built.buttons);
+        if (built.description) setDescription(built.description);
+        if (built.seo) setSeo(built.seo);
       } else {
         setPdfAnalysis(built);
         setModels(built.specs?.models ?? []);
         setSpecGroups(built.specs?.groups ?? []);
+        if (built.series) setSeries(built.series);
+        if (built.company) setCompany(built.company);
+        if (built.environment) setEnvironment(built.environment);
+        if (built.sellingModes?.length) setSellingModes(built.sellingModes);
+        if (built.characteristics?.length) setCharacteristics(built.characteristics);
+        if (built.variants?.length) setVariants(built.variants);
+        if (built.fieldwork?.projects?.length) setFieldwork(built.fieldwork);
+        if (built.buttons) setButtons(built.buttons);
+        if (built.description) setDescription(built.description);
+        if (built.seo) setSeo(built.seo);
         // Le nom pré-rempli vient du PDF, PAS du produit construit. `built`
         // fusionne le template maître, et sa ligne 239 fait
         // `overlay.name || master.name` : quand le parser n'a rien lu, c'est
@@ -2319,12 +2466,21 @@ function ProductForm({
         environmentCategoryIds,
         applicationCategoryIds,
         categoryIds,
-        specs: nextSpecs,
-        variants: models.map((m) => ({
+        series: series.trim() || undefined,
+        company: company.trim() || undefined,
+        environment,
+        sellingModes,
+        characteristics,
+        variants: variants.length > 0 ? variants : models.map((m) => ({
           name: m.name,
           value: m.specs['pitch'] || m.specs['pixelpitch'] || m.name,
           reference: m.name,
         })),
+        specs: nextSpecs,
+        fieldwork,
+        buttons,
+        description,
+        seo,
       });
 
       // On enchaîne sur la version la plus récente du document à chaque étape.
@@ -2406,6 +2562,16 @@ function ProductForm({
         environmentCategoryIds,
         applicationCategoryIds,
         categoryIds,
+        series: series.trim() || undefined,
+        company: company.trim() || undefined,
+        environment,
+        sellingModes,
+        characteristics,
+        variants,
+        fieldwork,
+        buttons,
+        description,
+        seo,
       };
       if (pdfReanalysis) {
         Object.assign(body, pdfReanalysis);
@@ -2426,11 +2592,15 @@ function ProductForm({
           models,
         };
       }
-      body.variants = models.map((m) => ({
-        name: m.name,
-        value: m.specs['pitch'] || m.specs['pixelpitch'] || m.name,
-        reference: m.name,
-      }));
+      if (variants && variants.length > 0) {
+        body.variants = variants;
+      } else {
+        body.variants = models.map((m) => ({
+          name: m.name,
+          value: m.specs['pitch'] || m.specs['pixelpitch'] || m.name,
+          reference: m.name,
+        }));
+      }
       // La galerie est l'état local de référence. La réanalyse a été construite
       // sur le produit tel qu'il était À L'OUVERTURE de l'éditeur : sans cette
       // ligne, enregistrer une réanalyse annulait silencieusement les photos
@@ -3084,18 +3254,571 @@ function ProductForm({
                 )}
               </section>
 
-              {!pdfReanalysis && summary.length > 0 && (
-                <section>
-                  <h2 className="text-sm font-bold text-neutral-900 dark:text-white mb-1.5">
-                    Données extraites de la fiche technique
-                  </h2>
-                  <p className="text-[11px] text-neutral-400 mb-3">
-                    Informations à vérifier avant publication.
-                  </p>
-                  <SummaryGrid summary={summary} />
-                  <ImportDiagnosticsPanel items={diagnostics} />
-                </section>
-              )}
+              {/* ── ESPACE CENTRALISÉ D'ADMINISTRATION DES DONNÉES DU PRODUIT ── */}
+              <section className="space-y-4">
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <div>
+                    <h2 className="text-sm font-bold text-neutral-900 dark:text-white">
+                      Données extraites de la fiche technique
+                    </h2>
+                    <p className="text-[11px] text-neutral-400 mt-0.5">
+                      Cliquez sur une carte pour modifier ses données directement dans le formulaire.
+                    </p>
+                  </div>
+                  {activeSummarySection && (
+                    <button
+                      type="button"
+                      onClick={() => setActiveSummarySection(null)}
+                      className="text-xs text-neutral-500 hover:text-neutral-800 dark:hover:text-white font-semibold flex items-center gap-1 cursor-pointer"
+                    >
+                      <X className="w-3.5 h-3.5" /> Fermer l&apos;éditeur
+                    </button>
+                  )}
+                </div>
+
+                {/* Grille des 10 cartes interactives */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                  {summaryCards.map((card) => {
+                    const isActive = activeSummarySection === card.key;
+                    return (
+                      <button
+                        key={card.key}
+                        type="button"
+                        onClick={() => setActiveSummarySection(isActive ? null : card.key)}
+                        className={`text-left flex items-start gap-3 p-3.5 rounded-2xl border transition-all cursor-pointer relative group ${
+                          isActive
+                            ? 'bg-emerald-500/10 border-[#38E044] ring-2 ring-[#38E044]/30 shadow-sm'
+                            : 'bg-neutral-50 dark:bg-white/[0.03] border-neutral-200/80 dark:border-white/[0.06] hover:border-neutral-300 dark:hover:border-white/20 hover:bg-white dark:hover:bg-white/[0.05]'
+                        }`}
+                      >
+                        <CheckCircle2
+                          className={`w-4 h-4 mt-0.5 shrink-0 ${
+                            isActive ? 'text-[#38E044]' : 'text-[#2fcb3c]'
+                          }`}
+                        />
+                        <div className="min-w-0 flex-1">
+                          <div className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+                            {card.label}
+                          </div>
+                          <div
+                            className="text-xs font-semibold text-neutral-800 dark:text-neutral-100 truncate mt-0.5"
+                            title={card.value}
+                          >
+                            {card.value}
+                          </div>
+                        </div>
+                        <div
+                          className={`shrink-0 p-1 rounded-lg transition-colors ${
+                            isActive
+                              ? 'bg-[#38E044] text-black'
+                              : 'text-neutral-400 group-hover:text-neutral-600 dark:group-hover:text-white'
+                          }`}
+                        >
+                          {isActive ? (
+                            <ChevronUp className="w-3.5 h-3.5" />
+                          ) : (
+                            <Pencil className="w-3.5 h-3.5" />
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Panneau dépliable d'édition intégrée */}
+                <AnimatePresence>
+                  {activeSummarySection && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -8, height: 0 }}
+                      animate={{ opacity: 1, y: 0, height: 'auto' }}
+                      exit={{ opacity: 0, y: -8, height: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="p-5 rounded-2xl border border-neutral-300 dark:border-white/10 bg-white dark:bg-zinc-900 shadow-sm space-y-4">
+                        <div className="flex items-center justify-between border-b border-neutral-100 dark:border-white/10 pb-3">
+                          <div className="flex items-center gap-2">
+                            <span className="w-2.5 h-2.5 rounded-full bg-[#38E044]" />
+                            <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-900 dark:text-white">
+                              Édition directe — {summaryCards.find((c) => c.key === activeSummarySection)?.label}
+                            </h3>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setActiveSummarySection(null)}
+                            className="p-1 rounded-lg hover:bg-neutral-100 dark:hover:bg-white/10 text-neutral-400 hover:text-neutral-700 dark:hover:text-white transition-colors"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+
+                        {/* 1. SÉRIE */}
+                        {activeSummarySection === 'series' && (
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div>
+                              <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">
+                                Nom commercial / Titre
+                              </label>
+                              <input
+                                type="text"
+                                maxLength={MAX_PRODUCT_NAME_LENGTH}
+                                value={name}
+                                onChange={(e) => {
+                                  setName(e.target.value);
+                                  if (!isSlugManuallyEdited && !isTemplate) {
+                                    setCustomSlug(slugify(e.target.value));
+                                  }
+                                }}
+                                className="w-full px-3 py-2 rounded-xl text-xs bg-neutral-50 dark:bg-zinc-800 border border-neutral-300 dark:border-white/10 text-neutral-900 dark:text-white focus:ring-2 focus:ring-[#38E044]/40 outline-none"
+                                placeholder="ex: PXT Fine"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">
+                                Nom de la série (fil d&apos;Ariane)
+                              </label>
+                              <input
+                                type="text"
+                                value={series}
+                                onChange={(e) => setSeries(e.target.value)}
+                                className="w-full px-3 py-2 rounded-xl text-xs bg-neutral-50 dark:bg-zinc-800 border border-neutral-300 dark:border-white/10 text-neutral-900 dark:text-white focus:ring-2 focus:ring-[#38E044]/40 outline-none"
+                                placeholder="ex: PXT Fine Series"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">
+                                Fabricant / Société
+                              </label>
+                              <input
+                                type="text"
+                                value={company}
+                                onChange={(e) => setCompany(e.target.value)}
+                                className="w-full px-3 py-2 rounded-xl text-xs bg-neutral-50 dark:bg-zinc-800 border border-neutral-300 dark:border-white/10 text-neutral-900 dark:text-white focus:ring-2 focus:ring-[#38E044]/40 outline-none"
+                                placeholder="ex: PixiaTech"
+                              />
+                            </div>
+                          </div>
+                        )}
+
+                        {/* 2. ENVIRONNEMENT */}
+                        {activeSummarySection === 'environment' && (
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                            {[
+                              { id: 'indoor', label: 'Intérieur' },
+                              { id: 'outdoor', label: 'Extérieur' },
+                              { id: 'showcase', label: 'Vitrine' },
+                              { id: 'both', label: 'Intérieur / Extérieur' },
+                            ].map((env) => (
+                              <button
+                                key={env.id}
+                                type="button"
+                                onClick={() => setEnvironment(env.id as ProductEnvironment)}
+                                className={`p-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                                  environment === env.id
+                                    ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                                    : 'bg-neutral-50 dark:bg-zinc-800 border-neutral-300 dark:border-white/10 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-white/5'
+                                }`}
+                              >
+                                {environment === env.id && <Check className="w-3.5 h-3.5 text-white" />}
+                                <span>{env.label}</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* 3. MODES DE VENTE */}
+                        {activeSummarySection === 'sellingModes' && (
+                          <div className="flex items-center gap-3">
+                            {[
+                              { id: 'sale', label: 'Vente directe' },
+                              { id: 'rental', label: 'Location' },
+                            ].map((mode) => {
+                              const isSelected = sellingModes.includes(mode.id as SellingMode);
+                              return (
+                                <button
+                                  key={mode.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setSellingModes((prev) =>
+                                      isSelected
+                                        ? prev.filter((m) => m !== mode.id)
+                                        : [...prev, mode.id as SellingMode]
+                                    );
+                                  }}
+                                  className={`px-4 py-2.5 rounded-xl border text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
+                                    isSelected
+                                      ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                                      : 'bg-neutral-50 dark:bg-zinc-800 border-neutral-300 dark:border-white/10 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-white/5'
+                                  }`}
+                                >
+                                  {isSelected && <Check className="w-3.5 h-3.5 text-white" />}
+                                  <span>{mode.label}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        {/* 4. CARACTÉRISTIQUES */}
+                        {activeSummarySection === 'characteristics' && (
+                          <div className="space-y-2.5">
+                            {characteristics.length === 0 ? (
+                              <p className="text-xs text-neutral-400 italic">Aucune caractéristique renseignée.</p>
+                            ) : (
+                              characteristics.map((c, index) => (
+                                <div key={index} className="flex items-center gap-2">
+                                  <input
+                                    type="text"
+                                    value={c.key}
+                                    onChange={(e) => {
+                                      const next = [...characteristics];
+                                      next[index] = { ...next[index], key: e.target.value };
+                                      setCharacteristics(next);
+                                    }}
+                                    placeholder="Nom (ex: PIXEL PITCH)"
+                                    className="w-1/3 px-3 py-2 rounded-xl text-xs bg-neutral-50 dark:bg-zinc-800 border border-neutral-300 dark:border-white/10 text-neutral-900 dark:text-white focus:ring-2 focus:ring-[#38E044]/40 outline-none uppercase font-semibold"
+                                  />
+                                  <input
+                                    type="text"
+                                    value={c.value}
+                                    onChange={(e) => {
+                                      const next = [...characteristics];
+                                      next[index] = { ...next[index], value: e.target.value };
+                                      setCharacteristics(next);
+                                    }}
+                                    placeholder="Valeur (ex: 1.2 – 3.1 mm)"
+                                    className="flex-1 px-3 py-2 rounded-xl text-xs bg-neutral-50 dark:bg-zinc-800 border border-neutral-300 dark:border-white/10 text-neutral-900 dark:text-white focus:ring-2 focus:ring-[#38E044]/40 outline-none"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => setCharacteristics((prev) => prev.filter((_, i) => i !== index))}
+                                    className="w-8 h-8 rounded-xl inline-flex items-center justify-center border border-neutral-200 dark:border-white/10 text-neutral-400 hover:text-rose-500 hover:border-rose-500/50 hover:bg-rose-500/10 transition-colors cursor-pointer shrink-0"
+                                    title="Supprimer la caractéristique"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              ))
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => setCharacteristics((prev) => [...prev, { key: '', value: '' }])}
+                              className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#38E044] hover:bg-[#2fcb3c] text-black text-xs font-extrabold transition-all cursor-pointer shadow-sm active:scale-95"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                              <span>Ajouter une caractéristique</span>
+                            </button>
+                          </div>
+                        )}
+
+                        {/* 5. VARIANTES & RÉFÉRENCES */}
+                        {activeSummarySection === 'variants' && (
+                          <div className="space-y-2.5">
+                            {variants.length === 0 ? (
+                              <p className="text-xs text-neutral-400 italic">Aucune variante renseignée.</p>
+                            ) : (
+                              variants.map((v, index) => (
+                                <div key={index} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 p-2.5 rounded-xl border border-neutral-200 dark:border-white/10 bg-neutral-50/50 dark:bg-zinc-800/80">
+                                  <input
+                                    type="text"
+                                    value={v.name}
+                                    onChange={(e) => {
+                                      const next = [...variants];
+                                      next[index] = { ...next[index], name: e.target.value };
+                                      setVariants(next);
+                                    }}
+                                    placeholder="Nom (ex: PXT Fine 1.2 Lite)"
+                                    className="flex-1 px-3 py-1.5 rounded-lg text-xs bg-white dark:bg-zinc-900 border border-neutral-300 dark:border-white/10 text-neutral-900 dark:text-white font-semibold"
+                                  />
+                                  <input
+                                    type="text"
+                                    value={v.value}
+                                    onChange={(e) => {
+                                      const next = [...variants];
+                                      next[index] = { ...next[index], value: e.target.value };
+                                      setVariants(next);
+                                    }}
+                                    placeholder="Pitch / Valeur (ex: 1.25 mm)"
+                                    className="w-full sm:w-36 px-3 py-1.5 rounded-lg text-xs bg-white dark:bg-zinc-900 border border-neutral-300 dark:border-white/10 text-neutral-900 dark:text-white"
+                                  />
+                                  <input
+                                    type="text"
+                                    value={v.reference || ''}
+                                    onChange={(e) => {
+                                      const next = [...variants];
+                                      next[index] = { ...next[index], reference: e.target.value };
+                                      setVariants(next);
+                                    }}
+                                    placeholder="Référence commerciale"
+                                    className="w-full sm:w-48 px-3 py-1.5 rounded-lg text-xs bg-white dark:bg-zinc-900 border border-neutral-300 dark:border-white/10 text-neutral-900 dark:text-white"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => setVariants((prev) => prev.filter((_, i) => i !== index))}
+                                    className="w-8 h-8 rounded-lg inline-flex items-center justify-center border border-neutral-200 dark:border-white/10 text-neutral-400 hover:text-rose-500 hover:border-rose-500/50 hover:bg-rose-500/10 transition-colors cursor-pointer shrink-0 self-end sm:self-center"
+                                    title="Supprimer la variante"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              ))
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => setVariants((prev) => [...prev, { name: '', value: '', reference: '' }])}
+                              className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#38E044] hover:bg-[#2fcb3c] text-black text-xs font-extrabold transition-all cursor-pointer shadow-sm active:scale-95"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                              <span>Ajouter une variante</span>
+                            </button>
+                          </div>
+                        )}
+
+                        {/* 6. MATRICE COMPARATIVE */}
+                        {activeSummarySection === 'specs' && (
+                          <div className="space-y-3">
+                            <p className="text-[11px] text-neutral-400">
+                              Édition directe de la matrice des variantes (colonnes) et des caractéristiques techniques (lignes).
+                            </p>
+                            <SpecsMatrixEditor
+                              models={models}
+                              setModels={setModels}
+                              groups={specGroups}
+                              setGroups={setSpecGroups}
+                              onAddVariant={() => {
+                                setNewVariantName('');
+                                setShowAddVariantModal(true);
+                              }}
+                              onDeleteVariant={deleteVariant}
+                            />
+                          </div>
+                        )}
+
+                        {/* 7. PROJETS RÉALISÉS */}
+                        {activeSummarySection === 'fieldwork' && (
+                          <div className="space-y-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              <div>
+                                <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">
+                                  Titre de la section projets
+                                </label>
+                                <input
+                                  type="text"
+                                  value={fieldwork.title || ''}
+                                  onChange={(e) => setFieldwork((prev) => ({ ...prev, title: e.target.value }))}
+                                  placeholder="ex: Nos réalisations d'exception"
+                                  className="w-full px-3 py-2 rounded-xl text-xs bg-neutral-50 dark:bg-zinc-800 border border-neutral-300 dark:border-white/10 text-neutral-900 dark:text-white"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">
+                                  Accroche / Eyebrow
+                                </label>
+                                <input
+                                  type="text"
+                                  value={fieldwork.eyebrow || ''}
+                                  onChange={(e) => setFieldwork((prev) => ({ ...prev, eyebrow: e.target.value }))}
+                                  placeholder="ex: RÉFÉRENCES TERRAIN"
+                                  className="w-full px-3 py-2 rounded-xl text-xs bg-neutral-50 dark:bg-zinc-800 border border-neutral-300 dark:border-white/10 text-neutral-900 dark:text-white"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="space-y-3">
+                              {(fieldwork.projects || []).map((proj, idx) => (
+                                <div key={idx} className="p-3.5 rounded-xl border border-neutral-200 dark:border-white/10 bg-neutral-50/50 dark:bg-zinc-800/80 space-y-2.5">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-xs font-extrabold text-neutral-900 dark:text-white">Projet {idx + 1}</span>
+                                    <button
+                                      type="button"
+                                      onClick={() => setFieldwork((prev) => ({ ...prev, projects: prev.projects.filter((_, i) => i !== idx) }))}
+                                      className="text-xs text-rose-500 hover:text-rose-700 font-bold flex items-center gap-1 cursor-pointer"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" /> Supprimer
+                                    </button>
+                                  </div>
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                                    <input
+                                      type="text"
+                                      value={proj.title}
+                                      onChange={(e) => {
+                                        const next = [...fieldwork.projects];
+                                        next[idx] = { ...next[idx], title: e.target.value };
+                                        setFieldwork((prev) => ({ ...prev, projects: next }));
+                                      }}
+                                      placeholder="Nom du projet / Client"
+                                      className="px-3 py-1.5 rounded-lg text-xs bg-white dark:bg-zinc-900 border border-neutral-300 dark:border-white/10"
+                                    />
+                                    <input
+                                      type="text"
+                                      value={proj.location || ''}
+                                      onChange={(e) => {
+                                        const next = [...fieldwork.projects];
+                                        next[idx] = { ...next[idx], location: e.target.value };
+                                        setFieldwork((prev) => ({ ...prev, projects: next }));
+                                      }}
+                                      placeholder="Lieu (ex: Paris)"
+                                      className="px-3 py-1.5 rounded-lg text-xs bg-white dark:bg-zinc-900 border border-neutral-300 dark:border-white/10"
+                                    />
+                                    <input
+                                      type="text"
+                                      value={proj.pitch || ''}
+                                      onChange={(e) => {
+                                        const next = [...fieldwork.projects];
+                                        next[idx] = { ...next[idx], pitch: e.target.value };
+                                        setFieldwork((prev) => ({ ...prev, projects: next }));
+                                      }}
+                                      placeholder="Pitch (ex: 1.2 mm)"
+                                      className="px-3 py-1.5 rounded-lg text-xs bg-white dark:bg-zinc-900 border border-neutral-300 dark:border-white/10"
+                                    />
+                                    <input
+                                      type="text"
+                                      value={proj.year || ''}
+                                      onChange={(e) => {
+                                        const next = [...fieldwork.projects];
+                                        next[idx] = { ...next[idx], year: e.target.value };
+                                        setFieldwork((prev) => ({ ...prev, projects: next }));
+                                      }}
+                                      placeholder="Année (ex: 2024)"
+                                      className="px-3 py-1.5 rounded-lg text-xs bg-white dark:bg-zinc-900 border border-neutral-300 dark:border-white/10"
+                                    />
+                                  </div>
+                                  <input
+                                    type="text"
+                                    value={proj.image || ''}
+                                    onChange={(e) => {
+                                      const next = [...fieldwork.projects];
+                                      next[idx] = { ...next[idx], image: e.target.value };
+                                      setFieldwork((prev) => ({ ...prev, projects: next }));
+                                    }}
+                                    placeholder="URL de l'image (ex: /images/... ou https://...)"
+                                    className="w-full px-3 py-1.5 rounded-lg text-xs bg-white dark:bg-zinc-900 border border-neutral-300 dark:border-white/10"
+                                  />
+                                </div>
+                              ))}
+                              <button
+                                type="button"
+                                onClick={() => setFieldwork((prev) => ({ ...prev, projects: [...(prev.projects || []), { title: '', location: '', pitch: '', year: '', image: '', caption: '' }] }))}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#38E044] hover:bg-[#2fcb3c] text-black text-xs font-extrabold transition-all cursor-pointer shadow-sm active:scale-95"
+                              >
+                                <Plus className="w-3.5 h-3.5" />
+                                <span>Ajouter un projet</span>
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* 8. BOUTONS */}
+                        {activeSummarySection === 'buttons' && (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">
+                                Libellé bouton principal (Étude / Devis)
+                              </label>
+                              <input
+                                type="text"
+                                value={buttons?.study || ''}
+                                onChange={(e) => setButtons((prev) => ({ ...prev, study: e.target.value }))}
+                                placeholder="ex: RECEVOIR UNE ÉTUDE TECHNIQUE"
+                                className="w-full px-3 py-2 rounded-xl text-xs bg-neutral-50 dark:bg-zinc-800 border border-neutral-300 dark:border-white/10 text-neutral-900 dark:text-white"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">
+                                Libellé bouton secondaire (Fiche technique)
+                              </label>
+                              <input
+                                type="text"
+                                value={buttons?.datasheet || ''}
+                                onChange={(e) => setButtons((prev) => ({ ...prev, datasheet: e.target.value }))}
+                                placeholder="ex: TÉLÉCHARGER LA FICHE TECHNIQUE"
+                                className="w-full px-3 py-2 rounded-xl text-xs bg-neutral-50 dark:bg-zinc-800 border border-neutral-300 dark:border-white/10 text-neutral-900 dark:text-white"
+                              />
+                            </div>
+                          </div>
+                        )}
+
+                        {/* 9. DESCRIPTION */}
+                        {activeSummarySection === 'description' && (
+                          <div className="space-y-3">
+                            <div>
+                              <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">
+                                Description courte (Accroche)
+                              </label>
+                              <textarea
+                                rows={3}
+                                value={description?.shortFr || ''}
+                                onChange={(e) => setDescription((prev) => ({ ...prev, shortFr: e.target.value }))}
+                                placeholder="Courte phrase d'introduction..."
+                                className="w-full px-3 py-2 rounded-xl text-xs bg-neutral-50 dark:bg-zinc-800 border border-neutral-300 dark:border-white/10 text-neutral-900 dark:text-white"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">
+                                Description détaillée
+                              </label>
+                              <textarea
+                                rows={4}
+                                value={description?.detailedFr || ''}
+                                onChange={(e) => setDescription((prev) => ({ ...prev, detailedFr: e.target.value }))}
+                                placeholder="Présentation détaillée..."
+                                className="w-full px-3 py-2 rounded-xl text-xs bg-neutral-50 dark:bg-zinc-800 border border-neutral-300 dark:border-white/10 text-neutral-900 dark:text-white"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">
+                                Mots-clés / Tags (séparés par des virgules)
+                              </label>
+                              <input
+                                type="text"
+                                value={(description?.keywords || []).join(', ')}
+                                onChange={(e) => {
+                                  const splitted = e.target.value.split(',').map((s) => s.trim()).filter(Boolean);
+                                  setDescription((prev) => ({ ...prev, keywords: splitted }));
+                                }}
+                                placeholder="ex: INTÉRIEUR, Corporate, Salle de contrôle"
+                                className="w-full px-3 py-2 rounded-xl text-xs bg-neutral-50 dark:bg-zinc-800 border border-neutral-300 dark:border-white/10 text-neutral-900 dark:text-white"
+                              />
+                            </div>
+                          </div>
+                        )}
+
+                        {/* 10. RÉFÉRENCEMENT */}
+                        {activeSummarySection === 'seo' && (
+                          <div className="space-y-3">
+                            <div>
+                              <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">
+                                Titre SEO (Balise Title)
+                              </label>
+                              <input
+                                type="text"
+                                value={seo?.title || ''}
+                                onChange={(e) => setSeo((prev) => ({ ...prev, title: e.target.value }))}
+                                placeholder="ex: PXT Fine — Écran LED Intérieur Ultra-Fin | PixiaTech"
+                                className="w-full px-3 py-2 rounded-xl text-xs bg-neutral-50 dark:bg-zinc-800 border border-neutral-300 dark:border-white/10 text-neutral-900 dark:text-white"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">
+                                Meta Description
+                              </label>
+                              <textarea
+                                rows={3}
+                                value={seo?.description || ''}
+                                onChange={(e) => setSeo((prev) => ({ ...prev, description: e.target.value }))}
+                                placeholder="Description pour les moteurs de recherche..."
+                                className="w-full px-3 py-2 rounded-xl text-xs bg-neutral-50 dark:bg-zinc-800 border border-neutral-300 dark:border-white/10 text-neutral-900 dark:text-white"
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                <ImportDiagnosticsPanel items={diagnostics} />
+              </section>
             </>
           )}
 
