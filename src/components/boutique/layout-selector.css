@@ -12,9 +12,14 @@
   --inactive: #9ca3af; /* gris = inactif, comme les boutons voisins */
 
   position: relative;
+  box-sizing: border-box;
 
-  width: 44px;
-  height: 44px;
+  width: 40px !important;
+  height: 40px !important;
+  min-width: 40px !important;
+  min-height: 40px !important;
+  max-width: 40px !important;
+  max-height: 40px !important;
 
   display: inline-flex;
   align-items: center;
@@ -23,8 +28,8 @@
   padding: 0;
   margin: 0;
 
-  border: 1px solid rgba(229, 231, 235, 0.8);
-  border-radius: 10px; /* carré légèrement arrondi */
+  border: 1px solid rgba(229, 231, 235, 0.8) !important;
+  border-radius: 14px !important;
 
   background: #ffffff;
 

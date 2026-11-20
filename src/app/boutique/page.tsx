@@ -523,7 +523,7 @@ export default function BoutiquePage() {
         </div>
       )}
       <div className="max-w-7xl mx-4 lg:mx-auto flex flex-col md:flex-row md:items-center justify-between gap-3 py-3 border-b border-gray-200/40">
-        <nav className="relative flex items-center bg-gray-100 p-1 rounded-[13px] border border-gray-200/80 overflow-x-auto scrollbar-hide shrink-0 max-w-full">
+        <nav className="relative flex items-center bg-gray-100 p-1 rounded-[16px] border border-gray-200/80 overflow-x-auto scrollbar-hide shrink-0 max-w-full">
           {[
             { id: 'all', label: t('boutique.products') },
             { id: 'sale', label: t('boutique.sale') },
@@ -535,12 +535,12 @@ export default function BoutiquePage() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as typeof activeTab)}
-                className="relative h-9 min-w-[85px] sm:min-w-[110px] px-3 sm:px-4 rounded-[9px] text-xs sm:text-sm font-medium transition-colors duration-200 shrink-0 whitespace-nowrap flex items-center justify-center cursor-pointer select-none"
+                className="relative h-8 min-w-[85px] sm:min-w-[110px] px-3 sm:px-4 rounded-[12px] text-xs sm:text-sm font-medium transition-colors duration-200 shrink-0 whitespace-nowrap flex items-center justify-center cursor-pointer select-none"
               >
                 {isActive && (
                   <motion.div
                     layoutId="segmentedControlActive"
-                    className="absolute inset-0 bg-gray-900 rounded-[9px] shadow-sm"
+                    className="absolute inset-0 bg-gray-900 rounded-[12px] shadow-sm"
                     transition={{ type: 'spring', stiffness: 420, damping: 32 }}
                   />
                 )}
@@ -555,7 +555,7 @@ export default function BoutiquePage() {
           <div className="relative">
             <button
               onClick={() => setSortOpen(!sortOpen)}
-              className="flex h-11 items-center gap-1.5 bg-white border border-gray-200/80 hover:border-gray-300 rounded-[10px] px-4 text-xs sm:text-sm font-medium text-gray-700 shadow-xs transition-all duration-200 cursor-pointer shrink-0 whitespace-nowrap"
+              className="flex h-10 items-center gap-1.5 bg-white border border-gray-200/80 hover:border-gray-300 rounded-[14px] px-4 text-xs sm:text-sm font-medium text-gray-700 shadow-xs transition-all duration-200 cursor-pointer shrink-0 whitespace-nowrap"
             >
               {sortBy === 'manual' ? t('boutique.sortManual') : sortBy === 'newest' ? t('boutique.sortNewest') : sortBy === 'recent' ? t('boutique.sortPopular') : sortBy === 'price-asc' ? t('boutique.sortPriceAsc') : t('boutique.sortPriceDesc')}
               <ChevronDown size={14} className="text-gray-400 transition-transform duration-200" style={{ transform: sortOpen ? 'rotate(180deg)' : undefined }} />
@@ -646,13 +646,13 @@ export default function BoutiquePage() {
               setTimeout(() => searchInputRef.current?.focus(), 100);
             }}
             aria-label={t('boutique.search')}
-            className={`relative flex items-center justify-center size-11 rounded-[10px] border bg-white shadow-xs transition-all duration-200 shrink-0 ${
+            className={`relative flex items-center justify-center size-10 rounded-[14px] border bg-white shadow-xs transition-all duration-200 shrink-0 ${
               searchQuery
                 ? 'text-gray-900 border-gray-400 bg-gray-50'
                 : 'text-gray-500 border-gray-200/80 hover:text-gray-800 hover:border-gray-300 hover:bg-gray-50'
             }`}
           >
-            <Search size={16} />
+            <Search size={15} />
             {searchQuery && (
               <span className="absolute -top-1 -right-1 size-4 bg-gray-900 text-white text-[9px] font-bold flex items-center justify-center rounded-full">!</span>
             )}
@@ -661,13 +661,13 @@ export default function BoutiquePage() {
           <button
             onClick={() => setFilterOpen(true)}
             aria-label={t('boutique.filters')}
-            className={`relative flex items-center justify-center size-11 rounded-[10px] border bg-white shadow-xs transition-all duration-200 shrink-0 ${
+            className={`relative flex items-center justify-center size-10 rounded-[14px] border bg-white shadow-xs transition-all duration-200 shrink-0 ${
               activeFilterCount > 0
                 ? 'text-gray-900 border-gray-400 bg-gray-50'
                 : 'text-gray-500 border-gray-200/80 hover:text-gray-800 hover:border-gray-300 hover:bg-gray-50'
             }`}
           >
-            <SlidersHorizontal size={16} />
+            <SlidersHorizontal size={15} />
             {activeFilterCount > 0 && (
               <span className="absolute -top-1 -right-1 size-4 bg-gray-900 text-white text-[9px] font-bold flex items-center justify-center rounded-full">{activeFilterCount}</span>
             )}
@@ -692,7 +692,7 @@ export default function BoutiquePage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={t('boutique.searchPlaceholder')}
-                className="w-full bg-white border border-gray-200/80 rounded-[10px] pl-10 pr-10 py-2.5 h-11 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-300 transition-all shadow-xs"
+                className="w-full bg-white border border-gray-200/80 rounded-[14px] pl-10 pr-10 py-2 h-10 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-300 transition-all shadow-xs"
               />
               <button
                 onClick={() => { setSearchOpen(false); setSearchQuery(''); }}
