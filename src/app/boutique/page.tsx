@@ -523,7 +523,7 @@ export default function BoutiquePage() {
         </div>
       )}
       <div className="max-w-7xl mx-4 lg:mx-auto flex flex-col md:flex-row md:items-center justify-between gap-3 py-3 border-b border-gray-200/40">
-        <nav className="flex items-center gap-2 sm:gap-2.5 overflow-x-auto scrollbar-hide shrink-0 max-w-full py-1">
+        <nav className="relative flex items-center bg-gray-100 p-1 rounded-[10px] border border-gray-200/80 overflow-x-auto scrollbar-hide shrink-0 max-w-full">
           {[
             { id: 'all', label: t('boutique.products') },
             { id: 'sale', label: t('boutique.sale') },
@@ -535,13 +535,18 @@ export default function BoutiquePage() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as typeof activeTab)}
-                className={`h-11 px-5 sm:px-6 rounded-[10px] text-xs sm:text-sm font-semibold transition-all duration-200 shrink-0 whitespace-nowrap flex items-center justify-center cursor-pointer select-none ${
-                  isActive
-                    ? 'bg-gray-900 text-white shadow-sm border border-gray-900'
-                    : 'bg-white text-gray-700 hover:text-gray-900 hover:bg-gray-50 border border-gray-200/80 shadow-xs'
-                }`}
+                className="relative h-9 min-w-[85px] sm:min-w-[110px] px-3 sm:px-4 rounded-[7px] text-xs sm:text-sm font-medium transition-colors duration-200 shrink-0 whitespace-nowrap flex items-center justify-center cursor-pointer select-none"
               >
-                {tab.label}
+                {isActive && (
+                  <motion.div
+                    layoutId="segmentedControlActive"
+                    className="absolute inset-0 bg-gray-900 rounded-[7px] shadow-sm"
+                    transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+                  />
+                )}
+                <span className={`relative z-10 transition-colors duration-200 whitespace-nowrap ${isActive ? 'text-white font-semibold' : 'text-gray-600 hover:text-gray-900 font-medium'}`}>
+                  {tab.label}
+                </span>
               </button>
             );
           })}
