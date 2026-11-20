@@ -227,7 +227,7 @@ export default function CartPage() {
     <div className="w-full min-h-[100dvh] bg-[#F5F5F5]" style={{ backgroundColor: '#F5F5F5' }}>
 
 
-      <main className="max-w-6xl mx-auto px-6 md:px-10 lg:px-14 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 lg:px-10 py-8">
         {items.length === 0 ? (
           <div className="text-center py-20">
             <ShoppingBag size={48} className="mx-auto text-gray-300 mb-4" />

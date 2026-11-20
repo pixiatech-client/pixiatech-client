@@ -480,7 +480,7 @@ export default function BoutiquePage() {
       />
 
       {quoteDeclinedId && (
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 md:px-10 lg:px-14 mt-4 p-6 bg-white rounded-2xl border border-gray-200/70 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 lg:px-10 mt-4 p-6 bg-white rounded-2xl border border-gray-200/70 shadow-sm">
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
               <ShoppingBag className="w-6 h-6 text-amber-600" />
@@ -522,7 +522,7 @@ export default function BoutiquePage() {
           </div>
         </div>
       )}
-      <div className="max-w-6xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-2 md:gap-3 px-4 sm:px-6 md:px-10 lg:px-14 py-2 md:py-4 border-b border-gray-200/40">
+      <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-2 md:gap-3 px-4 sm:px-6 md:px-8 lg:px-10 py-2 md:py-4 border-b border-gray-200/40">
         <nav className="relative flex items-center space-x-1 bg-gray-200/40 p-1 sm:p-1.5 rounded-full overflow-x-auto scrollbar-hide">
           {[
             { id: 'all', label: t('boutique.products') },
@@ -671,7 +671,7 @@ export default function BoutiquePage() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.97 }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="max-w-6xl mx-auto px-4 sm:px-6 md:px-10 lg:px-14 pt-4"
+            className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 lg:px-10 pt-4"
           >
             <div className="relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-gray-400 pointer-events-none" />
@@ -694,7 +694,7 @@ export default function BoutiquePage() {
         )}
       </AnimatePresence>
 
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 md:px-10 lg:px-14 py-6">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 lg:px-10 py-6">
         {loading ? (
           <div className="min-h-[calc(100dvh-160px)] flex items-center justify-center px-4">
             <LiquidLoader size={150} />
@@ -717,7 +717,7 @@ export default function BoutiquePage() {
               <article
                 key={product.id}
                 style={{ animationDelay: `${idx * 0.08}s` }}
-                className={`product-card-entry w-full bg-[#F5F5F5] p-3 sm:p-4 border border-gray-200/70 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-200 relative flex ${layout === 4 ? 'flex-row items-stretch gap-3 sm:gap-4' : 'flex-col'} ${outOfStock ? 'opacity-70' : ''}`}
+                className={`product-card-entry w-full bg-white p-3 sm:p-4 border border-gray-200/70 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-200 relative flex ${layout === 4 ? 'flex-row items-stretch gap-3 sm:gap-4' : 'flex-col'} ${outOfStock ? 'opacity-70' : ''}`}
               >
                 <a href={`/boutique/produit/${product.id}`} onClick={(e) => { e.preventDefault(); router.push(`/boutique/produit/${product.id}`); }} className={`block relative group ${layout === 4 ? 'w-24 sm:w-32 md:w-40 shrink-0 mb-0' : 'w-full mb-3'}`}>
                   {outOfStock && (
