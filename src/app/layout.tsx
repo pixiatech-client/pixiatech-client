@@ -80,7 +80,7 @@ export default async function RootLayout({
           />
         )}
       </head>
-      <body className={`${inter.variable} ${orbitron.variable} font-body antialiased min-h-[100dvh] bg-[#F8FAFC]${isDark ? ' dark-theme' : ' light-theme'}`} suppressHydrationWarning>
+      <body className={`${inter.variable} ${orbitron.variable} font-body antialiased min-h-[100dvh] bg-[#F5F5F5]${isDark ? ' dark-theme' : ' light-theme'}`} suppressHydrationWarning>
         <div className="flare cyan" aria-hidden="true" />
         <div className="flare magenta" aria-hidden="true" />
         <div className="directional-flare" aria-hidden="true" suppressHydrationWarning />

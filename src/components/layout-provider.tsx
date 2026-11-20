@@ -148,14 +148,14 @@ export function LayoutProvider({
         <ThemeProvider initialThemeName={initialThemeName}>
           <ProfileProvider initialBoutiqueB2B={initialBoutiqueB2B}>
           <CartProvider>
-          <div className={cn("flex flex-col min-h-dvh", isFrontendPage ? "bg-[#F8FAFC]" : "bg-background")}>
+          <div className={cn("flex flex-col min-h-dvh", isFrontendPage ? "bg-[#F5F5F5]" : "bg-background")}>
             {isFrontendPage && !isMonComptePage && !isBoutiqueIndexPage && <BoutiqueHeader boutiqueEnabled={initialBoutiqueEnabled} />}
             {isFrontendPage ? (
-              <div className={`flex flex-col flex-1 ${isMonComptePage || isBoutiqueIndexPage ? '' : 'pt-[68px]'} ${showBottomNav ? 'pb-20' : ''} bg-[#F8FAFC]`}>
+              <div className={`flex flex-col flex-1 ${isMonComptePage || isBoutiqueIndexPage ? '' : 'pt-[68px]'} ${showBottomNav ? 'pb-20' : ''} bg-[#F5F5F5]`}>
                 <SiteBanners />
                 <main
                   className={cn(
-                    'flex-1 flex w-full bg-[#F8FAFC]',
+                    'flex-1 flex w-full bg-[#F5F5F5]',
                     isBoutiquePage ? 'flex-col items-stretch' : 'items-start justify-center',
                     isHomePage && 'px-4 pb-4 pt-8 md:px-6 md:pb-6 md:pt-8',
                     !isHomePage && !isQuotePage && !isBoutiquePage && !isMonComptePage && !isContactPage && 'px-4 pb-4 md:px-6 md:pb-6',
