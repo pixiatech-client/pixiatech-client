@@ -7,7 +7,7 @@ import { Toaster as SonnerToaster } from 'sonner';
 import { BoutiqueHeader } from '@/components/boutique-header';
 import { FirebaseClientProvider } from '@/firebase';
 import { cn } from '@/lib/utils';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { FloatingChatWrapper } from '@/components/chat/FloatingChatWrapper';
 import { PixiaGlobalAnimation } from '@/components/pixia/PixiaGlobalAnimation';
 import { RoleProvider } from '@/contexts/RoleContext';
@@ -51,6 +51,33 @@ export function LayoutProvider({
 }>) {
   const pathname = usePathname();
   const router = useRouter();
+
+  /* Configuration Guidée (`/?step=...`, mode `wizard`) : le configurateur
+     occupe tout l'écran. On masque uniquement l'enveloppe visuelle Pixia —
+     sans démonter le moteur ni relâcher le relais de mascotte, ce qui ferait
+     réapparaître l'ancien robot. */
+  const [guidedConfigActive, setGuidedConfigActive] = useState(
+    () => typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('step')
+  );
+  useEffect(() => {
+    const syncFromUrl = () => {
+      setGuidedConfigActive(
+        pathname === '/' && new URLSearchParams(window.location.search).has('step')
+      );
+    };
+    const onMode = (event: Event) => {
+      const mode = (event as CustomEvent<{ mode?: string }>).detail?.mode;
+      setGuidedConfigActive(pathname === '/' && mode === 'wizard');
+    };
+    syncFromUrl();
+    window.addEventListener('popstate', syncFromUrl);
+    window.addEventListener('quote-mode', onMode);
+    return () => {
+      window.removeEventListener('popstate', syncFromUrl);
+      window.removeEventListener('quote-mode', onMode);
+    };
+  }, [pathname]);
+
   const isWebDomain =
     isWebHost ||
     (typeof window !== 'undefined' &&
@@ -161,6 +188,7 @@ export function LayoutProvider({
               active={isWebPage || isFrontendPage}
               heroSelector={isFrontendPage ? 'main' : undefined}
               dockBottomInset={isFrontendPage && showBottomNav ? 64 : 0}
+              hidden={guidedConfigActive}
             />
           </div>
           </CartProvider>

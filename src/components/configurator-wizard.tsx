@@ -577,7 +577,7 @@ export function ConfiguratorWizard({ onComplete, onBack, allProducts, settings, 
               className="flex-1 flex flex-col items-start p-0"
             >
               <div className={cn(
-                "w-full mx-auto flex-col pt-0 pb-6 transition-all duration-500",
+                "w-full mx-auto flex-col pt-0 pb-6 transition-all duration-500 bg-white",
                 state.step === 5 ? "max-w-[1550px] px-6" : (state.step === 1 ? "max-w-7xl px-4" : "max-w-5xl")
               )}>
                 <HorizontalStepper

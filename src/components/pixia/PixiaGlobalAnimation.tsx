@@ -249,12 +249,17 @@ interface PixiaGlobalAnimationProps {
    *  une barre d'onglets fixe (application mobile). Sans effet sur `/web`, où
    *  l'icône reste ancrée sur `#back-to-top-btn`. */
   dockBottomInset?: number;
+  /** Masque temporairement la mascotte (Configuration Guidée) sans démonter
+   *  le composant : le relais reste actif, donc aucun ancien robot ne réapparaît
+   *  et le pont conversationnel reste intact. */
+  hidden?: boolean;
 }
 
 export function PixiaGlobalAnimation({
   active = false,
   heroSelector = DEFAULT_HERO_SELECTOR,
   dockBottomInset = 0,
+  hidden = false,
 }: PixiaGlobalAnimationProps) {
   const pathname = usePathname();
   const { locale } = useI18n();
@@ -853,6 +858,7 @@ export function PixiaGlobalAnimation({
         inset: 0,
         zIndex: elevated ? 290 : 101,
         pointerEvents: 'none',
+        display: hidden ? 'none' : undefined,
       }}
     >
       {/* Limites du glisser-déposer : tout l'écran, comme le robot historique. */}
