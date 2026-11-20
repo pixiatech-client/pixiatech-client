@@ -4,7 +4,7 @@
       "id": "home",
       "name": "home",
       "slug": "/home",
-      "updatedAt": "2026-11-17T21:39:05.618Z",
+      "updatedAt": "2026-11-20T23:24:51.778Z",
       "sections": {
         "pixia-web": {
           "text_1790257213042": "sdsdsdsdÉDITEUR DIRECT : CLIQUEZ SUR UN TEXTE OU UNE IMAGE",
@@ -59,12 +59,20 @@
                 "updatedAt": "2026-11-06T23:47:31.536Z",
                 "sourceText": "De l'idée à la première lumière."
               }
+            },
+            "badge": {
+              "fr": {
+                "value": "05 / MÉTHODOLOGIE & PROCESS",
+                "status": "source",
+                "updatedAt": "2026-11-19T18:12:15.680Z",
+                "sourceText": "05 / MÉTHODOLOGIE & PROCESS"
+              }
             }
           },
           "text_1790511327180": "SUPPORTQSZS",
           "text_1790511351723": "SUPPORT 2026",
-          "minHeight": 1432,
-          "paddingBottom": 58,
+          "minHeight": 1375,
+          "paddingBottom": 1,
           "_elements": {
             "section:1/div:1/div:2/div:3/span:2": {
               "text_fr": "CONFIGURATION",
@@ -116,11 +124,12 @@
           "visible": true,
           "layout": {
             "visible": true
-          }
+          },
+          "badge": "05 / MÉTHODOLOGIE & PROCESS"
         },
         "insights": {
-          "minHeight": 931,
-          "paddingBottom": 125,
+          "minHeight": 965,
+          "paddingBottom": 159,
           "insight_1_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2F58a79297-045f-44ea-b870-572542b62d61_9yq9y.png?alt=media",
           "insight_0_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FInstallation_d_un_mur_LED_professionnel_qf9zi.png?alt=media",
           "_elements": {},
@@ -128,7 +137,18 @@
           "visible": true,
           "layout": {
             "visible": true
-          }
+          },
+          "_i18n": {
+            "badge": {
+              "fr": {
+                "value": "06 / RESSOURCES & INSIGHTS",
+                "status": "source",
+                "updatedAt": "2026-11-19T18:12:22.653Z",
+                "sourceText": "06 / RESSOURCES & INSIGHTS"
+              }
+            }
+          },
+          "badge": "06 / RESSOURCES & INSIGHTS"
         },
         "hero": {
           "_i18n": {
@@ -174,10 +194,10 @@
             },
             "slider3.title": {
               "fr": {
-                "value": "Caissons lumineux dynamiques.",
+                "value": "Caisson LED dynamique",
                 "status": "source",
-                "updatedAt": "2026-11-01T18:40:11.985Z",
-                "sourceText": "Caissons lumineux dynamiques."
+                "updatedAt": "2026-11-19T18:26:44.372Z",
+                "sourceText": "Caisson LED dynamique"
               }
             },
             "slider2.title": {
@@ -190,58 +210,58 @@
             },
             "slider3.description": {
               "fr": {
-                "value": "À la vente sur mesure ou à la location, nos caissons lumineux dynamiques s’adaptent à vos installations fixes comme à vos événements.",
+                "value": "Des caissons lumineux animés pour valoriser vos vitrines, stands et espaces de vente.",
                 "status": "source",
-                "updatedAt": "2026-11-06T20:51:43.665Z",
-                "sourceText": "À la vente sur mesure ou à la location, nos caissons lumineux dynamiques s’adaptent à vos installations fixes comme à vos événements."
+                "updatedAt": "2026-11-19T18:45:55.242Z",
+                "sourceText": "Des caissons lumineux animés pour valoriser vos vitrines, stands et espaces de vente."
               }
             },
             "slider2.description": {
               "fr": {
-                "value": "Louez un écran LED plat ou incurvé pour vos événements en intérieur et en extérieur, à Paris et en Île-de-France.",
+                "value": "Des écrans LED pour vos salons, concerts et événements à Paris et en Île-de-France.",
                 "status": "source",
-                "updatedAt": "2026-11-06T20:30:39.244Z",
-                "sourceText": "Louez un écran LED plat ou incurvé pour vos événements en intérieur et en extérieur, à Paris et en Île-de-France."
+                "updatedAt": "2026-11-19T18:45:43.467Z",
+                "sourceText": "Des écrans LED pour vos salons, concerts et événements à Paris et en Île-de-France."
               }
             },
             "slider1.description": {
               "fr": {
-                "value": "Choisissez un écran LED intérieur ou extérieur adapté à votre espace et à votre budget.",
+                "value": "Écrans LED intérieurs et extérieurs à Paris et en Île-de-France.",
                 "status": "source",
-                "updatedAt": "2026-11-06T20:24:14.547Z",
-                "sourceText": "Choisissez un écran LED intérieur ou extérieur adapté à votre espace et à votre budget."
+                "updatedAt": "2026-11-19T18:22:09.772Z",
+                "sourceText": "Écrans LED intérieurs et extérieurs à Paris et en Île-de-France."
               }
             },
             "slider2.tagline": {
               "fr": {
-                "value": "Pour vos événements .",
+                "value": "Valorisez vos événements.",
                 "status": "source",
-                "updatedAt": "2026-11-06T20:52:15.145Z",
-                "sourceText": "Pour vos événements ."
+                "updatedAt": "2026-11-19T18:27:34.213Z",
+                "sourceText": "Valorisez vos événements."
               }
             },
             "slider1.title": {
               "fr": {
-                "value": "Mur et écrans LED",
+                "value": "Murs et écrans LED",
                 "status": "source",
-                "updatedAt": "2026-11-06T20:22:42.856Z",
-                "sourceText": "Mur et écrans LED"
+                "updatedAt": "2026-11-19T18:46:16.459Z",
+                "sourceText": "Murs et écrans LED"
               }
             },
             "slider1.tagline": {
               "fr": {
-                "value": " Donnez vie à vos espaces .",
+                "value": " Donnez vie à vos espaces.",
                 "status": "source",
-                "updatedAt": "2026-11-06T20:52:21.409Z",
-                "sourceText": " Donnez vie à vos espaces ."
+                "updatedAt": "2026-11-19T18:27:19.381Z",
+                "sourceText": " Donnez vie à vos espaces."
               }
             },
             "slider3.tagline": {
               "fr": {
-                "value": "Fixes ou portables .",
+                "value": "Illuminez votre enseigne.",
                 "status": "source",
-                "updatedAt": "2026-11-06T20:52:08.706Z",
-                "sourceText": "Fixes ou portables ."
+                "updatedAt": "2026-11-19T18:27:46.469Z",
+                "sourceText": "Illuminez votre enseigne."
               }
             },
             "slider1.badge": {
@@ -294,10 +314,10 @@
             },
             "slider1.primaryCta": {
               "fr": {
-                "value": "Découvrir nos écrans LED →",
+                "value": "Acheter un écran\n →",
                 "status": "source",
-                "updatedAt": "2026-11-04T21:40:08.477Z",
-                "sourceText": "Découvrir nos écrans LED →"
+                "updatedAt": "2026-11-19T17:03:49.382Z",
+                "sourceText": "Acheter un écran\n →"
               },
               "en": {
                 "value": "Découvrir nos écrans LED → ",
@@ -308,10 +328,10 @@
             },
             "slider2.primaryCta": {
               "fr": {
-                "value": "Découvrir nos écrans à louer →",
+                "value": "Louer un écran \n\n→\n  ",
                 "status": "source",
-                "updatedAt": "2026-11-01T18:39:48.760Z",
-                "sourceText": "Découvrir nos écrans à louer →"
+                "updatedAt": "2026-11-19T17:02:47.453Z",
+                "sourceText": "Louer un écran \n\n→\n  "
               }
             },
             "slider3.primaryCta": {
@@ -323,8 +343,8 @@
               }
             }
           },
-          "minHeight": 773,
-          "paddingBottom": 55,
+          "minHeight": 793,
+          "paddingBottom": 175,
           "slideImage1": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2Fa7444871-7002-4900-b1b3-7473744525e8_vawmr.png?alt=media",
           "_elements": {
             "div:2/section:1/div:7/div:1/div:3/span:2": {
@@ -334,7 +354,7 @@
               "text": "PARIS · MONDE 11"
             },
             "tagline": {
-              "fontSize": "38px",
+              "fontSize": "30px",
               "offsetX": 0,
               "offsetY": 8,
               "backgroundColor": "transparent",
@@ -347,7 +367,8 @@
               "color": "#ffffff",
               "backgroundColor": "transparent",
               "offsetX": 0,
-              "offsetY": 0
+              "offsetY": 0,
+              "width": "631px"
             },
             "section:1/div:5/div:1/div:3/span:1": {
               "text_fr": "INSTALLATION PARTOUT EN FRANCE",
@@ -384,12 +405,12 @@
               }
             },
             "slideImage3": {
-              "src": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2Fdeaaf996-b057-4335-845d-4677516ac285__2__q8ftz.webp?alt=media",
+              "src": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FCAISSON_DYNAMIQUE_LED_1_hr5yd.webp?alt=media",
               "mediaType": "image",
               "overlay": {
                 "enabled": true,
                 "color": "#000000",
-                "opacity": 70,
+                "opacity": 80,
                 "gradientEnabled": false,
                 "gradientStartColor": "#000000",
                 "gradientStartOpacity": 45,
@@ -400,7 +421,7 @@
             },
             "title": {
               "fontSize": "62px",
-              "width": "872px",
+              "width": "898px",
               "backgroundColor": "transparent"
             },
             "slideImage2": {
@@ -426,42 +447,46 @@
               "color": "#f7f7f7",
               "backgroundColor": "transparent"
             },
-            "primaryCta": {
-              "hover": {
-                "color": "#f5f4f0",
-                "backgroundColor": "transparent"
-              },
-              "buttonEffect": {
-                "type": "glow",
-                "intensity": 60,
-                "duration": 300,
-                "color": "#C3F910",
-                "amplitude": 4
-              },
-              "backgroundColor": "transparent",
-              "color": "#f5f4f0",
-              "borderStyle": "solid",
-              "borderRadius": "12px",
-              "borderWidth": "2px"
-            },
             "secondaryCta": {
               "hover": {
-                "backgroundColor": "transparent",
-                "color": "#faf5f5"
+                "backgroundColor": "#0a0a09",
+                "color": "#f2eadf"
               },
               "buttonEffect": {
                 "type": "signature",
                 "intensity": 60,
                 "duration": 300,
-                "color": "#C3F910",
-                "amplitude": 4
+                "color": "#cf5a1c",
+                "amplitude": 12
               },
-              "borderRadius": "12px",
-              "borderStyle": "solid"
+              "borderRadius": "8px",
+              "borderStyle": "solid",
+              "backgroundColor": "#f2eadf",
+              "color": "#0a0a09"
+            },
+            "primaryCta": {
+              "hover": {
+                "color": "#0a0a09",
+                "backgroundColor": "#ffffff"
+              },
+              "color": "#e9e7e7",
+              "backgroundColor": "#0a0a09",
+              "borderWidth": "2px",
+              "borderStyle": "solid",
+              "borderColor": "#cf5a1c",
+              "buttonEffect": {
+                "type": "none"
+              },
+              "active": {
+                "color": "#ffffff",
+                "backgroundColor": "#0a0a09"
+              },
+              "borderRadius": "8px",
+              "href": "https://google.fr"
             }
           },
           "slideImage2": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FECRAN_LED_LOCATION__2___2___2___2___2___2__etc9v.webp?alt=media",
-          "slideImage3": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2Fdeaaf996-b057-4335-845d-4677516ac285__2__q8ftz.webp?alt=media",
+          "slideImage3": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FCAISSON_DYNAMIQUE_LED_1_hr5yd.webp?alt=media",
           "title": "TECHNOLOGIES03 D’AFFICHAGE 01",
           "badge": "PIXIATECH / VISUAL TECHNOLOGY ",
           "description": "Spécialisée dans la vente d’écrans professionnels et de technologies d’affichage LED, Micro LED et OLED, pour les entreprises, les commerces, l’architecture et l’événementiel",
@@ -472,23 +497,23 @@
           "layout": {
             "visible": true
           },
-          "slider3.title": "Caissons lumineux dynamiques.",
+          "slider3.title": "Caisson LED dynamique",
           "slider2.title": "Location d’écrans LED",
-          "slider3.description": "À la vente sur mesure ou à la location, nos caissons lumineux dynamiques s’adaptent à vos installations fixes comme à vos événements.",
-          "slider2.description": "Louez un écran LED plat ou incurvé pour vos événements en intérieur et en extérieur, à Paris et en Île-de-France.",
-          "slider1.description": "Choisissez un écran LED intérieur ou extérieur adapté à votre espace et à votre budget.",
-          "slider2.tagline": "Pour vos événements .",
-          "slider1.title": "Mur et écrans LED",
-          "slider1.tagline": " Donnez vie à vos espaces .",
-          "slider3.tagline": "Fixes ou portables .",
+          "slider3.description": "Des caissons lumineux animés pour valoriser vos vitrines, stands et espaces de vente.",
+          "slider2.description": "Des écrans LED pour vos salons, concerts et événements à Paris et en Île-de-France.",
+          "slider1.description": "Écrans LED intérieurs et extérieurs à Paris et en Île-de-France.",
+          "slider2.tagline": "Valorisez vos événements.",
+          "slider1.title": "Murs et écrans LED",
+          "slider1.tagline": " Donnez vie à vos espaces.",
+          "slider3.tagline": "Illuminez votre enseigne.",
           "slider1.badge": "PIXIATECH / TECHNOLOGIE VISUELLE",
           "slider2.badge": "PIXIATECH / TECHNOLOGIE VISUELLE",
           "slider3.badge": "PIXIATECH / TECHNOLOGIE VISUELLE ",
           "slider2.secondaryCta": "Estimer mon projet →",
           "slider1.secondaryCta": "Estimer mon projet →",
           "slider3.secondaryCta": "Estimer mon projet →",
-          "slider1.primaryCta": "Découvrir nos écrans LED →",
-          "slider2.primaryCta": "Découvrir nos écrans à louer →",
+          "slider1.primaryCta": "Acheter un écran\n →",
+          "slider2.primaryCta": "Louer un écran \n\n→\n  ",
           "slider3.primaryCta": "Découvrir nos caissons dynamiques →",
           "bgColor": "#000000",
           "textColor": "#ffffff"
@@ -500,9 +525,6 @@
               "textAlign": "center",
               "text": "Built for every environment. 111",
               "text_fr": "Built for every environment. "
-            },
-            "title": {
-              "width": "1098px"
             }
           },
           "market_rental_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FLOCATION_ECRAN_EVENMENTIEL_3yxyk.webp?alt=media",
@@ -517,8 +539,21 @@
           "layout": {
             "visible": true
           },
-          "minHeight": 812,
-          "paddingBottom": 4
+          "minHeight": 724,
+          "paddingBottom": 0,
+          "bgColor": "#0d0d0c",
+          "textColor": "#f5f4f0",
+          "_i18n": {
+            "badge": {
+              "fr": {
+                "value": "02 / MARCHÉS",
+                "status": "source",
+                "updatedAt": "2026-11-19T18:11:58.950Z",
+                "sourceText": "02 / MARCHÉS"
+              }
+            }
+          },
+          "badge": "02 / MARCHÉS"
         },
         "header": {
           "_elements": {
@@ -530,6 +565,10 @@
             },
             "nav:1/div:1/a:4": {
               "text_fr": "ENGAGEMENTS"
+            },
+            "div:1/div:1/div:2/div:2/a:1": {
+              "offsetX": 16,
+              "offsetY": 0
             }
           }
         },
@@ -541,29 +580,42 @@
             "div:2/section:1/div:1/h2:1/span:1": {
               "color": "#e60505"
             },
-            "badge": {
-              "offsetX": -48,
-              "offsetY": 0,
-              "fontSize": "14px"
-            },
-            "subtitle": {
-              "fontSize": "20px",
-              "fontWeight": "400",
-              "width": "809px",
-              "offsetX": -92,
+            "titleLine2": {
+              "width": "40px",
+              "offsetX": -51,
               "offsetY": 0
             },
+            "titleLine3": {
+              "offsetX": -99,
+              "offsetY": 16,
+              "width": "1036px",
+              "fontSize": "60px"
+            },
+            "subtitle": {
+              "width": "862px",
+              "offsetX": -56,
+              "offsetY": -24,
+              "fontSize": "18px",
+              "fontWeight": "400"
+            },
             "title": {
-              "width": "1353px",
-              "offsetX": 116,
-              "offsetY": 0,
-              "color": "#e9683d"
+              "width": "964px",
+              "fontSize": "56px",
+              "color": "#cf5a1c",
+              "offsetX": -64,
+              "offsetY": 44,
+              "textAlign": "left",
+              "fontWeight": "700"
+            },
+            "badge": {
+              "offsetX": -64,
+              "offsetY": 32
             }
           },
           "paddingTop": 0,
           "overlayColor": "#d50b0b",
           "overlayOpacity": 85,
-          "minHeight": 574,
+          "minHeight": 632,
           "marginBottom": 0,
           "paddingBottom": 0,
           "visible": true,
@@ -573,10 +625,10 @@
           "_i18n": {
             "subtitle": {
               "fr": {
-                "value": "PIXIATECH est une entreprise française spécialisée dans les solutions visuelles sur mesure. Nous aidons les entreprises à dynamiser leur communication, à valoriser leurs espaces et à capter l’attention de leurs publics. Écrans LED, affichages transparents et caissons lumineux dynamiques : nous adaptons chaque solution à votre message, à votre environnement et à vos objectifs.",
+                "value": "PIXIATECH est une entreprise française spécialisée dans la vente, la location et l’installation d’écrans LED et de solutions d’affichage sur mesure pour les commerces, les entreprises et l’événementiel.",
                 "status": "source",
-                "updatedAt": "2026-11-01T18:55:50.106Z",
-                "sourceText": "PIXIATECH est une entreprise française spécialisée dans les solutions visuelles sur mesure. Nous aidons les entreprises à dynamiser leur communication, à valoriser leurs espaces et à capter l’attention de leurs publics. Écrans LED, affichages transparents et caissons lumineux dynamiques : nous adaptons chaque solution à votre message, à votre environnement et à vos objectifs."
+                "updatedAt": "2026-11-20T10:13:41.876Z",
+                "sourceText": "PIXIATECH est une entreprise française spécialisée dans la vente, la location et l’installation d’écrans LED et de solutions d’affichage sur mesure pour les commerces, les entreprises et l’événementiel."
               }
             },
             "badge": {
@@ -589,34 +641,34 @@
             },
             "title": {
               "fr": {
-                "value": "NOUS FAISONS DE LA TECHNOLOGIE LED",
+                "value": "NOUS FAISONS DE LA TECHNOLOGIE LED, UNE PARTIE INTÉGRANTE DE VOS ESPACES. ",
                 "status": "source",
-                "updatedAt": "2026-11-05T15:23:02.501Z",
-                "sourceText": "NOUS FAISONS DE LA TECHNOLOGIE LED"
+                "updatedAt": "2026-11-20T10:15:54.648Z",
+                "sourceText": "NOUS FAISONS DE LA TECHNOLOGIE LED, UNE PARTIE INTÉGRANTE DE VOS ESPACES. "
               }
             },
             "titleLine2": {
               "fr": {
-                "value": "UNE PARTIE",
+                "value": "",
                 "status": "source",
-                "updatedAt": "2026-11-05T15:23:22.285Z",
-                "sourceText": "UNE PARTIE"
+                "updatedAt": "2026-11-19T10:06:24.824Z",
+                "sourceText": ""
               }
             },
             "titleLine3": {
               "fr": {
-                "value": "INTÉGRANTE DE VOS ESPACES.",
+                "value": "",
                 "status": "source",
-                "updatedAt": "2026-11-05T15:23:39.312Z",
-                "sourceText": "INTÉGRANTE DE VOS ESPACES."
+                "updatedAt": "2026-11-19T17:45:32.335Z",
+                "sourceText": ""
               }
             }
           },
-          "subtitle": "PIXIATECH est une entreprise française spécialisée dans les solutions visuelles sur mesure. Nous aidons les entreprises à dynamiser leur communication, à valoriser leurs espaces et à capter l’attention de leurs publics. Écrans LED, affichages transparents et caissons lumineux dynamiques : nous adaptons chaque solution à votre message, à votre environnement et à vos objectifs.",
+          "subtitle": "PIXIATECH est une entreprise française spécialisée dans la vente, la location et l’installation d’écrans LED et de solutions d’affichage sur mesure pour les commerces, les entreprises et l’événementiel.",
           "badge": "01 / À PROPOS DE PIXIATECH",
-          "title": "NOUS FAISONS DE LA TECHNOLOGIE LED",
-          "titleLine2": "UNE PARTIE",
-          "titleLine3": "INTÉGRANTE DE VOS ESPACES.",
+          "title": "NOUS FAISONS DE LA TECHNOLOGIE LED, UNE PARTIE INTÉGRANTE DE VOS ESPACES. ",
+          "titleLine2": "",
+          "titleLine3": "",
           "bgColor": "#fffff",
           "paddingRight": 0,
           "paddingLeft": 72
@@ -652,7 +704,7 @@
               "fontSize": "48px"
             },
             "title": {
-              "color": "#e9683d",
+              "color": "#cf5a1c",
               "fontSize": "60px"
             },
             "section:1/div:1/div:2/div:2/div:2/div:3/div:2/div:1": {
@@ -673,10 +725,10 @@
             },
             "title": {
               "fr": {
-                "value": "À quelle distance pour une image parfaites ?",
+                "value": "À quelle distance pour une image parfaite ?",
                 "status": "source",
-                "updatedAt": "2026-11-01T22:56:22.317Z",
-                "sourceText": "À quelle distance pour une image parfaites ?"
+                "updatedAt": "2026-11-19T18:50:23.593Z",
+                "sourceText": "À quelle distance pour une image parfaite ?"
               }
             },
             "description": {
@@ -686,20 +738,29 @@
                 "updatedAt": "2026-11-01T20:21:11.431Z",
                 "sourceText": "Le pas de pixel est l’espace entre deux pixels, mesuré en millimètres. Plus il est petit, plus l’image est détaillée à courte distance. Lorsque le public est plus éloigné, un pas plus large peut suffire. Le bon choix dépend de la distance de visionnage et des contenus à afficher"
               }
+            },
+            "badge": {
+              "fr": {
+                "value": "03 / PAS DE PIXEL",
+                "status": "source",
+                "updatedAt": "2026-11-19T22:56:05.231Z",
+                "sourceText": "03 / PAS DE PIXEL"
+              }
             }
           },
           "titleLine2": "Où vous placer face à l’écran ?",
-          "title": "À quelle distance pour une image parfaites ?",
+          "title": "À quelle distance pour une image parfaite ?",
           "description": "Le pas de pixel est l’espace entre deux pixels, mesuré en millimètres. Plus il est petit, plus l’image est détaillée à courte distance. Lorsque le public est plus éloigné, un pas plus large peut suffire. Le bon choix dépend de la distance de visionnage et des contenus à afficher",
           "minHeight": 974,
           "paddingBottom": 52,
           "textColor": "#292929",
           "overlayOpacity": 0,
-          "overlayColor": "#212121"
+          "overlayColor": "#212121",
+          "badge": "03 / PAS DE PIXEL"
         },
         "projects": {
-          "minHeight": 1018,
-          "paddingBottom": 53,
+          "minHeight": 1070,
+          "paddingBottom": 105,
           "_elements": {
             "div:1/section:1/div:1/div:3/div:1/div:2/span:1": {
               "text_fr": "Comment sublime la scène du festival d’été."
@@ -778,7 +839,8 @@
               "borderRadius": "12px"
             },
             "title": {
-              "width": "1014px"
+              "width": "1014px",
+              "color": "#cf5a1c"
             },
             "titleLine2": {
               "width": "497px"
@@ -799,10 +861,10 @@
             },
             "title": {
               "fr": {
-                "value": "Déployé dans le monde réel.    à la première lumière  .",
+                "value": "Déployé dans le monde réel.\nDe l’idée à la première lumière.",
                 "status": "source",
-                "updatedAt": "2026-11-06T23:50:53.124Z",
-                "sourceText": "Déployé dans le monde réel.    à la première lumière  ."
+                "updatedAt": "2026-11-19T18:51:27.004Z",
+                "sourceText": "Déployé dans le monde réel.\nDe l’idée à la première lumière."
               }
             },
             "titleLine2": {
@@ -811,6 +873,14 @@
                 "status": "source",
                 "updatedAt": "2026-11-06T23:49:42.793Z",
                 "sourceText": ""
+              }
+            },
+            "badge": {
+              "fr": {
+                "value": "07 / PROJETS & RÉALISATIONS",
+                "status": "source",
+                "updatedAt": "2026-11-19T18:12:28.582Z",
+                "sourceText": "07 / PROJETS & RÉALISATIONS"
               }
             }
           },
@@ -822,8 +892,9 @@
             "visible": true
           },
           "paddingTop": 108,
-          "title": "Déployé dans le monde réel.    à la première lumière  .",
-          "titleLine2": ""
+          "title": "Déployé dans le monde réel.\nDe l’idée à la première lumière.",
+          "titleLine2": "",
+          "badge": "07 / PROJETS & RÉALISATIONS"
         },
         "showreel": {
           "_elements": {
@@ -1309,10 +1380,10 @@
             },
             "lede": {
               "fr": {
-                "value": "Faites défiler la caméra avance de la métropole jusqu’à plonger au cœur des micro-diodes LED.",
+                "value": "Faites défiler la caméra depuis la métropole jusqu’au cœur des micro-diodes LED.",
                 "status": "source",
-                "updatedAt": "2026-11-01T11:54:11.561Z",
-                "sourceText": "Faites défiler la caméra avance de la métropole jusqu’à plonger au cœur des micro-diodes LED."
+                "updatedAt": "2026-11-19T18:16:29.218Z",
+                "sourceText": "Faites défiler la caméra depuis la métropole jusqu’au cœur des micro-diodes LED."
               },
               "en": {
                 "value": "Scroll down  the camera moves from the metropolis into the heart of LED micro-diodes.",
@@ -1435,10 +1506,10 @@
             },
             "cameraKeyframes": {
               "fr": {
-                "value": "[{\"id\":\"kf-1793720895300\",\"name\":\"Clé 03\",\"time\":0,\"zoom\":1.12,\"x\":0.1,\"y\":-5.3,\"originX\":49.97,\"originY\":57.2,\"easing\":\"easeInOut\"},{\"id\":\"kf-1793720813029\",\"name\":\"Clé 02\",\"time\":0.888,\"zoom\":12.41,\"x\":6,\"y\":-5.3,\"originX\":49.1,\"originY\":61.2,\"easing\":\"easeInOut\"}]",
+                "value": "[{\"id\":\"kf-1793720895300\",\"name\":\"Clé 03\",\"time\":0,\"zoom\":1.12,\"x\":0.1,\"y\":-5.3,\"originX\":49.97,\"originY\":57.2,\"easing\":\"easeInOut\"},{\"id\":\"kf-1795115225769\",\"name\":\"Clé 01\",\"time\":0.91,\"zoom\":25,\"x\":-13.6,\"y\":-5.3,\"originX\":49.2,\"originY\":60,\"easing\":\"easeInOut\"},{\"id\":\"kf-1793720813029\",\"name\":\"Clé 02\",\"time\":0.778,\"zoom\":12.41,\"x\":6,\"y\":-5.3,\"originX\":49.1,\"originY\":61.2,\"easing\":\"easeInOut\"}]",
                 "status": "source",
-                "updatedAt": "2026-11-06T18:24:46.602Z",
-                "sourceText": "[{\"id\":\"kf-1793720895300\",\"name\":\"Clé 03\",\"time\":0,\"zoom\":1.12,\"x\":0.1,\"y\":-5.3,\"originX\":49.97,\"originY\":57.2,\"easing\":\"easeInOut\"},{\"id\":\"kf-1793720813029\",\"name\":\"Clé 02\",\"time\":0.888,\"zoom\":12.41,\"x\":6,\"y\":-5.3,\"originX\":49.1,\"originY\":61.2,\"easing\":\"easeInOut\"}]"
+                "updatedAt": "2026-11-19T19:11:09.611Z",
+                "sourceText": "[{\"id\":\"kf-1793720895300\",\"name\":\"Clé 03\",\"time\":0,\"zoom\":1.12,\"x\":0.1,\"y\":-5.3,\"originX\":49.97,\"originY\":57.2,\"easing\":\"easeInOut\"},{\"id\":\"kf-1795115225769\",\"name\":\"Clé 01\",\"time\":0.91,\"zoom\":25,\"x\":-13.6,\"y\":-5.3,\"originX\":49.2,\"originY\":60,\"easing\":\"easeInOut\"},{\"id\":\"kf-1793720813029\",\"name\":\"Clé 02\",\"time\":0.778,\"zoom\":12.41,\"x\":6,\"y\":-5.3,\"originX\":49.1,\"originY\":61.2,\"easing\":\"easeInOut\"}]"
               }
             },
             "ledKeyframes": {
@@ -1520,7 +1591,7 @@
           "image4Src": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FDIODE_LED_ECRAN_GEANT_ufu1w.webp?alt=media",
           "label": "PIXIATECH / FILM DE PRÉSENTATION",
           "scrollHint": "FAITES DÉFILER — DU LOIN AU CŒUR DES LED",
-          "lede": "Faites défiler la caméra avance de la métropole jusqu’à plonger au cœur des micro-diodes LED.",
+          "lede": "Faites défiler la caméra depuis la métropole jusqu’au cœur des micro-diodes LED.",
           "ch1Eyebrow": "01 / LA MÉTROPOLE",
           "ch1TitleLine1": "Écrans LED",
           "ch1TitleLine2": "à l’échelle de la ville.",
@@ -1551,7 +1622,7 @@
           "videoScreenTop": "53.412",
           "videoScreenWidth": "14.319",
           "videoScreenHeight": "11.44",
-          "cameraKeyframes": "[{\"id\":\"kf-1793720895300\",\"name\":\"Clé 03\",\"time\":0,\"zoom\":1.12,\"x\":0.1,\"y\":-5.3,\"originX\":49.97,\"originY\":57.2,\"easing\":\"easeInOut\"},{\"id\":\"kf-1793720813029\",\"name\":\"Clé 02\",\"time\":0.888,\"zoom\":12.41,\"x\":6,\"y\":-5.3,\"originX\":49.1,\"originY\":61.2,\"easing\":\"easeInOut\"}]",
+          "cameraKeyframes": "[{\"id\":\"kf-1793720895300\",\"name\":\"Clé 03\",\"time\":0,\"zoom\":1.12,\"x\":0.1,\"y\":-5.3,\"originX\":49.97,\"originY\":57.2,\"easing\":\"easeInOut\"},{\"id\":\"kf-1795115225769\",\"name\":\"Clé 01\",\"time\":0.91,\"zoom\":25,\"x\":-13.6,\"y\":-5.3,\"originX\":49.2,\"originY\":60,\"easing\":\"easeInOut\"},{\"id\":\"kf-1793720813029\",\"name\":\"Clé 02\",\"time\":0.778,\"zoom\":12.41,\"x\":6,\"y\":-5.3,\"originX\":49.1,\"originY\":61.2,\"easing\":\"easeInOut\"}]",
           "showVideoOutline": false,
           "ledKeyframes": "[{\"id\":\"led-kf-1\",\"name\":\"Clé 01 — Grille globale\",\"time\":0,\"zoom\":1,\"x\":0,\"y\":0,\"originX\":50,\"originY\":50,\"easing\":\"easeInOut\"},{\"id\":\"led-kf-2\",\"name\":\"Clé 02 — Cabinets 500mm\",\"time\":0.502,\"zoom\":2.2,\"x\":-10.9,\"y\":0,\"originX\":50,\"originY\":62.5,\"easing\":\"easeInOut\"}]"
         },
@@ -1612,7 +1683,7 @@
             },
             "title": {
               "width": "959px",
-              "color": "#ff9900"
+              "color": "#cf5a1c"
             },
             "tech_solidskin_image": {
               "src": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2Fe04d1b87-6c5c-46ae-b3ce-fa2978731c40__2__lvn1h.webp?alt=media",
@@ -1641,7 +1712,7 @@
               "width": "435px"
             },
             "tech_coldled_image": {
-              "src": "/uploads/products/armk2/back.jpg",
+              "src": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2F6766e48f-c4ff-464d-8f80-06d8be171aab__2__m7wvu.webp?alt=media",
               "mediaType": "image",
               "overlay": {
                 "enabled": true,
@@ -1664,18 +1735,18 @@
           "_i18n": {
             "tech_solidskin_desc": {
               "fr": {
-                "value": "Vos équipements sont contrôlés et leur configuration vérifiée avant leur déploiement. Chaque installation est préparée pour offrir un affichage adapté à votre environnement et à votre utilisation.",
+                "value": "Nous contrôlons vos équipements et vérifions leur configuration avant livraison pour assurer leur bon fonctionnement et préparer leur installation.",
                 "status": "source",
-                "updatedAt": "2026-11-06T22:33:34.161Z",
-                "sourceText": "Vos équipements sont contrôlés et leur configuration vérifiée avant leur déploiement. Chaque installation est préparée pour offrir un affichage adapté à votre environnement et à votre utilisation."
+                "updatedAt": "2026-11-19T23:04:49.690Z",
+                "sourceText": "Nous contrôlons vos équipements et vérifions leur configuration avant livraison pour assurer leur bon fonctionnement et préparer leur installation."
               }
             },
             "tech_coldled_desc": {
               "fr": {
-                "value": "Conseil, livraison, installation et mise en service : nous prenons en charge les étapes techniques pour simplifier votre projet, jusqu’à la diffusion de vos premiers contenus.dsqsdqsd",
+                "value": "De l’étude à la mise en service, nous coordonnons votre projet pour une installation adaptée à vos besoins et aux contraintes de votre espace.",
                 "status": "source",
-                "updatedAt": "2026-11-17T15:19:21.657Z",
-                "sourceText": "Conseil, livraison, installation et mise en service : nous prenons en charge les étapes techniques pour simplifier votre projet, jusqu’à la diffusion de vos premiers contenus.dsqsdqsd"
+                "updatedAt": "2026-11-19T23:04:36.149Z",
+                "sourceText": "De l’étude à la mise en service, nous coordonnons votre projet pour une installation adaptée à vos besoins et aux contraintes de votre espace."
               }
             },
             "tech_coldled_name": {
@@ -1688,58 +1759,58 @@
             },
             "tech_armorled_name": {
               "fr": {
-                "value": "UN BUDGET TRANSPARENT",
+                "value": "UN BUDGET CLAIR ET PRÉCIS",
                 "status": "source",
-                "updatedAt": "2026-11-06T22:33:43.027Z",
-                "sourceText": "UN BUDGET TRANSPARENT"
+                "updatedAt": "2026-11-19T23:04:58.549Z",
+                "sourceText": "UN BUDGET CLAIR ET PRÉCIS"
               }
             },
             "tech_solidskin_name": {
               "fr": {
-                "value": "LA QUALITÉ AVANT LA LIVRAISON",
+                "value": "DES ÉQUIPEMENTS CONTRÔLÉS",
                 "status": "source",
-                "updatedAt": "2026-11-06T22:33:11.208Z",
-                "sourceText": "LA QUALITÉ AVANT LA LIVRAISON"
+                "updatedAt": "2026-11-19T23:03:15.915Z",
+                "sourceText": "DES ÉQUIPEMENTS CONTRÔLÉS"
               }
             },
             "tech_cbsf_name": {
               "fr": {
-                "value": "UNE PRISE EN MAIN SIMPLIFIÉE",
+                "value": "PRISE EN MAIN ACCOMPAGNÉE",
                 "status": "source",
-                "updatedAt": "2026-11-06T22:34:02.682Z",
-                "sourceText": "UNE PRISE EN MAIN SIMPLIFIÉE"
+                "updatedAt": "2026-11-19T23:05:17.261Z",
+                "sourceText": "PRISE EN MAIN ACCOMPAGNÉE"
               }
             },
             "tech_cbsf_desc": {
               "fr": {
-                "value": "Nous vous guidons dans l’utilisation de votre équipement et la gestion de vos contenus. Vous disposez des repères nécessaires pour piloter votre affichage au quotidien, en toute autonomie.",
+                "value": "Nous vous accompagnons dans l’utilisation de votre équipement et la gestion de vos contenus pour vous rendre autonome et faciliter votre quotidien.",
                 "status": "source",
-                "updatedAt": "2026-11-06T22:34:09.772Z",
-                "sourceText": "Nous vous guidons dans l’utilisation de votre équipement et la gestion de vos contenus. Vous disposez des repères nécessaires pour piloter votre affichage au quotidien, en toute autonomie."
+                "updatedAt": "2026-11-19T23:05:27.630Z",
+                "sourceText": "Nous vous accompagnons dans l’utilisation de votre équipement et la gestion de vos contenus pour vous rendre autonome et faciliter votre quotidien."
               }
             },
             "tech_armorled_desc": {
               "fr": {
-                "value": "Équipements, prestations et options : chaque poste est détaillé dans votre devis. Vous connaissez le contenu de notre offre et les coûts associés avant de vous engager.",
+                "value": "Votre devis détaille les équipements, les prestations et les options retenues pour vous permettre de comprendre les coûts et de maîtriser votre budget.",
                 "status": "source",
-                "updatedAt": "2026-11-06T22:33:51.941Z",
-                "sourceText": "Équipements, prestations et options : chaque poste est détaillé dans votre devis. Vous connaissez le contenu de notre offre et les coûts associés avant de vous engager."
+                "updatedAt": "2026-11-19T23:05:06.705Z",
+                "sourceText": "Votre devis détaille les équipements, les prestations et les options retenues pour vous permettre de comprendre les coûts et de maîtriser votre budget."
               }
             },
             "tech_infinite_desc": {
               "fr": {
-                "value": "Vos équipements achetés bénéficient d’une garantie de 2 ans, selon les conditions applicables. Après la mise en service, nous restons votre interlocuteur pour l’assistance technique et le SAV.",
+                "value": "Vos équipements achetés bénéficient d’une garantie de 2 ans selon les conditions prévues. Notre équipe reste disponible pour vous accompagner après l’installation.",
                 "status": "source",
-                "updatedAt": "2026-11-06T22:34:25.016Z",
-                "sourceText": "Vos équipements achetés bénéficient d’une garantie de 2 ans, selon les conditions applicables. Après la mise en service, nous restons votre interlocuteur pour l’assistance technique et le SAV."
+                "updatedAt": "2026-11-19T23:05:39.273Z",
+                "sourceText": "Vos équipements achetés bénéficient d’une garantie de 2 ans selon les conditions prévues. Notre équipe reste disponible pour vous accompagner après l’installation."
               }
             },
             "tech_infinite_name": {
               "fr": {
-                "value": "GARANTIE 2 ANS & ASSISTANCE",
+                "value": "GARANTIE ET SUIVI ASSURÉS",
                 "status": "source",
-                "updatedAt": "2026-11-06T22:34:17.714Z",
-                "sourceText": "GARANTIE 2 ANS & ASSISTANCE"
+                "updatedAt": "2026-11-19T23:05:33.447Z",
+                "sourceText": "GARANTIE ET SUIVI ASSURÉS"
               }
             },
             "title": {
@@ -1752,33 +1823,33 @@
             },
             "description": {
               "fr": {
-                "value": "Un projet bien préparé, un budget clair et un accompagnement qui dure. Découvrez les cinq engagements qui font la différence à chaque étape de votre projet.",
+                "value": "Un projet maîtrisé, des coûts détaillés et un interlocuteur présent avant comme après l’installation.",
                 "status": "source",
-                "updatedAt": "2026-11-06T22:30:26.428Z",
-                "sourceText": "Un projet bien préparé, un budget clair et un accompagnement qui dure. Découvrez les cinq engagements qui font la différence à chaque étape de votre projet."
+                "updatedAt": "2026-11-19T23:02:18.939Z",
+                "sourceText": "Un projet maîtrisé, des coûts détaillés et un interlocuteur présent avant comme après l’installation."
               }
             },
             "badge": {
               "fr": {
-                "value": "07 / NOS ENGAGEMENTS",
+                "value": "08 / NOS ENGAGEMENTS",
                 "status": "source",
-                "updatedAt": "2026-11-06T22:29:18.868Z",
-                "sourceText": "07 / NOS ENGAGEMENTS"
+                "updatedAt": "2026-11-19T18:12:37.696Z",
+                "sourceText": "08 / NOS ENGAGEMENTS"
               }
             }
           },
-          "tech_solidskin_desc": "Vos équipements sont contrôlés et leur configuration vérifiée avant leur déploiement. Chaque installation est préparée pour offrir un affichage adapté à votre environnement et à votre utilisation.",
-          "tech_coldled_desc": "Conseil, livraison, installation et mise en service : nous prenons en charge les étapes techniques pour simplifier votre projet, jusqu’à la diffusion de vos premiers contenus.dsqsdqsd",
+          "tech_solidskin_desc": "Nous contrôlons vos équipements et vérifions leur configuration avant livraison pour assurer leur bon fonctionnement et préparer leur installation.",
+          "tech_coldled_desc": "De l’étude à la mise en service, nous coordonnons votre projet pour une installation adaptée à vos besoins et aux contraintes de votre espace.",
           "tech_coldled_name": "UN PROJET CLÉ EN MAIN",
-          "tech_armorled_name": "UN BUDGET TRANSPARENT",
-          "tech_solidskin_name": "LA QUALITÉ AVANT LA LIVRAISON",
-          "tech_cbsf_name": "UNE PRISE EN MAIN SIMPLIFIÉE",
-          "tech_cbsf_desc": "Nous vous guidons dans l’utilisation de votre équipement et la gestion de vos contenus. Vous disposez des repères nécessaires pour piloter votre affichage au quotidien, en toute autonomie.",
-          "tech_armorled_desc": "Équipements, prestations et options : chaque poste est détaillé dans votre devis. Vous connaissez le contenu de notre offre et les coûts associés avant de vous engager.",
-          "tech_infinite_desc": "Vos équipements achetés bénéficient d’une garantie de 2 ans, selon les conditions applicables. Après la mise en service, nous restons votre interlocuteur pour l’assistance technique et le SAV.",
-          "tech_infinite_name": "GARANTIE 2 ANS & ASSISTANCE",
+          "tech_armorled_name": "UN BUDGET CLAIR ET PRÉCIS",
+          "tech_solidskin_name": "DES ÉQUIPEMENTS CONTRÔLÉS",
+          "tech_cbsf_name": "PRISE EN MAIN ACCOMPAGNÉE",
+          "tech_cbsf_desc": "Nous vous accompagnons dans l’utilisation de votre équipement et la gestion de vos contenus pour vous rendre autonome et faciliter votre quotidien.",
+          "tech_armorled_desc": "Votre devis détaille les équipements, les prestations et les options retenues pour vous permettre de comprendre les coûts et de maîtriser votre budget.",
+          "tech_infinite_desc": "Vos équipements achetés bénéficient d’une garantie de 2 ans selon les conditions prévues. Notre équipe reste disponible pour vous accompagner après l’installation.",
+          "tech_infinite_name": "GARANTIE ET SUIVI ASSURÉS",
           "tech_solidskin_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2Fe04d1b87-6c5c-46ae-b3ce-fa2978731c40__2__lvn1h.webp?alt=media",
-          "tech_coldled_image": "/uploads/products/armk2/back.jpg",
+          "tech_coldled_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2F6766e48f-c4ff-464d-8f80-06d8be171aab__2__m7wvu.webp?alt=media",
           "tech_armorled_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2F2f8ed08b-d78d-4283-9273-b227a5b96dea_13gjc.webp?alt=media",
           "tech_infinite_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2F9f059472-2817-41ae-814f-da912a5bdbe9__2__3lfyl.webp?alt=media",
           "tech_cbsf_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2Ff820cc21-5b77-4b45-abb0-da8059e2b0ec__2__8vlv7.webp?alt=media",
@@ -1787,8 +1858,8 @@
             "visible": true
           },
           "title": "Pourquoi choisir\nPIXIATECH ?",
-          "description": "Un projet bien préparé, un budget clair et un accompagnement qui dure. Découvrez les cinq engagements qui font la différence à chaque étape de votre projet.",
-          "badge": "07 / NOS ENGAGEMENTS",
+          "description": "Un projet maîtrisé, des coûts détaillés et un interlocuteur présent avant comme après l’installation.",
+          "badge": "08 / NOS ENGAGEMENTS",
           "minHeight": 1044,
           "paddingBottom": 90
         },
@@ -1821,7 +1892,18 @@
           "visible": true,
           "layout": {
             "visible": true
-          }
+          },
+          "_i18n": {
+            "badge": {
+              "fr": {
+                "value": "04 / PIXIATECH EXPERIENCE CENTER",
+                "status": "source",
+                "updatedAt": "2026-11-19T22:56:10.244Z",
+                "sourceText": "04 / PIXIATECH EXPERIENCE CENTER"
+              }
+            }
+          },
+          "badge": "04 / PIXIATECH EXPERIENCE CENTER"
         },
         "products": {
           "_elements": {
@@ -1887,7 +1969,8 @@
           },
           "primaryCta": "EXPLORER LE CATALOGUE →",
           "minHeight": 542,
-          "paddingBottom": 151
+          "paddingBottom": 151,
+          "bgColor": "#f5f4f0"
         },
         "kinetic": {
           "_elements": {
@@ -1919,9 +2002,9 @@
               "text_fr": "STRUCTURE DU CAISSON"
             }
           },
-          "visible": true,
+          "visible": false,
           "layout": {
-            "visible": true
+            "visible": false
           },
           "minHeight": 1666,
           "paddingBottom": 56,
@@ -1972,16 +2055,21 @@
             },
             "footer_col4_address": {
               "text_fr": "20–24 avenue Henri Barbusse, 93000 Bobigny, France "
+            },
+            "footer_col1_title": {
+              "width": "100px"
             }
           }
         },
         "contact": {
           "_elements": {
             "div:1/section:1/div:1/div:1/a:1/div:2": {
-              "text_fr": "Écran LED intérieur"
+              "text_fr": "Écran LED intérieur",
+              "color": "#cf5a1c"
             },
             "div:1/section:1/div:1/div:1/a:2/div:2": {
-              "text_fr": "Écran LED extérieur"
+              "text_fr": "Écran LED extérieur",
+              "color": "#cf5a1c"
             },
             "div:1/section:1/div:1/div:1/a:2/div:3": {
               "text_fr": "Écran LED fin pitch d'extérieur"
@@ -1994,6 +2082,12 @@
               "backgroundColor": "#e4e2e2",
               "borderRadius": "12px",
               "borderStyle": "solid"
+            },
+            "div:1/section:1/div:1/div:1/a:2": {
+              "color": "#cf5a1c"
+            },
+            "div:1/section:1/div:1/div:1/a:1": {
+              "color": "#cf5a1c"
             }
           },
           "visible": true,
@@ -2009,14 +2103,14 @@
         "products",
         "markets",
         "pitch",
-        "technology",
-        "kinetic",
+        "experience",
+        "process",
         "insights",
         "projects",
-        "process",
-        "experience",
-        "contact",
+        "technology",
+        "kinetic",
         "header",
+        "contact",
         "footer"
       ]
     },
@@ -2350,7 +2444,7 @@
       "id": "insights",
       "name": "insights",
       "slug": "/insights",
-      "updatedAt": "2026-11-17T21:15:49.577Z",
+      "updatedAt": "2026-11-20T23:09:41.470Z",
       "sections": {
         "insights_hero": {
           "_i18n": {
@@ -2392,22 +2486,30 @@
           "_i18n": {
             "featured_title": {
               "fr": {
-                "value": "Configurateur guidé LED : personnalisez votre projet et obtenez une estimation gratuite",
+                "value": "MERCI",
                 "status": "source",
-                "updatedAt": "2026-11-17T18:15:15.568Z",
-                "sourceText": "Configurateur guidé LED : personnalisez votre projet et obtenez une estimation gratuite"
+                "updatedAt": "2026-11-20T21:48:43.665Z",
+                "sourceText": "MERCI"
               }
             },
             "featured_desc": {
               "fr": {
-                "value": "Vente ou location : laissez-vous guider étape par étape, choisissez les dimensions et les options de votre écran LED, puis obtenez une estimation instantanée et gratuite de votre projet.",
+                "value": "Découvrez les étapes pour configurer votre projet de location ou d’achat, obtenir une estimation gratuite et sans engagement, puis échanger avec un conseiller PIXIATECH pour préciser votre demande. qzzd",
                 "status": "source",
-                "updatedAt": "2026-11-17T18:14:48.389Z",
-                "sourceText": "Vente ou location : laissez-vous guider étape par étape, choisissez les dimensions et les options de votre écran LED, puis obtenez une estimation instantanée et gratuite de votre projet."
+                "updatedAt": "2026-11-20T23:09:39.353Z",
+                "sourceText": "Découvrez les étapes pour configurer votre projet de location ou d’achat, obtenir une estimation gratuite et sans engagement, puis échanger avec un conseiller PIXIATECH pour préciser votre demande. qzzd"
+              }
+            },
+            "featured_category": {
+              "fr": {
+                "value": "GUIDE — CONFIGURATEUR PIXIATECH",
+                "status": "source",
+                "updatedAt": "2026-11-20T10:52:56.253Z",
+                "sourceText": "GUIDE — CONFIGURATEUR PIXIATECH"
               }
             }
           },
-          "featured_title": "Configurateur guidé LED : personnalisez votre projet et obtenez une estimation gratuite",
+          "featured_title": "MERCI",
           "_elements": {
             "featured_title": {
               "offsetX": 0,
@@ -2416,9 +2518,26 @@
             "div:1/a:1": {
               "offsetX": 0,
               "offsetY": 0
+            },
+            "featured_image": {
+              "src": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2Fvideoframe_3330_4hacf.png?alt=media",
+              "mediaType": "image",
+              "overlay": {
+                "enabled": false,
+                "color": "#000000",
+                "opacity": 45,
+                "gradientEnabled": false,
+                "gradientStartColor": "#000000",
+                "gradientStartOpacity": 45,
+                "gradientEndColor": "#000000",
+                "gradientEndOpacity": 85,
+                "gradientDirection": "to bottom"
+              }
             }
           },
-          "featured_desc": "Vente ou location : laissez-vous guider étape par étape, choisissez les dimensions et les options de votre écran LED, puis obtenez une estimation instantanée et gratuite de votre projet."
+          "featured_desc": "Découvrez les étapes pour configurer votre projet de location ou d’achat, obtenir une estimation gratuite et sans engagement, puis échanger avec un conseiller PIXIATECH pour préciser votre demande. qzzd",
+          "featured_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2Fvideoframe_3330_4hacf.png?alt=media",
+          "featured_category": "GUIDE — CONFIGURATEUR PIXIATECH"
         }
       }
     },
@@ -2487,9 +2606,9 @@
     "phone": "+33 1 89 70 42 00",
     "address": "75008 Paris, France",
     "officeHours": "Lun - Ven, 09h00 - 19h00 CET",
-    "accentColor": "#FFE600",
+    "accentColor": "#00AAFF",
     "backendName": "Pixel Tech Web",
     "backendApiUrl": "/api/site-web"
   },
-  "updatedAt": "2026-11-20T19:19:37.966Z"
+  "updatedAt": "2026-11-20T23:24:53.563Z"
 }

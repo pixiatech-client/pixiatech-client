@@ -119,6 +119,20 @@ export function getSectionNode(sectionKey: string): HTMLElement | null {
 }
 
 /**
+ * Attribut optionnel qui isole la DESTINATION d'un élément de son style visuel.
+ *
+ * Le Hero réutilise le même nœud DOM pour les 3 slides : le style reste sur
+ * `primaryCta` / `secondaryCta`, mais chaque slide doit écrire son URL dans sa
+ * propre clé (`slider1.primaryCta`, `slider2.primaryCta`, ...). Sans cet
+ * attribut, `resolveElementKey` continue à renvoyer la clé de style historique.
+ */
+export const CMS_LINK_KEY_ATTRIBUTE = 'data-cms-link-key';
+
+export function getElementLinkKey(el: HTMLElement | null | undefined): string | null {
+  return el?.getAttribute?.(CMS_LINK_KEY_ATTRIBUTE) || null;
+}
+
+/**
  * Clé stable d'un élément à l'intérieur de sa section.
  *
  * On privilégie les clés déjà portées par les sections (`data-element-key`,
@@ -274,6 +288,9 @@ export type SelectedElement = {
   sectionKey: string;
   elementKey: string;
   clickableElementKey?: string;
+  /** Clé de destination figée à la sélection (Hero : bouton du slide courant). */
+  linkKey?: string | null;
+  clickableLinkKey?: string | null;
   kind: 'text' | 'media' | 'button' | 'link';
 };
 
@@ -285,12 +302,29 @@ export function getSelectedElement(): SelectedElement | null {
 }
 
 export function setSelectedElement(next: SelectedElement | null): void {
+  // Le Hero conserve le MÊME nœud `<a>` quand on change de slide. Sans cette
+  // comparaison, cliquer le bouton du slide 2 après celui du slide 1 ne
+  // notifiait pas la toolbar : elle continuait à afficher l'URL du slide 1.
+  const contextKey = (entry: SelectedElement | null, clickable: boolean): string => {
+    if (!entry) return '';
+    const el = clickable ? entry.clickableEl : entry.el;
+    const stored = clickable ? entry.clickableLinkKey : entry.linkKey;
+    return (
+      stored ||
+      getElementLinkKey(el) ||
+      el?.getAttribute?.('data-slide-field') ||
+      ''
+    );
+  };
+
   const same =
     (selectedElement === null && next === null) ||
     (selectedElement !== null &&
       next !== null &&
       selectedElement.el === next.el &&
-      selectedElement.elementKey === next.elementKey);
+      selectedElement.elementKey === next.elementKey &&
+      contextKey(selectedElement, false) === contextKey(next, false) &&
+      contextKey(selectedElement, true) === contextKey(next, true));
   if (same) return;
   selectedElement = next;
   listeners.forEach((l) => l());

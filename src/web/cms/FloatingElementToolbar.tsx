@@ -45,6 +45,9 @@ import {
   makeElementStyledId,
   removeElementDynamicStyles,
   hexToRgba,
+  getElementLinkKey,
+  linkStyleFrom,
+  withoutLinkStyle,
   type ElementStyle,
   type ElementVisualState,
   type ButtonEffectConfig,
@@ -217,7 +220,7 @@ export const FloatingElementToolbar: React.FC<{
       if (selected?.el) selected.el.removeAttribute('data-cms-preview-state');
       if (selected?.clickableEl) selected.clickableEl.removeAttribute('data-cms-preview-state');
     };
-  }, [selected?.elementKey, selected?.sectionKey]);
+  }, [selected?.elementKey, selected?.sectionKey, selected?.linkKey]);
 
   const handleDragStart = useCallback(
     (e: React.MouseEvent) => {
@@ -343,6 +346,19 @@ export const FloatingElementToolbar: React.FC<{
     [sectionData, selected]
   );
 
+  // Destination propre au bouton sélectionné. Sur le Hero, les 3 slides
+  // partagent le même nœud DOM : `data-cms-link-key` désigne la clé réelle
+  // (`slider1.primaryCta`, `slider2.primaryCta`, ...). Le style visuel reste,
+  // lui, sur `primaryCta` / `secondaryCta`.
+  const selectedLinkKey = selected
+    ? selected.linkKey ||
+      getElementLinkKey(selected.el) ||
+      (selected.clickableEl ? getElementLinkKey(selected.clickableEl) : null)
+    : null;
+  const scopedLink = selectedLinkKey
+    ? linkStyleFrom(readElementStyle(sectionData, selectedLinkKey))
+    : ({} as ElementStyle);
+
   /** Écrit le style de l'élément via le contexte (synchrone via pagesRef), l'applique immédiatement, puis sauvegarde via PUT */
   const commit = useCallback(
     (patch: Partial<ElementStyle>) => {
@@ -352,23 +368,42 @@ export const FloatingElementToolbar: React.FC<{
       const elementKey = selected.elementKey;
       const clickableElementKey = selected.clickableElementKey;
 
+      // Une URL appartient à la clé de destination du bouton, jamais à la clé
+      // de style partagée. Les autres propriétés gardent leur comportement.
+      const linkPatch = selectedLinkKey ? linkStyleFrom(patch) : ({} as ElementStyle);
+      const visualPatch = selectedLinkKey ? withoutLinkStyle(patch) : patch;
+
       // Utilise updateElementStyle du contexte (lit depuis pagesRef synchrone,
       // jamais périmé) pour éviter d'écraser des modifications concurrentes.
-      const nextStyle = updateElementStyle(sectionKey, elementKey, patch as Record<string, unknown>) as ElementStyle;
+      const nextStyle = updateElementStyle(sectionKey, elementKey, visualPatch as Record<string, unknown>) as ElementStyle;
 
       // Si un conteneur cliquable parent existe (ex: a ou button englobant un span), on synchronise aussi sa clé
       if (clickableElementKey && clickableElementKey !== elementKey) {
-        updateElementStyle(sectionKey, clickableElementKey, patch as Record<string, unknown>);
+        updateElementStyle(sectionKey, clickableElementKey, visualPatch as Record<string, unknown>);
       }
 
       // Rendu immédiat dans le DOM avec identifiant de style dynamique
       const styledId = makeElementStyledId(sectionKey, elementKey);
-      applyElementStyle(selected.el, nextStyle, normalizeLang(currentLang), styledId);
+      const appliedStyle = selectedLinkKey ? withoutLinkStyle(nextStyle) : nextStyle;
+      const clickStyledId = clickableElementKey
+        ? makeElementStyledId(sectionKey, clickableElementKey)
+        : styledId;
+      applyElementStyle(selected.el, appliedStyle, normalizeLang(currentLang), styledId);
       if (selected.clickableEl) {
-        const clickStyledId = clickableElementKey
-          ? makeElementStyledId(sectionKey, clickableElementKey)
-          : styledId;
-        applyElementStyle(selected.clickableEl, nextStyle, normalizeLang(currentLang), clickStyledId);
+        applyElementStyle(selected.clickableEl, appliedStyle, normalizeLang(currentLang), clickStyledId);
+      }
+
+      // Écriture séparée de la destination, dans la clé de CE bouton uniquement.
+      if (selectedLinkKey && Object.keys(linkPatch).length > 0) {
+        const nextLinkStyle = updateElementStyle(
+          sectionKey,
+          selectedLinkKey,
+          linkPatch as Record<string, unknown>
+        ) as ElementStyle;
+        applyElementStyle(selected.el, nextLinkStyle, normalizeLang(currentLang), styledId);
+        if (selected.clickableEl) {
+          applyElementStyle(selected.clickableEl, nextLinkStyle, normalizeLang(currentLang), clickStyledId);
+        }
       }
 
       updateCoords();
@@ -382,7 +417,7 @@ export const FloatingElementToolbar: React.FC<{
         });
       }, SAVE_DEBOUNCE_MS);
     },
-    [selected, currentLang, updateElementStyle, saveCurrentPage, updateCoords]
+    [selected, selectedLinkKey, currentLang, updateElementStyle, saveCurrentPage, updateCoords]
   );
 
   const switchPaletteStateTab = useCallback(
@@ -776,8 +811,10 @@ export const FloatingElementToolbar: React.FC<{
   const actionAttr = clickableNode?.getAttribute('data-action');
   const isSearchAction = actionAttr === 'search' || clickableNode?.classList.contains('search-trigger');
 
-  // URL réelle configurée actuellement
+  // URL réelle configurée actuellement. La clé de destination du bouton prime
+  // sur l'ancien href global, lui-même conservé comme repli de compatibilité.
   const realCurrentUrl =
+    scopedLink.href ??
     style.href ??
     clickableNode?.getAttribute('href') ??
     clickableNode?.getAttribute('data-href') ??
@@ -786,7 +823,8 @@ export const FloatingElementToolbar: React.FC<{
     '';
 
   const isBlank =
-    (style.target ??
+    (scopedLink.target ??
+      style.target ??
       clickableNode?.getAttribute('target') ??
       clickableNode?.getAttribute('data-target') ??
       selected.el.getAttribute('target') ??

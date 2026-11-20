@@ -3,7 +3,12 @@
 import { useEffect } from 'react';
 import { useCms } from '@/lib/site-web/cms-context';
 import { CMS_SOURCE_LANG, normalizeLang } from '@/lib/site-web/cms-i18n';
-import { forEachElementInSection, getRegisteredSections, subscribeSections } from './section-registry';
+import {
+  CMS_LINK_KEY_ATTRIBUTE,
+  forEachElementInSection,
+  getRegisteredSections,
+  subscribeSections,
+} from './section-registry';
 import { fluidFontSize } from './fluid-font-size';
 import { isMediaVideo } from './media-utils';
 
@@ -131,6 +136,29 @@ export function readElementStyle(
 ): ElementStyle {
   const bag = sectionData?._elements as Record<string, ElementStyle> | undefined;
   return (bag && bag[elementKey]) || EMPTY_ELEMENT_STYLE;
+}
+
+/** Clé de destination propre à ce bouton, quand la section en déclare une. */
+export function getElementLinkKey(el: HTMLElement | null | undefined): string | null {
+  return el?.getAttribute?.(CMS_LINK_KEY_ATTRIBUTE) || null;
+}
+
+/** Ne garde que les propriétés de destination (href / target / rel). */
+export function linkStyleFrom(style: Partial<ElementStyle> | undefined): ElementStyle {
+  const link: ElementStyle = {};
+  if (style?.href !== undefined) link.href = style.href;
+  if (style?.target !== undefined) link.target = style.target;
+  if (style?.rel !== undefined) link.rel = style.rel;
+  return link;
+}
+
+/** Retire les propriétés de destination d'un style visuel. */
+export function withoutLinkStyle(style: Partial<ElementStyle>): ElementStyle {
+  const visual: ElementStyle = { ...style };
+  delete visual.href;
+  delete visual.target;
+  delete visual.rel;
+  return visual;
 }
 
 
@@ -934,8 +962,34 @@ export function useCmsElementStyles(): void {
 
         forEachElementInSection(node, (el, key) => {
           const style = bag[key];
+          const styledId = makeElementStyledId(sectionKey, key);
+          const linkKey = getElementLinkKey(el);
+
+          if (linkKey) {
+            // Styles visuels : clé historique partagée (primaryCta /
+            // secondaryCta). On retire volontairement href/target/rel pour
+            // qu'un lien de slide ne puisse pas écraser ceux des autres.
+            applyElementStyle(el, style ? withoutLinkStyle(style) : {}, currentLang, styledId);
+
+            // Destination : clé dédiée du bouton (sliderN.primaryCta, ...).
+            // L'ancien href global reste un repli tant qu'aucune URL propre
+            // n'a été enregistrée pour ce bouton.
+            const scoped = linkStyleFrom(bag[linkKey]);
+            const legacy = linkStyleFrom(style);
+            applyElementStyle(
+              el,
+              {
+                href: scoped.href ?? legacy.href,
+                target: scoped.target ?? legacy.target,
+                rel: scoped.rel ?? legacy.rel,
+              },
+              currentLang,
+              styledId
+            );
+            return;
+          }
+
           if (style) {
-            const styledId = makeElementStyledId(sectionKey, key);
             applyElementStyle(el, style, currentLang, styledId);
           }
         });

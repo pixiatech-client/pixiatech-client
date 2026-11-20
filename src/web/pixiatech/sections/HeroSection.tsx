@@ -51,6 +51,25 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ lang = 'FR', onOpenCon
   const slideValue = (field: string): string => getCmsText(cmsHero, slideFieldKey(field), activeLang);
   const slideOrGlobal = (field: string, global: string): string => slideValue(field) || global;
 
+  // Destination des CTA : chaque slide lit SA propre clé CMS. Le href global
+  // historique (_elements.primaryCta / secondaryCta) ne sert plus que de repli,
+  // jamais de valeur partagée entre les boutons.
+  const slideElements = (cmsData._elements || {}) as Record<string, Record<string, unknown>>;
+  const slideLink = (field: string, fallback: string) => {
+    const own = slideElements[slideFieldKey(field)] || {};
+    const shared = slideElements[field] || {};
+    const href = own.href ?? shared.href;
+    const target = own.target ?? shared.target;
+    const rel = own.rel ?? shared.rel;
+    return {
+      href: typeof href === 'string' ? href : fallback,
+      target: typeof target === 'string' && target ? target : undefined,
+      rel: typeof rel === 'string' && rel ? rel : undefined,
+    };
+  };
+  const primaryLink = slideLink('primaryCta', '#markets');
+  const secondaryLink = slideLink('secondaryCta', '/web/contact');
+
   // Ramène l'index dans une plage valide quand le nombre de photos change.
   useEffect(() => {
     if (slides.length === 0) return;
@@ -269,15 +288,26 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ lang = 'FR', onOpenCon
 
           {/* Action Buttons */}
           <div className="hero-ctas">
-            <a href="#markets" className="hero-cta1" data-text-key="primaryCta" data-slide-field={slideFieldKey('primaryCta')}>
+            <a
+              href={primaryLink.href}
+              target={primaryLink.target}
+              rel={primaryLink.rel}
+              className="hero-cta1"
+              data-text-key="primaryCta"
+              data-slide-field={slideFieldKey('primaryCta')}
+              data-cms-link-key={slideFieldKey('primaryCta')}
+            >
               {t.cta1}
             </a>
             <a
-              href="/web/contact"
+              href={secondaryLink.href}
+              target={secondaryLink.target}
+              rel={secondaryLink.rel}
               className="hero-cta2"
               style={{ cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
               data-text-key="secondaryCta"
               data-slide-field={slideFieldKey('secondaryCta')}
+              data-cms-link-key={slideFieldKey('secondaryCta')}
             >
               {t.cta2}
             </a>

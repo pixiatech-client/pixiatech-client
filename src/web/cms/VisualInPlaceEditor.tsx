@@ -26,7 +26,13 @@ import {
   Eye,
   RotateCcw,
 } from 'lucide-react';
-import { findSectionKey, getSectionNode, resolveElementKey, setSelectedElement } from './section-registry';
+import {
+  findSectionKey,
+  getElementLinkKey,
+  getSectionNode,
+  resolveElementKey,
+  setSelectedElement,
+} from './section-registry';
 
 import { FloatingElementToolbar } from './FloatingElementToolbar';
 import {
@@ -592,6 +598,10 @@ export const VisualInPlaceEditor: React.FC = () => {
         sectionKey,
         elementKey,
         clickableElementKey,
+        linkKey: getElementLinkKey(target) || target.getAttribute('data-slide-field'),
+        clickableLinkKey: clickableParent
+          ? getElementLinkKey(clickableParent) || clickableParent.getAttribute('data-slide-field')
+          : null,
         kind: resolvedKind,
       });
 
