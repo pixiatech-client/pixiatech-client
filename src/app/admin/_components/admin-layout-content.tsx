@@ -655,7 +655,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
               {/* ── 5. Plein écran ── */}
               <FullscreenToggle
                 className="hidden md:flex bg-white hover:bg-theme-sidebar-active-bg"
-                hoverColor="#FF2E93"
+                hoverColor="#2563EB"
                 labelEnter={
                   !t('admin.fullscreen.enter') || t('admin.fullscreen.enter') === 'admin.fullscreen.enter'
                     ? (locale === 'en' ? 'Full screen' : locale === 'zh-CN' ? '全屏' : 'Plein écran')

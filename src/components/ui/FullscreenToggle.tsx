@@ -7,7 +7,7 @@
  *   <FullscreenToggle />
  *
  * Usage avec couleur de survol personnalisée :
- *   <FullscreenToggle hoverColor="#FF2E93" />
+ *   <FullscreenToggle hoverColor="#2563EB" />
  *
  * Compatible : Next.js, React 18+, Tailwind CSS.
  * Dépendances : aucune (SVG custom inline — zéro lib externe).
@@ -19,16 +19,14 @@ import React, { useState, useEffect, useCallback } from 'react';
 /**
  * Icône 4 coins "expand" — style viewfinder / cadre photo.
  * Les coins pointent vers l'extérieur (entrer en plein écran).
- * Un réticule central s'allume au survol ("dans lui une couleur").
  */
 function IconExpand({
   size = 20,
   strokeColor,
-  isHovered,
 }: {
   size?: number;
   strokeColor: string;
-  isHovered: boolean;
+  isHovered?: boolean;
 }) {
   const s = 5; // longueur des branches en L
   const p = 3; // padding depuis le bord du SVG
@@ -44,8 +42,7 @@ function IconExpand({
       strokeLinecap="round"
       strokeLinejoin="round"
       style={{
-        transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-        transform: isHovered ? 'scale(1.1)' : 'scale(1)',
+        transition: 'stroke 0.2s ease',
       }}
       aria-hidden="true"
     >
@@ -57,21 +54,6 @@ function IconExpand({
       <path d={`M ${p} ${dim - p - s} L ${p} ${dim - p} L ${p + s} ${dim - p}`} />
       {/* Coin bas-droit */}
       <path d={`M ${dim - p} ${dim - p - s} L ${dim - p} ${dim - p} L ${dim - p - s} ${dim - p}`} />
-
-      {/* Point de visée central à l'intérieur du cadre ("dans lui") */}
-      <circle
-        cx="10"
-        cy="10"
-        r="1.5"
-        fill={strokeColor}
-        stroke="none"
-        style={{
-          transition: 'opacity 0.2s ease, transform 0.2s ease',
-          opacity: isHovered ? 1 : 0,
-          transform: isHovered ? 'scale(1)' : 'scale(0.5)',
-          transformOrigin: 'center',
-        }}
-      />
     </svg>
   );
 }
@@ -79,16 +61,14 @@ function IconExpand({
 /**
  * Icône 4 coins "compress" — style viewfinder inversé.
  * Les coins pointent vers l'intérieur (quitter le plein écran).
- * Un réticule central s'allume au survol ("dans lui une couleur").
  */
 function IconCompress({
   size = 20,
   strokeColor,
-  isHovered,
 }: {
   size?: number;
   strokeColor: string;
-  isHovered: boolean;
+  isHovered?: boolean;
 }) {
   const s = 5;
   const p = 3;
@@ -105,8 +85,7 @@ function IconCompress({
       strokeLinecap="round"
       strokeLinejoin="round"
       style={{
-        transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-        transform: isHovered ? 'scale(1.1)' : 'scale(1)',
+        transition: 'stroke 0.2s ease',
       }}
       aria-hidden="true"
     >
@@ -118,21 +97,6 @@ function IconCompress({
       <path d={`M ${p} ${dim - m} L ${m} ${dim - m} L ${m} ${dim - p}`} />
       {/* Coin bas-droit (pointe vers l'intérieur ↖) */}
       <path d={`M ${dim - p} ${dim - m} L ${dim - m} ${dim - m} L ${dim - m} ${dim - p}`} />
-
-      {/* Point de visée central à l'intérieur du cadre ("dans lui") */}
-      <circle
-        cx="10"
-        cy="10"
-        r="1.5"
-        fill={strokeColor}
-        stroke="none"
-        style={{
-          transition: 'opacity 0.2s ease, transform 0.2s ease',
-          opacity: isHovered ? 1 : 0,
-          transform: isHovered ? 'scale(1)' : 'scale(0.5)',
-          transformOrigin: 'center',
-        }}
-      />
     </svg>
   );
 }
@@ -142,7 +106,7 @@ export interface FullscreenToggleProps {
   className?: string;
   /** Taille de l'icône en px (défaut : 20) */
   iconSize?: number;
-  /** Couleur au survol — distincte des autres boutons du header (défaut : #FF2E93 Rose Néon / Fuchsia Laser) */
+  /** Couleur au survol (défaut : #2563EB bleu) */
   hoverColor?: string;
   /** Couleur par défaut au repos (défaut : #9CA3AF gris) */
   defaultColor?: string;
@@ -159,7 +123,7 @@ export interface FullscreenToggleProps {
 export function FullscreenToggle({
   className = '',
   iconSize = 20,
-  hoverColor = '#FF2E93', // Rose Fuchsia Néon unique & éclatant (différent de bleu, indigo, vert et orange)
+  hoverColor = '#2563EB', // Bleu
   defaultColor = '#9CA3AF',
   labelEnter = 'Plein écran',
   labelExit = 'Quitter le plein écran',
@@ -204,18 +168,12 @@ export function FullscreenToggle({
       className={[
         'group relative flex items-center justify-center',
         'h-11 w-11 rounded-xl',
-        'bg-white shadow-sm transition-all duration-200 cursor-pointer',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-500',
+        'bg-white shadow-sm transition-colors duration-200 cursor-pointer',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500',
         className,
       ]
         .filter(Boolean)
         .join(' ')}
-      style={{
-        boxShadow: isHovered
-          ? `0 0 14px rgba(255, 46, 147, 0.25), 0 2px 6px rgba(0, 0, 0, 0.08)`
-          : undefined,
-        borderColor: isHovered ? 'rgba(255, 46, 147, 0.35)' : undefined,
-      }}
     >
       {isFullscreen ? (
         <IconCompress

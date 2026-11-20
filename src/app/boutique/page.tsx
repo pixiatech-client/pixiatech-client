@@ -515,11 +515,11 @@ export default function BoutiquePage() {
         <div
           className="pointer-events-auto w-full transition-all"
           style={{
-            background: 'rgba(255, 255, 255, 0.72)',
-            backdropFilter: 'blur(18px) saturate(160%)',
-            WebkitBackdropFilter: 'blur(18px) saturate(160%)',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.55)',
-            boxShadow: '0 8px 28px rgba(20, 25, 40, 0.06)',
+            background: 'rgba(248, 250, 252, 0.78)',
+            backdropFilter: 'blur(20px) saturate(140%)',
+            WebkitBackdropFilter: 'blur(20px) saturate(140%)',
+            borderBottom: '1px solid rgba(226, 232, 240, 0.7)',
+            boxShadow: '0 4px 20px -2px rgba(15, 23, 42, 0.04)',
           }}
         >
           <div className="max-w-7xl mx-4 lg:mx-auto flex flex-col md:flex-row md:items-center justify-between gap-3 py-3">
