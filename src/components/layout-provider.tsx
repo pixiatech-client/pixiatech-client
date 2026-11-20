@@ -56,9 +56,7 @@ export function LayoutProvider({
      occupe tout l'écran. On masque uniquement l'enveloppe visuelle Pixia —
      sans démonter le moteur ni relâcher le relais de mascotte, ce qui ferait
      réapparaître l'ancien robot. */
-  const [guidedConfigActive, setGuidedConfigActive] = useState(
-    () => typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('step')
-  );
+  const [guidedConfigActive, setGuidedConfigActive] = useState(false);
   useEffect(() => {
     const syncFromUrl = () => {
       setGuidedConfigActive(
