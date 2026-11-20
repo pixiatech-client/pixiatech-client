@@ -720,6 +720,10 @@
     "logout": "Déconnexion",
     "switchLanguage": "Passer en Français",
     "floatingCalculator": "Calculatrice",
+      "fullscreen": {
+        "enter": "Plein écran",
+        "exit": "Quitter le plein écran"
+      },
     "about": {
       "title": "À propos",
       "subtitle": "Version, build et mise à jour de l'application.",

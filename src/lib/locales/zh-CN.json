@@ -285,6 +285,10 @@
     "siteAccess": "访问网站",
     "accessApplication": "访问应用程序",
     "floatingCalculator": "计算器",
+      "fullscreen": {
+        "enter": "全屏",
+        "exit": "退出全屏"
+      },
     "about": {
       "title": "关于",
       "subtitle": "应用版本、构建与更新。",

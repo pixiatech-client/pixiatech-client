@@ -35,6 +35,8 @@ import {
   MoreHorizontal,
   Info,
   Receipt,
+  Maximize2,
+  Minimize2,
 } from 'lucide-react';
 import Link from 'next/link';
 import { logout, getSettings, saveSidebarConfig } from '@/app/admin/actions';
@@ -63,6 +65,7 @@ import { VersionUpdateDialog } from '@/components/VersionUpdateDialog';
 import { APP_VERSION } from '@/lib/build-info';
 import { isVersionNewer } from '@/lib/version';
 import LiquidLoader from '@/components/LiquidLoader';
+import { FullscreenToggle } from '@/components/ui/FullscreenToggle';
 
 const mapRoleToUserRoleEnum = (role: string | undefined): UserRoleEnum => {
   switch (role) {
@@ -648,6 +651,21 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                 )} />
                 <span className="sr-only">{t('admin.boutique')}</span>
               </Button>
+
+              {/* ── 5. Plein écran ── */}
+              <FullscreenToggle
+                className="hidden md:flex bg-white hover:bg-theme-sidebar-active-bg"
+                labelEnter={
+                  !t('admin.fullscreen.enter') || t('admin.fullscreen.enter') === 'admin.fullscreen.enter'
+                    ? (locale === 'en' ? 'Full screen' : locale === 'zh-CN' ? '全屏' : 'Plein écran')
+                    : t('admin.fullscreen.enter')
+                }
+                labelExit={
+                  !t('admin.fullscreen.exit') || t('admin.fullscreen.exit') === 'admin.fullscreen.exit'
+                    ? (locale === 'en' ? 'Exit full screen' : locale === 'zh-CN' ? '退出全屏' : 'Quitter le plein écran')
+                    : t('admin.fullscreen.exit')
+                }
+              />
 
               <div className={cn("h-9 w-px mx-1 hidden sm:block", "bg-gray-200")} />
 

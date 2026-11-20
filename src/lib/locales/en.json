@@ -720,6 +720,10 @@
     "logout": "Log out",
     "switchLanguage": "Switch to English",
     "floatingCalculator": "Calculator",
+      "fullscreen": {
+        "enter": "Full screen",
+        "exit": "Exit full screen"
+      },
     "about": {
       "title": "About",
       "subtitle": "Version, build and application update.",
