@@ -60,6 +60,7 @@ import { SpecsMatrixEditor } from './SpecsMatrixEditor';
 import {
   SYSTEM_TEMPLATE_LABEL,
   SYSTEM_TEMPLATE_PROTECTED_MESSAGE,
+  SYSTEM_TEMPLATE_SLUG,
   isSystemTemplate,
   isSystemTemplateSlug,
   partitionDeletableProducts,
@@ -509,8 +510,123 @@ export function SiteWebProduitsModule({ initial, editSlug }: SiteWebProduitsModu
     }
   };
 
+  const [creatingNew, setCreatingNew] = useState(false);
+
+  const createNewFromMasterTemplate = async () => {
+    if (creatingNew) return;
+    setCreatingNew(true);
+    try {
+      // 1. Récupérer le template maître (en mémoire ou via l'API)
+      let master = products.find((p) => isSystemTemplate(p) || p.slug === SYSTEM_TEMPLATE_SLUG);
+      if (!master) {
+        try {
+          const res = await fetch(`/api/site-web/products/${encodeURIComponent(SYSTEM_TEMPLATE_SLUG)}`);
+          if (res.ok) {
+            const json = await res.json();
+            if (json?.product) {
+              master = json.product;
+            }
+          }
+        } catch (fetchErr) {
+          console.warn('[createNewFromMasterTemplate] fetch master template error:', fetchErr);
+        }
+      }
+
+      if (!master) {
+        throw new Error('Impossible de charger le template maître (template-maitre). Veuillez vous assurer qu’il existe dans la base.');
+      }
+
+      // 2. Générer un identifiant et slug uniques
+      const usedSlugs = new Set(products.map((p) => p.slug.toLowerCase()));
+      const baseName = 'Nouveau produit';
+      let candidateName = baseName;
+      let candidateSlug = slugify(baseName);
+      let idx = 1;
+
+      if (usedSlugs.has(candidateSlug)) {
+        idx = 2;
+        candidateName = `${baseName} ${idx}`;
+        candidateSlug = `${slugify(baseName)}-${idx}`;
+        while (usedSlugs.has(candidateSlug)) {
+          idx += 1;
+          candidateName = `${baseName} ${idx}`;
+          candidateSlug = `${slugify(baseName)}-${idx}`;
+        }
+      }
+
+      // 3. Copie indépendante complète de toutes les données du template maître
+      // (structuredClone garantit qu'aucun objet ou tableau imbriqué n'est partagé en mémoire)
+      const cloned = structuredClone(master);
+      delete (cloned as { id?: string }).id;
+      delete (cloned as { createdAt?: string }).createdAt;
+      delete (cloned as { updatedAt?: string }).updatedAt;
+
+      cloned.name = candidateName;
+      cloned.slug = candidateSlug;
+      cloned.status = 'draft';
+
+      // 4. Persistance du nouveau produit dans Firestore
+      const newProduct = await createProduct(cloned as unknown as Record<string, unknown>);
+
+      // 5. Création et duplication de la page CMS Firestore associée (product__${slug})
+      try {
+        const getPageRes = await fetch(`/api/site-web/pages/product__${encodeURIComponent(SYSTEM_TEMPLATE_SLUG)}`);
+        const newPageId = `product__${candidateSlug}`;
+        let pageDataToSave: Record<string, unknown>;
+
+        if (getPageRes.ok) {
+          const pageJson = await getPageRes.json();
+          if (pageJson?.page) {
+            const clonedPage = structuredClone(pageJson.page);
+            pageDataToSave = {
+              ...clonedPage,
+              id: newPageId,
+              name: candidateName,
+              slug: `/web/product/${candidateSlug}`,
+              updatedAt: new Date().toISOString(),
+            };
+          } else {
+            pageDataToSave = {
+              id: newPageId,
+              name: candidateName,
+              slug: `/web/product/${candidateSlug}`,
+              updatedAt: new Date().toISOString(),
+              sectionOrder: ['hero', 'overview', 'design', 'features', 'specs', 'fieldwork', 'next'],
+              sections: {},
+            };
+          }
+        } else {
+          pageDataToSave = {
+            id: newPageId,
+            name: candidateName,
+            slug: `/web/product/${candidateSlug}`,
+            updatedAt: new Date().toISOString(),
+            sectionOrder: ['hero', 'overview', 'design', 'features', 'specs', 'fieldwork', 'next'],
+            sections: {},
+          };
+        }
+
+        await fetch(`/api/site-web/pages/${encodeURIComponent(newPageId)}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(pageDataToSave),
+        });
+      } catch (cmsErr) {
+        console.warn('[createNewFromMasterTemplate] CMS page copy skipped:', cmsErr);
+      }
+
+      toast.success(`Nouveau produit « ${candidateName} » initialisé à partir du template maître.`);
+      await refresh();
+      goEdit(newProduct);
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setCreatingNew(false);
+    }
+  };
+
   const duplicateProduct = async (product: Product) => {
-    const used = new Set(products.map((p) => p.slug));
+    const used = new Set(products.map((p) => p.slug.toLowerCase()));
     const base = product.name || 'Produit';
     const makeVariantName = (idx: number): string => {
       // Le nom dupliqué n'est JAMAIS tronqué : « IL-FISS-IRWP1.2 Lite 2 » doit
@@ -540,9 +656,14 @@ export function SiteWebProduitsModule({ initial, editSlug }: SiteWebProduitsModu
       toast.error((err as Error).message);
       return;
     }
-    const { createdAt, updatedAt, ...rest } = product;
+
     try {
-      const copy = await createProduct({ ...rest, name, slug, status: 'draft' });
+      const cloned = structuredClone(product);
+      delete (cloned as { id?: string }).id;
+      delete (cloned as { createdAt?: string }).createdAt;
+      delete (cloned as { updatedAt?: string }).updatedAt;
+
+      const copy = await createProduct({ ...cloned, name, slug, status: 'draft' });
 
       // Dupliquer également la page CMS si elle existe
       try {
@@ -551,11 +672,12 @@ export function SiteWebProduitsModule({ initial, editSlug }: SiteWebProduitsModu
           const pageJson = await getPageRes.json();
           if (pageJson?.page) {
             const newPageId = `product__${slug}`;
+            const clonedPage = structuredClone(pageJson.page);
             await fetch(`/api/site-web/pages/${encodeURIComponent(newPageId)}`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                ...pageJson.page,
+                ...clonedPage,
                 id: newPageId,
                 name: copy.name,
                 slug: `/web/product/${slug}`,
@@ -600,7 +722,8 @@ export function SiteWebProduitsModule({ initial, editSlug }: SiteWebProduitsModu
       loading={loading}
       error={error}
       onRefresh={refresh}
-      onNew={() => setState({ view: 'new' })}
+      onNew={createNewFromMasterTemplate}
+      creatingNew={creatingNew}
       onEdit={goEdit}
       onDelete={askDelete}
       onDuplicate={duplicateProduct}
@@ -624,6 +747,7 @@ function ProductList({
   error,
   onRefresh,
   onNew,
+  creatingNew,
   onEdit,
   onDelete,
   onDuplicate,
@@ -637,6 +761,7 @@ function ProductList({
   error: string | null;
   onRefresh: () => void;
   onNew: () => void;
+  creatingNew?: boolean;
   onEdit: (p: Product) => void;
   onDelete: (p: Product) => void;
   onDuplicate: (p: Product) => void;
@@ -881,10 +1006,15 @@ return (
           <button
             type="button"
             onClick={onNew}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#38E044] hover:bg-[#2fcb3c] text-black text-xs font-extrabold transition-all cursor-pointer shadow-[0_0_16px_rgba(56,224,68,0.35)] active:scale-95"
+            disabled={creatingNew}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#38E044] hover:bg-[#2fcb3c] text-black text-xs font-extrabold transition-all cursor-pointer shadow-[0_0_16px_rgba(56,224,68,0.35)] active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            <Plus className="w-4 h-4" />
-            <span>Nouveau produit</span>
+            {creatingNew ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Plus className="w-4 h-4" />
+            )}
+            <span>{creatingNew ? 'Initialisation...' : 'Nouveau produit'}</span>
           </button>
         </div>
       </div>
@@ -1097,8 +1227,7 @@ return (
                         </div>
                         {products.length === 0 && (
                           <p className="text-xs text-neutral-400 max-w-sm">
-                            Cliquez sur « Nouveau produit », saisissez le nom, ajoutez la photo et analysez la
-                            fiche technique PDF : le brouillon est créé automatiquement.
+                            Cliquez sur « Nouveau produit » pour initialiser une nouvelle fiche produit directement depuis le template maître.
                           </p>
                         )}
                       </div>
