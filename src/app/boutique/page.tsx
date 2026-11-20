@@ -522,188 +522,190 @@ export default function BoutiquePage() {
           </div>
         </div>
       )}
-      <div className="max-w-7xl mx-4 lg:mx-auto flex flex-col md:flex-row md:items-center justify-between gap-3 py-3 border-b border-gray-200/40">
-        <nav className="relative flex items-center bg-gray-100 p-1 rounded-[16px] border border-gray-200/80 overflow-x-auto scrollbar-hide shrink-0 max-w-full">
-          {[
-            { id: 'all', label: t('boutique.products') },
-            { id: 'sale', label: t('boutique.sale') },
-            { id: 'rental', label: t('boutique.rental') },
-            { id: 'sur-commande', label: t('boutique.surCommande') },
-          ].map((tab) => {
-            const isActive = activeTab === tab.id;
-            return (
+      <div className="sticky top-[64px] z-20 w-full bg-[#F8FAFC]/80 backdrop-blur-md transition-all border-b border-gray-200/50 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)]">
+        <div className="max-w-7xl mx-4 lg:mx-auto flex flex-col md:flex-row md:items-center justify-between gap-3 py-3">
+          <nav className="relative flex items-center bg-gray-100 p-1 rounded-[16px] border border-gray-200/80 overflow-x-auto scrollbar-hide shrink-0 max-w-full">
+            {[
+              { id: 'all', label: t('boutique.products') },
+              { id: 'sale', label: t('boutique.sale') },
+              { id: 'rental', label: t('boutique.rental') },
+              { id: 'sur-commande', label: t('boutique.surCommande') },
+            ].map((tab) => {
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as typeof activeTab)}
+                  className="relative h-8 min-w-[85px] sm:min-w-[110px] px-3 sm:px-4 rounded-[12px] text-xs sm:text-sm font-medium transition-colors duration-200 shrink-0 whitespace-nowrap flex items-center justify-center cursor-pointer select-none"
+                >
+                  {isActive && (
+                    <motion.div
+                      layoutId="segmentedControlActive"
+                      className="absolute inset-0 bg-gray-900 rounded-[12px] shadow-sm"
+                      transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+                    />
+                  )}
+                  <span className={`relative z-10 transition-colors duration-200 whitespace-nowrap ${isActive ? 'text-white font-semibold' : 'text-gray-600 hover:text-gray-900 font-medium'}`}>
+                    {tab.label}
+                  </span>
+                </button>
+              );
+            })}
+          </nav>
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="relative">
               <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as typeof activeTab)}
-                className="relative h-8 min-w-[85px] sm:min-w-[110px] px-3 sm:px-4 rounded-[12px] text-xs sm:text-sm font-medium transition-colors duration-200 shrink-0 whitespace-nowrap flex items-center justify-center cursor-pointer select-none"
+                onClick={() => setSortOpen(!sortOpen)}
+                className="flex h-10 items-center gap-1.5 bg-white border border-gray-200/80 hover:border-gray-300 rounded-[14px] px-4 text-xs sm:text-sm font-medium text-gray-700 shadow-xs transition-all duration-200 cursor-pointer shrink-0 whitespace-nowrap"
               >
-                {isActive && (
-                  <motion.div
-                    layoutId="segmentedControlActive"
-                    className="absolute inset-0 bg-gray-900 rounded-[12px] shadow-sm"
-                    transition={{ type: 'spring', stiffness: 420, damping: 32 }}
-                  />
-                )}
-                <span className={`relative z-10 transition-colors duration-200 whitespace-nowrap ${isActive ? 'text-white font-semibold' : 'text-gray-600 hover:text-gray-900 font-medium'}`}>
-                  {tab.label}
-                </span>
+                {sortBy === 'manual' ? t('boutique.sortManual') : sortBy === 'newest' ? t('boutique.sortNewest') : sortBy === 'recent' ? t('boutique.sortPopular') : sortBy === 'price-asc' ? t('boutique.sortPriceAsc') : t('boutique.sortPriceDesc')}
+                <ChevronDown size={14} className="text-gray-400 transition-transform duration-200" style={{ transform: sortOpen ? 'rotate(180deg)' : undefined }} />
               </button>
-            );
-          })}
-        </nav>
-        <div className="flex items-center gap-2 shrink-0">
-          <div className="relative">
-            <button
-              onClick={() => setSortOpen(!sortOpen)}
-              className="flex h-10 items-center gap-1.5 bg-white border border-gray-200/80 hover:border-gray-300 rounded-[14px] px-4 text-xs sm:text-sm font-medium text-gray-700 shadow-xs transition-all duration-200 cursor-pointer shrink-0 whitespace-nowrap"
-            >
-              {sortBy === 'manual' ? t('boutique.sortManual') : sortBy === 'newest' ? t('boutique.sortNewest') : sortBy === 'recent' ? t('boutique.sortPopular') : sortBy === 'price-asc' ? t('boutique.sortPriceAsc') : t('boutique.sortPriceDesc')}
-              <ChevronDown size={14} className="text-gray-400 transition-transform duration-200" style={{ transform: sortOpen ? 'rotate(180deg)' : undefined }} />
-            </button>
-            {/* Desktop dropdown */}
+              {/* Desktop dropdown */}
+              <AnimatePresence>
+                {sortOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 4, scale: 1 }}
+                    exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                    className="hidden md:block absolute right-0 top-full mt-1 z-50 w-48 bg-white rounded-2xl border border-gray-200 shadow-xl overflow-hidden"
+                  >
+                    {[
+                      { value: 'manual', label: t('boutique.sortManual') },
+                      { value: 'newest', label: t('boutique.sortNewest') },
+                      { value: 'recent', label: t('boutique.sortPopular') },
+                      { value: 'price-asc', label: t('boutique.sortPriceAsc') },
+                      { value: 'price-desc', label: t('boutique.sortPriceDesc') },
+                    ].map((opt) => (
+                      <button
+                        key={opt.value}
+                        onClick={() => { setSortBy(opt.value as typeof sortBy); setSortOpen(false); }}
+                        className={`w-full flex items-center justify-between px-4 py-3 text-xs font-semibold transition-colors ${
+                          sortBy === opt.value ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                        }`}
+                      >
+                        {opt.label}
+                        {sortBy === opt.value && <Check className="w-3.5 h-3.5 text-blue-500" />}
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+            {/* Mobile bottom sheet */}
             <AnimatePresence>
               {sortOpen && (
-                <motion.div
-                  initial={{ opacity: 0, y: 8, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 4, scale: 1 }}
-                  exit={{ opacity: 0, y: 8, scale: 0.95 }}
-                  className="hidden md:block absolute right-0 top-full mt-1 z-50 w-48 bg-white rounded-2xl border border-gray-200 shadow-xl overflow-hidden"
-                >
-                  {[
-                    { value: 'manual', label: t('boutique.sortManual') },
-                    { value: 'newest', label: t('boutique.sortNewest') },
-                    { value: 'recent', label: t('boutique.sortPopular') },
-                    { value: 'price-asc', label: t('boutique.sortPriceAsc') },
-                    { value: 'price-desc', label: t('boutique.sortPriceDesc') },
-                  ].map((opt) => (
-                    <button
-                      key={opt.value}
-                      onClick={() => { setSortBy(opt.value as typeof sortBy); setSortOpen(false); }}
-                      className={`w-full flex items-center justify-between px-4 py-3 text-xs font-semibold transition-colors ${
-                        sortBy === opt.value ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                      }`}
-                    >
-                      {opt.label}
-                      {sortBy === opt.value && <Check className="w-3.5 h-3.5 text-blue-500" />}
-                    </button>
-                  ))}
-                </motion.div>
+                <>
+                  <motion.div
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 md:hidden" onClick={() => setSortOpen(false)}
+                  />
+                  <motion.div
+                    initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+                    transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+                    className="fixed inset-0 z-50 flex items-end justify-center pointer-events-none md:hidden"
+                  >
+                    <div className="pointer-events-auto w-full bg-white rounded-t-3xl shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                      <div className="px-6 py-5 flex items-center justify-between border-b border-gray-100">
+                        <h2 className="font-bold text-gray-900">{t('boutique.sortBy')}</h2>
+                        <button onClick={() => setSortOpen(false)} className="size-8 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors">
+                          <X size={16} className="text-gray-500" />
+                        </button>
+                      </div>
+                      <div className="p-3">
+                        {[
+                          { value: 'manual', label: t('boutique.sortManual') },
+                          { value: 'newest', label: t('boutique.sortNewest') },
+                          { value: 'recent', label: t('boutique.sortPopular') },
+                          { value: 'price-asc', label: t('boutique.sortPriceAsc') },
+                          { value: 'price-desc', label: t('boutique.sortPriceDesc') },
+                        ].map((opt) => (
+                          <button
+                            key={opt.value}
+                            onClick={() => { setSortBy(opt.value as typeof sortBy); setSortOpen(false); }}
+                            className={`w-full flex items-center justify-between px-4 py-4 rounded-2xl text-left text-base font-bold transition-all ${
+                              sortBy === opt.value ? 'bg-blue-50 ring-1 ring-blue-500/20 text-blue-700' : 'text-gray-900 hover:bg-gray-50'
+                            }`}
+                          >
+                            {opt.label}
+                            {sortBy === opt.value && (
+                              <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center">
+                                <Check className="w-4 h-4 text-white" />
+                              </div>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </motion.div>
+                </>
               )}
             </AnimatePresence>
+            <button
+              onClick={() => {
+                setSearchOpen(true);
+                setTimeout(() => searchInputRef.current?.focus(), 100);
+              }}
+              aria-label={t('boutique.search')}
+              className={`relative flex items-center justify-center size-10 rounded-[14px] border bg-white shadow-xs transition-all duration-200 shrink-0 ${
+                searchQuery
+                  ? 'text-gray-900 border-gray-400 bg-gray-50'
+                  : 'text-gray-500 border-gray-200/80 hover:text-gray-800 hover:border-gray-300 hover:bg-gray-50'
+              }`}
+            >
+              <Search size={15} />
+              {searchQuery && (
+                <span className="absolute -top-1 -right-1 size-4 bg-gray-900 text-white text-[9px] font-bold flex items-center justify-center rounded-full">!</span>
+              )}
+            </button>
+            <LayoutSelector value={layout} onChange={setLayout} />
+            <button
+              onClick={() => setFilterOpen(true)}
+              aria-label={t('boutique.filters')}
+              className={`relative flex items-center justify-center size-10 rounded-[14px] border bg-white shadow-xs transition-all duration-200 shrink-0 ${
+                activeFilterCount > 0
+                  ? 'text-gray-900 border-gray-400 bg-gray-50'
+                  : 'text-gray-500 border-gray-200/80 hover:text-gray-800 hover:border-gray-300 hover:bg-gray-50'
+              }`}
+            >
+              <SlidersHorizontal size={15} />
+              {activeFilterCount > 0 && (
+                <span className="absolute -top-1 -right-1 size-4 bg-gray-900 text-white text-[9px] font-bold flex items-center justify-center rounded-full">{activeFilterCount}</span>
+              )}
+            </button>
           </div>
-          {/* Mobile bottom sheet */}
-          <AnimatePresence>
-            {sortOpen && (
-              <>
-                <motion.div
-                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                  className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 md:hidden" onClick={() => setSortOpen(false)}
-                />
-                <motion.div
-                  initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
-                  transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-                  className="fixed inset-0 z-50 flex items-end justify-center pointer-events-none md:hidden"
-                >
-                  <div className="pointer-events-auto w-full bg-white rounded-t-3xl shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
-                    <div className="px-6 py-5 flex items-center justify-between border-b border-gray-100">
-                      <h2 className="font-bold text-gray-900">{t('boutique.sortBy')}</h2>
-                      <button onClick={() => setSortOpen(false)} className="size-8 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors">
-                        <X size={16} className="text-gray-500" />
-                      </button>
-                    </div>
-                    <div className="p-3">
-                      {[
-                        { value: 'manual', label: t('boutique.sortManual') },
-                        { value: 'newest', label: t('boutique.sortNewest') },
-                        { value: 'recent', label: t('boutique.sortPopular') },
-                        { value: 'price-asc', label: t('boutique.sortPriceAsc') },
-                        { value: 'price-desc', label: t('boutique.sortPriceDesc') },
-                      ].map((opt) => (
-                        <button
-                          key={opt.value}
-                          onClick={() => { setSortBy(opt.value as typeof sortBy); setSortOpen(false); }}
-                          className={`w-full flex items-center justify-between px-4 py-4 rounded-2xl text-left text-base font-bold transition-all ${
-                            sortBy === opt.value ? 'bg-blue-50 ring-1 ring-blue-500/20 text-blue-700' : 'text-gray-900 hover:bg-gray-50'
-                          }`}
-                        >
-                          {opt.label}
-                          {sortBy === opt.value && (
-                            <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center">
-                              <Check className="w-4 h-4 text-white" />
-                            </div>
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </motion.div>
-              </>
-            )}
-          </AnimatePresence>
-          <button
-            onClick={() => {
-              setSearchOpen(true);
-              setTimeout(() => searchInputRef.current?.focus(), 100);
-            }}
-            aria-label={t('boutique.search')}
-            className={`relative flex items-center justify-center size-10 rounded-[14px] border bg-white shadow-xs transition-all duration-200 shrink-0 ${
-              searchQuery
-                ? 'text-gray-900 border-gray-400 bg-gray-50'
-                : 'text-gray-500 border-gray-200/80 hover:text-gray-800 hover:border-gray-300 hover:bg-gray-50'
-            }`}
-          >
-            <Search size={15} />
-            {searchQuery && (
-              <span className="absolute -top-1 -right-1 size-4 bg-gray-900 text-white text-[9px] font-bold flex items-center justify-center rounded-full">!</span>
-            )}
-          </button>
-          <LayoutSelector value={layout} onChange={setLayout} />
-          <button
-            onClick={() => setFilterOpen(true)}
-            aria-label={t('boutique.filters')}
-            className={`relative flex items-center justify-center size-10 rounded-[14px] border bg-white shadow-xs transition-all duration-200 shrink-0 ${
-              activeFilterCount > 0
-                ? 'text-gray-900 border-gray-400 bg-gray-50'
-                : 'text-gray-500 border-gray-200/80 hover:text-gray-800 hover:border-gray-300 hover:bg-gray-50'
-            }`}
-          >
-            <SlidersHorizontal size={15} />
-            {activeFilterCount > 0 && (
-              <span className="absolute -top-1 -right-1 size-4 bg-gray-900 text-white text-[9px] font-bold flex items-center justify-center rounded-full">{activeFilterCount}</span>
-            )}
-          </button>
         </div>
-      </div>
 
-      <AnimatePresence>
-        {searchOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -8, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -8, scale: 0.97 }}
-            transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="max-w-7xl mx-4 lg:mx-auto pt-4"
-          >
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-gray-400 pointer-events-none" />
-              <input
-                ref={searchInputRef}
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={t('boutique.searchPlaceholder')}
-                className="w-full bg-white border border-gray-200/80 rounded-[14px] pl-10 pr-10 py-2 h-10 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-300 transition-all shadow-xs"
-              />
-              <button
-                onClick={() => { setSearchOpen(false); setSearchQuery(''); }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 size-5 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 text-gray-500 transition-colors"
-              >
-                <X size={12} />
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        <AnimatePresence>
+          {searchOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -8, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -8, scale: 0.97 }}
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              className="max-w-7xl mx-4 lg:mx-auto pb-3"
+            >
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-gray-400 pointer-events-none" />
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder={t('boutique.searchPlaceholder')}
+                  className="w-full bg-white border border-gray-200/80 rounded-[14px] pl-10 pr-10 py-2 h-10 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-300 transition-all shadow-xs"
+                />
+                <button
+                  onClick={() => { setSearchOpen(false); setSearchQuery(''); }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 size-5 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 text-gray-500 transition-colors"
+                >
+                  <X size={12} />
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
 
       <main className="max-w-7xl mx-4 lg:mx-auto py-6">
         {loading ? (
