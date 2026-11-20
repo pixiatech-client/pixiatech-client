@@ -523,39 +523,37 @@ export default function BoutiquePage() {
         </div>
       )}
       <div className="max-w-7xl mx-4 lg:mx-auto flex flex-col md:flex-row md:items-center justify-between gap-3 py-3 border-b border-gray-200/40">
-        <nav className="relative flex items-center space-x-1 bg-gray-200/40 p-1 sm:p-1.5 rounded-full overflow-x-auto scrollbar-hide shrink-0 max-w-full">
+        <nav className="flex items-center gap-2 sm:gap-2.5 overflow-x-auto scrollbar-hide shrink-0 max-w-full py-1">
           {[
             { id: 'all', label: t('boutique.products') },
             { id: 'sale', label: t('boutique.sale') },
             { id: 'rental', label: t('boutique.rental') },
             { id: 'sur-commande', label: t('boutique.surCommande') },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as typeof activeTab)}
-              className="relative min-h-[44px] px-4 sm:px-6 py-2.5 rounded-full text-xs font-medium transition-colors duration-300 shrink-0"
-            >
-              {activeTab === tab.id && (
-                <motion.div
-                  layoutId="activeTab"
-                  className="absolute inset-0 bg-gray-900 rounded-full shadow-sm"
-                  transition={{ type: 'spring', stiffness: 400, damping: 35 }}
-                />
-              )}
-              <span className={`relative z-10 transition-colors duration-300 whitespace-nowrap ${activeTab === tab.id ? 'text-white' : 'text-gray-500'}`}>
+          ].map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as typeof activeTab)}
+                className={`h-11 px-5 sm:px-6 rounded-[10px] text-xs sm:text-sm font-semibold transition-all duration-200 shrink-0 whitespace-nowrap flex items-center justify-center cursor-pointer select-none ${
+                  isActive
+                    ? 'bg-gray-900 text-white shadow-sm border border-gray-900'
+                    : 'bg-white text-gray-700 hover:text-gray-900 hover:bg-gray-50 border border-gray-200/80 shadow-xs'
+                }`}
+              >
                 {tab.label}
-              </span>
-            </button>
-          ))}
+              </button>
+            );
+          })}
         </nav>
         <div className="flex items-center gap-2 shrink-0">
           <div className="relative">
             <button
               onClick={() => setSortOpen(!sortOpen)}
-              className="flex min-h-[44px] items-center gap-1.5 bg-white border border-transparent hover:border-gray-200 rounded-full px-4 py-2.5 text-xs font-medium text-gray-700 shadow-sm transition-all duration-300 cursor-pointer"
+              className="flex h-11 items-center gap-1.5 bg-white border border-gray-200/80 hover:border-gray-300 rounded-[10px] px-4 text-xs sm:text-sm font-medium text-gray-700 shadow-xs transition-all duration-200 cursor-pointer shrink-0 whitespace-nowrap"
             >
               {sortBy === 'manual' ? t('boutique.sortManual') : sortBy === 'newest' ? t('boutique.sortNewest') : sortBy === 'recent' ? t('boutique.sortPopular') : sortBy === 'price-asc' ? t('boutique.sortPriceAsc') : t('boutique.sortPriceDesc')}
-              <ChevronDown size={13} className="text-gray-400 transition-transform duration-300" style={{ transform: sortOpen ? 'rotate(180deg)' : undefined }} />
+              <ChevronDown size={14} className="text-gray-400 transition-transform duration-200" style={{ transform: sortOpen ? 'rotate(180deg)' : undefined }} />
             </button>
             {/* Desktop dropdown */}
             <AnimatePresence>
@@ -643,11 +641,13 @@ export default function BoutiquePage() {
               setTimeout(() => searchInputRef.current?.focus(), 100);
             }}
             aria-label={t('boutique.search')}
-            className={`relative flex items-center justify-center size-11 rounded-xl border border-transparent hover:border-gray-200 bg-white shadow-sm transition-all duration-300 ${
-              searchQuery ? 'text-gray-900 border-gray-300 scale-105' : 'text-gray-400 hover:text-gray-600 hover:scale-105'
-            } active:scale-95 shrink-0`}
+            className={`relative flex items-center justify-center size-11 rounded-[10px] border bg-white shadow-xs transition-all duration-200 shrink-0 ${
+              searchQuery
+                ? 'text-gray-900 border-gray-400 bg-gray-50'
+                : 'text-gray-500 border-gray-200/80 hover:text-gray-800 hover:border-gray-300 hover:bg-gray-50'
+            }`}
           >
-            <Search size={15} />
+            <Search size={16} />
             {searchQuery && (
               <span className="absolute -top-1 -right-1 size-4 bg-gray-900 text-white text-[9px] font-bold flex items-center justify-center rounded-full">!</span>
             )}
@@ -656,9 +656,13 @@ export default function BoutiquePage() {
           <button
             onClick={() => setFilterOpen(true)}
             aria-label={t('boutique.filters')}
-            className="relative flex items-center justify-center size-11 rounded-xl border border-transparent hover:border-gray-200 bg-white shadow-sm text-gray-400 hover:text-gray-600 hover:scale-105 active:scale-95 transition-all duration-300 shrink-0"
+            className={`relative flex items-center justify-center size-11 rounded-[10px] border bg-white shadow-xs transition-all duration-200 shrink-0 ${
+              activeFilterCount > 0
+                ? 'text-gray-900 border-gray-400 bg-gray-50'
+                : 'text-gray-500 border-gray-200/80 hover:text-gray-800 hover:border-gray-300 hover:bg-gray-50'
+            }`}
           >
-            <SlidersHorizontal size={15} />
+            <SlidersHorizontal size={16} />
             {activeFilterCount > 0 && (
               <span className="absolute -top-1 -right-1 size-4 bg-gray-900 text-white text-[9px] font-bold flex items-center justify-center rounded-full">{activeFilterCount}</span>
             )}
@@ -683,7 +687,7 @@ export default function BoutiquePage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={t('boutique.searchPlaceholder')}
-                className="w-full bg-white border border-gray-200/70 rounded-full pl-10 pr-10 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-300 transition-all shadow-sm"
+                className="w-full bg-white border border-gray-200/80 rounded-[10px] pl-10 pr-10 py-2.5 h-11 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-300 transition-all shadow-xs"
               />
               <button
                 onClick={() => { setSearchOpen(false); setSearchQuery(''); }}

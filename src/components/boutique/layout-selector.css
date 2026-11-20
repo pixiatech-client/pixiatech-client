@@ -23,7 +23,7 @@
   padding: 0;
   margin: 0;
 
-  border: 1px solid transparent;
+  border: 1px solid rgba(229, 231, 235, 0.8);
   border-radius: 10px; /* carré légèrement arrondi */
 
   background: #ffffff;
