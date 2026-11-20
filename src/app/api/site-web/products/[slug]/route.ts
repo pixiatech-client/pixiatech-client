@@ -6,7 +6,7 @@ import {
   SYSTEM_TEMPLATE_PROTECTED_MESSAGE,
   isSystemTemplateSlug,
 } from '@/lib/products/system-template';
-import type { Product } from '@/lib/products/types';
+import { slugify, type Product } from '@/lib/products/types';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -62,12 +62,41 @@ export async function PUT(request: NextRequest, context: RouteContext) {
         { status: 403 }
       );
     }
-    if (body.slug && body.slug !== slug) {
-      return NextResponse.json(
-        { success: false, message: 'Le slug n’est pas modifiable ici : supprimez puis recréez le produit.' },
-        { status: 400 }
-      );
+
+    const targetSlug =
+      typeof body.slug === 'string' && body.slug.trim()
+        ? slugify(body.slug.trim())
+        : slug;
+
+    if (targetSlug !== slug) {
+      if (isSystemTemplateSlug(slug)) {
+        return NextResponse.json(
+          {
+            success: false,
+            code: SYSTEM_TEMPLATE_PROTECTED_CODE,
+            message: 'Le slug du template système est verrouillé et ne peut pas être modifié.',
+          },
+          { status: 403 }
+        );
+      }
+      if (isSystemTemplateSlug(targetSlug)) {
+        return NextResponse.json(
+          { success: false, message: 'Le slug choisi est réservé au template système.' },
+          { status: 400 }
+        );
+      }
+      const conflict = await getProductBySlug(targetSlug);
+      if (conflict) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: `Un produit existe déjà avec le lien '/web/product/${targetSlug}'. Choisissez un autre lien.`,
+          },
+          { status: 409 }
+        );
+      }
     }
+
     const existing = await getProductBySlug(slug);
     if (!existing) {
       return NextResponse.json(
@@ -75,11 +104,17 @@ export async function PUT(request: NextRequest, context: RouteContext) {
         { status: 404 }
       );
     }
-    const product = await saveProduct(slug, { ...body, slug, createdAt: existing.createdAt });
+    const product = await saveProduct(
+      slug,
+      { ...body, slug: targetSlug, createdAt: existing.createdAt },
+      targetSlug
+    );
     return NextResponse.json({
       success: true,
-      message: `Produit '${slug}' mis à jour dans la base produits (site web).`,
+      message: `Produit '${targetSlug}' mis à jour dans la base produits (site web).`,
       product,
+      oldSlug: slug,
+      newSlug: targetSlug,
     });
   } catch (err: unknown) {
     console.error('PUT /api/site-web/products/[slug]', err);

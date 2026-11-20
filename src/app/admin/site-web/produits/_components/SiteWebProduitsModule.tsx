@@ -61,6 +61,7 @@ import {
   SYSTEM_TEMPLATE_LABEL,
   SYSTEM_TEMPLATE_PROTECTED_MESSAGE,
   isSystemTemplate,
+  isSystemTemplateSlug,
   partitionDeletableProducts,
 } from '@/lib/products/system-template';
 import type { Product, ProductCategory, ProductCategoryGroup, ProductMediaItem, ProductShopLinkTypes, ProductShopLinks, ShopLinkTransactionType } from '@/lib/products/types';
@@ -542,6 +543,31 @@ export function SiteWebProduitsModule({ initial, editSlug }: SiteWebProduitsModu
     const { createdAt, updatedAt, ...rest } = product;
     try {
       const copy = await createProduct({ ...rest, name, slug, status: 'draft' });
+
+      // Dupliquer également la page CMS si elle existe
+      try {
+        const getPageRes = await fetch(`/api/site-web/pages/product__${encodeURIComponent(product.slug)}`);
+        if (getPageRes.ok) {
+          const pageJson = await getPageRes.json();
+          if (pageJson?.page) {
+            const newPageId = `product__${slug}`;
+            await fetch(`/api/site-web/pages/${encodeURIComponent(newPageId)}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                ...pageJson.page,
+                id: newPageId,
+                name: copy.name,
+                slug: `/web/product/${slug}`,
+                updatedAt: new Date().toISOString(),
+              }),
+            });
+          }
+        }
+      } catch (cmsErr) {
+        console.warn('[duplicateProduct] CMS page copy skipped:', cmsErr);
+      }
+
       toast.success(`Copie « ${copy.name} » créée en brouillon.`);
       await refresh();
       goEdit(copy);
@@ -1506,8 +1532,11 @@ function ProductForm({
 }) {
   const existing = view.view === 'edit' ? view.product : null;
   const isNew = !existing;
+  const isTemplate = existing ? isSystemTemplate(existing) : false;
 
   const [name, setName] = useState(existing?.name ?? '');
+  const [customSlug, setCustomSlug] = useState(existing?.slug ?? '');
+  const [isSlugManuallyEdited, setIsSlugManuallyEdited] = useState(false);
   const [status, setStatus] = useState<Product['status']>(existing?.status ?? 'draft');
   const [pdfAnalysis, setPdfAnalysis] = useState<Partial<Product> | null>(existing ?? null);
   const [pdfReanalysis, setPdfReanalysis] = useState<Partial<Product> | null>(null);
@@ -1591,6 +1620,8 @@ function ProductForm({
   useEffect(() => {
     if (existing) {
       setName(existing.name ?? '');
+      setCustomSlug(existing.slug ?? '');
+      setIsSlugManuallyEdited(false);
       setStatus(existing.status ?? 'draft');
       setMediaPhotos(existing.media?.photos ?? []);
       setShopLinks(existing.shopLinks ?? {});
@@ -1878,7 +1909,9 @@ function ProductForm({
   const photoInputRefs = useRef<Record<number, HTMLInputElement | null>>({});
 
   const cleanName = name.replace(/\s+/g, ' ').trim();
-  const slug = slugify(cleanName);
+  const slug = isTemplate
+    ? (existing?.slug || 'template-maitre')
+    : (customSlug.trim() ? slugify(customSlug) : slugify(cleanName));
   const nameValid = cleanName.length > 0 && cleanName.length <= MAX_PRODUCT_NAME_LENGTH;
   const previewUrl = isNew ? photoPreview : undefined;
 
@@ -2132,6 +2165,15 @@ function ProductForm({
       toast.error(`Saisissez un nom de produit (${MAX_PRODUCT_NAME_LENGTH} caractères max).`);
       return;
     }
+    const cleanSlug = customSlug.trim() ? slugify(customSlug) : slugify(cleanName);
+    if (!cleanSlug) {
+      toast.error('Le lien (slug) du produit ne peut pas être vide.');
+      return;
+    }
+    if (isSystemTemplateSlug(cleanSlug)) {
+      toast.error('Ce lien est réservé au template système.');
+      return;
+    }
     setSaving(true);
     try {
       const nextSpecs: ProductSpecs = {
@@ -2142,7 +2184,7 @@ function ProductForm({
       const product = await createProduct({
         ...(pdfAnalysis ?? {}),
         name: cleanName,
-        slug,
+        slug: cleanSlug,
         status: 'draft',
         order: 0,
         environmentCategoryIds,
@@ -2212,13 +2254,25 @@ function ProductForm({
   const save = async (nextStatus?: Product['status']) => {
     if (!existing) return;
     if (!nameValid) {
-      toast.error('Le nom doit faire 1 à 12 caractères.');
+      toast.error(`Le nom doit faire 1 à ${MAX_PRODUCT_NAME_LENGTH} caractères.`);
+      return;
+    }
+    const cleanSlug = isTemplate
+      ? existing.slug
+      : (customSlug.trim() ? slugify(customSlug) : slugify(cleanName));
+    if (!cleanSlug) {
+      toast.error('Le lien (slug) du produit ne peut pas être vide.');
+      return;
+    }
+    if (!isTemplate && isSystemTemplateSlug(cleanSlug)) {
+      toast.error('Ce lien est réservé au template système.');
       return;
     }
     setSaving(true);
     try {
       const body: Record<string, unknown> = {
         name: cleanName,
+        slug: cleanSlug,
         status: nextStatus || status,
         environmentCategoryIds,
         applicationCategoryIds,
@@ -2279,6 +2333,8 @@ function ProductForm({
         body.shopLinkTypes = {};
       }
       const next = await saveProduct(existing.slug, body);
+      existing.slug = next.slug;
+      setCustomSlug(next.slug);
       onSaved(next.status === 'published' ? `Produit « ${next.name} » publié.` : `Produit « ${next.name} » enregistré.`);
     } catch (err) {
       toast.error((err as Error).message);
@@ -2401,7 +2457,12 @@ function ProductForm({
                   type="text"
                   maxLength={MAX_PRODUCT_NAME_LENGTH}
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                    if (!isSlugManuallyEdited) {
+                      setCustomSlug(slugify(e.target.value));
+                    }
+                  }}
                   placeholder="ex. PXT Series"
                   autoFocus
                   className="mt-3 w-full max-w-md px-4 py-3 bg-neutral-50 dark:bg-white/5 border border-neutral-200 dark:border-white/10 rounded-xl text-sm text-neutral-900 dark:text-white focus:ring-2 focus:ring-[#38E044]/50 outline-none transition-all"
@@ -2414,7 +2475,7 @@ function ProductForm({
                     <span className="text-[11px] font-bold text-rose-500">Trop long : réduisez le nom.</span>
                   )}
                 </div>
-                <DerivedSlugHint name={cleanNameForSlugHints(cleanName, isNew, existing)} />
+                <DerivedSlugHint name={customSlug || slugify(cleanName) || ''} />
               </section>
 
               {/* 2 · PHOTO */}
@@ -2538,25 +2599,93 @@ function ProductForm({
             </>
           ) : (
             <>
-              {/* ÉDITION : nom + statut + photo + données extraites */}
+              {/* ÉDITION : nom + lien de la page + statut + photo + données extraites */}
               <section>
-                <h2 className="text-sm font-bold text-neutral-900 dark:text-white mb-1.5">Nom du produit</h2>
-                <input
-                  type="text"
-                  maxLength={MAX_PRODUCT_NAME_LENGTH}
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full max-w-md px-4 py-3 bg-neutral-50 dark:bg-white/5 border border-neutral-200 dark:border-white/10 rounded-xl text-sm text-neutral-900 dark:text-white focus:ring-2 focus:ring-[#38E044]/50 outline-none transition-all"
-                />
-                <div className="mt-1.5 flex items-center justify-between max-w-md">
-                  <span className="text-[11px] font-semibold text-neutral-400">
-                    {name.length}/{MAX_PRODUCT_NAME_LENGTH}
-                  </span>
-                  {name.length > MAX_PRODUCT_NAME_LENGTH && (
-                    <span className="text-[11px] font-bold text-rose-500">Trop long : réduisez le nom.</span>
-                  )}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl">
+                  <div>
+                    <h2 className="text-sm font-bold text-neutral-900 dark:text-white mb-1.5">Nom du produit</h2>
+                    <input
+                      type="text"
+                      maxLength={MAX_PRODUCT_NAME_LENGTH}
+                      value={name}
+                      onChange={(e) => {
+                        setName(e.target.value);
+                        if (!isSlugManuallyEdited && !isTemplate) {
+                          setCustomSlug(slugify(e.target.value));
+                        }
+                      }}
+                      className="w-full px-4 py-3 bg-neutral-50 dark:bg-white/5 border border-neutral-200 dark:border-white/10 rounded-xl text-sm text-neutral-900 dark:text-white focus:ring-2 focus:ring-[#38E044]/50 outline-none transition-all"
+                    />
+                    <div className="mt-1.5 flex items-center justify-between">
+                      <span className="text-[11px] font-semibold text-neutral-400">
+                        {name.length}/{MAX_PRODUCT_NAME_LENGTH}
+                      </span>
+                      {name.length > MAX_PRODUCT_NAME_LENGTH && (
+                        <span className="text-[11px] font-bold text-rose-500">Trop long : réduisez le nom.</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <h2 className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-1.5">
+                        <span>Lien de la page (URL)</span>
+                        {isTemplate && (
+                          <span
+                            title={SYSTEM_TEMPLATE_PROTECTED_MESSAGE}
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-extrabold uppercase bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/40"
+                          >
+                            <Lock className="w-2.5 h-2.5" />
+                            {SYSTEM_TEMPLATE_LABEL}
+                          </span>
+                        )}
+                      </h2>
+                      {!isTemplate && isSlugManuallyEdited && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCustomSlug(slugify(name));
+                            setIsSlugManuallyEdited(false);
+                          }}
+                          className="text-[11px] text-sky-600 hover:text-sky-700 dark:text-sky-400 font-semibold cursor-pointer"
+                        >
+                          Réinitialiser
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={customSlug}
+                        disabled={isTemplate}
+                        onChange={(e) => {
+                          setIsSlugManuallyEdited(true);
+                          setCustomSlug(slugify(e.target.value));
+                        }}
+                        placeholder="ex. pxt-fine-2"
+                        className={`w-full px-4 py-3 border rounded-xl text-sm font-mono outline-none transition-all ${
+                          isTemplate
+                            ? 'border-neutral-200 dark:border-white/10 text-neutral-400 dark:text-neutral-500 cursor-not-allowed bg-neutral-100/70 dark:bg-white/[0.02]'
+                            : 'bg-neutral-50 dark:bg-white/5 border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white focus:ring-2 focus:ring-[#38E044]/50'
+                        }`}
+                      />
+                    </div>
+
+                    <div className="mt-1.5">
+                      {isTemplate ? (
+                        <p className="text-[11px] text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                          <Lock className="w-3 h-3 shrink-0" />
+                          Le lien du template maître est verrouillé pour protéger le gabarit système.
+                        </p>
+                      ) : (
+                        <p className="text-[11px] text-neutral-500 dark:text-neutral-400 font-mono truncate">
+                          Adresse : <span className="font-bold text-neutral-800 dark:text-neutral-200">/web/product/{customSlug || '…'}</span>
+                        </p>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <DerivedSlugHint name={existing.slug} />
               </section>
 
               <section>

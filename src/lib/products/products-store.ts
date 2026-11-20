@@ -19,8 +19,42 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
   return docSnap.data() as Product;
 }
 
-export async function saveProduct(slug: string, data: Partial<Product>): Promise<Product> {
+export async function saveProduct(slug: string, data: Partial<Product>, newSlug?: string): Promise<Product> {
   const { adminDb } = getFirebaseAdmin();
+  const targetSlug = newSlug && newSlug !== slug ? newSlug : (data.slug && data.slug !== slug ? data.slug : slug);
+
+  if (targetSlug !== slug) {
+    assertDeletableProduct(slug); // Le template maître ne peut pas être renommé
+    const oldRef = adminDb.collection(PRODUCTS_COLLECTION).doc(slug);
+    const existingSnap = await oldRef.get();
+    const base = existingSnap.exists ? (existingSnap.data() as object) : {};
+    const payload = {
+      ...base,
+      ...data,
+      slug: targetSlug,
+      updatedAt: new Date().toISOString(),
+    };
+    const newRef = adminDb.collection(PRODUCTS_COLLECTION).doc(targetSlug);
+    await newRef.set(payload);
+    await oldRef.delete();
+
+    // Migrer la page CMS associée si elle existe
+    try {
+      const { getCmsPage, saveCmsPage, deleteCmsPage } = await import('@/lib/site-web/pages-store');
+      const oldPageId = `product__${slug}`;
+      const newPageId = `product__${targetSlug}`;
+      const pageData = await getCmsPage(oldPageId);
+      if (pageData) {
+        await saveCmsPage(newPageId, { ...pageData, id: newPageId, slug: `/web/product/${targetSlug}` });
+        await deleteCmsPage(oldPageId);
+      }
+    } catch (pageErr) {
+      console.warn('[saveProduct] Échec de migration de la page CMS:', pageErr);
+    }
+
+    return payload as unknown as Product;
+  }
+
   const ref = adminDb.collection(PRODUCTS_COLLECTION).doc(slug);
   const existingSnap = await ref.get();
   const base = existingSnap.exists ? (existingSnap.data() as object) : {};
