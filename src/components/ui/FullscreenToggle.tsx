@@ -22,6 +22,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 /**
  * Icône 4 coins "expand" — style viewfinder / cadre photo.
  * Les coins pointent vers l'extérieur (entrer en plein écran).
+ * Un réticule central s'allume au survol ("dans lui une couleur").
  */
 function IconExpand({ size = 20, className = '' }: { size?: number; className?: string }) {
   const s = 5; // longueur des branches en L
@@ -48,6 +49,14 @@ function IconExpand({ size = 20, className = '' }: { size?: number; className?: 
       <path d={`M ${p} ${dim - p - s} L ${p} ${dim - p} L ${p + s} ${dim - p}`} />
       {/* Coin bas-droit */}
       <path d={`M ${dim - p} ${dim - p - s} L ${dim - p} ${dim - p} L ${dim - p - s} ${dim - p}`} />
+
+      {/* Point de visée central à l'intérieur du cadre ("dans lui") */}
+      <circle
+        cx="10"
+        cy="10"
+        r="1.5"
+        className="fill-current stroke-none opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+      />
     </svg>
   );
 }
@@ -55,6 +64,7 @@ function IconExpand({ size = 20, className = '' }: { size?: number; className?: 
 /**
  * Icône 4 coins "compress" — style viewfinder inversé.
  * Les coins pointent vers l'intérieur (quitter le plein écran).
+ * Un réticule central s'allume au survol ("dans lui une couleur").
  */
 function IconCompress({ size = 20, className = '' }: { size?: number; className?: string }) {
   const s = 5;
@@ -82,6 +92,14 @@ function IconCompress({ size = 20, className = '' }: { size?: number; className?
       <path d={`M ${p} ${dim - m} L ${m} ${dim - m} L ${m} ${dim - p}`} />
       {/* Coin bas-droit (pointe vers l'intérieur ↖) */}
       <path d={`M ${dim - p} ${dim - m} L ${dim - m} ${dim - m} L ${dim - m} ${dim - p}`} />
+
+      {/* Point de visée central à l'intérieur du cadre ("dans lui") */}
+      <circle
+        cx="10"
+        cy="10"
+        r="1.5"
+        className="fill-current stroke-none opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+      />
     </svg>
   );
 }
@@ -89,6 +107,8 @@ function IconCompress({ size = 20, className = '' }: { size?: number; className?
 export interface FullscreenToggleProps {
   /** Classes Tailwind supplémentaires appliquées au bouton */
   className?: string;
+  /** Classe de couleur appliquée à l'icône (défaut : 'text-gray-400 group-hover:text-purple-600 transition-all duration-200 group-hover:scale-105') */
+  iconClassName?: string;
   /** Taille de l'icône en px (défaut : 20) */
   iconSize?: number;
   /** Tooltip affiché en mode normal */
@@ -103,6 +123,7 @@ export interface FullscreenToggleProps {
 
 export function FullscreenToggle({
   className,
+  iconClassName,
   iconSize = 20,
   labelEnter = 'Plein écran',
   labelExit = 'Quitter le plein écran',
@@ -155,12 +176,12 @@ export function FullscreenToggle({
       {isFullscreen ? (
         <IconCompress
           size={iconSize}
-          className="text-gray-500 group-hover:text-purple-500 transition-colors"
+          className={iconClassName ?? "text-gray-400 group-hover:text-purple-600 transition-all duration-200 group-hover:scale-105"}
         />
       ) : (
         <IconExpand
           size={iconSize}
-          className="text-gray-500 group-hover:text-purple-500 transition-colors"
+          className={iconClassName ?? "text-gray-400 group-hover:text-purple-600 transition-all duration-200 group-hover:scale-105"}
         />
       )}
       <span className="sr-only">{label}</span>
