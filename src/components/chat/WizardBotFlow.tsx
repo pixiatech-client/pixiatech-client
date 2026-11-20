@@ -45,9 +45,18 @@ import { CITIES } from '@/lib/cities';
 import type { QuoteDetails } from '@/lib/types';
 import LiquidLoader from '@/components/LiquidLoader';
 
-/* Dégradé de fond du panneau du chatbot PIXIA (référence visuelle fournie).
+/* Dégradé de fond du panneau du chatbot PIXIA (référence visuelle fournie)
+   + trame de points très légère, façon matrice LED, posée par-dessus.
    Appliqué uniquement au panneau, jamais à la page ni au widget du site. */
-const CHAT_PANEL_BACKGROUND = 'linear-gradient(110deg, #5a3e7b 0%, #4b4d8b 100%)';
+const CHAT_PANEL_BACKGROUND_STYLE: React.CSSProperties = {
+  backgroundColor: '#5a3e7b',
+  backgroundImage: [
+    'radial-gradient(rgba(255, 255, 255, 0.075) 1px, transparent 1.2px)',
+    'linear-gradient(110deg, #5a3e7b 0%, #4b4d8b 100%)',
+  ].join(', '),
+  backgroundSize: '18px 18px, 100% 100%',
+  backgroundPosition: '0 0, 0 0',
+};
 
 interface WizardBotFlowProps {
   onClose: () => void;
@@ -1222,7 +1231,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
       {step === STEP.SUCCESS ? (
         <div
           className="absolute inset-4 md:inset-10 z-[1010] pointer-events-auto text-[#f5f4f0] border border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col"
-          style={{ background: CHAT_PANEL_BACKGROUND }}
+          style={CHAT_PANEL_BACKGROUND_STYLE}
         >
           <button onClick={onClose} className="absolute top-4 right-4 z-[1020] p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors">
             <X size={20} className="text-white" />
@@ -1247,7 +1256,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
             transition={{ type: 'spring', damping: 26, stiffness: 200 }}
             onClick={(e) => e.stopPropagation()}
             className="fixed right-0 md:right-6 top-0 bottom-0 md:top-6 md:bottom-6 w-full md:w-[600px] h-auto text-[#f5f4f0] shadow-2xl z-[1010] border border-white/10 md:rounded-[24px] overflow-hidden flex flex-col pointer-events-auto"
-            style={{ background: CHAT_PANEL_BACKGROUND }}
+            style={CHAT_PANEL_BACKGROUND_STYLE}
           >
             {/* Header */}
             <div className="h-20 border-b border-white/10 flex items-center justify-between px-4 md:px-6 z-10 shrink-0 shadow-md">
@@ -2351,7 +2360,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                     exit={{ y: '100%' }}
                     transition={{ type: 'tween', ease: [0.16, 1, 0.3, 1], duration: 0.4 }}
                     className="text-[#f5f4f0] border-t border-white/10 w-full rounded-t-[32px] p-6 pb-10 shadow-2xl flex flex-col gap-3 max-h-[70%] pointer-events-auto"
-                    style={{ background: CHAT_PANEL_BACKGROUND }}
+                    style={CHAT_PANEL_BACKGROUND_STYLE}
                     onClick={e => e.stopPropagation()}
                   >
                     <div className="w-12 h-1.5 bg-white/20 rounded-full mb-2 mx-auto" />
