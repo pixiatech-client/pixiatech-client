@@ -1,7 +1,8 @@
 import '@/web/web.css';
 import '@/web/cms/cms-text-scale.css';
 import { WebCmsShell } from './web-cms-shell';
-import { getCmsPages } from '@/lib/site-web/pages-store';
+import { getCmsPages, getCmsSettings } from '@/lib/site-web/pages-store';
+import { generateThemeCss, DEFAULT_ACCENT } from '@/web/cms/theme-tokens';
 import { IntroPixiaTech } from '@/web/components/IntroPixiaTech';
 import { getSettings } from '@/app/actions/public-actions';
 import {
@@ -74,11 +75,20 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function WebLayout({ children }: { children: React.ReactNode }) {
   let initialPages = {};
+  let initialSettings: Awaited<ReturnType<typeof getCmsSettings>> | undefined = undefined;
   try {
-    initialPages = await getCmsPages();
+    const [pages, settings] = await Promise.all([
+      getCmsPages().catch(() => ({})),
+      getCmsSettings().catch(() => undefined),
+    ]);
+    initialPages = pages;
+    initialSettings = settings;
   } catch (err) {
-    console.warn('[WebLayout] getCmsPages fallback:', err);
+    console.warn('[WebLayout] getCmsPages/getCmsSettings fallback:', err);
   }
+
+  const accentColor = initialSettings?.accentColor || DEFAULT_ACCENT;
+  const themeCss = generateThemeCss(accentColor);
 
   return (
     <>
@@ -93,6 +103,8 @@ export default async function WebLayout({ children }: { children: React.ReactNod
         rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&amp;display=swap"
       />
+      {/* Thème couleur global persistant injecté dès le SSR (Zero-FOUC, résistant au vidage de cache/cookies) */}
+      <style id="pixiatech-theme-override-styles" dangerouslySetInnerHTML={{ __html: themeCss }} />
       <div
         id="pixia-web"
         className="min-h-[100dvh] w-full bg-[#080808] text-[#f5f4f0] antialiased"
@@ -101,7 +113,7 @@ export default async function WebLayout({ children }: { children: React.ReactNod
             'calc(var(--admin-bar-h, 0px) + var(--preview-bar-h, 0px) + var(--cms-section-bar-h, 0px))',
         }}
       >
-        <WebCmsShell initialPages={initialPages}>{children}</WebCmsShell>
+        <WebCmsShell initialPages={initialPages} initialSettings={initialSettings}>{children}</WebCmsShell>
       </div>
       {/* Intro « pixels → texte » : première visite uniquement (localStorage). */}
       <IntroPixiaTech />

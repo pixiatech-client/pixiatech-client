@@ -8,14 +8,14 @@ import { CmsSectionBar } from './CmsSectionBar';
 import { BackendExportModal } from './BackendExportModal';
 import { VisualInPlaceEditor } from './VisualInPlaceEditor';
 import { useCmsElementStyles } from './useCmsElementStyles';
-import { loadSavedTheme } from './ThemePanel';
+import { loadSavedTheme, applyThemeTokens, STORAGE_KEY } from './ThemePanel';
 
 // Pont CMS pour l'univers /web.
 // L'authentification se fait UNIQUEMENT côté serveur (session admin /admin).
 // Le rendu public (/web) est strictement identique pour les visiteurs : aucune UI CMS.
 
 export const WebCmsBridge: React.FC = () => {
-  const { isAdmin, pages, currentPageId, setCurrentLang } = useCms();
+  const { isAdmin, pages, currentPageId, setCurrentLang, settings } = useCms();
   const { locale } = useI18n();
   const [isBackendModalOpen, setIsBackendModalOpen] = useState(false);
 
@@ -38,12 +38,24 @@ export const WebCmsBridge: React.FC = () => {
   // Charge et applique le thème couleur global (sauvegardé via le Gestionnaire de Thèmes)
   // Appelé pour TOUS (admin + visiteurs) pour que le thème soit cohérent sur tout le site.
   useEffect(() => {
-    loadSavedTheme();
+    const accent = settings?.accentColor && /^#[0-9a-fA-F]{6}$/.test(settings.accentColor)
+      ? settings.accentColor
+      : loadSavedTheme();
+    applyThemeTokens(accent);
+    try {
+      localStorage.setItem(STORAGE_KEY, accent);
+    } catch {}
+
     // Réappliquer si la fenêtre redevient active (onglet focus)
-    const onFocus = () => loadSavedTheme();
+    const onFocus = () => {
+      const cur = settings?.accentColor && /^#[0-9a-fA-F]{6}$/.test(settings.accentColor)
+        ? settings.accentColor
+        : loadSavedTheme();
+      applyThemeTokens(cur);
+    };
     window.addEventListener('focus', onFocus);
     return () => window.removeEventListener('focus', onFocus);
-  }, []);
+  }, [settings?.accentColor]);
 
   const pageTitle = useMemo(() => {
     const page = pages[currentPageId];

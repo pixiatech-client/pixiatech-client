@@ -44,7 +44,7 @@ const ACTIVE_THEME_DOC_ID = 'global';
 // --- In-memory TTL caches (shared across calls within the same server process) ---
 let _settingsCache: { data: Settings; timestamp: number } | null = null;
 const SETTINGS_CACHE_TTL_MS = 60_000; // 60 seconds
-let _activeThemeCache: { themeId: string; timestamp: number } | null = null;
+let _activeThemeCache: { themeId: string; accentColor?: string; timestamp: number } | null = null;
 const THEME_CACHE_TTL_MS = 60_000; // 60 seconds
 
 export async function clearSettingsCache(): Promise<void> {
@@ -451,18 +451,21 @@ export async function getWizardSettings(): Promise<WizardSettings> {
 // Active global theme (lecture)
 // ─────────────────────────────────────────────────────────────────────────────
 
-export async function getActiveGlobalTheme(): Promise<{ themeId: string }> {
+export async function getActiveGlobalTheme(): Promise<{ themeId: string; accentColor?: string }> {
   const { adminDb } = getFirebaseAdmin();
   const defaultName = DEFAULT_PALETTES.find(p => p.isDefault)?.name || DEFAULT_PALETTES[0].name;
   try {
     if (_activeThemeCache && Date.now() - _activeThemeCache.timestamp < THEME_CACHE_TTL_MS) {
-      return { themeId: _activeThemeCache.themeId };
+      return { themeId: _activeThemeCache.themeId, accentColor: _activeThemeCache.accentColor };
     }
     const doc = await adminDb.collection('settings').doc(ACTIVE_THEME_DOC_ID).get();
     const data = doc.data();
     const themeId = data?.activeThemeId || defaultName;
-    _activeThemeCache = { themeId, timestamp: Date.now() };
-    return { themeId };
+    const accentColor = typeof data?.accentColor === 'string' && /^#[0-9a-fA-F]{6}$/.test(data.accentColor)
+      ? data.accentColor
+      : undefined;
+    _activeThemeCache = { themeId, accentColor, timestamp: Date.now() };
+    return { themeId, accentColor };
   } catch (error) {
     console.error("Error fetching active theme:", error);
     return { themeId: defaultName };

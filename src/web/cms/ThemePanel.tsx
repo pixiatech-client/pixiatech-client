@@ -263,23 +263,43 @@ export const ThemePanel: React.FC<ThemePanelProps> = ({ onClose }) => {
     }
   };
 
-  const handleApply = useCallback(() => {
+  const handleApply = useCallback(async () => {
     if (!/^#[0-9a-fA-F]{6}$/.test(selectedColor)) return;
+    // Appliquer visuellement immédiatement (optimiste)
+    applyThemeTokens(selectedColor);
     try {
-      localStorage.setItem(STORAGE_KEY, selectedColor);
-      applyThemeTokens(selectedColor);
+      // Persister dans Firestore via l'API settings — source de vérité globale
+      const res = await fetch('/api/site-web/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accentColor: selectedColor }),
+      });
+      if (!res.ok) throw new Error(`API ${res.status}`);
+      // Synchroniser localStorage comme cache local
+      try { localStorage.setItem(STORAGE_KEY, selectedColor); } catch {}
       setPersistedColor(selectedColor);
-      setStatusMessage('✓ Thème appliqué et sauvegardé !');
+      setStatusMessage('✓ Thème appliqué pour tout le monde !');
       setTimeout(() => setStatusMessage(null), 3000);
     } catch {
-      setStatusMessage('✕ Erreur lors de la sauvegarde');
+      // Fallback : localStorage uniquement si l'API est indisponible
+      try { localStorage.setItem(STORAGE_KEY, selectedColor); } catch {}
+      setPersistedColor(selectedColor);
+      setStatusMessage('⚠ Thème appliqué localement (erreur réseau)');
+      setTimeout(() => setStatusMessage(null), 3000);
     }
   }, [selectedColor]);
 
-  const handleReset = useCallback(() => {
+  const handleReset = useCallback(async () => {
+    // Appliquer visuellement immédiatement
+    applyThemeTokens(DEFAULT_ACCENT);
     try {
-      localStorage.removeItem(STORAGE_KEY);
+      await fetch('/api/site-web/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accentColor: DEFAULT_ACCENT }),
+      });
     } catch {}
+    try { localStorage.removeItem(STORAGE_KEY); } catch {}
     selectColor(DEFAULT_ACCENT);
     setPersistedColor(DEFAULT_ACCENT);
     setStatusMessage('✓ Réinitialisé au vert PIXIATECH');

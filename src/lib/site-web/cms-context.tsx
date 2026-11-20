@@ -83,19 +83,23 @@ interface CmsContextType {
   importPagesJson: (json: string) => boolean;
   resetPageToDefault: (pageId: string) => Promise<void>;
   updateSettings: (newSettings: Partial<CmsBackendSettings>) => void;
-  saveSettings: () => Promise<boolean>;
+  saveSettings: (override?: Partial<CmsBackendSettings>) => Promise<boolean>;
 }
 
 const CmsContext = createContext<CmsContextType | null>(null);
 
-function settingsWithLocal(): CmsBackendSettings {
+function settingsWithLocal(initial?: CmsBackendSettings): CmsBackendSettings {
+  if (initial) {
+    return { ...DEFAULT_CMS_SETTINGS, ...initial };
+  }
   return { ...DEFAULT_CMS_SETTINGS, ...(loadLocalSettings() || {}) };
 }
 
 export const CmsProvider: React.FC<{
   children: React.ReactNode;
   initialPages?: Record<string, CmsPageData>;
-}> = ({ children, initialPages }) => {
+  initialSettings?: CmsBackendSettings;
+}> = ({ children, initialPages, initialSettings }) => {
   // isAdmin = décision serveur UNIQUEMENT (GET /api/site-web/status, protégé par requireAdmin).
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [adminChecked, setAdminChecked] = useState<boolean>(false);
@@ -132,7 +136,7 @@ export const CmsProvider: React.FC<{
     []
   );
   const [currentLang, setCurrentLangState] = useState<string>('fr');
-  const [settings, setSettings] = useState<CmsBackendSettings>(settingsWithLocal);
+  const [settings, setSettings] = useState<CmsBackendSettings>(() => settingsWithLocal(initialSettings));
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [backendConnected, setBackendConnected] = useState<boolean>(false);
 
@@ -710,16 +714,22 @@ export const CmsProvider: React.FC<{
     }
   };
 
-  const saveSettings = async (): Promise<boolean> => {
+  const saveSettings = async (override?: Partial<CmsBackendSettings>): Promise<boolean> => {
     try {
+      const payload = override ? { ...settings, ...override } : settings;
       const res = await fetch('/api/site-web/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(settings),
+        body: JSON.stringify(payload),
       });
       if (res.ok) {
         const data = await res.json();
-        if (data?.settings) setSettings(data.settings);
+        if (data?.settings) {
+          setSettings(data.settings);
+          try {
+            localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(data.settings));
+          } catch {}
+        }
         return true;
       }
       return false;

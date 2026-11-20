@@ -339,6 +339,24 @@ export async function saveCmsSettings(partial: Partial<CmsBackendSettings>): Pro
   const current = await getCmsSettings();
   const merged: CmsBackendSettings = { ...current, ...partial };
   await firestoreSetSettings(merged);
+
+  // Synchronisation de l'accentColor dans settings/global pour le RootLayout & cache invalidation
+  if (merged.accentColor) {
+    try {
+      const db = await getFirestoreDb();
+      if (db) {
+        await db.collection('settings').doc('global').set(
+          { accentColor: merged.accentColor },
+          { merge: true }
+        );
+      }
+      const { clearThemeCache } = await import('@/app/actions/public-actions');
+      await clearThemeCache();
+    } catch {
+      /* best effort non bloquant */
+    }
+  }
+
   // Best-effort JSON local
   try {
     const db = readJsonDb();

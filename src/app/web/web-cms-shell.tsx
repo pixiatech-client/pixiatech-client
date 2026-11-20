@@ -4,7 +4,7 @@ import React from 'react';
 import { CmsProvider } from '@/lib/site-web/cms-context';
 import { WebCmsBridge } from '@/web/cms/WebCmsBridge';
 
-import type { CmsPageData } from '@/lib/site-web/cms-types';
+import type { CmsPageData, CmsBackendSettings } from '@/lib/site-web/cms-types';
 
 // Wrapper client : monte le provider CMS et l'interface d'édition pour l'univers /web.
 // Le layout reste un server component ; les children RSC sont passés tels quels,
@@ -12,12 +12,14 @@ import type { CmsPageData } from '@/lib/site-web/cms-types';
 export function WebCmsShell({
   children,
   initialPages,
+  initialSettings,
 }: {
   children: React.ReactNode;
   initialPages?: Record<string, CmsPageData>;
+  initialSettings?: CmsBackendSettings;
 }) {
   return (
-    <CmsProvider initialPages={initialPages}>
+    <CmsProvider initialPages={initialPages} initialSettings={initialSettings}>
       <WebCmsBridge />
       {children}
     </CmsProvider>

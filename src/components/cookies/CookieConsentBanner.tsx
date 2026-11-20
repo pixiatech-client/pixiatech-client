@@ -13,6 +13,36 @@ import {
   Lock,
 } from 'lucide-react';
 
+/** Toggle accordé avec var(--accent) */
+function AccentToggle({
+  checked,
+  onChange,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className="relative inline-flex items-center w-11 h-6 rounded-full transition-colors cursor-pointer shrink-0 focus:outline-none"
+      style={{
+        backgroundColor: checked ? 'var(--accent)' : '#222220',
+      }}
+    >
+      <span
+        className="absolute top-[2px] left-[2px] w-5 h-5 rounded-full transition-transform"
+        style={{
+          backgroundColor: checked ? '#0a0a09' : '#ffffff',
+          transform: checked ? 'translateX(20px)' : 'translateX(0)',
+        }}
+      />
+    </button>
+  );
+}
+
 export interface CookiePreferences {
   necessary: boolean; // Always true
   analytics: boolean;
@@ -140,7 +170,7 @@ export function CookieConsentBanner() {
             <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
               {/* Text & Explanations */}
               <div className="flex items-start gap-3.5 max-w-3xl">
-                <div className="w-10 h-10 rounded-xl bg-[#171714] border border-[#2d2d2a] text-[#C3F910] flex items-center justify-center shrink-0 mt-0.5">
+                <div className="w-10 h-10 rounded-xl bg-[#171714] border border-[#2d2d2a] flex items-center justify-center shrink-0 mt-0.5" style={{ color: 'var(--accent)' }}>
                   <Cookie className="w-5 h-5" />
                 </div>
                 <div className="space-y-1.5 text-left">
@@ -148,7 +178,7 @@ export function CookieConsentBanner() {
                     <h3 className="text-sm font-bold text-white tracking-wide">
                       Respect de votre vie privée & Cookies
                     </h3>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#171714] text-[#C3F910] border border-[#2b2b27]">
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#171714] border border-[#2b2b27]" style={{ color: 'var(--accent)' }}>
                       Conforme CNIL
                     </span>
                   </div>
@@ -158,7 +188,8 @@ export function CookieConsentBanner() {
                   <div className="text-[11px] pt-0.5">
                     <Link
                       href="/gestion-cookies"
-                      className="text-[#C3F910] hover:underline font-mono inline-flex items-center gap-1"
+                      className="hover:underline font-mono inline-flex items-center gap-1"
+                      style={{ color: 'var(--accent)' }}
                     >
                       <span>Consulter notre politique de gestion des cookies</span>
                       <ChevronRight className="w-3 h-3" />
@@ -189,7 +220,10 @@ export function CookieConsentBanner() {
                 <button
                   type="button"
                   onClick={handleAcceptAll}
-                  className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-[#C3F910] hover:bg-[#b0e20e] text-[#0a0a09] text-xs font-bold uppercase tracking-wider transition-all shadow-[0_0_20px_rgba(195,249,16,0.3)] hover:shadow-[0_0_30px_rgba(195,249,16,0.45)] cursor-pointer whitespace-nowrap"
+                  className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-[#0a0a09] text-xs font-bold uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap"
+                  style={{ backgroundColor: 'var(--accent)', boxShadow: '0 0 20px var(--accent-glow)' }}
+                  onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--accent-hover)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'var(--accent)'; }}
                 >
                   Tout accepter
                 </button>
@@ -210,7 +244,7 @@ export function CookieConsentBanner() {
             {/* Header */}
             <div className="flex items-center justify-between p-5 border-b border-[#1f1f1f]">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-[#171714] border border-[#2b2b27] text-[#C3F910] flex items-center justify-center">
+                <div className="w-9 h-9 rounded-xl bg-[#171714] border border-[#2b2b27] flex items-center justify-center" style={{ color: 'var(--accent)' }}>
                   <SlidersHorizontal className="w-4 h-4" />
                 </div>
                 <div>
@@ -239,7 +273,7 @@ export function CookieConsentBanner() {
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-sm text-white">Cookies Strictement Nécessaires</span>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded border" style={{ backgroundColor: 'var(--accent-muted)', color: 'var(--accent)', borderColor: 'var(--accent-border)' }}>
                       Toujours actif
                     </span>
                   </div>
@@ -247,8 +281,8 @@ export function CookieConsentBanner() {
                     Indispensables au bon fonctionnement du site : navigation sécurisée, persistance du panier d'achat, accès à votre compte client et équilibrage serveur. Ils ne peuvent être désactivés.
                   </p>
                 </div>
-                <div className="text-[#7a7a76] shrink-0 pt-1" title="Obligatoire">
-                  <Lock className="w-4 h-4 text-emerald-400" />
+                <div className="text-[#7a7a76] shrink-0 pt-1" title="Obligatoire" style={{ color: 'var(--accent)' }}>
+                  <Lock className="w-4 h-4" />
                 </div>
               </div>
 
@@ -260,17 +294,10 @@ export function CookieConsentBanner() {
                     Nous permettent d'analyser anonymement les volumes de visites, les pages consultées et la performance d'affichage afin d'améliorer la rapidité et la pertinence de nos contenus.
                   </p>
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer shrink-0 pt-1">
-                  <input
-                    type="checkbox"
-                    checked={preferences.analytics}
-                    onChange={(e) =>
-                      setPreferences((prev) => ({ ...prev, analytics: e.target.checked }))
-                    }
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-[#222220] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[6px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#C3F910] peer-checked:after:bg-[#0a0a09]"></div>
-                </label>
+                <AccentToggle
+                  checked={preferences.analytics}
+                  onChange={(v) => setPreferences((prev) => ({ ...prev, analytics: v }))}
+                />
               </div>
 
               {/* Category 3: Functionality & Preferences */}
@@ -281,17 +308,10 @@ export function CookieConsentBanner() {
                     Conservent vos paramètres personnalisés tels que la sélection de langue (FR/EN), l'affichage des devises et vos préférences d'interface.
                   </p>
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer shrink-0 pt-1">
-                  <input
-                    type="checkbox"
-                    checked={preferences.functional}
-                    onChange={(e) =>
-                      setPreferences((prev) => ({ ...prev, functional: e.target.checked }))
-                    }
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-[#222220] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[6px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#C3F910] peer-checked:after:bg-[#0a0a09]"></div>
-                </label>
+                <AccentToggle
+                  checked={preferences.functional}
+                  onChange={(v) => setPreferences((prev) => ({ ...prev, functional: v }))}
+                />
               </div>
 
               {/* Category 4: Marketing & Retargeting */}
@@ -302,17 +322,10 @@ export function CookieConsentBanner() {
                     Permettent d'afficher des suggestions de matériel LED adaptées à vos projets professionnels sur d'autres plateformes et de faciliter le partage sur les réseaux.
                   </p>
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer shrink-0 pt-1">
-                  <input
-                    type="checkbox"
-                    checked={preferences.marketing}
-                    onChange={(e) =>
-                      setPreferences((prev) => ({ ...prev, marketing: e.target.checked }))
-                    }
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-[#222220] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[6px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#C3F910] peer-checked:after:bg-[#0a0a09]"></div>
-                </label>
+                <AccentToggle
+                  checked={preferences.marketing}
+                  onChange={(v) => setPreferences((prev) => ({ ...prev, marketing: v }))}
+                />
               </div>
             </div>
 
@@ -338,7 +351,10 @@ export function CookieConsentBanner() {
               <button
                 type="button"
                 onClick={handleSavePreferences}
-                className="w-full sm:w-auto px-5 py-2 rounded-xl bg-[#C3F910] hover:bg-[#b0e20e] text-[#0a0a09] text-xs font-bold uppercase tracking-wider transition-all shadow-[0_0_20px_rgba(195,249,16,0.3)] cursor-pointer"
+                className="w-full sm:w-auto px-5 py-2 rounded-xl text-[#0a0a09] text-xs font-bold uppercase tracking-wider transition-all cursor-pointer"
+                style={{ backgroundColor: 'var(--accent)', boxShadow: '0 0 20px var(--accent-glow)' }}
+                onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--accent-hover)'; }}
+                onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'var(--accent)'; }}
               >
                 Enregistrer mes préférences
               </button>
@@ -352,7 +368,16 @@ export function CookieConsentBanner() {
         <button
           type="button"
           onClick={() => setShowModal(true)}
-          className="fixed bottom-4 left-4 z-40 w-10 h-10 rounded-full bg-[#11110f]/90 hover:bg-[#1a1a17] text-[#a3a3a3] hover:text-[#C3F910] border border-[#272725] hover:border-[#C3F910]/40 backdrop-blur-md shadow-lg flex items-center justify-center transition-all cursor-pointer group"
+          className="fixed bottom-4 left-4 z-40 w-10 h-10 rounded-full bg-[#11110f]/90 hover:bg-[#1a1a17] text-[#a3a3a3] border border-[#272725] backdrop-blur-md shadow-lg flex items-center justify-center transition-all cursor-pointer group"
+          style={{ '--hover-color': 'var(--accent)' } as React.CSSProperties}
+          onMouseEnter={e => {
+            e.currentTarget.style.color = 'var(--accent)';
+            e.currentTarget.style.borderColor = 'var(--accent-border)';
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.color = '';
+            e.currentTarget.style.borderColor = '';
+          }}
           title="Gérer les cookies & vie privée"
           aria-label="Gérer les cookies & vie privée"
         >

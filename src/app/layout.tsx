@@ -8,6 +8,7 @@ import { LayoutProvider } from '@/components/layout-provider';
 import { I18nProvider } from '@/lib/i18n';
 import { getSettings, getActiveGlobalTheme } from '@/app/actions/public-actions';
 import { resolveTheme, buildThemeCss } from '@/lib/theme-utils';
+import { generateThemeCss } from '@/web/cms/theme-tokens';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -72,6 +73,12 @@ export default async function RootLayout({
         <link rel="icon" href={faviconHref} sizes="any" />
         <link rel="apple-touch-icon" href="/favicon.ico" />
         <style dangerouslySetInnerHTML={{ __html: themeCss }} />
+        {activeThemeResult.accentColor && (
+          <style
+            id="pixiatech-global-accent-style"
+            dangerouslySetInnerHTML={{ __html: generateThemeCss(activeThemeResult.accentColor) }}
+          />
+        )}
       </head>
       <body className={`${inter.variable} ${orbitron.variable} font-body antialiased min-h-[100dvh] bg-[#F8FAFC]${isDark ? ' dark-theme' : ' light-theme'}`} suppressHydrationWarning>
         <div className="flare cyan" aria-hidden="true" />

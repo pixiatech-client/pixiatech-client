@@ -2480,5 +2480,16 @@
       }
     }
   },
-  "updatedAt": "2026-11-17T21:39:09.669Z"
+  "settings": {
+    "companyName": "PIXIATECH",
+    "tagline": "Systèmes LED Architecturaux de Pointe",
+    "email": "contact@pixiatech.com",
+    "phone": "+33 1 89 70 42 00",
+    "address": "75008 Paris, France",
+    "officeHours": "Lun - Ven, 09h00 - 19h00 CET",
+    "accentColor": "#FFE600",
+    "backendName": "Pixel Tech Web",
+    "backendApiUrl": "/api/site-web"
+  },
+  "updatedAt": "2026-11-20T19:19:37.966Z"
 }
