@@ -12,7 +12,15 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useMediaQuery } from 'usehooks-ts';
 import LiquidLoader from '@/components/LiquidLoader';
 
-export function BoutiqueHeader({ boutiqueEnabled = true }: { boutiqueEnabled?: boolean }) {
+export function BoutiqueHeader({
+  boutiqueEnabled = true,
+  isFixed = true,
+  className = '',
+}: {
+  boutiqueEnabled?: boolean;
+  isFixed?: boolean;
+  className?: string;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const { itemCount } = useCart();
@@ -158,10 +166,11 @@ export function BoutiqueHeader({ boutiqueEnabled = true }: { boutiqueEnabled?: b
   return (
     <header
       className={cn(
-        "fixed top-0 z-40 w-full pt-2 pb-2 transition-all duration-300",
-        // Effet miroir glossy & verre dépoli
-        "bg-gradient-to-b from-[#F8FAFC]/95 via-[#F8FAFC]/90 to-[#F8FAFC]/85 backdrop-blur-2xl supports-[backdrop-filter]:bg-[#F8FAFC]/80",
-        isBoutiquePage ? "" : "border-b border-gray-200/50 shadow-xs"
+        isFixed ? "fixed top-0 z-40" : "relative z-30",
+        "w-full pt-2 pb-2 transition-all duration-300",
+        "bg-[#F8FAFC]/80 backdrop-blur-2xl supports-[backdrop-filter]:bg-[#F8FAFC]/75",
+        isFixed && !isBoutiquePage ? "border-b border-gray-200/50 shadow-xs" : "",
+        className
       )}
     >
       <nav className="max-w-7xl mx-4 lg:mx-auto bg-black rounded-full px-6 lg:px-8 py-2.5 flex items-center justify-between shadow-2xl">

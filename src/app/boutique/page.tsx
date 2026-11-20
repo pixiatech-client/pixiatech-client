@@ -11,6 +11,7 @@ import { isProductOutOfStockForSale, isRentalOnlyProduct, isQuoteOnlyProduct, is
 import type { Product } from '@/lib/boutique-data';
 import { PriceDisplay, ActionButton, isProductMoreInfo } from '@/components/boutique/ProductActionButton';
 import LayoutSelector, { type LayoutMode } from '@/components/boutique/LayoutSelector';
+import { BoutiqueHeader } from '@/components/boutique-header';
 import LiquidLoader from '@/components/LiquidLoader';
 import { useI18n } from '@/lib/i18n';
 import { calculatePromotionPercent } from '@/lib/pricing-engine';
@@ -479,51 +480,23 @@ export default function BoutiquePage() {
         activeCount={activeFilterCount}
       />
 
-      {quoteDeclinedId && (
-        <div className="max-w-7xl mx-4 lg:mx-auto mt-4 p-6 bg-white rounded-2xl border border-gray-200/70 shadow-sm">
-          <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
-              <ShoppingBag className="w-6 h-6 text-amber-600" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="text-lg font-bold text-gray-900">{t('boutique.declinedTitle')}</h3>
-              <p className="text-sm text-gray-500 mt-1">{t('boutique.declinedDesc')}</p>
-              {suggestions.length > 0 && (
-                <div className="flex gap-3 mt-4">
-                  {suggestions.map((p) => (
-                    <a key={p.id} href={`/boutique/produit/${p.id}`}
-                      className="flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors group flex-1 min-w-0">
-                      {p.image ? (
-                        <img src={p.image} alt={p.name} className="w-12 h-12 rounded-lg object-cover bg-gray-200 flex-shrink-0" />
-                      ) : (
-                        <img src="/no-product.webp" alt={p.name} className="w-12 h-12 rounded-lg object-cover bg-gray-200 flex-shrink-0" />
-                      )}
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-gray-900 truncate group-hover:text-gray-600 transition-colors">{p.name}</p>
-                        <p className="text-xs font-bold text-gray-700 mt-0.5">
-                          {p.price > 0 ? (
-                            `${p.price} €`
-                          ) : (
-                            p.priceDisplay === 'free' ? t('boutique.free') :
-                            p.priceDisplay === 'multiprice' ? t('boutique.multipleRates') :
-                            p.priceDisplay === 'quote' ? t('boutique.onQuote') :
-                            '0 €'
-                          )}
-                        </p>
-                      </div>
-                    </a>
-                  ))}
-                </div>
-              )}
-            </div>
-            <button onClick={() => setQuoteDeclinedId(null)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0">
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      )}
-      <div className="sticky top-[68px] z-30 w-full bg-gradient-to-b from-[#F8FAFC]/85 via-[#F8FAFC]/90 to-[#F8FAFC]/95 backdrop-blur-2xl supports-[backdrop-filter]:bg-[#F8FAFC]/85 transition-all border-b border-gray-200/80 shadow-[0_12px_32px_-6px_rgba(0,0,0,0.07),0_4px_12px_-2px_rgba(0,0,0,0.03)]">
-        <div className="max-w-7xl mx-4 lg:mx-auto flex flex-col md:flex-row md:items-center justify-between gap-3 py-3">
+      {/* ── ZONE SUPÉRIEURE FIGÉE UNIFIÉE (Barre 1 + Barre 2 solidaires) ── */}
+      <div className="sticky top-0 z-40 w-full flex flex-col">
+        {/* 1. Navigation principale noire PIXIATECH */}
+        <BoutiqueHeader isFixed={false} />
+
+        {/* 2. Deuxième barre : Produits, filtres et contrôles avec effet Verre Dépoli Glassmorphism */}
+        <div
+          className="w-full transition-all"
+          style={{
+            background: 'rgba(255, 255, 255, 0.72)',
+            backdropFilter: 'blur(18px) saturate(160%)',
+            WebkitBackdropFilter: 'blur(18px) saturate(160%)',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.55)',
+            boxShadow: '0 8px 28px rgba(20, 25, 40, 0.06)',
+          }}
+        >
+          <div className="max-w-7xl mx-4 lg:mx-auto flex flex-col md:flex-row md:items-center justify-between gap-3 py-3">
           <nav className="relative flex items-center bg-gray-100 p-1 rounded-[16px] border border-gray-200/80 overflow-x-auto scrollbar-hide shrink-0 max-w-full">
             {[
               { id: 'all', label: t('boutique.products') },
@@ -705,7 +678,52 @@ export default function BoutiquePage() {
             </motion.div>
           )}
         </AnimatePresence>
+        </div>
       </div>
+
+      {quoteDeclinedId && (
+        <div className="max-w-7xl mx-4 lg:mx-auto mt-4 p-6 bg-white rounded-2xl border border-gray-200/70 shadow-sm">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
+              <ShoppingBag className="w-6 h-6 text-amber-600" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-lg font-bold text-gray-900">{t('boutique.declinedTitle')}</h3>
+              <p className="text-sm text-gray-500 mt-1">{t('boutique.declinedDesc')}</p>
+              {suggestions.length > 0 && (
+                <div className="flex gap-3 mt-4">
+                  {suggestions.map((p) => (
+                    <a key={p.id} href={`/boutique/produit/${p.id}`}
+                      className="flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors group flex-1 min-w-0">
+                      {p.image ? (
+                        <img src={p.image} alt={p.name} className="w-12 h-12 rounded-lg object-cover bg-gray-200 flex-shrink-0" />
+                      ) : (
+                        <img src="/no-product.webp" alt={p.name} className="w-12 h-12 rounded-lg object-cover bg-gray-200 flex-shrink-0" />
+                      )}
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-gray-900 truncate group-hover:text-gray-600 transition-colors">{p.name}</p>
+                        <p className="text-xs font-bold text-gray-700 mt-0.5">
+                          {p.price > 0 ? (
+                            `${p.price} €`
+                          ) : (
+                            p.priceDisplay === 'free' ? t('boutique.free') :
+                            p.priceDisplay === 'multiprice' ? t('boutique.multipleRates') :
+                            p.priceDisplay === 'quote' ? t('boutique.onQuote') :
+                            '0 €'
+                          )}
+                        </p>
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
+            <button onClick={() => setQuoteDeclinedId(null)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
 
       <main className="max-w-7xl mx-4 lg:mx-auto py-6">
         {loading ? (
