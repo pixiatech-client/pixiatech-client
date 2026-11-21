@@ -4,7 +4,7 @@
       "id": "home",
       "name": "home",
       "slug": "/home",
-      "updatedAt": "2026-11-20T23:24:51.778Z",
+      "updatedAt": "2026-11-21T10:46:13.414Z",
       "sections": {
         "pixia-web": {
           "text_1790257213042": "sdsdsdsdÉDITEUR DIRECT : CLIQUEZ SUR UN TEXTE OU UNE IMAGE",
@@ -483,6 +483,12 @@
               },
               "borderRadius": "8px",
               "href": "https://google.fr"
+            },
+            "slider1.primaryCta": {
+              "href": "https://pixiatech.com/products"
+            },
+            "slider2.primaryCta": {
+              "href": "https://google.frzzzzz"
             }
           },
           "slideImage2": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FECRAN_LED_LOCATION__2___2___2___2___2___2__etc9v.webp?alt=media",
@@ -1926,7 +1932,8 @@
               "borderStyle": "dashed",
               "borderWidth": "1px",
               "borderRadius": "12px",
-              "color": "#edeef0"
+              "color": "#edeef0",
+              "href": "https://pixiatech.com/products"
             }
           },
           "_i18n": {
@@ -2610,5 +2617,5 @@
     "backendName": "Pixel Tech Web",
     "backendApiUrl": "/api/site-web"
   },
-  "updatedAt": "2026-11-20T23:24:53.563Z"
+  "updatedAt": "2026-11-21T10:46:13.581Z"
 }

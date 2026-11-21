@@ -195,9 +195,9 @@ export const SpecsSection: React.FC<SpecsSectionProps> = ({ lang = 'FR', specs, 
               textTransform: 'uppercase',
             }}
           >
-            <span style={{ color: '#C3F910', fontWeight: 700 }}>{modelCount}</span>{' '}
+            <span style={{ color: 'var(--ui-accent, #C3F910)', fontWeight: 700 }}>{modelCount}</span>{' '}
             {lang === 'FR' ? 'MODÈLES — DÉFILEMENT HORIZONTAL' : 'MODELS — SCROLL HORIZONTALLY'}{' '}
-            <span style={{ color: '#C3F910' }}>→</span>
+            <span style={{ color: 'var(--ui-accent, #C3F910)' }}>→</span>
           </span>
 
           <div style={{ display: 'flex', gap: '8px' }}>
@@ -209,9 +209,9 @@ export const SpecsSection: React.FC<SpecsSectionProps> = ({ lang = 'FR', specs, 
               style={{
                 width: '44px',
                 height: '44px',
-                border: `1px solid ${canScrollLeft ? 'rgba(195, 249, 16, 0.4)' : 'var(--dark-line-3, #2a2a2a)'}`,
+                border: `1px solid ${canScrollLeft ? 'rgba(var(--ui-accent-rgb),0.4)' : 'var(--dark-line-3, #2a2a2a)'}`,
                 background: 'transparent',
-                color: canScrollLeft ? '#C3F910' : '#3A3A3A',
+                color: canScrollLeft ? 'var(--ui-accent, #C3F910)' : '#3A3A3A',
                 cursor: canScrollLeft ? 'pointer' : 'default',
                 fontSize: '16px',
                 display: 'flex',
@@ -221,14 +221,14 @@ export const SpecsSection: React.FC<SpecsSectionProps> = ({ lang = 'FR', specs, 
               }}
               onMouseEnter={(e) => {
                 if (canScrollLeft) {
-                  e.currentTarget.style.borderColor = '#C3F910';
-                  e.currentTarget.style.background = 'rgba(195, 249, 16, 0.12)';
-                  e.currentTarget.style.boxShadow = '0 0 12px rgba(195, 249, 16, 0.3)';
+                  e.currentTarget.style.borderColor = 'var(--ui-accent, #C3F910)';
+                  e.currentTarget.style.background = 'rgba(var(--ui-accent-rgb),0.12)';
+                  e.currentTarget.style.boxShadow = '0 0 12px rgba(var(--ui-accent-rgb),0.3)';
                 }
               }}
               onMouseLeave={(e) => {
                 if (canScrollLeft) {
-                  e.currentTarget.style.borderColor = 'rgba(195, 249, 16, 0.4)';
+                  e.currentTarget.style.borderColor = 'rgba(var(--ui-accent-rgb),0.4)';
                   e.currentTarget.style.background = 'transparent';
                   e.currentTarget.style.boxShadow = 'none';
                 }
@@ -244,9 +244,9 @@ export const SpecsSection: React.FC<SpecsSectionProps> = ({ lang = 'FR', specs, 
               style={{
                 width: '44px',
                 height: '44px',
-                border: `1px solid ${canScrollRight ? 'rgba(195, 249, 16, 0.4)' : 'var(--dark-line-3, #2a2a2a)'}`,
+                border: `1px solid ${canScrollRight ? 'rgba(var(--ui-accent-rgb),0.4)' : 'var(--dark-line-3, #2a2a2a)'}`,
                 background: 'transparent',
-                color: canScrollRight ? '#C3F910' : '#3A3A3A',
+                color: canScrollRight ? 'var(--ui-accent, #C3F910)' : '#3A3A3A',
                 cursor: canScrollRight ? 'pointer' : 'default',
                 fontSize: '16px',
                 display: 'flex',
@@ -256,14 +256,14 @@ export const SpecsSection: React.FC<SpecsSectionProps> = ({ lang = 'FR', specs, 
               }}
               onMouseEnter={(e) => {
                 if (canScrollRight) {
-                  e.currentTarget.style.borderColor = '#C3F910';
-                  e.currentTarget.style.background = 'rgba(195, 249, 16, 0.12)';
-                  e.currentTarget.style.boxShadow = '0 0 12px rgba(195, 249, 16, 0.3)';
+                  e.currentTarget.style.borderColor = 'var(--ui-accent, #C3F910)';
+                  e.currentTarget.style.background = 'rgba(var(--ui-accent-rgb),0.12)';
+                  e.currentTarget.style.boxShadow = '0 0 12px rgba(var(--ui-accent-rgb),0.3)';
                 }
               }}
               onMouseLeave={(e) => {
                 if (canScrollRight) {
-                  e.currentTarget.style.borderColor = 'rgba(195, 249, 16, 0.4)';
+                  e.currentTarget.style.borderColor = 'rgba(var(--ui-accent-rgb),0.4)';
                   e.currentTarget.style.background = 'transparent';
                   e.currentTarget.style.boxShadow = 'none';
                 }
@@ -363,24 +363,24 @@ export const SpecsSection: React.FC<SpecsSectionProps> = ({ lang = 'FR', specs, 
                       style={{
                         display: 'inline-block',
                         marginTop: '10px',
-                        border: '1px solid #C3F910',
+                        border: '1px solid var(--ui-accent, #C3F910)',
                         padding: '6px 12px',
                         fontSize: '10px',
                         letterSpacing: '.16em',
                         color: '#000000',
-                        background: '#C3F910',
+                        background: 'var(--ui-accent, #C3F910)',
                         cursor: 'pointer',
                         transition: 'all .2s ease',
                         fontWeight: 700,
                         textDecoration: 'none',
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.background = '#d4ff2e';
-                        e.currentTarget.style.borderColor = '#d4ff2e';
+                        e.currentTarget.style.background = 'var(--ui-accent-hover, #b0e20e)';
+                        e.currentTarget.style.borderColor = 'var(--ui-accent-hover, #b0e20e)';
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.background = '#C3F910';
-                        e.currentTarget.style.borderColor = '#C3F910';
+                        e.currentTarget.style.background = 'var(--ui-accent, #C3F910)';
+                        e.currentTarget.style.borderColor = 'var(--ui-accent, #C3F910)';
                       }}
                     >
                       {lang === 'FR' ? SHOP_LINK_BUTTON_LABELS[shopType].fr : SHOP_LINK_BUTTON_LABELS[shopType].en}
@@ -400,22 +400,22 @@ export const SpecsSection: React.FC<SpecsSectionProps> = ({ lang = 'FR', specs, 
                 {/* En-tête de groupe — absent quand les lignes n'ont pas de
                     libellé de groupe (matrice saisie sans structure).
 
-                    Séparation de catégorie : filet vert 1px sur toute la largeur
-                    du tableau + voile vert très léger (≤ 7 % d'opacité) qui
-                    s'estompe vers la droite. Vert en LITTÉRAL `#C3F910` — celui
-                    de `web.css` et de la fiche technique — et non `var(--accent)`,
-                    que la palette du back-office réécrit : aucune couleur
-                    inventée. Les largeurs de colonnes (240px / 280px) sont
+                    Séparation de catégorie : filet d'accent 1px sur toute la
+                    largeur du tableau + voile très léger (≤ 7 % d'opacité) qui
+                    s'estompe vers la droite. Le token `--ui-accent` est le miroir
+                    unique des deux systèmes de thème (back-office HSL et CMS
+                    hex) : la couleur suit donc toujours le thème actif, sans
+                    vert figé. Les largeurs de colonnes (240px / 280px) sont
                     inchangées : rien ne peut déformer la matrice, quel que soit
                     le nombre de variantes. */}
                 {grp.label && (
                 <div
                   style={{
                     display: 'flex',
-                    borderBottom: '1px solid rgba(195, 249, 16, 0.26)',
+                    borderBottom: '1px solid rgba(var(--ui-accent-rgb),0.26)',
                     backgroundColor: '#0A0A09',
                     backgroundImage:
-                      'linear-gradient(90deg, rgba(195, 249, 16, 0.075) 0%, rgba(195, 249, 16, 0.03) 26%, rgba(195, 249, 16, 0) 62%)',
+                      'linear-gradient(90deg, rgba(var(--ui-accent-rgb),0.075) 0%, rgba(var(--ui-accent-rgb),0.03) 26%, rgba(var(--ui-accent-rgb),0) 62%)',
                     minWidth: 'max-content',
                   }}
                 >
@@ -431,19 +431,16 @@ export const SpecsSection: React.FC<SpecsSectionProps> = ({ lang = 'FR', specs, 
                       // sur le site (`.fstage-step`). En `inset`, donc aucun
                       // décalage de mise en page.
                       //
-                      // VERT EN LITTÉRAL, et non `var(--accent)`. La palette du
-                      // back-office réécrit `--accent` via un `html:root` injecté
-                      // à l'exécution (theme-utils), de spécificité supérieure :
-                      // le libellé suivait la couleur du CMS — souvent claire,
-                      // donc blanche sur fond noir — alors que les filets, eux,
-                      // restaient verts. `#C3F910` est le vert Pixiatech, celui
-                      // de `web.css` et de la fiche technique.
-                      boxShadow: 'inset 2px 0 0 #C3F910',
+                      // `--accent` a deux formats concurrents (triplet HSL côté
+                      // back-office, hex côté CMS). On consomme donc le token
+                      // dérivé `--ui-accent`, valide dans les deux cas : le filet
+                      // et le libellé changent ensemble avec le thème actif.
+                      boxShadow: 'inset 2px 0 0 var(--ui-accent, #C3F910)',
                       // Fond opaque SOUS le voile vert : la colonne reste
                       // masquante pendant le défilement horizontal.
                       backgroundColor: '#0A0A09',
                       backgroundImage:
-                        'linear-gradient(90deg, rgba(195, 249, 16, 0.11) 0%, rgba(195, 249, 16, 0.045) 100%)',
+                        'linear-gradient(90deg, rgba(var(--ui-accent-rgb),0.11) 0%, rgba(var(--ui-accent-rgb),0.045) 100%)',
                       padding: '15px 14px',
                       fontSize: '10.5px',
                       letterSpacing: '.26em',
@@ -451,7 +448,7 @@ export const SpecsSection: React.FC<SpecsSectionProps> = ({ lang = 'FR', specs, 
                       // PHYSICAL, OPTIQUE, OPTICAL… partagent ce seul rendu, donc
                       // quelle que soit la langue du libellé du PDF, le titre de
                       // catégorie reste vert Pixiatech — jamais blanc.
-                      color: '#C3F910',
+                      color: 'var(--ui-accent, #C3F910)',
                       fontWeight: 700,
                       textTransform: 'uppercase',
                       display: 'flex',

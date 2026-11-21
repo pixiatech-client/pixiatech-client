@@ -399,7 +399,7 @@ export function BoutiqueHeader({
                     onClick={() => setProfileOpen(false)}
                     className="flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
                   >
-                    <LayoutDashboard size={14} className="text-[#38E044]" />
+                    <LayoutDashboard size={14} className="text-[color:var(--ui-accent)]" />
                     <span>Tableau de bord</span>
                   </Link>
                   <Link

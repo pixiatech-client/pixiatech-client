@@ -18,6 +18,17 @@
 :root {
   --aurora-color1: rgba(168, 85, 247, 0.2);
   --aurora-color2: rgba(79, 70, 229, 0.2);
+
+  /* Token de marque unique (couleur CSS directe, contrairement à `--accent`
+     qui reste un triplet HSL pour shadcn). Écrit par les deux systèmes de
+     thème : sélecteur global back-office ET accent du site web. */
+  --ui-accent: #C3F910;
+  --ui-accent-rgb: 195, 249, 16;
+  --ui-accent-hover: #b0e20e;
+  --ui-accent-active: #9acc0c;
+  --ui-accent-muted: rgba(195, 249, 16, 0.15);
+  --ui-accent-border: rgba(195, 249, 16, 0.4);
+  --ui-accent-glow: rgba(195, 249, 16, 0.35);
 }
 
 @keyframes pulse {

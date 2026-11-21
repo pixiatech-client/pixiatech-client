@@ -169,7 +169,7 @@ function SelectBox({
       onChange={onChange}
       disabled={disabled}
       aria-label={label}
-      className="w-4 h-4 rounded accent-[#38E044] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+      className="w-4 h-4 rounded accent-[color:var(--ui-accent)] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
     />
   );
 }
@@ -997,12 +997,12 @@ return (
 
         <div className="flex items-center gap-4 min-w-0">
           <div className="w-12 h-12 rounded-2xl bg-[#141B1E] border border-neutral-700 flex items-center justify-center shrink-0">
-            <Box className="w-6 h-6 text-[#38E044]" />
+            <Box className="w-6 h-6 text-[color:var(--ui-accent)]" />
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-xl font-bold tracking-tight">Produits du site web</h1>
-              <span className="text-[10px] font-mono font-extrabold bg-[#38E044] text-black px-2.5 py-0.5 rounded-full shadow-[0_0_10px_rgba(56,224,68,0.4)]">
+              <span className="text-[10px] font-mono font-extrabold bg-[color:var(--ui-accent)] text-black px-2.5 py-0.5 rounded-full shadow-[0_0_10px_rgba(var(--ui-accent-rgb),0.4)]">
                 BACKOFFICE
               </span>
             </div>
@@ -1019,14 +1019,14 @@ return (
             className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-neutral-800/80 hover:bg-neutral-700 text-white text-xs font-bold border border-white/10 transition-all cursor-pointer shadow-sm active:scale-95"
             title="Actualiser la liste"
           >
-            <RefreshCw className={`w-3.5 h-3.5 text-[#38E044] ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 text-[color:var(--ui-accent)] ${loading ? 'animate-spin' : ''}`} />
             <span>Actualiser</span>
           </button>
           <button
             type="button"
             onClick={onNew}
             disabled={creatingNew}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#38E044] hover:bg-[#2fcb3c] text-black text-xs font-extrabold transition-all cursor-pointer shadow-[0_0_16px_rgba(56,224,68,0.35)] active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[color:var(--ui-accent)] hover:bg-[color:var(--ui-accent-hover)] text-black text-xs font-extrabold transition-all cursor-pointer shadow-[0_0_16px_rgba(var(--ui-accent-rgb),0.35)] active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {creatingNew ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -1164,7 +1164,7 @@ return (
                       type="button"
                       onClick={() => setBulkConfirm('publish')}
                       disabled={bulkBusy}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-wide rounded-full bg-[#38E044] text-black border border-[#38E044] hover:bg-[#2fcb3c] transition-colors cursor-pointer disabled:opacity-60"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-wide rounded-full bg-[color:var(--ui-accent)] text-black border border-[color:var(--ui-accent)] hover:bg-[color:var(--ui-accent-hover)] transition-colors cursor-pointer disabled:opacity-60"
                     >
                       <Globe className="w-3.5 h-3.5" />
                       Publier
@@ -1271,7 +1271,7 @@ return (
                         key={p.slug}
                         className={`relative transition-colors ${
                           selected[p.slug]
-                            ? 'bg-[#38E044]/10 dark:bg-[#38E044]/5'
+                            ? 'bg-[color:rgb(var(--ui-accent-rgb)/0.1)] dark:bg-[color:rgb(var(--ui-accent-rgb)/0.05)]'
                             : 'hover:bg-neutral-50/90 dark:hover:bg-white/[0.02]'
                         }`}
                       >
@@ -1377,7 +1377,7 @@ return (
                                 disabled={busy}
                                 aria-label={`Publier « ${p.name} »`}
                                 title="Publier ce produit sur le site web"
-                                className="inline-flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wide px-3.5 py-2 rounded-full border transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-wait bg-[#38E044] text-black border-[#38E044] hover:bg-[#2ec235] hover:border-[#2ec235] shadow-[0_0_12px_rgba(56,224,68,0.35)]"
+                                className="inline-flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wide px-3.5 py-2 rounded-full border transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-wait bg-[color:var(--ui-accent)] text-black border-[color:var(--ui-accent)] hover:bg-[color:var(--ui-accent-hover)] hover:border-[color:var(--ui-accent-hover)] shadow-[0_0_12px_rgba(var(--ui-accent-rgb),0.35)]"
                               >
                                 {busy ? (
                                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1557,7 +1557,7 @@ function SortableVariantColumn({
       ref={setNodeRef}
       style={style}
       className={`shrink-0 w-[300px] p-3 border-l border-neutral-300 dark:border-white/10 relative group bg-white dark:bg-[#0A0D0E] ${
-        isDragging ? 'shadow-2xl ring-2 ring-[#38E044]' : ''
+        isDragging ? 'shadow-2xl ring-2 ring-[color:var(--ui-accent)]' : ''
       }`}
     >
       {/* En-tête de colonne avec poignée Drag & Drop et bouton de suppression */}
@@ -1606,7 +1606,7 @@ function SortableVariantColumn({
           onChange={(ev) => onUrlChange(ev.target.value)}
           placeholder="https://boutique…"
           aria-invalid={!blank && !valid}
-          className="flex-1 min-w-0 px-3 py-1.5 rounded-xl text-[11px] font-semibold bg-white dark:bg-zinc-800 text-neutral-900 dark:text-white border border-neutral-300 dark:border-white/10 focus:ring-2 focus:ring-[#38E044]/40 outline-none transition-all"
+          className="flex-1 min-w-0 px-3 py-1.5 rounded-xl text-[11px] font-semibold bg-white dark:bg-zinc-800 text-neutral-900 dark:text-white border border-neutral-300 dark:border-white/10 focus:ring-2 focus:ring-[color:rgb(var(--ui-accent-rgb)/0.4)] outline-none transition-all"
         />
         {valid && (
           <a
@@ -1614,7 +1614,7 @@ function SortableVariantColumn({
             target="_blank"
             rel="noopener noreferrer"
             title="Ouvrir le lien dans un nouvel onglet"
-            className="shrink-0 w-8 h-8 rounded-xl inline-flex items-center justify-center border border-neutral-300 dark:border-white/10 text-neutral-500 dark:text-neutral-300 hover:text-[#38E044] hover:border-[#38E044]/60 transition-colors"
+            className="shrink-0 w-8 h-8 rounded-xl inline-flex items-center justify-center border border-neutral-300 dark:border-white/10 text-neutral-500 dark:text-neutral-300 hover:text-[color:var(--ui-accent)] hover:border-[color:rgb(var(--ui-accent-rgb)/0.6)] transition-colors"
           >
             <ExternalLink className="h-3.5 w-3.5" />
           </a>
@@ -2663,7 +2663,7 @@ function ProductForm({
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-xl font-bold tracking-tight truncate">{headerTitle}</h1>
-              <span className="text-[10px] font-mono font-extrabold bg-[#38E044] text-black px-2.5 py-0.5 rounded-full shadow-[0_0_10px_rgba(56,224,68,0.4)]">
+              <span className="text-[10px] font-mono font-extrabold bg-[color:var(--ui-accent)] text-black px-2.5 py-0.5 rounded-full shadow-[0_0_10px_rgba(var(--ui-accent-rgb),0.4)]">
                 BACKOFFICE
               </span>
             </div>
@@ -2679,7 +2679,7 @@ function ProductForm({
               rel="noreferrer"
               className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-neutral-800/80 hover:bg-neutral-700 text-white text-xs font-bold border border-white/10 transition-all cursor-pointer shadow-sm active:scale-95"
             >
-              <ExternalLink className="w-3.5 h-3.5 text-[#38E044]" />
+              <ExternalLink className="w-3.5 h-3.5 text-[color:var(--ui-accent)]" />
               <span>Voir la page</span>
             </a>
           )}
@@ -2694,7 +2694,7 @@ function ProductForm({
               type="button"
               onClick={() => void create()}
               disabled={saving || !nameValid}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#38E044] hover:bg-[#2fcb3c] text-black text-xs font-extrabold transition-all cursor-pointer shadow-[0_0_16px_rgba(56,224,68,0.35)] active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[color:var(--ui-accent)] hover:bg-[color:var(--ui-accent-hover)] text-black text-xs font-extrabold transition-all cursor-pointer shadow-[0_0_16px_rgba(var(--ui-accent-rgb),0.35)] active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
             >
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
               <span>{saving ? 'Création…' : 'Créer le produit'}</span>
@@ -2705,7 +2705,7 @@ function ProductForm({
                 type="button"
                 onClick={() => void save(status === 'published' ? 'draft' : 'published')}
                 disabled={saving || uploading}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#38E044] hover:bg-[#2fcb3c] text-black text-xs font-extrabold transition-all cursor-pointer shadow-[0_0_16px_rgba(56,224,68,0.35)] active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[color:var(--ui-accent)] hover:bg-[color:var(--ui-accent-hover)] text-black text-xs font-extrabold transition-all cursor-pointer shadow-[0_0_16px_rgba(var(--ui-accent-rgb),0.35)] active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
               >
                 {saving && !uploading ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -2731,7 +2731,7 @@ function ProductForm({
                 {uploading ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
-                  <Check className="w-3.5 h-3.5 text-[#38E044]" />
+                  <Check className="w-3.5 h-3.5 text-[color:var(--ui-accent)]" />
                 )}
                 <span>{uploading ? 'Photo…' : 'Enregistrer'}</span>
               </button>
@@ -2748,7 +2748,7 @@ function ProductForm({
               {/* 1 · NOM */}
               <section>
                 <div className="flex items-center gap-2 mb-1.5">
-                  <div className="flex items-center justify-center w-6 h-6 rounded-lg bg-[#38E044] text-black text-[11px] font-black font-mono shrink-0">1</div>
+                  <div className="flex items-center justify-center w-6 h-6 rounded-lg bg-[color:var(--ui-accent)] text-black text-[11px] font-black font-mono shrink-0">1</div>
                   <h2 className="text-sm font-bold text-neutral-900 dark:text-white">Le nom du produit</h2>
                   <span className="text-[11px] text-neutral-400 font-medium">({MAX_PRODUCT_NAME_LENGTH} caractères max)</span>
                 </div>
@@ -2764,7 +2764,7 @@ function ProductForm({
                   }}
                   placeholder="ex. PXT Series"
                   autoFocus
-                  className="mt-3 w-full max-w-md px-4 py-3 bg-neutral-50 dark:bg-white/5 border border-neutral-200 dark:border-white/10 rounded-xl text-sm text-neutral-900 dark:text-white focus:ring-2 focus:ring-[#38E044]/50 outline-none transition-all"
+                  className="mt-3 w-full max-w-md px-4 py-3 bg-neutral-50 dark:bg-white/5 border border-neutral-200 dark:border-white/10 rounded-xl text-sm text-neutral-900 dark:text-white focus:ring-2 focus:ring-[color:rgb(var(--ui-accent-rgb)/0.5)] outline-none transition-all"
                 />
                 <div className="mt-1.5 flex items-center justify-between max-w-md">
                   <span className="text-[11px] font-semibold text-neutral-400">
@@ -2780,7 +2780,7 @@ function ProductForm({
               {/* 2 · PHOTO */}
               <section>
                 <div className="flex items-center gap-2 mb-1.5">
-                  <div className="flex items-center justify-center w-6 h-6 rounded-lg bg-[#38E044] text-black text-[11px] font-black font-mono shrink-0">2</div>
+                  <div className="flex items-center justify-center w-6 h-6 rounded-lg bg-[color:var(--ui-accent)] text-black text-[11px] font-black font-mono shrink-0">2</div>
                   <h2 className="text-sm font-bold text-neutral-900 dark:text-white">La photo du produit</h2>
                   <span className="text-[11px] text-neutral-400 font-medium">(optionnelle — ajustée ensuite à la direction artistique)</span>
                 </div>
@@ -2820,7 +2820,7 @@ function ProductForm({
               {/* 3 · IMAGE AU SURVOL */}
               <section>
                 <div className="flex items-center gap-2 mb-1.5">
-                  <div className="flex items-center justify-center w-6 h-6 rounded-lg bg-[#38E044] text-black text-[11px] font-black font-mono shrink-0">3</div>
+                  <div className="flex items-center justify-center w-6 h-6 rounded-lg bg-[color:var(--ui-accent)] text-black text-[11px] font-black font-mono shrink-0">3</div>
                   <h2 className="text-sm font-bold text-neutral-900 dark:text-white">L&apos;image au survol</h2>
                   <span className="text-[11px] text-neutral-400 font-medium">
                     (optionnelle — affichée au survol dans « Tous les produits »)
@@ -2864,7 +2864,7 @@ function ProductForm({
               {/* 4 · PDF technique */}
               <section>
                 <div className="flex items-center gap-2 mb-1.5">
-                  <div className="flex items-center justify-center w-6 h-6 rounded-lg bg-[#38E044] text-black text-[11px] font-black font-mono shrink-0">4</div>
+                  <div className="flex items-center justify-center w-6 h-6 rounded-lg bg-[color:var(--ui-accent)] text-black text-[11px] font-black font-mono shrink-0">4</div>
                   <h2 className="text-sm font-bold text-neutral-900 dark:text-white">La fiche technique (PDF)</h2>
                   <span className="text-[11px] text-neutral-400 font-medium">(optionnelle — remplit automatiquement la fiche)</span>
                 </div>
@@ -2879,7 +2879,7 @@ function ProductForm({
                   />
                   {analyzing && (
                     <div className="mt-3 flex items-center gap-2 text-xs text-neutral-500 font-semibold">
-                      <Loader2 className="w-4 h-4 animate-spin text-[#38E044]" />
+                      <Loader2 className="w-4 h-4 animate-spin text-[color:var(--ui-accent)]" />
                       Analyse du PDF en cours…
                     </div>
                   )}
@@ -2913,7 +2913,7 @@ function ProductForm({
                           setCustomSlug(slugify(e.target.value));
                         }
                       }}
-                      className="w-full px-4 py-3 bg-neutral-50 dark:bg-white/5 border border-neutral-200 dark:border-white/10 rounded-xl text-sm text-neutral-900 dark:text-white focus:ring-2 focus:ring-[#38E044]/50 outline-none transition-all"
+                      className="w-full px-4 py-3 bg-neutral-50 dark:bg-white/5 border border-neutral-200 dark:border-white/10 rounded-xl text-sm text-neutral-900 dark:text-white focus:ring-2 focus:ring-[color:rgb(var(--ui-accent-rgb)/0.5)] outline-none transition-all"
                     />
                     <div className="mt-1.5 flex items-center justify-between">
                       <span className="text-[11px] font-semibold text-neutral-400">
@@ -2966,7 +2966,7 @@ function ProductForm({
                         className={`w-full px-4 py-3 border rounded-xl text-sm font-mono outline-none transition-all ${
                           isTemplate
                             ? 'border-neutral-200 dark:border-white/10 text-neutral-400 dark:text-neutral-500 cursor-not-allowed bg-neutral-100/70 dark:bg-white/[0.02]'
-                            : 'bg-neutral-50 dark:bg-white/5 border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white focus:ring-2 focus:ring-[#38E044]/50'
+                            : 'bg-neutral-50 dark:bg-white/5 border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white focus:ring-2 focus:ring-[color:rgb(var(--ui-accent-rgb)/0.5)]'
                         }`}
                       />
                     </div>
@@ -3228,7 +3228,7 @@ function ProductForm({
                 />
                 {analyzing && (
                   <div className="mt-3 flex items-center gap-2 text-xs text-neutral-500 font-semibold">
-                    <Loader2 className="w-4 h-4 animate-spin text-[#38E044]" />
+                    <Loader2 className="w-4 h-4 animate-spin text-[color:var(--ui-accent)]" />
                     Analyse du PDF en cours…
                   </div>
                 )}
@@ -3287,13 +3287,13 @@ function ProductForm({
                         onClick={() => setActiveSummarySection(isActive ? null : card.key)}
                         className={`text-left flex items-start gap-3 p-3.5 rounded-2xl border transition-all cursor-pointer relative group ${
                           isActive
-                            ? 'bg-emerald-500/10 border-[#38E044] ring-2 ring-[#38E044]/30 shadow-sm'
+                            ? 'bg-emerald-500/10 border-[color:var(--ui-accent)] ring-2 ring-[color:rgb(var(--ui-accent-rgb)/0.3)] shadow-sm'
                             : 'bg-neutral-50 dark:bg-white/[0.03] border-neutral-200/80 dark:border-white/[0.06] hover:border-neutral-300 dark:hover:border-white/20 hover:bg-white dark:hover:bg-white/[0.05]'
                         }`}
                       >
                         <CheckCircle2
                           className={`w-4 h-4 mt-0.5 shrink-0 ${
-                            isActive ? 'text-[#38E044]' : 'text-[#2fcb3c]'
+                            isActive ? 'text-[color:var(--ui-accent)]' : 'text-[color:var(--ui-accent-hover)]'
                           }`}
                         />
                         <div className="min-w-0 flex-1">
@@ -3310,7 +3310,7 @@ function ProductForm({
                         <div
                           className={`shrink-0 p-1 rounded-lg transition-colors ${
                             isActive
-                              ? 'bg-[#38E044] text-black'
+                              ? 'bg-[color:var(--ui-accent)] text-black'
                               : 'text-neutral-400 group-hover:text-neutral-600 dark:group-hover:text-white'
                           }`}
                         >
@@ -3338,7 +3338,7 @@ function ProductForm({
                       <div className="p-5 rounded-2xl border border-neutral-300 dark:border-white/10 bg-white dark:bg-zinc-900 shadow-sm space-y-4">
                         <div className="flex items-center justify-between border-b border-neutral-100 dark:border-white/10 pb-3">
                           <div className="flex items-center gap-2">
-                            <span className="w-2.5 h-2.5 rounded-full bg-[#38E044]" />
+                            <span className="w-2.5 h-2.5 rounded-full bg-[color:var(--ui-accent)]" />
                             <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-900 dark:text-white">
                               Édition directe — {summaryCards.find((c) => c.key === activeSummarySection)?.label}
                             </h3>
@@ -3369,7 +3369,7 @@ function ProductForm({
                                     setCustomSlug(slugify(e.target.value));
                                   }
                                 }}
-                                className="w-full px-3 py-2 rounded-xl text-xs bg-neutral-50 dark:bg-zinc-800 border border-neutral-300 dark:border-white/10 text-neutral-900 dark:text-white focus:ring-2 focus:ring-[#38E044]/40 outline-none"
+                                className="w-full px-3 py-2 rounded-xl text-xs bg-neutral-50 dark:bg-zinc-800 border border-neutral-300 dark:border-white/10 text-neutral-900 dark:text-white focus:ring-2 focus:ring-[color:rgb(var(--ui-accent-rgb)/0.4)] outline-none"
                                 placeholder="ex: PXT Fine"
                               />
                             </div>
@@ -3381,7 +3381,7 @@ function ProductForm({
                                 type="text"
                                 value={series}
                                 onChange={(e) => setSeries(e.target.value)}
-                                className="w-full px-3 py-2 rounded-xl text-xs bg-neutral-50 dark:bg-zinc-800 border border-neutral-300 dark:border-white/10 text-neutral-900 dark:text-white focus:ring-2 focus:ring-[#38E044]/40 outline-none"
+                                className="w-full px-3 py-2 rounded-xl text-xs bg-neutral-50 dark:bg-zinc-800 border border-neutral-300 dark:border-white/10 text-neutral-900 dark:text-white focus:ring-2 focus:ring-[color:rgb(var(--ui-accent-rgb)/0.4)] outline-none"
                                 placeholder="ex: PXT Fine Series"
                               />
                             </div>
@@ -3393,7 +3393,7 @@ function ProductForm({
                                 type="text"
                                 value={company}
                                 onChange={(e) => setCompany(e.target.value)}
-                                className="w-full px-3 py-2 rounded-xl text-xs bg-neutral-50 dark:bg-zinc-800 border border-neutral-300 dark:border-white/10 text-neutral-900 dark:text-white focus:ring-2 focus:ring-[#38E044]/40 outline-none"
+                                className="w-full px-3 py-2 rounded-xl text-xs bg-neutral-50 dark:bg-zinc-800 border border-neutral-300 dark:border-white/10 text-neutral-900 dark:text-white focus:ring-2 focus:ring-[color:rgb(var(--ui-accent-rgb)/0.4)] outline-none"
                                 placeholder="ex: PixiaTech"
                               />
                             </div>
@@ -3476,7 +3476,7 @@ function ProductForm({
                                       setCharacteristics(next);
                                     }}
                                     placeholder="Nom (ex: PIXEL PITCH)"
-                                    className="w-1/3 px-3 py-2 rounded-xl text-xs bg-neutral-50 dark:bg-zinc-800 border border-neutral-300 dark:border-white/10 text-neutral-900 dark:text-white focus:ring-2 focus:ring-[#38E044]/40 outline-none uppercase font-semibold"
+                                    className="w-1/3 px-3 py-2 rounded-xl text-xs bg-neutral-50 dark:bg-zinc-800 border border-neutral-300 dark:border-white/10 text-neutral-900 dark:text-white focus:ring-2 focus:ring-[color:rgb(var(--ui-accent-rgb)/0.4)] outline-none uppercase font-semibold"
                                   />
                                   <input
                                     type="text"
@@ -3487,7 +3487,7 @@ function ProductForm({
                                       setCharacteristics(next);
                                     }}
                                     placeholder="Valeur (ex: 1.2 – 3.1 mm)"
-                                    className="flex-1 px-3 py-2 rounded-xl text-xs bg-neutral-50 dark:bg-zinc-800 border border-neutral-300 dark:border-white/10 text-neutral-900 dark:text-white focus:ring-2 focus:ring-[#38E044]/40 outline-none"
+                                    className="flex-1 px-3 py-2 rounded-xl text-xs bg-neutral-50 dark:bg-zinc-800 border border-neutral-300 dark:border-white/10 text-neutral-900 dark:text-white focus:ring-2 focus:ring-[color:rgb(var(--ui-accent-rgb)/0.4)] outline-none"
                                   />
                                   <button
                                     type="button"
@@ -3503,7 +3503,7 @@ function ProductForm({
                             <button
                               type="button"
                               onClick={() => setCharacteristics((prev) => [...prev, { key: '', value: '' }])}
-                              className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#38E044] hover:bg-[#2fcb3c] text-black text-xs font-extrabold transition-all cursor-pointer shadow-sm active:scale-95"
+                              className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[color:var(--ui-accent)] hover:bg-[color:var(--ui-accent-hover)] text-black text-xs font-extrabold transition-all cursor-pointer shadow-sm active:scale-95"
                             >
                               <Plus className="w-3.5 h-3.5" />
                               <span>Ajouter une caractéristique</span>
@@ -3566,7 +3566,7 @@ function ProductForm({
                             <button
                               type="button"
                               onClick={() => setVariants((prev) => [...prev, { name: '', value: '', reference: '' }])}
-                              className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#38E044] hover:bg-[#2fcb3c] text-black text-xs font-extrabold transition-all cursor-pointer shadow-sm active:scale-95"
+                              className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[color:var(--ui-accent)] hover:bg-[color:var(--ui-accent-hover)] text-black text-xs font-extrabold transition-all cursor-pointer shadow-sm active:scale-95"
                             >
                               <Plus className="w-3.5 h-3.5" />
                               <span>Ajouter une variante</span>
@@ -3699,7 +3699,7 @@ function ProductForm({
                               <button
                                 type="button"
                                 onClick={() => setFieldwork((prev) => ({ ...prev, projects: [...(prev.projects || []), { title: '', location: '', pitch: '', year: '', image: '', caption: '' }] }))}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#38E044] hover:bg-[#2fcb3c] text-black text-xs font-extrabold transition-all cursor-pointer shadow-sm active:scale-95"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[color:var(--ui-accent)] hover:bg-[color:var(--ui-accent-hover)] text-black text-xs font-extrabold transition-all cursor-pointer shadow-sm active:scale-95"
                               >
                                 <Plus className="w-3.5 h-3.5" />
                                 <span>Ajouter un projet</span>
@@ -3891,7 +3891,7 @@ function ProductForm({
                   setNewVariantName('');
                   setShowAddVariantModal(true);
                 }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#38E044] hover:bg-[#2fcb3c] text-black text-xs font-extrabold transition-all cursor-pointer shadow-sm active:scale-95"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[color:var(--ui-accent)] hover:bg-[color:var(--ui-accent-hover)] text-black text-xs font-extrabold transition-all cursor-pointer shadow-sm active:scale-95"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Ajouter une variante</span>
@@ -3912,7 +3912,7 @@ function ProductForm({
                     setNewVariantName('');
                     setShowAddVariantModal(true);
                   }}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#38E044] hover:bg-[#2fcb3c] text-black text-xs font-extrabold transition-all cursor-pointer shadow-sm active:scale-95"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[color:var(--ui-accent)] hover:bg-[color:var(--ui-accent-hover)] text-black text-xs font-extrabold transition-all cursor-pointer shadow-sm active:scale-95"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Ajouter une variante</span>
@@ -4046,7 +4046,7 @@ function ProductForm({
                       }}
                       placeholder="ex. IL-FISS-IRWP1.2 Lite"
                       autoFocus
-                      className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-neutral-50 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white outline-none focus:ring-2 focus:ring-[#38E044]/50 transition-all"
+                      className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-neutral-50 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white outline-none focus:ring-2 focus:ring-[color:rgb(var(--ui-accent-rgb)/0.5)] transition-all"
                     />
                   </div>
                   <div className="flex items-center justify-end gap-2 pt-2">
@@ -4064,7 +4064,7 @@ function ProductForm({
                       type="button"
                       onClick={addVariant}
                       disabled={!newVariantName.trim()}
-                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-extrabold bg-[#38E044] hover:bg-[#2fcb3c] text-black transition-all cursor-pointer shadow-[0_0_12px_rgba(56,224,68,0.3)] disabled:opacity-50 disabled:pointer-events-none"
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-extrabold bg-[color:var(--ui-accent)] hover:bg-[color:var(--ui-accent-hover)] text-black transition-all cursor-pointer shadow-[0_0_12px_rgba(var(--ui-accent-rgb),0.3)] disabled:opacity-50 disabled:pointer-events-none"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       <span>Ajouter la variante</span>
@@ -4083,7 +4083,7 @@ function ProductForm({
               </span>
               <a
                 href="/admin/site-web/categories"
-                className="inline-flex items-center gap-1.5 ml-auto px-3 py-1.5 rounded-xl text-[11px] font-bold border border-neutral-300 dark:border-white/10 text-neutral-700 dark:text-neutral-200 hover:border-[#38E044]/60 hover:text-[#38E044] transition-colors"
+                className="inline-flex items-center gap-1.5 ml-auto px-3 py-1.5 rounded-xl text-[11px] font-bold border border-neutral-300 dark:border-white/10 text-neutral-700 dark:text-neutral-200 hover:border-[color:rgb(var(--ui-accent-rgb)/0.6)] hover:text-[color:var(--ui-accent)] transition-colors"
               >
                 <SlidersHorizontal className="h-3.5 w-3.5" />
                 Gérer les filtres (renommer / supprimer)
@@ -4131,7 +4131,7 @@ function ProductForm({
                                   onClick={() => toggleSel(type, c.id)}
                                   className={`px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all cursor-pointer border ${
                                     on
-                                      ? 'bg-[#38E044] text-black border-[#38E044] shadow-[0_0_12px_rgba(56,224,68,0.25)]'
+                                      ? 'bg-[color:var(--ui-accent)] text-black border-[color:var(--ui-accent)] shadow-[0_0_12px_rgba(var(--ui-accent-rgb),0.25)]'
                                       : 'bg-white dark:bg-zinc-800 text-neutral-700 dark:text-neutral-200 border-neutral-300 dark:border-white/10 hover:border-neutral-400'
                                   }`}
                                 >
@@ -4156,13 +4156,13 @@ function ProductForm({
                                   }
                                 }}
                                 placeholder={`Nouveau filtre ${label}…`}
-                                className="w-56 px-3 py-1.5 rounded-xl text-[11px] font-semibold bg-white dark:bg-zinc-800 text-neutral-900 dark:text-white border border-neutral-300 dark:border-white/10 focus:ring-2 focus:ring-[#38E044]/40 outline-none transition-all"
+                                className="w-56 px-3 py-1.5 rounded-xl text-[11px] font-semibold bg-white dark:bg-zinc-800 text-neutral-900 dark:text-white border border-neutral-300 dark:border-white/10 focus:ring-2 focus:ring-[color:rgb(var(--ui-accent-rgb)/0.4)] outline-none transition-all"
                               />
                               <button
                                 type="button"
                                 onClick={() => void addFilter(type, newFilterName)}
                                 disabled={categorySaving}
-                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-[11px] font-black bg-[#38E044] text-black hover:bg-[#4af257] transition-colors disabled:opacity-50 cursor-pointer"
+                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-[11px] font-black bg-[color:var(--ui-accent)] text-black hover:bg-[color:var(--ui-accent-hover)] transition-colors disabled:opacity-50 cursor-pointer"
                               >
                                 {categorySaving ? (
                                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -4189,7 +4189,7 @@ function ProductForm({
                                 setAddingGroup(type);
                                 setNewFilterName('');
                               }}
-                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-[11px] font-bold text-neutral-500 dark:text-neutral-400 border border-dashed border-neutral-300 dark:border-white/15 hover:text-[#38E044] hover:border-[#38E044]/60 transition-colors cursor-pointer"
+                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-[11px] font-bold text-neutral-500 dark:text-neutral-400 border border-dashed border-neutral-300 dark:border-white/15 hover:text-[color:var(--ui-accent)] hover:border-[color:rgb(var(--ui-accent-rgb)/0.6)] transition-colors cursor-pointer"
                             >
                               <Plus className="h-3.5 w-3.5" />
                               Ajouter un filtre {label}
@@ -4254,14 +4254,14 @@ function UploadZone({
       }}
       className={`flex flex-col items-center justify-center gap-1.5 px-4 py-6 rounded-2xl border-2 border-dashed cursor-pointer transition-all text-center select-none ${
         dragOver
-          ? 'border-[#38E044] bg-emerald-50 dark:bg-emerald-500/10'
-          : 'border-neutral-300 dark:border-white/15 hover:border-[#38E044]/60 hover:bg-neutral-50 dark:hover:bg-white/[0.03]'
+          ? 'border-[color:var(--ui-accent)] bg-emerald-50 dark:bg-emerald-500/10'
+          : 'border-neutral-300 dark:border-white/15 hover:border-[color:rgb(var(--ui-accent-rgb)/0.6)] hover:bg-neutral-50 dark:hover:bg-white/[0.03]'
       } ${disabled ? 'opacity-50 pointer-events-none' : ''}`}
     >
       {acceptsPdf ? (
-        <FileUp className={`w-6 h-6 ${dragOver ? 'text-[#38E044]' : 'text-neutral-400'}`} />
+        <FileUp className={`w-6 h-6 ${dragOver ? 'text-[color:var(--ui-accent)]' : 'text-neutral-400'}`} />
       ) : (
-        <Upload className={`w-6 h-6 ${dragOver ? 'text-[#38E044]' : 'text-neutral-400'}`} />
+        <Upload className={`w-6 h-6 ${dragOver ? 'text-[color:var(--ui-accent)]' : 'text-neutral-400'}`} />
       )}
       <span className="text-xs font-bold text-neutral-700 dark:text-neutral-200">{label}</span>
       {hint && <span className="text-[11px] text-neutral-400">{hint}</span>}
@@ -4287,7 +4287,7 @@ function SummaryGrid({ summary }: { summary: { label: string; value: string }[] 
           key={row.label}
           className="flex items-start gap-2.5 p-3 rounded-xl bg-neutral-50 dark:bg-white/[0.03] border border-neutral-200/70 dark:border-white/[0.06]"
         >
-          <CheckCircle2 className="w-4 h-4 text-[#2fcb3c] mt-0.5 shrink-0" />
+          <CheckCircle2 className="w-4 h-4 text-[color:var(--ui-accent-hover)] mt-0.5 shrink-0" />
           <div className="min-w-0">
             <div className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">{row.label}</div>
             <div className="text-xs font-semibold text-neutral-800 dark:text-neutral-100 truncate" title={row.value}>

@@ -101,7 +101,7 @@ export const DatasheetModal: React.FC<DatasheetModalProps> = ({
 
         {/* Datasheet Header */}
         <div className="border-b border-[#222] pb-6 mb-6">
-          <div className="flex items-center justify-between text-[10px] tracking-[0.22em] text-[#C3F910] uppercase font-mono mb-2">
+          <div className="flex items-center justify-between text-[10px] tracking-[0.22em] text-[color:var(--ui-accent)] uppercase font-mono mb-2">
             <span>{certifiedSheetText}</span>
             <span className="text-[#7a7a76]">{engineeringDeptText}</span>
           </div>
@@ -121,7 +121,7 @@ export const DatasheetModal: React.FC<DatasheetModalProps> = ({
             // enfants.
             <div key={`${group.label || 'grp'}::${groupIdx}`} className="border border-[#1f1f1f] bg-[#0e0e0d]">
               {group.label && (
-                <div className="bg-[#141413] px-4 py-2 border-b border-[#1f1f1f] text-[10.5px] tracking-[0.2em] font-bold text-[#C3F910] uppercase font-mono">
+                <div className="bg-[#141413] px-4 py-2 border-b border-[#1f1f1f] text-[10.5px] tracking-[0.2em] font-bold text-[color:var(--ui-accent)] uppercase font-mono">
                   {translateGroupLabel(group.label)}
                 </div>
               )}

@@ -38,8 +38,8 @@ function SpecRow({
         borderBottom: isLast ? 'none' : '1px solid var(--dark-line, #1f1f1f)',
         cursor: 'pointer',
         transition: 'all .25s ease',
-        background: hovered ? 'rgba(195, 249, 16, 0.06)' : 'transparent',
-        borderLeft: hovered ? '2px solid #C3F910' : '2px solid transparent',
+        background: hovered ? 'rgba(var(--ui-accent-rgb),0.06)' : 'transparent',
+        borderLeft: hovered ? '2px solid var(--ui-accent, #C3F910)' : '2px solid transparent',
         paddingLeft: hovered ? '14px' : '8px',
       }}
     >
@@ -47,7 +47,7 @@ function SpecRow({
         style={{
           fontSize: '13px',
           letterSpacing: '.14em',
-          color: hovered ? '#C3F910' : 'var(--dark-muted, #7a7a76)',
+          color: hovered ? 'var(--ui-accent, #C3F910)' : 'var(--dark-muted, #7a7a76)',
           transition: 'color .2s',
           fontWeight: hovered ? 700 : 500,
         }}
@@ -61,7 +61,7 @@ function SpecRow({
           color: hovered ? '#ffffff' : 'var(--dark-text, #f5f4f0)',
           transition: 'all .2s ease',
           transform: hovered ? 'translateX(4px)' : 'translateX(0)',
-          textShadow: hovered ? '0 0 12px rgba(195, 249, 16, 0.35)' : 'none',
+          textShadow: hovered ? '0 0 12px rgba(var(--ui-accent-rgb),0.35)' : 'none',
         }}
       >
         {val}
@@ -127,10 +127,10 @@ function SpecsList({
                 fontSize: '13px',
                 fontWeight: 700,
                 letterSpacing: '.08em',
-                color: '#C3F910',
-                borderBottom: '1px solid #C3F910',
+                color: 'var(--ui-accent, #C3F910)',
+                borderBottom: '1px solid var(--ui-accent, #C3F910)',
                 padding: '4px 10px',
-                background: linkHovered ? 'rgba(195, 249, 16, 0.15)' : 'transparent',
+                background: linkHovered ? 'rgba(var(--ui-accent-rgb),0.15)' : 'transparent',
                 borderRadius: '2px',
                 transition: 'all .2s ease',
                 textDecoration: 'none',
@@ -179,11 +179,11 @@ function ConfigCard({ num, title, desc }: { num: string; title: string; desc: st
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
-        borderTop: `2px solid ${hovered ? '#C3F910' : 'rgba(195, 249, 16, 0.25)'}`,
+        borderTop: `2px solid ${hovered ? 'var(--ui-accent, #C3F910)' : 'rgba(var(--ui-accent-rgb),0.25)'}`,
         paddingTop: '20px',
         transition: 'all .25s ease',
         cursor: 'default',
-        background: hovered ? 'rgba(195, 249, 16, 0.04)' : 'transparent',
+        background: hovered ? 'rgba(var(--ui-accent-rgb),0.04)' : 'transparent',
         padding: '20px 14px 16px',
         borderRadius: hovered ? '4px' : '0',
       }}
@@ -192,7 +192,7 @@ function ConfigCard({ num, title, desc }: { num: string; title: string; desc: st
         style={{
           fontSize: '11px',
           letterSpacing: '.2em',
-          color: '#C3F910',
+          color: 'var(--ui-accent, #C3F910)',
           marginBottom: '10px',
           fontWeight: 700,
         }}
@@ -302,7 +302,7 @@ export const DesignSection: React.FC<DesignSectionProps> = ({
           style={{
             fontSize: '11px',
             letterSpacing: '.24em',
-            color: '#C3F910',
+            color: 'var(--ui-accent, #C3F910)',
             marginBottom: '36px',
             textTransform: 'uppercase',
             fontWeight: 700,
@@ -339,13 +339,13 @@ export const DesignSection: React.FC<DesignSectionProps> = ({
             <line x1="230" y1="50" x2="230" y2="218.8" stroke="#252523" strokeWidth="0.6" strokeDasharray="3 3" />
             <line x1="80" y1="134.4" x2="380" y2="134.4" stroke="#252523" strokeWidth="0.6" strokeDasharray="3 3" />
 
-            {/* Active Highlighted Module in #C3F910 */}
-            <rect x="80" y="50" width="150" height="84.4" fill="rgba(195, 249, 16, 0.08)" stroke="#C3F910" strokeWidth="1.8" />
+            {/* Active Highlighted Module in var(--ui-accent, #C3F910) */}
+            <rect x="80" y="50" width="150" height="84.4" fill="rgba(var(--ui-accent-rgb),0.08)" stroke="var(--ui-accent, #C3F910)" strokeWidth="1.8" />
             {moduleArt && (
               <>
-                <line x1="155" y1="50" x2="155" y2="24" stroke="#C3F910" strokeWidth="1" />
-                <circle cx="155" cy="50" r="2.5" fill="#C3F910" />
-                <text x="145" y="16" fontSize="11" fill="#C3F910" fontWeight="700" letterSpacing="0.08em">
+                <line x1="155" y1="50" x2="155" y2="24" stroke="var(--ui-accent, #C3F910)" strokeWidth="1" />
+                <circle cx="155" cy="50" r="2.5" fill="var(--ui-accent, #C3F910)" />
+                <text x="145" y="16" fontSize="11" fill="var(--ui-accent, #C3F910)" fontWeight="700" letterSpacing="0.08em">
                   MODULE — {moduleArt}
                 </text>
               </>
@@ -362,15 +362,15 @@ export const DesignSection: React.FC<DesignSectionProps> = ({
             )}
 
             {/* Side View with Depth */}
-            <rect x="440" y="50" width="14.8" height="168.8" fill="rgba(195, 249, 16, 0.05)" stroke="#3A3A36" strokeWidth="1.2" />
-            <line x1="440" y1="50" x2="440" y2="218.8" stroke="#C3F910" strokeWidth="2.8" />
+            <rect x="440" y="50" width="14.8" height="168.8" fill="rgba(var(--ui-accent-rgb),0.05)" stroke="#3A3A36" strokeWidth="1.2" />
+            <line x1="440" y1="50" x2="440" y2="218.8" stroke="var(--ui-accent, #C3F910)" strokeWidth="2.8" />
             {depthArt && (
               <>
                 <line x1="440" y1="238.8" x2="454.8" y2="238.8" stroke="#4A4A46" strokeWidth="0.8" />
                 <line x1="440" y1="230.8" x2="440" y2="246.8" stroke="#4A4A46" strokeWidth="0.8" />
                 <line x1="454.8" y1="230.8" x2="454.8" y2="246.8" stroke="#4A4A46" strokeWidth="0.8" />
                 <text x="418" y="266.8" fontSize="11" fill="#C9C7C1" letterSpacing="0.08em">
-                  DEPTH — <tspan fill="#C3F910" fontWeight="700">{depthArt}</tspan>
+                  DEPTH — <tspan fill="var(--ui-accent, #C3F910)" fontWeight="700">{depthArt}</tspan>
                 </text>
               </>
             )}

@@ -95,8 +95,25 @@ export async function getStoredMegaMenu(): Promise<MegaMenu | null> {
 
 export async function saveStoredMegaMenu(menu: MegaMenu): Promise<MegaMenu> {
   const { adminDb } = getFirebaseAdmin();
-  const next: MegaMenu = { ...menu, updatedAt: new Date().toISOString() };
-  await adminDb.collection(SETTINGS_COLLECTION).doc(MEGA_MENU_SETTING_ID).set(next);
+  const docRef = adminDb.collection(SETTINGS_COLLECTION).doc(MEGA_MENU_SETTING_ID);
+  const snap = await docRef.get();
+  const existing = snap.exists ? (snap.data() as object) : {};
+
+  // Sauvegarde automatique horodatée avant toute écriture pour sécurité maximale
+  if (snap.exists) {
+    try {
+      const backupId = `mega_menu_backup_${new Date().toISOString().replace(/[:.]/g, '-')}`;
+      await adminDb.collection(SETTINGS_COLLECTION).doc(backupId).set({
+        ...existing,
+        _backedUpAt: new Date().toISOString(),
+      });
+    } catch (bErr) {
+      console.warn('[saveStoredMegaMenu] Note backup auto:', bErr);
+    }
+  }
+
+  const next: MegaMenu = { ...existing, ...menu, updatedAt: new Date().toISOString() };
+  await docRef.set(next);
   return next;
 }
 

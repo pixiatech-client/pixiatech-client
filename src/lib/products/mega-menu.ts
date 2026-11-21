@@ -5,9 +5,26 @@
 // le payload est réduit à une liste blanche de clés et rejeté sinon.
 // ============================================================================
 
-import { isValidSlug, type MegaMenu, type MegaMenuItem, type MegaMenuColumn } from './types';
+import {
+  isValidSlug,
+  type MegaMenu,
+  type MegaMenuItem,
+  type MegaMenuColumn,
+  type MainNavItem,
+  DEFAULT_MAIN_NAV_ITEMS,
+} from './types';
 
-const ALLOWED_MENU_KEYS = ['columns', 'updatedAt'];
+const ALLOWED_MENU_KEYS = [
+  'columns',
+  'updatedAt',
+  'headerMenuType',
+  'descriptionMode',
+  'globalMessageFr',
+  'globalMessageEn',
+  'mainNavItems',
+  'insightsSlug',
+  '_backupMetadata',
+];
 const ALLOWED_COLUMN_KEYS = ['id', 'titleEn', 'titleFr', 'items', 'descFr', 'descEn'];
 const ALLOWED_ITEM_KEYS = ['id', 'label', 'catalogSlug', 'productSlug', 'customUrl', 'customImg', 'visible', 'previewTitleFr', 'previewTitleEn', 'descFr', 'descEn', 'environment'];
 const PRODUCT_DATA_HINT =
@@ -26,6 +43,12 @@ export function generateId(prefix: string): string {
 
 export function emptyMegaMenu(): MegaMenu {
   return {
+    headerMenuType: 'mega',
+    descriptionMode: 'individual',
+    globalMessageFr: '',
+    globalMessageEn: '',
+    insightsSlug: 'nos-conseils',
+    mainNavItems: DEFAULT_MAIN_NAV_ITEMS,
     columns: [
       {
         id: generateId('col'),
@@ -138,24 +161,86 @@ function sanitizeColumn(raw: unknown, index: number): MegaMenuColumn {
  * Valide et normalise un payload de méga-menu. Jette une Error si le payload
  * est invalide ou contient des données produit embarquées.
  */
+function sanitizeMainNavItem(raw: unknown, index: number): MainNavItem {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    throw new Error('Element de navigation ' + (index + 1) + ' invalide.');
+  }
+  const item = raw as Record<string, unknown>;
+  const id = typeof item.id === 'string' && item.id.trim() ? item.id.trim() : generateId('nav');
+  const labelFr = str(item.labelFr, 'Element de navigation ' + id + ' : labelFr', false);
+  const labelEn = str(item.labelEn, 'Element de navigation ' + id + ' : labelEn', false);
+  const href = str(item.href, 'Element de navigation ' + id + ' : href', false);
+  const type: 'page' | 'anchor' | 'external' | 'custom' =
+    item.type === 'page' || item.type === 'anchor' || item.type === 'external' || item.type === 'custom'
+      ? item.type
+      : href.startsWith('#')
+        ? 'anchor'
+        : 'page';
+  const targetAnchor = typeof item.targetAnchor === 'string' && item.targetAnchor.trim()
+    ? item.targetAnchor.trim()
+    : type === 'anchor' && href.startsWith('#')
+      ? href
+      : undefined;
+
+  return {
+    id,
+    labelFr: labelFr || (labelEn ?? 'Menu'),
+    labelEn: labelEn || (labelFr ?? 'Menu'),
+    href: href || '/',
+    type,
+    ...(targetAnchor ? { targetAnchor } : {}),
+    target: item.target === '_blank' ? '_blank' : '_self',
+    order: typeof item.order === 'number' ? item.order : index + 1,
+    visibleOnHome: item.visibleOnHome !== false,
+    visibleOnInner: item.visibleOnInner !== false,
+    enabled: item.enabled !== false,
+  };
+}
+
 export function sanitizeMegaMenu(payload: unknown): MegaMenu {
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
-    throw new Error('Payload invalide : un objet méga-menu est attendu.');
+    throw new Error('Payload invalide : un objet mega-menu est attendu.');
   }
   const raw = payload as Record<string, unknown>;
   for (const key of Object.keys(raw)) {
     if (!ALLOWED_MENU_KEYS.includes(key)) {
-      throw new Error(`Méga-menu : clé « ${key} » non autorisée. ${PRODUCT_DATA_HINT}`);
+      throw new Error('Mega-menu : cle non autorisee : ' + key);
     }
   }
   const columnsRaw = raw.columns;
   if (!Array.isArray(columnsRaw)) {
-    throw new Error('Méga-menu invalide : « columns » doit être un tableau.');
+    throw new Error('Mega-menu invalide : columns doit etre un tableau.');
   }
   if (columnsRaw.length > MAX_COLUMNS) {
-    throw new Error(`Méga-menu invalide : trop de colonnes (max ${MAX_COLUMNS}).`);
+    throw new Error('Mega-menu invalide : trop de colonnes (max ' + MAX_COLUMNS + ').');
   }
-  return { columns: columnsRaw.map((rawCol, i) => sanitizeColumn(rawCol, i)) };
+
+  // Normalisation des colonnes (conservation stricte des items existants)
+  const columns = columnsRaw.map((rawCol, i) => sanitizeColumn(rawCol, i));
+
+  // Normalisation des elements de navigation principale
+  let mainNavItems: MainNavItem[];
+  if (Array.isArray(raw.mainNavItems) && raw.mainNavItems.length > 0) {
+    mainNavItems = raw.mainNavItems.map((item, i) => sanitizeMainNavItem(item, i));
+  } else {
+    mainNavItems = DEFAULT_MAIN_NAV_ITEMS;
+  }
+
+  const result: MegaMenu = {
+    columns,
+    headerMenuType: raw.headerMenuType === 'classic' ? 'classic' : 'mega',
+    descriptionMode: raw.descriptionMode === 'global' ? 'global' : 'individual',
+    globalMessageFr: typeof raw.globalMessageFr === 'string' ? raw.globalMessageFr.trim() : null,
+    globalMessageEn: typeof raw.globalMessageEn === 'string' ? raw.globalMessageEn.trim() : null,
+    insightsSlug: typeof raw.insightsSlug === 'string' && raw.insightsSlug.trim() ? raw.insightsSlug.trim() : 'nos-conseils',
+    mainNavItems,
+  };
+
+  if (typeof raw.updatedAt === 'string') {
+    result.updatedAt = raw.updatedAt;
+  }
+
+  return result;
 }
 
 /** Récap pour la boîte de confirmation de réinitialisation. */

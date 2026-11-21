@@ -97,7 +97,7 @@
 #pixia-web .btn-ink:hover,
 #pixia-web a[data-text-key='primaryCta']:hover {
   transform: translateY(-2px);
-  box-shadow: 0 0 28px rgba(195, 249, 16, 0.42),
+  box-shadow: 0 0 28px rgba(var(--accent-rgb, 195, 249, 16), 0.42),
               0 8px 24px rgba(0, 0, 0, 0.3) !important;
 }
 
@@ -105,7 +105,7 @@
 #pixia-web .btn-outline:hover,
 #pixia-web a[data-text-key='secondaryCta']:hover {
   transform: translateY(-2px);
-  box-shadow: 0 0 20px rgba(195, 249, 16, 0.22);
+  box-shadow: 0 0 20px rgba(var(--accent-rgb, 195, 249, 16), 0.22);
 }
 
 /* ---- 3. Cartes de Produits & Marchés : Lévitation Aérienne ---- */
@@ -123,8 +123,8 @@
 #pixia-web .article-card:hover {
   transform: translateY(-6px);
   box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.55),
-              0 0 22px rgba(195, 249, 16, 0.14) !important;
-  border-color: rgba(195, 249, 16, 0.35) !important;
+              0 0 22px rgba(var(--accent-rgb, 195, 249, 16), 0.14) !important;
+  border-color: rgba(var(--accent-rgb, 195, 249, 16), 0.35) !important;
 }
 
 #pixia-web .card .card-media img,
@@ -199,7 +199,7 @@
   border-color: rgba(var(--accent-rgb, 195, 249, 16), 0.65) !important;
   background-color: rgba(var(--accent-rgb, 195, 249, 16), 0.07) !important;
   box-shadow: 0 16px 32px -8px rgba(0, 0, 0, 0.6),
-              0 0 20px rgba(195, 249, 16, 0.18) !important;
+              0 0 20px rgba(var(--accent-rgb, 195, 249, 16), 0.18) !important;
 }
 
 /* Formulaire Contact : Inputs lissés et focalisés */
@@ -235,7 +235,7 @@
 }
 #pixia-web .hero-dot:hover:not(.on) {
   transform: scale(1.05);
-  border-color: rgba(195, 249, 16, 0.7) !important;
+  border-color: rgba(var(--accent-rgb, 195, 249, 16), 0.7) !important;
 }
 
 /* ---- 5. Liens de Navigation avec Underline Morphing ---- */

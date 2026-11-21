@@ -100,7 +100,7 @@ export const FeaturesSection: React.FC<FeaturesSectionProps> = ({ lang = 'FR', d
           style={{
             fontSize: '11px',
             letterSpacing: '.24em',
-            color: '#C3F910',
+            color: 'var(--ui-accent, #C3F910)',
             marginBottom: '36px',
             textTransform: 'uppercase',
             fontWeight: 700,
@@ -166,7 +166,7 @@ export const FeaturesSection: React.FC<FeaturesSectionProps> = ({ lang = 'FR', d
               {activeFeature && (
               <div className="fstage-foot">
                 <div className="fstage-caption">
-                  <span style={{ color: '#C3F910', fontWeight: 700, letterSpacing: '.24em' }}>
+                  <span style={{ color: 'var(--ui-accent, #C3F910)', fontWeight: 700, letterSpacing: '.24em' }}>
                     {activeFeature.indexStr}
                   </span>
                   <span key={activeFeature.title} className="fstage-cap-in" style={{ color: '#ffffff' }}>
@@ -188,7 +188,7 @@ export const FeaturesSection: React.FC<FeaturesSectionProps> = ({ lang = 'FR', d
                         className={`fstage-seg ${isActive ? 'on' : ''}`}
                         style={{ flex: isActive ? 2.4 : 1 }}
                       >
-                        <i style={{ background: isActive ? '#C3F910' : undefined }} />
+                        <i style={{ background: isActive ? 'var(--ui-accent, #C3F910)' : undefined }} />
                       </button>
                     );
                   })}
@@ -228,7 +228,7 @@ export const FeaturesSection: React.FC<FeaturesSectionProps> = ({ lang = 'FR', d
                     <div className="fstage-step-meta">
                       <span
                         style={{
-                          color: '#C3F910',
+                          color: 'var(--ui-accent, #C3F910)',
                           fontWeight: 700,
                           fontSize: '12px',
                           letterSpacing: '.2em',
@@ -239,13 +239,13 @@ export const FeaturesSection: React.FC<FeaturesSectionProps> = ({ lang = 'FR', d
                       <span
                         className="fstage-step-line"
                         style={{
-                          background: isActive ? '#C3F910' : undefined,
-                          boxShadow: isActive ? '0 0 10px rgba(195, 249, 16, 0.5)' : 'none',
+                          background: isActive ? 'var(--ui-accent, #C3F910)' : undefined,
+                          boxShadow: isActive ? '0 0 10px rgba(var(--ui-accent-rgb),0.5)' : 'none',
                         }}
                       />
                       <span
                         style={{
-                          color: isActive ? '#C3F910' : undefined,
+                          color: isActive ? 'var(--ui-accent, #C3F910)' : undefined,
                           fontWeight: isActive ? 600 : 400,
                           transition: 'color .3s',
                         }}

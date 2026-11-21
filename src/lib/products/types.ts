@@ -520,9 +520,145 @@ export interface MegaMenuColumn {
   items: MegaMenuItem[];
 }
 
+export interface MainNavItem {
+  id: string;
+  labelFr: string;
+  labelEn: string;
+  /** Destination : page interne ('/products'), ancre ('#markets'), externe, etc. */
+  href: string;
+  /** Type d'élément de navigation */
+  type: 'page' | 'anchor' | 'external' | 'custom';
+  /** Ancre One Page cible si type === 'anchor' (ex: '#markets', '#projects', '#technology', '#manifesto') */
+  targetAnchor?: string;
+  /** Cible d'ouverture */
+  target?: '_self' | '_blank';
+  order: number;
+  /** Visibilité sur la page d'accueil One Page */
+  visibleOnHome: boolean;
+  /** Visibilité sur les pages intérieures (Contact, Nos conseils, fiches produits, etc.) */
+  visibleOnInner: boolean;
+  /** Actif */
+  enabled?: boolean;
+}
+
+export const DEFAULT_MAIN_NAV_ITEMS: MainNavItem[] = [
+  {
+    id: 'nav-home',
+    labelFr: 'Accueil',
+    labelEn: 'Home',
+    href: '/',
+    type: 'page',
+    order: 1,
+    visibleOnHome: true,
+    visibleOnInner: true,
+    enabled: true,
+  },
+  {
+    id: 'nav-products',
+    labelFr: 'Produits',
+    labelEn: 'Products',
+    href: '/products',
+    type: 'page',
+    order: 2,
+    visibleOnHome: true,
+    visibleOnInner: true,
+    enabled: true,
+  },
+  {
+    id: 'nav-markets',
+    labelFr: 'Marchés',
+    labelEn: 'Markets',
+    href: '#markets',
+    targetAnchor: '#markets',
+    type: 'anchor',
+    order: 3,
+    visibleOnHome: true,
+    visibleOnInner: false,
+    enabled: true,
+  },
+  {
+    id: 'nav-projects',
+    labelFr: 'Projets',
+    labelEn: 'Projects',
+    href: '#projects',
+    targetAnchor: '#projects',
+    type: 'anchor',
+    order: 4,
+    visibleOnHome: true,
+    visibleOnInner: false,
+    enabled: true,
+  },
+  {
+    id: 'nav-technology',
+    labelFr: 'Technologie',
+    labelEn: 'Technology',
+    href: '#technology',
+    targetAnchor: '#technology',
+    type: 'anchor',
+    order: 5,
+    visibleOnHome: true,
+    visibleOnInner: false,
+    enabled: true,
+  },
+  {
+    id: 'nav-manifesto',
+    labelFr: 'À propos',
+    labelEn: 'About',
+    href: '#manifesto',
+    targetAnchor: '#manifesto',
+    type: 'anchor',
+    order: 6,
+    visibleOnHome: true,
+    visibleOnInner: false,
+    enabled: true,
+  },
+  {
+    id: 'nav-insights',
+    labelFr: 'Nos conseils',
+    labelEn: 'Insights',
+    href: '/nos-conseils',
+    type: 'page',
+    order: 7,
+    visibleOnHome: true,
+    visibleOnInner: true,
+    enabled: true,
+  },
+  {
+    id: 'nav-contact',
+    labelFr: 'Contact',
+    labelEn: 'Contact',
+    href: '/contact',
+    type: 'page',
+    order: 8,
+    visibleOnHome: true,
+    visibleOnInner: true,
+    enabled: true,
+  },
+];
+
 export interface MegaMenu {
   columns: MegaMenuColumn[];
   updatedAt?: string;
+  /**
+   * Type de menu actif dans le header :
+   * - 'mega' : navigation standard avec ouverture du méga-menu sur « Produits »
+   * - 'classic' : navigation standard où « Produits » est un lien classique direct
+   */
+  headerMenuType?: 'classic' | 'mega';
+  /**
+   * Mode d'affichage des descriptions dans le panneau de droite du méga-menu :
+   * - 'global' : Message global fixe permanent (switch activé)
+   * - 'individual' : Description individuelle selon le produit survolé (switch désactivé)
+   */
+  descriptionMode?: 'global' | 'individual';
+  globalMessageFr?: string | null;
+  globalMessageEn?: string | null;
+  /** Liens centralisés du menu principal */
+  mainNavItems?: MainNavItem[];
+  /** Slug configurable de la page Nos conseils (ex: 'nos-conseils') */
+  insightsSlug?: string | null;
+  /** Préservation de tous champs additionnels / inconnus */
+  [key: string]: unknown;
 }
 
 // ---------------------------------------------------------------------------

@@ -193,8 +193,11 @@ export async function getMegaMenu(): Promise<MegaMenu | null> {
 }
 
 export async function saveMegaMenu(menu: MegaMenu): Promise<MegaMenu> {
-  const next: MegaMenu = { ...menu, updatedAt: nowISO() };
-  await setDoc(doc(firestore, 'settings', MEGA_MENU_SETTING_ID), next);
+  const ref = doc(firestore, 'settings', MEGA_MENU_SETTING_ID);
+  const snap = await getDoc(ref);
+  const existing = snap.exists() ? (snap.data() as object) : {};
+  const next: MegaMenu = { ...existing, ...menu, updatedAt: nowISO() };
+  await setDoc(ref, next);
   return next;
 }
 

@@ -720,10 +720,10 @@
     "logout": "Déconnexion",
     "switchLanguage": "Passer en Français",
     "floatingCalculator": "Calculatrice",
-      "fullscreen": {
-        "enter": "Plein écran",
-        "exit": "Quitter le plein écran"
-      },
+    "fullscreen": {
+      "enter": "Plein écran",
+      "exit": "Quitter le plein écran"
+    },
     "about": {
       "title": "À propos",
       "subtitle": "Version, build et mise à jour de l'application.",
@@ -793,7 +793,7 @@
       "moduleButton": "PIXIATECH SITE WEB",
       "backToAdmin": "PIXIATECH ADMIN",
       "navDashboard": "Tableau de bord",
-      "navMenu": "Menu",
+      "navMenu": "Gestion des menus",
       "navContact": "Contact",
       "navProduits": "Produits",
       "navCategories": "Catégories",

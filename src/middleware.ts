@@ -100,6 +100,10 @@ export async function middleware(request: NextRequest) {
   // Sur le domaine vitrine (pixiatech.com), si une URL contient explicitement /web,
   // on la normalise vers l'URL propre sans /web visible.
   if (isWebHost) {
+    // Redirection directe vers l'application pour le configurateur guidé
+    if (pathname === '/step-one' || pathname === '/step1') {
+      return NextResponse.redirect('https://app.pixiatech.com/?step=1');
+    }
     if (pathname === '/web' || pathname === '/web/') {
       return NextResponse.redirect(new URL('/' + request.nextUrl.search, baseUrl));
     }

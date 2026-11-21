@@ -30,7 +30,7 @@ export async function generateMetadata({
         "Contactez l'équipe PIXIATECH pour vos projets d'écrans LED, devis et solutions visuelles sur-mesure.",
     };
   }
-  if (slug?.[0] === 'insights') {
+  if (slug?.[0] === 'insights' || slug?.[0] === 'nos-conseils') {
     if (slug?.[1]) {
       const article = (await getArticle(slug[1])) || getInsightArticle(slug[1]);
       if (article) {
@@ -69,7 +69,8 @@ export default async function WebSlugPage({
   const { slug } = await params;
   const first = slug?.[0];
 
-  if (first === 'insights') {
+  // Support des deux slugs : insights (ancien, rétrocompat) + nos-conseils (nouveau)
+  if (first === 'insights' || first === 'nos-conseils') {
     if (slug?.[1]) {
       const article = (await getArticle(slug[1])) || getInsightArticle(slug[1]);
       if (!article) {

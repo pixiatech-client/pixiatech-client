@@ -205,7 +205,8 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
       pathname.startsWith('/products') ||
       pathname.startsWith('/product/')
       ? 'products'
-      : pathname.startsWith('/web/insights') || pathname.startsWith('/insights')
+      : pathname.startsWith('/web/insights') || pathname.startsWith('/insights') ||
+        pathname.startsWith('/web/nos-conseils') || pathname.startsWith('/nos-conseils')
         ? 'insights'
         : pathname.startsWith('/web/contact') || pathname.startsWith('/contact')
           ? 'contact'
@@ -357,7 +358,13 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
   useEffect(() => setPreviewImgFailed(false), [previewImgRaw]);
   const previewImg = previewImgRaw && !previewImgFailed ? previewImgRaw : null;
   const previewPitch = preview?.legacy?.pitch ?? '';
-  const previewDesc = activeLang === 'FR' ? preview?.descFr ?? '' : preview?.descEn ?? '';
+  const isGlobalDesc = menu?.descriptionMode === 'global';
+  const globalDesc = activeLang === 'FR' ? menu?.globalMessageFr : menu?.globalMessageEn;
+  const previewDesc = (isGlobalDesc && globalDesc?.trim())
+    ? globalDesc.trim()
+    : (activeLang === 'FR' ? preview?.descFr ?? '' : preview?.descEn ?? '');
+  const isClassicMenu = menu?.headerMenuType === 'classic';
+  const insightsSlug = menu?.insightsSlug?.trim() || 'nos-conseils';
 
   const navigateTo = (target: { clickable: boolean; productSlug: string | null; customUrl?: string | null }) => {
     if (!target.clickable) return;
@@ -495,8 +502,42 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
           }
         }
       } else {
-        const y = window.scrollY || 0;
-        if (y < 200) {
+        // Aucune <section> détectée : scan DOM réel sous le centre du header
+        // pour détecter la couleur de fond de la page (pages intérieures, main, div…)
+        const probeX = typeof window !== 'undefined' ? window.innerWidth / 2 : 0;
+        let cur: HTMLElement | null = null;
+        try {
+          cur = document.elementFromPoint(probeX, probeY) as HTMLElement | null;
+        } catch {
+          cur = null;
+        }
+        // Traverser vers le haut jusqu'à trouver une couleur de fond non transparente
+        let found = false;
+        while (cur && cur !== document.documentElement && cur !== document.body) {
+          if (headerRootRef.current && headerRootRef.current.contains(cur)) {
+            cur = cur.parentElement;
+            continue;
+          }
+          const bg = window.getComputedStyle(cur).backgroundColor;
+          if (bg && bg !== 'transparent' && bg !== 'rgba(0, 0, 0, 0)') {
+            const m = bg.match(/\d+/g);
+            if (m && m.length >= 3) {
+              const r = parseInt(m[0], 10);
+              const g = parseInt(m[1], 10);
+              const b = parseInt(m[2], 10);
+              const a = m[3] !== undefined ? parseFloat(m[3]) : 1;
+              if (a > 0.4) {
+                const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+                light = lum > 140;
+                found = true;
+                break;
+              }
+            }
+          }
+          cur = cur.parentElement;
+        }
+        // Si toujours rien de concluant, laisser le thème sombre (défaut)
+        if (!found) {
           light = false;
         }
       }
@@ -519,7 +560,7 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
       window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('resize', handleScroll);
     };
-  }, [scrolled, megaOpen, forceSolidDark, mobileMenuOpen]);
+  }, [scrolled, megaOpen, forceSolidDark, mobileMenuOpen, pathname]);
 
   const isLight = isLightMode && !forceSolidDark && !megaOpen;
   const isDarkBar = forceSolidDark || scrolled || megaOpen;
@@ -692,17 +733,30 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
               {activeLang === 'FR' ? 'ACCUEIL' : 'HOME'}
             </a>
 
-            {/* Products trigger: hover opens Mega Menu */}
-            <span
-              onMouseEnter={() => setMegaOpen(true)}
-              onClick={() => setMegaOpen((prev) => !prev)}
-              // `megaOpen` n'est PAS un etat d'onglet : ouvrir le menu au survol
-              // sur /web/contact ne doit pas allumer PRODUITS. Seul le chemin
-              // decide de l'onglet actif.
-              className={`pxt-nav-link ${routeKey === 'products' ? 'active' : ''}`}
-            >
-              {activeLang === 'FR' ? 'PRODUITS' : 'PRODUCTS'} ▾
-            </span>
+            {/* Products trigger: hover opens Mega Menu if mode is 'mega', or direct link if 'classic' */}
+            {isClassicMenu ? (
+              <a
+                href={webLink('/products')}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setMegaOpen(false);
+                  setMobileMenuOpen(false);
+                  router.push(webLink('/products'));
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className={`pxt-nav-link ${routeKey === 'products' ? 'active' : ''}`}
+              >
+                {activeLang === 'FR' ? 'PRODUITS' : 'PRODUCTS'}
+              </a>
+            ) : (
+              <span
+                onMouseEnter={() => setMegaOpen(true)}
+                onClick={() => setMegaOpen((prev) => !prev)}
+                className={`pxt-nav-link ${routeKey === 'products' ? 'active' : ''}`}
+              >
+                {activeLang === 'FR' ? 'PRODUITS' : 'PRODUCTS'} ▾
+              </span>
+            )}
 
             {/* Navigation interne de la FICHE produit — ancre de section de la
                 page courante. Rendue seulement sur /web/product/*, et seulement
@@ -776,17 +830,17 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
             )}
 
             <a
-              href={webLink('/insights')}
+              href={webLink('/' + insightsSlug)}
               onClick={(e) => {
                 e.preventDefault();
                 setMegaOpen(false);
                 setMobileMenuOpen(false);
-                router.push(webLink('/insights'));
+                router.push(webLink('/' + insightsSlug));
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
               className={`pxt-nav-link ${routeKey === 'insights' ? 'active' : ''}`}
             >
-              {activeLang === 'FR' ? 'RESSOURCES' : 'RESOURCES'}
+              {activeLang === 'FR' ? 'NOS CONSEILS' : 'INSIGHTS'}
             </a>
 
             <a
@@ -1669,11 +1723,11 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                 )}
 
                 <a
-                  href={webLink('/insights')}
+                  href={webLink('/' + insightsSlug)}
                   onClick={(e) => {
                     e.preventDefault();
                     setMobileMenuOpen(false);
-                    router.push(webLink('/insights'));
+                    router.push(webLink('/' + insightsSlug));
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                   }}
                   style={{
@@ -1687,7 +1741,7 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                     textDecoration: 'none',
                   }}
                 >
-                  {activeLang === 'FR' ? 'RESSOURCES' : 'RESOURCES'}
+                  {activeLang === 'FR' ? 'NOS CONSEILS' : 'INSIGHTS'}
                 </a>
 
                 <a

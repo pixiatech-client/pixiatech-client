@@ -48,6 +48,15 @@ export function deriveThemeTokens(hex: string): Record<string, string> {
     '--accent-muted': `rgba(${r}, ${g}, ${b}, 0.15)`,
     '--accent-border': `rgba(${r}, ${g}, ${b}, 0.4)`,
     '--accent-glow': `rgba(${r}, ${g}, ${b}, 0.35)`,
+    // Miroir de `theme-tokens.ts` (source unique côté serveur) : le panneau
+    // applique ces tokens en direct pour un retour visuel immédiat.
+    '--ui-accent': cleanHex,
+    '--ui-accent-rgb': `${r}, ${g}, ${b}`,
+    '--ui-accent-hover': hoverHex,
+    '--ui-accent-active': activeHex,
+    '--ui-accent-muted': `rgba(${r}, ${g}, ${b}, 0.15)`,
+    '--ui-accent-border': `rgba(${r}, ${g}, ${b}, 0.4)`,
+    '--ui-accent-glow': `rgba(${r}, ${g}, ${b}, 0.35)`,
   };
 }
 
@@ -98,6 +107,13 @@ export function applyThemeTokens(hex: string): void {
       --accent-muted: ${tokens['--accent-muted']} !important;
       --accent-border: ${tokens['--accent-border']} !important;
       --accent-glow: ${tokens['--accent-glow']} !important;
+      --ui-accent: ${tokens['--ui-accent']} !important;
+      --ui-accent-rgb: ${tokens['--ui-accent-rgb']} !important;
+      --ui-accent-hover: ${tokens['--ui-accent-hover']} !important;
+      --ui-accent-active: ${tokens['--ui-accent-active']} !important;
+      --ui-accent-muted: ${tokens['--ui-accent-muted']} !important;
+      --ui-accent-border: ${tokens['--ui-accent-border']} !important;
+      --ui-accent-glow: ${tokens['--ui-accent-glow']} !important;
       --pxt-nav-hover: ${color} !important;
       --pxt-nav-active: ${color} !important;
     }

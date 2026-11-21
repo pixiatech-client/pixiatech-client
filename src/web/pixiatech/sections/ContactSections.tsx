@@ -130,7 +130,7 @@ const CONTACT_CSS = `
   border-color: var(--accent, #C3F910);
   color: #0a0a0a;
 }
-.ct-chip[aria-pressed='true']:hover { background: #d4ff2e; }
+.ct-chip[aria-pressed='true']:hover { background: var(--accent-hover, #b0e20e); }
 .ct-chip:active { transform: scale(.985); }
 .ct-chip:focus-visible {
   outline: 2px solid var(--accent, #C3F910);
@@ -222,8 +222,8 @@ const CONTACT_CSS = `
   color: #0a0a0a;
 }
 .ct-btn-solid:hover {
-  background: #d4ff2e;
-  border-color: #d4ff2e;
+  background: var(--accent-hover, #b0e20e);
+  border-color: var(--accent-hover, #b0e20e);
   box-shadow: 0 0 0 4px rgba(var(--accent-rgb, 195, 249, 16), .26);
 }
 .ct-btn-solid:disabled {

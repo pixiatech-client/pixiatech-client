@@ -1,0 +1,61 @@
+{
+  "columns": [
+    {
+      "titleEn": "LOCATION",
+      "id": "col-992849de-8bcc-406a-840b-b88e247966d6",
+      "items": [
+        {
+          "visible": true,
+          "id": "item-b2e0fe88-4e09-4cc6-8be0-a5f7e686ff63",
+          "productSlug": "pxtflex",
+          "label": "PXT FLEX",
+          "catalogSlug": null
+        },
+        {
+          "label": "PXT ÉCLAIR",
+          "visible": true,
+          "catalogSlug": null,
+          "productSlug": "pxteclair",
+          "id": "item-e3de822b-812c-4682-b65b-62dc9a8d7a8f"
+        }
+      ],
+      "titleFr": "LOCATION D’ÉCRANS GÉANTS"
+    },
+    {
+      "items": [
+        {
+          "visible": true,
+          "catalogSlug": null,
+          "productSlug": "pxt-seg",
+          "id": "item-70d3ca64-aa1f-457e-9716-503c4b57b9a9",
+          "label": "PXT SEG"
+        },
+        {
+          "label": "Nouvel élément",
+          "productSlug": null,
+          "visible": true,
+          "catalogSlug": null,
+          "id": "item-87002fb5-6a1d-440d-9742-804ec40ba824"
+        }
+      ],
+      "titleFr": "LOCATION CAISSONS LUMINEUX ANIMÉS",
+      "id": "col-57582ec0-8f4d-4cc3-ba0f-ad35154e2ba8",
+      "titleEn": "LOCATION"
+    },
+    {
+      "titleFr": "NOUVELLE COLONNE",
+      "id": "col-ab38aea6-6862-492b-a6fe-e3412dfab490",
+      "items": [
+        {
+          "label": "PXT FLEX",
+          "productSlug": "pxtflex",
+          "id": "item-27edebc0-0ab3-4158-b69a-8cfa24315769",
+          "catalogSlug": null,
+          "visible": true
+        }
+      ],
+      "titleEn": "aaaaaaa"
+    }
+  ],
+  "updatedAt": "2026-11-20T23:27:19.384Z"
+}

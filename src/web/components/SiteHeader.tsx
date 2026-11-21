@@ -72,7 +72,7 @@ export const SiteHeader: React.FC<SiteHeaderProps> = ({
                 transition: 'height 0.35s ease',
               }}
             />
-            <span className="w-1.5 h-1.5 bg-[#C3F910] rounded-full shadow-[0_0_8px_#C3F910] shrink-0" />
+            <span className="w-1.5 h-1.5 bg-[color:var(--ui-accent)] rounded-full shadow-[0_0_8px_var(--ui-accent, #C3F910)] shrink-0" />
           </div>
         </a>
 
@@ -165,7 +165,7 @@ export const SiteHeader: React.FC<SiteHeaderProps> = ({
                 setMobileMenuOpen(false);
                 onOpenConsultation();
               }}
-              className="w-full text-center py-3 bg-[#C3F910] text-black tracking-[0.1em] font-bold"
+              className="w-full text-center py-3 bg-[color:var(--ui-accent)] text-black tracking-[0.1em] font-bold"
             >
               {t.requestConsultation}
             </button>

@@ -24,6 +24,11 @@ export default async function StepPage(props: {
     redirect(`/quote/verify?${query.toString()}`);
   }
 
+  // step-one / step1 : alias legacy → ouvre le Wizard directement à l'étape 1
+  if (stepName === 'step-one' || stepName === 'step1') {
+    redirect('/?step=1');
+  }
+
   // All named step paths redirect to root — everything stays at /
   if (stepName) {
     redirect('/');
