@@ -22,6 +22,7 @@ import {
   Star as StarIcon,
   FileUp,
   FileCheck,
+  FileDown,
   X,
   Sparkles,
   SlidersHorizontal,
@@ -832,6 +833,20 @@ function ProductList({
    */
   const [statusPending, setStatusPending] = useState<Record<string, boolean>>({});
   const [unpublishAsk, setUnpublishAsk] = useState<string | null>(null);
+  const [exportingSlug, setExportingSlug] = useState<string | null>(null);
+
+  const handleDownloadPdf = async (product: Product) => {
+    try {
+      setExportingSlug(product.slug);
+      const { exportProductToPdf } = await import('@/lib/products/export-product-pdf');
+      await exportProductToPdf(product, { lang: 'FR' });
+    } catch (err) {
+      console.error('Erreur export PDF:', err);
+      toast.error('Erreur lors du téléchargement de la fiche technique PDF');
+    } finally {
+      setExportingSlug(null);
+    }
+  };
 
 /**
    * Écrit le statut d'UN produit et renvoie `false` en cas d'échec.
@@ -1391,6 +1406,20 @@ return (
                         </td>
                         <td className="p-4 text-right">
                           <div className="inline-flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => void handleDownloadPdf(p)}
+                              disabled={exportingSlug === p.slug}
+                              className="p-2 rounded-xl text-neutral-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-500/10 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-wait"
+                              title="Télécharger la fiche technique PDF"
+                              aria-label={`Télécharger la fiche technique PDF de « ${p.name} »`}
+                            >
+                              {exportingSlug === p.slug ? (
+                                <Loader2 className="w-4 h-4 animate-spin text-amber-500" />
+                              ) : (
+                                <FileDown className="w-4 h-4" />
+                              )}
+                            </button>
                             <a
                               href={viewHref}
                               target="_blank"
@@ -2642,6 +2671,47 @@ function ProductForm({
     }
   };
 
+  const [exportingPdf, setExportingPdf] = useState(false);
+
+  const handleDownloadPdf = async () => {
+    if (!existing) return;
+    try {
+      setExportingPdf(true);
+      const currentProduct: Product = {
+        ...existing,
+        name: name.trim() || existing.name,
+        slug: (isSlugManuallyEdited ? customSlug : existing.slug).trim() || existing.slug,
+        status,
+        series,
+        company,
+        environment,
+        sellingModes,
+        characteristics,
+        variants,
+        fieldwork,
+        buttons,
+        description,
+        seo,
+        specs: {
+          ...(existing.specs || {}),
+          groups: specGroups,
+          models,
+        },
+        media: {
+          ...(existing.media || {}),
+          photos: mediaPhotos,
+        },
+      };
+      const { exportProductToPdf } = await import('@/lib/products/export-product-pdf');
+      await exportProductToPdf(currentProduct, { lang: 'FR' });
+    } catch (err) {
+      console.error('Erreur export PDF:', err);
+      toast.error('Erreur lors du téléchargement de la fiche technique');
+    } finally {
+      setExportingPdf(false);
+    }
+  };
+
   const headerTitle = isNew ? 'Nouveau produit' : `Éditer — ${existing.name}`;
   const headerSubtitle = isNew
     ? 'Créez une fiche produit à partir d’un PDF technique.'
@@ -2701,6 +2771,22 @@ function ProductForm({
             </button>
           ) : (
             <>
+              {existing && (
+                <button
+                  type="button"
+                  onClick={() => void handleDownloadPdf()}
+                  disabled={exportingPdf || saving || uploading}
+                  className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-600 dark:text-amber-400 text-xs font-bold border border-amber-500/30 transition-all cursor-pointer shadow-sm active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
+                  title="Télécharger la fiche technique au format PDF"
+                >
+                  {exportingPdf ? (
+                    <Loader2 className="w-4 h-4 animate-spin text-amber-500" />
+                  ) : (
+                    <FileDown className="w-4 h-4" />
+                  )}
+                  <span>{exportingPdf ? 'Génération…' : 'Télécharger en PDF'}</span>
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => void save(status === 'published' ? 'draft' : 'published')}
