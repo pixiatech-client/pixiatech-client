@@ -332,7 +332,7 @@ export const ThemePanel: React.FC<ThemePanelProps> = ({ onClose }) => {
       data-cms-ui
       style={{
         position: 'fixed',
-        top: 'calc(var(--admin-bar-h, 42px) + 8px)',
+        top: 'calc(var(--admin-bar-h, 0px) + var(--preview-bar-h, 0px) + var(--cms-section-bar-h, 0px) + 8px)',
         right: 16,
         zIndex: 350,
         width: 310,
@@ -382,7 +382,7 @@ export const ThemePanel: React.FC<ThemePanelProps> = ({ onClose }) => {
               onChange={(e) => handleHexChange(e.target.value)}
               placeholder="#C3F910"
               maxLength={7}
-              className="flex-1 bg-[#141412] border border-[#262624] focus:border-[#C3F910] rounded-lg px-3 py-2 text-xs font-mono font-bold text-white focus:outline-none uppercase tracking-wider"
+              className="flex-1 bg-[#141412] border border-[#262624] focus:border-[color:var(--ui-accent)] rounded-lg px-3 py-2 text-xs font-mono font-bold text-white focus:outline-none uppercase tracking-wider"
             />
           </div>
         </div>

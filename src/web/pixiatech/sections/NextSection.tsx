@@ -49,7 +49,7 @@ export const NextSection: React.FC<NextSectionProps> = ({ onOpenConsultation, la
             href="#hero"
             className="block border p-8 transition-colors duration-300"
             style={{
-              borderColor: hovCard1 ? 'var(--accent, #C3F910)' : '#1f1f1f',
+              borderColor: hovCard1 ? 'var(--accent, var(--ui-accent))' : '#1f1f1f',
             }}
             onMouseEnter={() => setHovCard1(true)}
             onMouseLeave={() => setHovCard1(false)}
@@ -57,7 +57,7 @@ export const NextSection: React.FC<NextSectionProps> = ({ onOpenConsultation, la
             <div className="text-[10.5px] tracking-[0.2em] text-[#7a7a76] mb-3.5 uppercase font-mono">{t.prevSeries}</div>
             <div
               className="text-[clamp(22px,2.2vw,32px)] font-bold transition-colors"
-              style={{ color: hovCard1 ? 'var(--accent, #C3F910)' : '#ffffff' }}
+              style={{ color: hovCard1 ? 'var(--accent, var(--ui-accent))' : '#ffffff' }}
             >
               WK Series
             </div>
@@ -68,7 +68,7 @@ export const NextSection: React.FC<NextSectionProps> = ({ onOpenConsultation, la
             href="#hero"
             className="block border p-8 text-left md:text-right transition-colors duration-300"
             style={{
-              borderColor: hovCard2 ? 'var(--accent, #C3F910)' : '#1f1f1f',
+              borderColor: hovCard2 ? 'var(--accent, var(--ui-accent))' : '#1f1f1f',
             }}
             onMouseEnter={() => setHovCard2(true)}
             onMouseLeave={() => setHovCard2(false)}
@@ -76,7 +76,7 @@ export const NextSection: React.FC<NextSectionProps> = ({ onOpenConsultation, la
             <div className="text-[10.5px] tracking-[0.2em] text-[#7a7a76] mb-3.5 uppercase font-mono">{t.nextSeries}</div>
             <div
               className="text-[clamp(22px,2.2vw,32px)] font-bold transition-colors"
-              style={{ color: hovCard2 ? 'var(--accent, #C3F910)' : '#ffffff' }}
+              style={{ color: hovCard2 ? 'var(--accent, var(--ui-accent))' : '#ffffff' }}
             >
               PXT Ultra
             </div>
@@ -102,9 +102,9 @@ export const NextSection: React.FC<NextSectionProps> = ({ onOpenConsultation, la
             }}
             className="btn btn-solid py-5 px-9 text-[14px] font-semibold tracking-[0.06em] transition-all cursor-pointer"
             style={{
-              backgroundColor: hovBtn ? 'var(--accent, #C3F910)' : '#ffffff',
+              backgroundColor: hovBtn ? 'var(--accent, var(--ui-accent))' : '#ffffff',
               color: '#000000',
-              borderColor: hovBtn ? 'var(--accent, #C3F910)' : '#ffffff',
+              borderColor: hovBtn ? 'var(--accent, var(--ui-accent))' : '#ffffff',
             }}
             onMouseEnter={() => setHovBtn(true)}
             onMouseLeave={() => setHovBtn(false)}

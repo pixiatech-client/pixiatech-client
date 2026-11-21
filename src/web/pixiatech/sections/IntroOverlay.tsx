@@ -54,7 +54,7 @@ export function IntroOverlay() {
           const flicker = 0.55 + 0.45 * (0.5 + 0.5 * Math.sin(now / 90 + dist * 40));
           const alpha = ignite * flicker;
           const size = cw * (0.28 + 0.5 * ignite);
-          ctx.fillStyle = `rgba(195,249,16,${(alpha * 0.75).toFixed(3)})`;
+          ctx.fillStyle = `rgba(var(--ui-accent-rgb),${(alpha * 0.75).toFixed(3)})`;
           ctx.fillRect(cx * cw - size / 2, cy * ch - size / 2, size, size);
           ctx.fillStyle = `rgba(245,244,240,${(alpha * 0.55).toFixed(3)})`;
           ctx.fillRect(cx * cw - size / 4, cy * ch - size / 4, size / 2, size / 2);

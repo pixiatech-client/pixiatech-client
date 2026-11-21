@@ -62,7 +62,7 @@ export function ClientOrdersView({
           <p className="text-sm text-neutral-500 mb-6">{t('client.orders.emptyDesc')}</p>
           <Link href="/boutique" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#0A0D0E] text-white text-xs font-bold hover:bg-neutral-800 transition-all shadow-md">
             {t('client.orders.discoverShop')}
-            <ArrowRight className="w-3.5 h-3.5 text-[#38E044]" />
+            <ArrowRight className="w-3.5 h-3.5 text-[color:var(--ui-accent)]" />
           </Link>
         </div>
       ) : filteredOrders.length === 0 ? (

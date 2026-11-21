@@ -119,7 +119,7 @@ export const SiteFooter: React.FC<SiteFooterProps> = ({
         {/* Bottom bar */}
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-8 text-[11px] tracking-[0.15em] text-[#7a7a76] uppercase font-mono">
           <div className="flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-[color:var(--ui-accent)] shadow-[0_0_8px_var(--ui-accent, #C3F910)]" />
+            <span className="w-1.5 h-1.5 rounded-full bg-[color:var(--ui-accent)] shadow-[0_0_8px_var(--ui-accent, var(--ui-accent))]" />
             © 2026 {companyName.toUpperCase()}. {t.rights}
           </div>
           <div className="flex flex-wrap gap-5">

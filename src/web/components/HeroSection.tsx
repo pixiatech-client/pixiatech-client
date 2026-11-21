@@ -27,18 +27,6 @@ interface HeroSectionProps {
   productPhotosInOverview?: boolean;
   /** Série du produit (masthead PDF) : dernier fil d'Ariane. */
   series?: string;
-  /**
-   * Sections effectivement rendues plus bas sur la page. La sous-navigation
-   * ne propose que des ancres existantes : un lien vers une section masquée
-   * parce qu'elle est vide mènerait nulle part.
-   *
-   * NOTRE AUTRE ÉTAPE : la FICHE PRODUIT (`ProductPageTemplate`) ne fournit
-   * plus cette prop. Sa navigation interne est passée dans le header principal
-   * (`PixiaHeader` + `productSections`), pour qu'il n'y ait qu'une seule
-   * navigation interne sur la fiche. Cette prop ne sert plus qu'à la page
-   * générique `WebPage`, qui garde son rendu d'origine.
-   */
-  sections?: { id: string; label: string }[];
 }
 
 export const HeroSection: React.FC<HeroSectionProps> = ({
@@ -48,7 +36,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   image,
   data,
   series,
-  sections,
   productPhotosInOverview = false,
 }) => {
   const { pages, currentPageId } = useCms();
@@ -81,17 +68,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   const tags = data?.tags?.length ? data.tags : [];
   const specs = (data?.specs ?? []).filter((s) => text(s.value) && text(s.label));
 
-  // Non utilisé par la fiche produit (voir `sections`) : la seule page qui le
-  // passe encore est la page générique, qui conserve son sous-menu.
-  const subnavItems = sections ?? [];
-
-  const handleSubnavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-    e.preventDefault();
-    const el = document.querySelector(href);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
+  // La navigation interne vit désormais dans le header principal
+  // (`PixiaHeader` + `productSections`) : une seule nav, toujours en haut,
+  // sur la fiche produit comme sur la page CMS générique.
 
   return (
     <section
@@ -266,34 +245,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         )}
       </div>
 
-      {/* Sous-navigation : masquée si la page n'a qu'une seule section. */}
-      {subnavItems.length > 0 && (
-      <div
-        style={{
-          borderTop: '1px solid var(--dark-line, #1f1f1f)',
-          marginTop: '64px',
-        }}
-      >
-        <div
-          className="wrap subnav"
-          style={{
-            display: 'flex',
-            gap: 'clamp(20px, 3vw, 44px)',
-            overflowX: 'auto',
-          }}
-        >
-          {subnavItems.map((item) => (
-            <a
-              key={item.id}
-              href={`#${item.id}`}
-              onClick={(e) => handleSubnavClick(e, `#${item.id}`)}
-            >
-              {item.label}
-            </a>
-          ))}
-        </div>
-      </div>
-      )}
     </section>
   );
 };

@@ -629,7 +629,7 @@ export function ClientPortal({ initialTab, initialDisputeId }: ClientPortalProps
   }
 
   return (
-    <div className="w-full flex min-h-screen flex-col bg-[#080A0B] font-sans text-neutral-100 antialiased selection:bg-[#38E044] selection:text-black">
+    <div className="w-full flex min-h-screen flex-col bg-[#080A0B] font-sans text-neutral-100 antialiased selection:bg-[color:var(--ui-accent)] selection:text-black">
       {/* 1. Header (Identique aux captures) */}
       <Header
         user={user}
@@ -820,8 +820,8 @@ function SessionLoadingScreen() {
         className="flex items-center gap-6"
       >
         <span className="relative inline-flex h-2.5 w-2.5">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#38E044] opacity-75" />
-          <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#38E044]" />
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[color:var(--ui-accent)] opacity-75" />
+          <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[color:var(--ui-accent)]" />
         </span>
         <p className="text-sm font-medium text-neutral-400">Chargement de votre espace client…</p>
       </motion.div>

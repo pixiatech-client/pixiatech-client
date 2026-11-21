@@ -832,8 +832,8 @@ export const FloatingElementToolbar: React.FC<{
 
   const iconBtn =
     'p-1.5 rounded-lg transition-colors cursor-pointer flex items-center justify-center min-w-[28px] h-[28px] text-xs';
-  const on = 'text-[#C3F910] bg-[#C3F910]/20 font-bold';
-  const off = 'text-[#B9B7B1] hover:text-[#C3F910] hover:bg-[#1a1a17]';
+  const on = 'text-[color:var(--ui-accent)] bg-[rgba(var(--ui-accent-rgb),0.2)] font-bold';
+  const off = 'text-[#B9B7B1] hover:text-[color:var(--ui-accent)] hover:bg-[#1a1a17]';
 
   return (
     <>
@@ -856,7 +856,7 @@ export const FloatingElementToolbar: React.FC<{
         <div
           onMouseDown={handleDragStart}
           onDoubleClick={() => setDragPosition(null)}
-          className="flex items-center justify-center p-1 rounded-md text-[#7A7A75] hover:text-[#C3F910] hover:bg-[#1C1C19] active:cursor-grabbing cursor-grab transition-colors select-none shrink-0"
+          className="flex items-center justify-center p-1 rounded-md text-[#7A7A75] hover:text-[color:var(--ui-accent)] hover:bg-[#1C1C19] active:cursor-grabbing cursor-grab transition-colors select-none shrink-0"
           title="Cliquer et glisser pour déplacer la barre (Double-clic pour réaligner)"
         >
           <GripVertical className="w-3.5 h-3.5" />
@@ -864,9 +864,9 @@ export const FloatingElementToolbar: React.FC<{
         {/* Badge indicateur de type & section */}
         <span
           style={{
-            backgroundColor: 'var(--accent-muted, rgba(195, 249, 16, 0.12))',
-            color: 'var(--accent, #C3F910)',
-            borderColor: 'var(--accent-border, rgba(195, 249, 16, 0.35))',
+            backgroundColor: 'var(--accent-muted, rgba(var(--ui-accent-rgb), 0.12))',
+            color: 'var(--accent, var(--ui-accent))',
+            borderColor: 'var(--accent-border, rgba(var(--ui-accent-rgb), 0.35))',
           }}
           className="px-2 py-1 rounded-md border font-mono text-[10px] font-bold tracking-wider uppercase whitespace-nowrap"
           title={`${selected.sectionKey} → ${selected.elementKey}`}
@@ -889,7 +889,7 @@ export const FloatingElementToolbar: React.FC<{
             <button
               type="button"
               onClick={() => onOpenImageModal?.(selected.el)}
-              className="flex items-center gap-1.5 bg-[#C3F910] hover:bg-[#b0e20e] text-[#080808] px-3 py-1.5 rounded-lg font-mono text-xs font-bold transition-all cursor-pointer shadow-md"
+              className="flex items-center gap-1.5 bg-[color:var(--ui-accent)] hover:bg-[color:var(--ui-accent-hover)] text-[#080808] px-3 py-1.5 rounded-lg font-mono text-xs font-bold transition-all cursor-pointer shadow-md"
               title="Remplacer cette image / média"
             >
               <ImageIcon className="w-3.5 h-3.5" />
@@ -985,7 +985,7 @@ export const FloatingElementToolbar: React.FC<{
               >
                 <Palette className="w-3.5 h-3.5" />
                 {(hasHoverStyles || hasActiveStyles || Boolean(style.backgroundColor || style.borderColor || style.borderRadius)) && (
-                  <span className="w-1.5 h-1.5 rounded-full ml-0.5" style={{ backgroundColor: 'var(--accent, #C3F910)' }} />
+                  <span className="w-1.5 h-1.5 rounded-full ml-0.5" style={{ backgroundColor: 'var(--accent, var(--ui-accent))' }} />
                 )}
               </button>
             </div>
@@ -1004,15 +1004,15 @@ export const FloatingElementToolbar: React.FC<{
                 style={{
                   backgroundColor:
                     showEffectsPanel || (style.buttonEffect?.type && style.buttonEffect.type !== 'none')
-                      ? 'var(--accent-muted, rgba(195, 249, 16, 0.16))'
+                      ? 'var(--accent-muted, rgba(var(--ui-accent-rgb), 0.16))'
                       : 'transparent',
                   color:
                     showEffectsPanel || (style.buttonEffect?.type && style.buttonEffect.type !== 'none')
-                      ? 'var(--accent, #C3F910)'
+                      ? 'var(--accent, var(--ui-accent))'
                       : '#B9B7B1',
                   borderColor:
                     showEffectsPanel || (style.buttonEffect?.type && style.buttonEffect.type !== 'none')
-                      ? 'var(--accent-border, rgba(195, 249, 16, 0.35))'
+                      ? 'var(--accent-border, rgba(var(--ui-accent-rgb), 0.35))'
                       : 'transparent',
                 }}
                 className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer border"
@@ -1023,7 +1023,7 @@ export const FloatingElementToolbar: React.FC<{
                 {style.buttonEffect?.type && style.buttonEffect.type !== 'none' && (
                   <span
                     className="w-1.5 h-1.5 rounded-full"
-                    style={{ backgroundColor: 'var(--accent, #C3F910)' }}
+                    style={{ backgroundColor: 'var(--accent, var(--ui-accent))' }}
                     title={`Effet actif : ${style.buttonEffect.type}`}
                   />
                 )}
@@ -1044,9 +1044,9 @@ export const FloatingElementToolbar: React.FC<{
               }
             }}
             style={{
-              backgroundColor: showLinkEditor || realCurrentUrl ? 'var(--accent-muted, rgba(195, 249, 16, 0.16))' : 'transparent',
-              color: showLinkEditor || realCurrentUrl ? 'var(--accent, #C3F910)' : '#B9B7B1',
-              borderColor: showLinkEditor || realCurrentUrl ? 'var(--accent-border, rgba(195, 249, 16, 0.35))' : 'transparent',
+              backgroundColor: showLinkEditor || realCurrentUrl ? 'var(--accent-muted, rgba(var(--ui-accent-rgb), 0.16))' : 'transparent',
+              color: showLinkEditor || realCurrentUrl ? 'var(--accent, var(--ui-accent))' : '#B9B7B1',
+              borderColor: showLinkEditor || realCurrentUrl ? 'var(--accent-border, rgba(var(--ui-accent-rgb), 0.35))' : 'transparent',
             }}
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer border"
             title="Éditer le lien de redirection de cet élément (URL / Page interne)"
@@ -1054,7 +1054,7 @@ export const FloatingElementToolbar: React.FC<{
             <LinkIcon className="w-3.5 h-3.5" />
             <span>LIEN</span>
             {realCurrentUrl && (
-              <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'var(--accent, #C3F910)' }} title={`Lien : ${realCurrentUrl}`} />
+              <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'var(--accent, var(--ui-accent))' }} title={`Lien : ${realCurrentUrl}`} />
             )}
           </button>
         </div>
@@ -1062,7 +1062,7 @@ export const FloatingElementToolbar: React.FC<{
         {/* ── Cas 4 : DÉPLACEMENT (NUDGE TRANSFORM) ── */}
         <div className="flex items-center gap-0.5 px-1 border-l border-[#2b2b28]">
           <span
-            style={{ color: hasOffset ? 'var(--accent, #C3F910)' : '#6a6a65' }}
+            style={{ color: hasOffset ? 'var(--accent, var(--ui-accent))' : '#6a6a65' }}
             className="flex items-center gap-1 font-mono text-[10px] font-bold"
             title="Décalage horizontal / vertical (nudge)"
           >
@@ -1116,7 +1116,7 @@ export const FloatingElementToolbar: React.FC<{
             className={`${iconBtn} ${off}`}
             title="Réinitialiser tous les styles de l'élément (effacer fond, couleur, bordures, etc.)"
           >
-            <Sparkles className="w-3.5 h-3.5" style={{ color: 'var(--accent, #C3F910)' }} />
+            <Sparkles className="w-3.5 h-3.5" style={{ color: 'var(--accent, var(--ui-accent))' }} />
           </button>
         </div>
 
@@ -1129,13 +1129,13 @@ export const FloatingElementToolbar: React.FC<{
                 saveState === 'error'
                   ? '#ff4444'
                   : saveState === 'saving'
-                  ? 'var(--accent, #C3F910)'
+                  ? 'var(--accent, var(--ui-accent))'
                   : saveState === 'saved'
-                  ? 'var(--accent, #C3F910)'
+                  ? 'var(--accent, var(--ui-accent))'
                   : '#7a7a76',
               backgroundColor:
                 saveState === 'saved'
-                  ? 'rgba(195, 249, 16, 0.12)'
+                  ? 'rgba(var(--ui-accent-rgb), 0.12)'
                   : saveState === 'error'
                   ? 'rgba(255, 68, 68, 0.12)'
                   : 'transparent',
@@ -1173,7 +1173,7 @@ export const FloatingElementToolbar: React.FC<{
                 onClick={() => switchPaletteStateTab('normal')}
                 className={`px-2.5 py-1 rounded-md font-mono text-[11px] font-bold transition-all cursor-pointer ${
                   paletteStateTab === 'normal'
-                    ? 'bg-[#C3F910] text-[#080808] shadow-sm'
+                    ? 'bg-[color:var(--ui-accent)] text-[#080808] shadow-sm'
                     : 'text-[#aaa] hover:text-white hover:bg-[#1a1a17]'
                 }`}
               >
@@ -1184,7 +1184,7 @@ export const FloatingElementToolbar: React.FC<{
                 onClick={() => switchPaletteStateTab('hover')}
                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md font-mono text-[11px] font-bold transition-all cursor-pointer ${
                   paletteStateTab === 'hover'
-                    ? 'bg-[#C3F910] text-[#080808] shadow-sm'
+                    ? 'bg-[color:var(--ui-accent)] text-[#080808] shadow-sm'
                     : 'text-[#aaa] hover:text-white hover:bg-[#1a1a17]'
                 }`}
               >
@@ -1192,7 +1192,7 @@ export const FloatingElementToolbar: React.FC<{
                 {hasHoverStyles && (
                   <span
                     className={`w-1.5 h-1.5 rounded-full ${
-                      paletteStateTab === 'hover' ? 'bg-[#080808]' : 'bg-[#C3F910]'
+                      paletteStateTab === 'hover' ? 'bg-[#080808]' : 'bg-[color:var(--ui-accent)]'
                     }`}
                     title="Styles de survol personnalisés définis"
                   />
@@ -1203,7 +1203,7 @@ export const FloatingElementToolbar: React.FC<{
                 onClick={() => switchPaletteStateTab('active')}
                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md font-mono text-[11px] font-bold transition-all cursor-pointer ${
                   paletteStateTab === 'active'
-                    ? 'bg-[#C3F910] text-[#080808] shadow-sm'
+                    ? 'bg-[color:var(--ui-accent)] text-[#080808] shadow-sm'
                     : 'text-[#aaa] hover:text-white hover:bg-[#1a1a17]'
                 }`}
               >
@@ -1211,7 +1211,7 @@ export const FloatingElementToolbar: React.FC<{
                 {hasActiveStyles && (
                   <span
                     className={`w-1.5 h-1.5 rounded-full ${
-                      paletteStateTab === 'active' ? 'bg-[#080808]' : 'bg-[#C3F910]'
+                      paletteStateTab === 'active' ? 'bg-[#080808]' : 'bg-[color:var(--ui-accent)]'
                     }`}
                     title="Styles de clic personnalisés définis"
                   />
@@ -1297,7 +1297,7 @@ export const FloatingElementToolbar: React.FC<{
                 <button
                   type="button"
                   onClick={() => commitVisualProperty('backgroundColor', 'transparent')}
-                  className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-[#1c1c1a] hover:bg-[#2b2b28] text-[#d0cfca] hover:text-[#C3F910] border border-[#333] transition-colors cursor-pointer"
+                  className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-[#1c1c1a] hover:bg-[#2b2b28] text-[#d0cfca] hover:text-[color:var(--ui-accent)] border border-[#333] transition-colors cursor-pointer"
                   title="Fond transparent"
                 >
                   <Ban className="w-2.5 h-2.5 text-[#ff5555]" />
@@ -1413,7 +1413,7 @@ export const FloatingElementToolbar: React.FC<{
           <div className="flex items-center gap-2 flex-wrap">
             {/* 1. Destination URL active */}
             <div className="flex-1 min-w-[200px] flex items-center gap-1.5 bg-[#0a0a09] border border-[#333] px-2 py-1 rounded">
-              <LinkIcon className="w-3.5 h-3.5 text-[#C3F910] shrink-0" />
+              <LinkIcon className="w-3.5 h-3.5 text-[color:var(--ui-accent)] shrink-0" />
               <input
                 type="text"
                 value={realCurrentUrl}
@@ -1441,7 +1441,7 @@ export const FloatingElementToolbar: React.FC<{
                 else selected.el.setAttribute('data-href', url);
                 commit({ href: url });
               }}
-              className="bg-[#1f1f1d] border border-[#333] rounded px-2 py-1 text-xs text-[#ddd] font-mono focus:border-[#C3F910] cursor-pointer"
+              className="bg-[#1f1f1d] border border-[#333] rounded px-2 py-1 text-xs text-[#ddd] font-mono focus:border-[color:var(--ui-accent)] cursor-pointer"
               title="Choisir une page interne ou ancre du site"
             >
               <option value="">-- Choisir une page interne --</option>
@@ -1462,7 +1462,7 @@ export const FloatingElementToolbar: React.FC<{
                 commit({ target: nextTarget, rel: nextTarget === '_blank' ? 'noopener noreferrer' : '' });
               }}
               className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-mono transition-all cursor-pointer ${
-                isBlank ? 'bg-[#C3F910] text-[#080808] font-bold' : 'bg-[#222] text-[#aaa] hover:text-white'
+                isBlank ? 'bg-[color:var(--ui-accent)] text-[#080808] font-bold' : 'bg-[#222] text-[#aaa] hover:text-white'
               }`}
               title={isBlank ? 'S’ouvre dans un nouvel onglet (_blank)' : 'S’ouvre dans le même onglet (_self)'}
             >
@@ -1500,12 +1500,12 @@ export const FloatingElementToolbar: React.FC<{
           {/* En-tête : Titre + Test des 3 États (Normal, Hover, Active) */}
           <div className="flex items-center justify-between gap-3 pb-2 border-b border-[#262624] flex-wrap">
             <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-[#C3F910]" />
+              <Sparkles className="w-4 h-4 text-[color:var(--ui-accent)]" />
               <span className="font-mono text-xs font-bold text-white uppercase tracking-wider">
                 Bibliothèque d&apos;Effets & Animations
               </span>
               {style.buttonEffect?.type && style.buttonEffect.type !== 'none' && (
-                <span className="px-1.5 py-0.5 rounded text-[9.5px] font-mono font-bold bg-[#C3F910]/20 text-[#C3F910] border border-[#C3F910]/30 uppercase">
+                <span className="px-1.5 py-0.5 rounded text-[9.5px] font-mono font-bold bg-[rgba(var(--ui-accent-rgb),0.2)] text-[color:var(--ui-accent)] border border-[rgba(var(--ui-accent-rgb),0.3)] uppercase">
                   {style.buttonEffect.type}
                 </span>
               )}
@@ -1520,7 +1520,7 @@ export const FloatingElementToolbar: React.FC<{
                   onClick={() => switchEffectsPreviewState(st)}
                   className={`px-2 py-0.5 rounded font-mono text-[10px] font-bold transition-all cursor-pointer ${
                     effectsPreviewState === st
-                      ? 'bg-[#C3F910] text-[#080808] shadow-sm'
+                      ? 'bg-[color:var(--ui-accent)] text-[#080808] shadow-sm'
                       : 'text-[#888] hover:text-white'
                   }`}
                   title={`Tester l'état ${st === 'normal' ? 'Normal' : st === 'hover' ? 'Survol (Hover)' : 'Clic (Active)'} sur le bouton réel`}
@@ -1541,21 +1541,21 @@ export const FloatingElementToolbar: React.FC<{
                   onClick={() => handleSelectEffect(item.id)}
                   className={`group relative p-2 rounded-xl border transition-all cursor-pointer flex flex-col justify-between min-h-[72px] select-none ${
                     isCurrent
-                      ? 'bg-[#1c2211] border-[#C3F910] ring-1 ring-[#C3F910]/60'
+                      ? 'bg-[#1c2211] border-[color:var(--ui-accent)] ring-1 ring-[rgba(var(--ui-accent-rgb),0.6)]'
                       : 'bg-[#181816] border-[#2b2b28] hover:border-[#444] hover:bg-[#1e1e1b]'
                   }`}
                 >
                   <div className="flex items-start justify-between gap-1 mb-1">
-                    <span className="font-mono text-[11px] font-bold text-white group-hover:text-[#C3F910] transition-colors leading-tight">
+                    <span className="font-mono text-[11px] font-bold text-white group-hover:text-[color:var(--ui-accent)] transition-colors leading-tight">
                       {item.name}
                     </span>
                     {item.badge && (
-                      <span className="px-1 py-0.5 rounded text-[7.5px] font-mono font-bold bg-[#C3F910] text-[#080808]">
+                      <span className="px-1 py-0.5 rounded text-[7.5px] font-mono font-bold bg-[color:var(--ui-accent)] text-[#080808]">
                         {item.badge}
                       </span>
                     )}
                     {isCurrent && !item.badge && (
-                      <Check className="w-3 h-3 text-[#C3F910] shrink-0" />
+                      <Check className="w-3 h-3 text-[color:var(--ui-accent)] shrink-0" />
                     )}
                   </div>
                   <span className="text-[9px] font-mono text-[#8a8880] leading-tight line-clamp-2 mb-1.5">
@@ -1568,7 +1568,7 @@ export const FloatingElementToolbar: React.FC<{
                       <span className="text-[9px] font-mono text-[#666]">Standard</span>
                     )}
                     {item.id === 'signature' && (
-                      <span className="px-2 py-0.5 text-[9px] font-bold rounded bg-[#C3F910] text-black inline-flex items-center gap-1 transition-all group-hover:gap-2 group-hover:shadow-[0_0_10px_rgba(195,249,16,0.6)]">
+                      <span className="px-2 py-0.5 text-[9px] font-bold rounded bg-[color:var(--ui-accent)] text-black inline-flex items-center gap-1 transition-all group-hover:gap-2 group-hover:shadow-[0_0_10px_rgba(var(--ui-accent-rgb),0.6)]">
                         <span>Signature</span>
                         <span>→</span>
                       </span>
@@ -1579,38 +1579,38 @@ export const FloatingElementToolbar: React.FC<{
                       </span>
                     )}
                     {item.id === 'glow' && (
-                      <span className="px-2 py-0.5 text-[9px] font-bold rounded bg-[#262624] text-white border border-[#C3F910]/40 transition-all group-hover:shadow-[0_0_12px_rgba(195,249,16,0.8)] group-hover:border-[#C3F910]">
+                      <span className="px-2 py-0.5 text-[9px] font-bold rounded bg-[#262624] text-white border border-[rgba(var(--ui-accent-rgb),0.4)] transition-all group-hover:shadow-[0_0_12px_rgba(var(--ui-accent-rgb),0.8)] group-hover:border-[color:var(--ui-accent)]">
                         Glow ☀
                       </span>
                     )}
                     {item.id === 'shine' && (
                       /* Curtain closing effect (dev.to / shubhamtiwari909) :
                          deux demi-rideaux colorés se referment sur le bouton au hover */
-                      <span className="relative overflow-hidden px-2 py-0.5 text-[9px] font-bold rounded bg-[#262624] text-white transition-colors duration-300 group-hover:text-black before:content-[''] before:absolute before:inset-y-0 before:left-0 before:w-0 before:bg-[#C3F910] before:transition-all before:duration-300 group-hover:before:w-1/2 after:content-[''] after:absolute after:inset-y-0 after:right-0 after:w-0 after:bg-[#C3F910] after:transition-all after:duration-300 group-hover:after:w-1/2">
+                      <span className="relative overflow-hidden px-2 py-0.5 text-[9px] font-bold rounded bg-[#262624] text-white transition-colors duration-300 group-hover:text-black before:content-[''] before:absolute before:inset-y-0 before:left-0 before:w-0 before:bg-[color:var(--ui-accent)] before:transition-all before:duration-300 group-hover:before:w-1/2 after:content-[''] after:absolute after:inset-y-0 after:right-0 after:w-0 after:bg-[color:var(--ui-accent)] after:transition-all after:duration-300 group-hover:after:w-1/2">
                         <span className="relative z-10">Shine ✦</span>
                       </span>
                     )}
                     {item.id === 'fill' && (
                       /* Slide transition — fond remontant de bas en haut */
-                      <span className="relative overflow-hidden px-2 py-0.5 text-[9px] font-bold rounded border border-[#C3F910] text-[#C3F910] group-hover:text-black transition-colors duration-300 before:content-[''] before:absolute before:inset-x-0 before:bottom-0 before:h-0 before:bg-[#C3F910] before:transition-all before:duration-300 group-hover:before:h-full">
+                      <span className="relative overflow-hidden px-2 py-0.5 text-[9px] font-bold rounded border border-[color:var(--ui-accent)] text-[color:var(--ui-accent)] group-hover:text-black transition-colors duration-300 before:content-[''] before:absolute before:inset-x-0 before:bottom-0 before:h-0 before:bg-[color:var(--ui-accent)] before:transition-all before:duration-300 group-hover:before:h-full">
                         <span className="relative z-10">Fill ▲</span>
                       </span>
                     )}
                     {item.id === 'scale' && (
                       /* Multicolor transition — dégradé arc-en-ciel au hover */
-                      <span className="relative px-2 py-0.5 text-[9px] font-bold rounded bg-[#262624] text-white transition-all duration-300 group-hover:bg-gradient-to-r group-hover:from-[#C3F910] group-hover:via-[#00e5ff] group-hover:to-[#ff6ec7] group-hover:text-black group-hover:scale-105">
+                      <span className="relative px-2 py-0.5 text-[9px] font-bold rounded bg-[#262624] text-white transition-all duration-300 group-hover:bg-gradient-to-r group-hover:from-[color:var(--ui-accent)] group-hover:via-[#00e5ff] group-hover:to-[#ff6ec7] group-hover:text-black group-hover:scale-105">
                         Scale 🌈
                       </span>
                     )}
                     {item.id === 'border-glow' && (
                       /* Multi-color border hover — bordure qui tourne en couleurs */
-                      <span className="relative px-2 py-0.5 text-[9px] font-bold rounded text-white bg-[#0e0e0d] border-2 border-transparent transition-all duration-300 group-hover:[background:linear-gradient(#0e0e0d,#0e0e0d)_padding-box,linear-gradient(90deg,#C3F910,#00e5ff,#ff6ec7,#C3F910)_border-box] group-hover:shadow-[0_0_10px_rgba(195,249,16,0.5)]">
+                      <span className="relative px-2 py-0.5 text-[9px] font-bold rounded text-white bg-[#0e0e0d] border-2 border-transparent transition-all duration-300 group-hover:[background:linear-gradient(#0e0e0d,#0e0e0d)_padding-box,linear-gradient(90deg,var(--ui-accent),#00e5ff,#ff6ec7,#C3F910)_border-box] group-hover:shadow-[0_0_10px_rgba(var(--ui-accent-rgb),0.5)]">
                         Border ▣
                       </span>
                     )}
                     {item.id === 'slide' && (
                       /* Star / sparkle transition — étoiles qui apparaissent + slide du texte */
-                      <span className="relative overflow-hidden px-2 py-0.5 text-[9px] font-bold rounded bg-[#262624] text-white inline-flex items-center gap-0.5 transition-all duration-300 group-hover:gap-1.5 group-hover:bg-[#1a1f0a] group-hover:text-[#C3F910]">
+                      <span className="relative overflow-hidden px-2 py-0.5 text-[9px] font-bold rounded bg-[#262624] text-white inline-flex items-center gap-0.5 transition-all duration-300 group-hover:gap-1.5 group-hover:bg-[#1a1f0a] group-hover:text-[color:var(--ui-accent)]">
                         <span className="transition-transform duration-300 group-hover:-translate-x-0.5">Slide</span>
                         <span className="transition-all duration-300 opacity-0 group-hover:opacity-100 scale-0 group-hover:scale-100">★</span>
                         <span className="transition-transform duration-300 group-hover:translate-x-0.5">→</span>
@@ -1618,19 +1618,19 @@ export const FloatingElementToolbar: React.FC<{
                     )}
                     {item.id === 'pulse' && (
                       /* Pulse renforcé avec ring animé expansif */
-                      <span className="relative px-2 py-0.5 text-[9px] font-bold rounded bg-[#C3F910]/20 text-[#C3F910] border border-[#C3F910]/40 transition-all duration-300 group-hover:bg-[#C3F910]/30 group-hover:shadow-[0_0_0_4px_rgba(195,249,16,0.15),0_0_0_8px_rgba(195,249,16,0.07)] group-hover:animate-pulse">
+                      <span className="relative px-2 py-0.5 text-[9px] font-bold rounded bg-[rgba(var(--ui-accent-rgb),0.2)] text-[color:var(--ui-accent)] border border-[rgba(var(--ui-accent-rgb),0.4)] transition-all duration-300 group-hover:bg-[rgba(var(--ui-accent-rgb),0.3)] group-hover:shadow-[0_0_0_4px_rgba(var(--ui-accent-rgb),0.15),0_0_0_8px_rgba(var(--ui-accent-rgb),0.07)] group-hover:animate-pulse">
                         Pulse ◎
                       </span>
                     )}
                     {item.id === 'magnetic' && (
                       /* Shimmer latéral — reflet qui traverse + déplacement magnétique */
-                      <span className="relative overflow-hidden px-2 py-0.5 text-[9px] font-bold rounded bg-[#262624] text-white transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:shadow-[2px_-2px_6px_rgba(195,249,16,0.3)] before:content-[''] before:absolute before:top-0 before:left-[-60%] before:w-[40%] before:h-full before:bg-gradient-to-r before:from-transparent before:via-white/30 before:to-transparent before:skew-x-[-20deg] group-hover:before:left-[160%] before:transition-all before:duration-500">
+                      <span className="relative overflow-hidden px-2 py-0.5 text-[9px] font-bold rounded bg-[#262624] text-white transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:shadow-[2px_-2px_6px_rgba(var(--ui-accent-rgb),0.3)] before:content-[''] before:absolute before:top-0 before:left-[-60%] before:w-[40%] before:h-full before:bg-gradient-to-r before:from-transparent before:via-white/30 before:to-transparent before:skew-x-[-20deg] group-hover:before:left-[160%] before:transition-all before:duration-500">
                         Magnetic ⌖
                       </span>
                     )}
                     {item.id === 'underline' && (
                       /* Underline double — barre qui grandit + seconde barre décalée */
-                      <span className="relative px-2 py-0.5 text-[9px] font-bold text-white group-hover:text-[#C3F910] transition-colors duration-200 after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-[2px] after:bg-[#C3F910] after:transition-all after:duration-300 group-hover:after:w-full before:content-[''] before:absolute before:bottom-[-3px] before:right-0 before:w-0 before:h-[1px] before:bg-[#C3F910]/40 before:transition-all before:duration-500 before:delay-100 group-hover:before:w-3/4">
+                      <span className="relative px-2 py-0.5 text-[9px] font-bold text-white group-hover:text-[color:var(--ui-accent)] transition-colors duration-200 after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-[2px] after:bg-[color:var(--ui-accent)] after:transition-all after:duration-300 group-hover:after:w-full before:content-[''] before:absolute before:bottom-[-3px] before:right-0 before:w-0 before:h-[1px] before:bg-[rgba(var(--ui-accent-rgb),0.4)] before:transition-all before:duration-500 before:delay-100 group-hover:before:w-3/4">
                         Underline ═
                       </span>
                     )}
@@ -1661,9 +1661,9 @@ export const FloatingElementToolbar: React.FC<{
                       step="5"
                       value={eff.intensity ?? 60}
                       onChange={(e) => handleUpdateEffectParam('intensity', Number(e.target.value))}
-                      className="w-16 h-1.5 bg-[#262624] rounded-lg appearance-none cursor-pointer accent-[#C3F910]"
+                      className="w-16 h-1.5 bg-[#262624] rounded-lg appearance-none cursor-pointer accent-[color:var(--ui-accent)]"
                     />
-                    <span className="font-mono text-[10px] font-bold text-[#C3F910] min-w-[24px]">
+                    <span className="font-mono text-[10px] font-bold text-[color:var(--ui-accent)] min-w-[24px]">
                       {eff.intensity ?? 60}%
                     </span>
                   </div>
@@ -1698,9 +1698,9 @@ export const FloatingElementToolbar: React.FC<{
                       step="1"
                       value={eff.amplitude ?? 4}
                       onChange={(e) => handleUpdateEffectParam('amplitude', Number(e.target.value))}
-                      className="w-14 h-1.5 bg-[#262624] rounded-lg appearance-none cursor-pointer accent-[#C3F910]"
+                      className="w-14 h-1.5 bg-[#262624] rounded-lg appearance-none cursor-pointer accent-[color:var(--ui-accent)]"
                     />
-                    <span className="font-mono text-[10px] font-bold text-[#C3F910] min-w-[20px]">
+                    <span className="font-mono text-[10px] font-bold text-[color:var(--ui-accent)] min-w-[20px]">
                       {eff.amplitude ?? 4}px
                     </span>
                   </div>
@@ -1725,7 +1725,7 @@ export const FloatingElementToolbar: React.FC<{
                       type="text"
                       value={eff.color || '#C3F910'}
                       onChange={(e) => handleUpdateEffectParam('color', e.target.value)}
-                      className="w-14 bg-[#141412] border border-[#333] rounded px-1 py-0.5 text-[10px] text-white font-mono uppercase focus:border-[#C3F910] focus:outline-none"
+                      className="w-14 bg-[#141412] border border-[#333] rounded px-1 py-0.5 text-[10px] text-white font-mono uppercase focus:border-[color:var(--ui-accent)] focus:outline-none"
                     />
                   </div>
                 )}
@@ -1767,12 +1767,12 @@ export const FloatingElementToolbar: React.FC<{
                 justifyContent: 'center',
                 borderRadius: 4,
                 background: '#0e0e0d',
-                border: '1px solid var(--accent, #C3F910)',
+                border: '1px solid var(--accent, var(--ui-accent))',
               }}
               onMouseDown={(e) => handleWidthResizeStart(e, 'left')}
               title="Redimensionner horizontalement (gauche)"
             >
-              <svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M2 1L2 13M6 1L6 13" stroke="var(--accent, #C3F910)" strokeWidth="1.5" strokeLinecap="round"/></svg>
+              <svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M2 1L2 13M6 1L6 13" stroke="var(--accent, var(--ui-accent))" strokeWidth="1.5" strokeLinecap="round"/></svg>
             </div>
             {/* Poignée droite */}
             <div
@@ -1790,12 +1790,12 @@ export const FloatingElementToolbar: React.FC<{
                 justifyContent: 'center',
                 borderRadius: 4,
                 background: '#0e0e0d',
-                border: '1px solid var(--accent, #C3F910)',
+                border: '1px solid var(--accent, var(--ui-accent))',
               }}
               onMouseDown={(e) => handleWidthResizeStart(e, 'right')}
               title="Redimensionner horizontalement (droite)"
             >
-              <svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M2 1L2 13M6 1L6 13" stroke="var(--accent, #C3F910)" strokeWidth="1.5" strokeLinecap="round"/></svg>
+              <svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M2 1L2 13M6 1L6 13" stroke="var(--accent, var(--ui-accent))" strokeWidth="1.5" strokeLinecap="round"/></svg>
             </div>
           </>
         );

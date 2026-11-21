@@ -7,6 +7,7 @@ import { Home, Store, ShoppingBag, User, LogOut, Package, ChevronDown, Shield, K
 import { useCart } from '@/contexts/CartContext';
 import { useI18n } from '@/lib/i18n';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
+import { MobileBottomSheet } from '@/components/ui/bottom-sheet';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMediaQuery } from 'usehooks-ts';
@@ -392,7 +393,7 @@ export function BoutiqueHeader({
                 <span className="max-w-[100px] truncate hidden sm:inline">{truncatedEmail}</span>
                 <ChevronDown size={12} className={cn("transition-transform", profileOpen && "rotate-180")} />
               </button>
-              {profileOpen && (
+              {!isMobile && profileOpen && (
                 <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50">
                   <Link
                     href="/mon-compte/tableau-de-bord"
@@ -421,6 +422,40 @@ export function BoutiqueHeader({
                   </form>
                 </div>
               )}
+              <MobileBottomSheet
+                open={isMobile && profileOpen}
+                onClose={() => setProfileOpen(false)}
+                title="Mon compte"
+                description={truncatedEmail}
+              >
+                <div className="space-y-2">
+                  <Link
+                    href="/mon-compte/tableau-de-bord"
+                    onClick={() => setProfileOpen(false)}
+                    className="flex min-h-[52px] items-center gap-3 rounded-xl bg-gray-50 px-4 text-sm font-semibold text-gray-800"
+                  >
+                    <LayoutDashboard size={18} className="text-[color:var(--ui-accent)]" />
+                    Tableau de bord
+                  </Link>
+                  <Link
+                    href="/mon-compte/commandes"
+                    onClick={() => setProfileOpen(false)}
+                    className="flex min-h-[52px] items-center gap-3 rounded-xl bg-gray-50 px-4 text-sm font-semibold text-gray-800"
+                  >
+                    <Package size={18} />
+                    {t('header.myOrders')}
+                  </Link>
+                  <form action="/api/boutique/logout" method="POST">
+                    <button
+                      type="submit"
+                      className="flex min-h-[52px] w-full items-center gap-3 rounded-xl bg-red-50 px-4 text-sm font-semibold text-red-700"
+                    >
+                      <LogOut size={18} />
+                      {t('header.logout')}
+                    </button>
+                  </form>
+                </div>
+              </MobileBottomSheet>
             </div>
           ) : (
             <div className="relative" ref={resellerRef}>
@@ -462,45 +497,27 @@ export function BoutiqueHeader({
                 </div>
               )}
 
-              {/* Mobile bottom sheet */}
-              <AnimatePresence>
-                {isMobile && createOpen && (
-                  <>
-                    <motion.div
-                      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                      className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50"
-                      onClick={() => setCreateOpen(false)}
-                    />
-                    <motion.div
-                      initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
-                      transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-                      className="fixed inset-0 z-50 flex items-end justify-center pointer-events-none"
-                    >
-                      <div className="pointer-events-auto w-full bg-white rounded-t-3xl shadow-2xl overflow-y-auto max-h-[85dvh] min-h-[65dvh] pb-24" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center justify-between px-6 pt-5 pb-2">
-                          <h2 className="font-bold text-gray-900">{t('header.memberArea')}</h2>
-                          <button onClick={() => setCreateOpen(false)} className="size-8 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors">
-                            <X size={16} className="text-gray-500" />
-                          </button>
-                        </div>
-                        <EspaceMembreContent
-                          espaceTab={espaceTab} setEspaceTab={setEspaceTab}
-                          memberEmail={memberEmail} setMemberEmail={setMemberEmail}
-                          memberPassword={memberPassword} setMemberPassword={setMemberPassword}
-                          memberLoading={memberLoading} memberError={memberError}
-                          memberMagicSent={memberMagicSent}
-                          handlePasswordLogin={handlePasswordLogin}
-                          handleMagicLink={handleMagicLink}
-                          resellerDone={resellerDone}
-                          resellerEmail={resellerEmail} setResellerEmail={setResellerEmail}
-                          resellerLoading={resellerLoading} resellerError={resellerError}
-                          handleResellerInterest={handleResellerInterest}
-                        />
-                      </div>
-                    </motion.div>
-                  </>
-                )}
-              </AnimatePresence>
+              {/* Mobile bottom sheet — système unifié */}
+              <MobileBottomSheet
+                open={isMobile && createOpen}
+                onClose={() => setCreateOpen(false)}
+                title={t('header.memberArea')}
+                contentClassName="px-0"
+              >
+                <EspaceMembreContent
+                  espaceTab={espaceTab} setEspaceTab={setEspaceTab}
+                  memberEmail={memberEmail} setMemberEmail={setMemberEmail}
+                  memberPassword={memberPassword} setMemberPassword={setMemberPassword}
+                  memberLoading={memberLoading} memberError={memberError}
+                  memberMagicSent={memberMagicSent}
+                  handlePasswordLogin={handlePasswordLogin}
+                  handleMagicLink={handleMagicLink}
+                  resellerDone={resellerDone}
+                  resellerEmail={resellerEmail} setResellerEmail={setResellerEmail}
+                  resellerLoading={resellerLoading} resellerError={resellerError}
+                  handleResellerInterest={handleResellerInterest}
+                />
+              </MobileBottomSheet>
             </div>
           )}
 

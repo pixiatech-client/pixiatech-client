@@ -623,7 +623,7 @@ export function MenuEditor() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4 min-w-0">
             <div className="w-12 h-12 rounded-2xl bg-[#141B1E] border border-neutral-700 flex items-center justify-center shrink-0">
-              <Globe className="w-6 h-6 text-[#38E044]" />
+              <Globe className="w-6 h-6 text-[color:var(--ui-accent)]" />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
@@ -650,7 +650,7 @@ export function MenuEditor() {
               }}
               className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 headerMenuType === 'classic'
-                  ? 'bg-[#38E044] text-black shadow-md'
+                  ? 'bg-[color:var(--ui-accent)] text-black shadow-md'
                   : 'text-neutral-400 hover:text-white'
               }`}
             >
@@ -665,7 +665,7 @@ export function MenuEditor() {
               }}
               className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 headerMenuType === 'mega'
-                  ? 'bg-[#38E044] text-black shadow-md'
+                  ? 'bg-[color:var(--ui-accent)] text-black shadow-md'
                   : 'text-neutral-400 hover:text-white'
               }`}
             >
@@ -688,7 +688,7 @@ export function MenuEditor() {
                 : 'text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-white'
             }`}
           >
-            <Layers className="w-3.5 h-3.5 text-[#38E044]" />
+            <Layers className="w-3.5 h-3.5 text-[color:var(--ui-accent)]" />
             <span>1. Navigation principale</span>
           </button>
           <button
@@ -700,7 +700,7 @@ export function MenuEditor() {
                 : 'text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-white'
             }`}
           >
-            <LayoutGrid className="w-3.5 h-3.5 text-[#38E044]" />
+            <LayoutGrid className="w-3.5 h-3.5 text-[color:var(--ui-accent)]" />
             <span>2. Méga menu Produits</span>
           </button>
         </div>
@@ -711,14 +711,14 @@ export function MenuEditor() {
             onClick={() => void loadAll()}
             className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-neutral-100 hover:bg-neutral-200 dark:bg-white/5 dark:hover:bg-white/10 text-neutral-700 dark:text-neutral-100 text-xs font-bold border border-neutral-300/80 dark:border-white/15 transition-all cursor-pointer shadow-sm active:scale-95"
           >
-            <RefreshCw className={`w-3.5 h-3.5 text-[#38E044] ${saveState === 'idle' ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 text-[color:var(--ui-accent)] ${saveState === 'idle' ? 'animate-spin' : ''}`} />
             <span>Actualiser</span>
           </button>
           <button
             type="button"
             onClick={() => void save()}
             disabled={saveState === 'saving'}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#38E044] hover:bg-[#2fcb3c] text-black text-xs font-extrabold transition-all cursor-pointer shadow-[0_0_16px_rgba(56,224,68,0.35)] active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[color:var(--ui-accent)] hover:bg-[color:var(--ui-accent-hover)] text-black text-xs font-extrabold transition-all cursor-pointer shadow-[0_0_16px_rgba(var(--ui-accent-rgb),0.35)] active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {saveState === 'saving' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             <span>{saveState === 'saving' ? 'Enregistrement…' : 'Enregistrer sur le site'}</span>
@@ -749,50 +749,26 @@ export function MenuEditor() {
           {/* Card Options Générales */}
           <div className="bg-white dark:bg-zinc-900 border border-neutral-200/80 dark:border-white/10 rounded-3xl p-5 sm:p-6 shadow-sm">
             <h2 className="text-sm font-bold text-neutral-800 dark:text-white flex items-center gap-2">
-              <Settings2 className="w-4 h-4 text-[#38E044]" />
-              <span>Paramètres de la navigation</span>
+              <Settings2 className="w-4 h-4 text-[color:var(--ui-accent)]" />
+              <span>Paramètres généraux de la navigation</span>
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              <div>
-                <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">
-                  Type de menu du header
-                </label>
-                <p className="text-[11px] text-neutral-400 mb-2">
-                  {headerMenuType === 'mega'
-                    ? 'Méga menu activé : le bouton PRODUITS ouvre le panneau riche en colonnes.'
-                    : 'Menu classique : le bouton PRODUITS est un lien direct vers la page catalogue.'}
-                </p>
-                <select
-                  value={headerMenuType}
-                  onChange={(e) => {
-                    setHeaderMenuType(e.target.value as 'classic' | 'mega');
-                    markDirty();
-                  }}
-                  className="w-full px-3 py-2 text-xs rounded-xl bg-neutral-50 dark:bg-zinc-800 border border-neutral-200 dark:border-white/10 text-neutral-800 dark:text-white font-bold"
-                >
-                  <option value="mega">Méga menu (panneau déroulant riche)</option>
-                  <option value="classic">Menu classique (liens simples directs)</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">
-                  Slug de la page « Nos conseils »
-                </label>
-                <p className="text-[11px] text-neutral-400 mb-2">
-                  URL publique de la page de conseils (ex: <code className="font-mono">nos-conseils</code> ou <code className="font-mono">insights</code>).
-                </p>
-                <input
-                  type="text"
-                  value={insightsSlug}
-                  onChange={(e) => {
-                    setInsightsSlug(e.target.value);
-                    markDirty();
-                  }}
-                  placeholder="nos-conseils"
-                  className="w-full px-3 py-2 text-xs font-mono rounded-xl bg-neutral-50 dark:bg-zinc-800 border border-neutral-200 dark:border-white/10 text-neutral-800 dark:text-white"
-                />
-              </div>
+            <div className="mt-4 max-w-md">
+              <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">
+                Slug de la page « Nos conseils »
+              </label>
+              <p className="text-[11px] text-neutral-400 mb-2">
+                URL publique de la page de conseils (ex: <code className="font-mono">nos-conseils</code> ou <code className="font-mono">insights</code>).
+              </p>
+              <input
+                type="text"
+                value={insightsSlug}
+                onChange={(e) => {
+                  setInsightsSlug(e.target.value);
+                  markDirty();
+                }}
+                placeholder="nos-conseils"
+                className="w-full px-3 py-2 text-xs font-mono rounded-xl bg-neutral-50 dark:bg-zinc-800 border border-neutral-200 dark:border-white/10 text-neutral-800 dark:text-white"
+              />
             </div>
           </div>
 
@@ -801,7 +777,7 @@ export function MenuEditor() {
             <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
               <div>
                 <h2 className="text-sm font-bold text-neutral-800 dark:text-white flex items-center gap-2">
-                  <Layers className="w-4 h-4 text-[#38E044]" />
+                  <Layers className="w-4 h-4 text-[color:var(--ui-accent)]" />
                   <span>Liens du menu principal</span>
                 </h2>
                 <p className="text-[11px] text-neutral-400 mt-0.5">
@@ -811,7 +787,7 @@ export function MenuEditor() {
               <button
                 type="button"
                 onClick={addNavItem}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#38E044]/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/40 text-xs font-bold hover:bg-[#38E044]/25 transition-all cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[rgba(var(--ui-accent-rgb),0.15)] text-emerald-600 dark:text-emerald-400 border border-emerald-500/40 text-xs font-bold hover:bg-[rgba(var(--ui-accent-rgb),0.25)] transition-all cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Ajouter un lien</span>
@@ -927,12 +903,59 @@ export function MenuEditor() {
       {/* ONGLET 2 : MÉGA MENU PRODUITS */}
       {activeTab === 'mega' && (
         <div className="space-y-6">
+          {/* Activation du Méga Menu vs Menu classique */}
+          <div className="bg-white dark:bg-zinc-900 border border-neutral-200/80 dark:border-white/10 rounded-3xl p-5 sm:p-6 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-sm font-bold text-neutral-800 dark:text-white flex items-center gap-2">
+                  <LayoutGrid className="w-4 h-4 text-[#38E044]" />
+                  <span>Activation du Méga Menu</span>
+                </h2>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                  Définissez si le bouton « PRODUITS » de la barre de navigation ouvre ce méga-menu complet ou s’il redirige directement vers la page catalogue.
+                </p>
+              </div>
+              <div className="flex items-center gap-2 bg-neutral-100 dark:bg-zinc-800 p-1.5 rounded-2xl border border-neutral-200 dark:border-white/10 self-start sm:self-auto shrink-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setHeaderMenuType('mega');
+                    markDirty();
+                  }}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    headerMenuType === 'mega'
+                      ? 'bg-[#38E044] text-black shadow-sm'
+                      : 'text-neutral-500 hover:text-white'
+                  }`}
+                >
+                  <LayoutGrid className="w-3.5 h-3.5" />
+                  <span>Méga-menu activé</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setHeaderMenuType('classic');
+                    markDirty();
+                  }}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    headerMenuType === 'classic'
+                      ? 'bg-[#38E044] text-black shadow-sm'
+                      : 'text-neutral-500 hover:text-white'
+                  }`}
+                >
+                  <MenuIcon className="w-3.5 h-3.5" />
+                  <span>Menu classique (lien direct)</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
           {/* Section 14 : Gestion des Descriptions */}
           <div className="bg-white dark:bg-zinc-900 border border-neutral-200/80 dark:border-white/10 rounded-3xl p-5 sm:p-6 shadow-sm">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
               <div>
                 <h2 className="text-sm font-bold text-neutral-800 dark:text-white flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-[#38E044]" />
+                  <FileText className="w-4 h-4 text-[color:var(--ui-accent)]" />
                   <span>Gestion des descriptions du panneau latéral</span>
                 </h2>
                 <p className="text-[11px] text-neutral-400 mt-0.5">
@@ -950,7 +973,7 @@ export function MenuEditor() {
                   }}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     descriptionMode === 'individual'
-                      ? 'bg-[#38E044] text-black shadow-sm'
+                      ? 'bg-[color:var(--ui-accent)] text-black shadow-sm'
                       : 'text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-white'
                   }`}
                 >
@@ -964,7 +987,7 @@ export function MenuEditor() {
                   }}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     descriptionMode === 'global'
-                      ? 'bg-[#38E044] text-black shadow-sm'
+                      ? 'bg-[color:var(--ui-accent)] text-black shadow-sm'
                       : 'text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-white'
                   }`}
                 >
@@ -1031,7 +1054,7 @@ export function MenuEditor() {
               <button
                 type="button"
                 onClick={applyEmpty}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#38E044] hover:bg-[#2fcb3c] text-black text-xs font-extrabold transition-all cursor-pointer shadow-md"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[color:var(--ui-accent)] hover:bg-[color:var(--ui-accent-hover)] text-black text-xs font-extrabold transition-all cursor-pointer shadow-md"
               >
                 <Plus className="w-4 h-4" />
                 <span>Créer un méga-menu</span>
@@ -1169,7 +1192,7 @@ export function MenuEditor() {
                             className={`shrink-0 px-2.5 py-1.5 rounded-xl text-[10px] font-extrabold transition-all cursor-pointer ${
                               placed
                                 ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/40'
-                                : 'bg-[#38E044]/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/40'
+                                : 'bg-[rgba(var(--ui-accent-rgb),0.15)] text-emerald-600 dark:text-emerald-400 border border-emerald-500/40'
                             }`}
                           >
                             {placed ? 'Re-placer' : '+ Ajouter'}
@@ -1213,7 +1236,7 @@ export function MenuEditor() {
                     setConfirm(null);
                   }
                 }}
-                className="px-4 py-2.5 rounded-xl text-xs font-extrabold bg-[#38E044] hover:bg-[#2fcb3c] text-black cursor-pointer"
+                className="px-4 py-2.5 rounded-xl text-xs font-extrabold bg-[color:var(--ui-accent)] hover:bg-[color:var(--ui-accent-hover)] text-black cursor-pointer"
               >
                 Confirmer
               </button>
@@ -1269,7 +1292,7 @@ function ColumnCard(props: {
         isDragging ? 'opacity-40 z-50 shadow-2xl' : ''
       } ${
         isActive
-          ? 'border-[#38E044]/70 shadow-[0_0_0_1px_rgba(56,224,68,0.4)]'
+          ? 'border-[rgba(var(--ui-accent-rgb),0.7)] shadow-[0_0_0_1px_rgba(var(--ui-accent-rgb),0.4)]'
           : 'border-neutral-200/80 dark:border-white/10'
       }`}
     >
@@ -1285,27 +1308,39 @@ function ColumnCard(props: {
         <span className="px-2 py-1 rounded-lg bg-neutral-100 dark:bg-white/5 text-[10px] font-mono font-bold text-neutral-500">
           {index + 1}/{total}
         </span>
-        <input
-          type="text"
-          value={column.titleFr}
-          onChange={(e) => onPatchColumn({ titleFr: e.target.value })}
-          className="w-1/2 min-w-0 px-2 py-1 text-xs font-bold bg-transparent rounded-lg border border-transparent focus:border-emerald-500/50 focus:outline-none text-neutral-900 dark:text-white"
-          placeholder="Titre FR"
-        />
-        <input
-          type="text"
-          value={column.titleEn}
-          onChange={(e) => onPatchColumn({ titleEn: e.target.value })}
-          className="w-1/2 min-w-0 px-2 py-1 text-xs font-mono uppercase tracking-wide bg-transparent rounded-lg border border-transparent focus:border-emerald-500/50 focus:outline-none text-neutral-500 dark:text-neutral-400"
-          placeholder="Titre EN"
-        />
+        <div className="flex items-center gap-1 flex-1 min-w-0">
+          <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 shrink-0">
+            FR
+          </span>
+          <input
+            type="text"
+            value={column.titleFr}
+            onChange={(e) => onPatchColumn({ titleFr: e.target.value })}
+            className="w-full min-w-0 px-2 py-1 text-xs font-bold bg-transparent rounded-lg border border-transparent focus:border-emerald-500/50 focus:outline-none text-neutral-900 dark:text-white"
+            placeholder="Titre colonne en français"
+            title="Titre de la colonne affiché aux visiteurs francophones"
+          />
+        </div>
+        <div className="flex items-center gap-1 flex-1 min-w-0">
+          <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/30 shrink-0">
+            EN
+          </span>
+          <input
+            type="text"
+            value={column.titleEn}
+            onChange={(e) => onPatchColumn({ titleEn: e.target.value })}
+            className="w-full min-w-0 px-2 py-1 text-xs font-mono uppercase tracking-wide bg-transparent rounded-lg border border-transparent focus:border-emerald-500/50 focus:outline-none text-neutral-500 dark:text-neutral-400"
+            placeholder="Titre colonne en anglais (site en EN)"
+            title="Titre de la colonne affiché si le visiteur passe le site en anglais (bouton EN)"
+          />
+        </div>
         <div className="ml-auto flex items-center gap-1">
           <button
             type="button"
             onClick={() => onSelect()}
             className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-colors cursor-pointer ${
               isActive
-                ? 'bg-[#38E044] text-black'
+                ? 'bg-[color:var(--ui-accent)] text-black'
                 : 'bg-neutral-100 dark:bg-white/5 text-neutral-500 hover:text-neutral-700 dark:hover:text-white'
             }`}
           >
@@ -1448,7 +1483,7 @@ function ItemRow(props: {
               onClick={() => setExpanded(!expanded)}
               className={`shrink-0 p-1.5 rounded-lg transition-colors cursor-pointer ${
                 expanded || item.descFr || item.environment || item.customUrl || item.customImg
-                  ? 'bg-[#38E044]/20 text-[#38E044]'
+                  ? 'bg-[rgba(var(--ui-accent-rgb),0.2)] text-[color:var(--ui-accent)]'
                   : 'bg-neutral-100 dark:bg-white/5 text-neutral-400 hover:text-white'
               }`}
               title="Personnaliser"
@@ -1488,11 +1523,21 @@ function ItemRow(props: {
             <span className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-bold border uppercase ${badge.className}`}>
               {badge.text}
             </span>
-            {item.environment && (
-              <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/30 uppercase">
-                {item.environment === 'indoor' ? 'Intérieur' : item.environment === 'outdoor' ? 'Extérieur' : 'Int. & Ext.'}
-              </span>
-            )}
+            <select
+              value={item.environment ?? ''}
+              onChange={(e) =>
+                onPatch({
+                  environment: (e.target.value === '' ? null : e.target.value) as 'indoor' | 'outdoor' | 'both' | null,
+                })
+              }
+              className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-lg bg-white dark:bg-zinc-800 border border-neutral-300 dark:border-white/10 text-neutral-800 dark:text-neutral-200 focus:outline-none focus:border-emerald-500/50 cursor-pointer"
+              title="Tag affiché dans le méga menu à côté du nom (ex: INTÉRIEUR, EXTÉRIEUR)"
+            >
+              <option value="">Tag : Aucun / Hérité</option>
+              <option value="indoor">Tag : INTÉRIEUR</option>
+              <option value="outdoor">Tag : EXTÉRIEUR</option>
+              <option value="both">Tag : INT. & EXT.</option>
+            </select>
             {item.descFr && item.descFr.trim() ? (
               <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
                 Desc. individuelle

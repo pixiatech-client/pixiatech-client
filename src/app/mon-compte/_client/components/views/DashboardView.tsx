@@ -111,8 +111,8 @@ function KpiCard({ label, value, suffix = '', sub, accent, icon, delay = 0, onCl
       className={`group relative overflow-hidden rounded-2xl border border-white/[0.06] bg-[#0F1214] p-5 shadow-lg transition-all duration-200 select-none ${onClick ? 'cursor-pointer hover:border-white/10 hover:bg-[#141719]' : ''}`}
     >
       {/* Subtle glow on hover */}
-      <div className={`pointer-events-none absolute inset-0 rounded-2xl opacity-0 transition-opacity duration-300 group-hover:opacity-100 ${accent.replace('text-', 'bg-').replace(/\[.*?\]/, '[#38E044]')}`}
-        style={{ background: `radial-gradient(ellipse at top left, ${accent.includes('emerald') ? 'rgba(56,224,68,0.06)' : accent.includes('sky') ? 'rgba(56,189,248,0.06)' : 'rgba(251,191,36,0.06)'} 0%, transparent 70%)` }}
+      <div className={`pointer-events-none absolute inset-0 rounded-2xl opacity-0 transition-opacity duration-300 group-hover:opacity-100 ${accent.replace('text-', 'bg-').replace(/\[.*?\]/, '[var(--ui-accent)]')}`}
+        style={{ background: `radial-gradient(ellipse at top left, ${accent.includes('emerald') ? 'rgba(var(--ui-accent-rgb),0.06)' : accent.includes('sky') ? 'rgba(56,189,248,0.06)' : 'rgba(251,191,36,0.06)'} 0%, transparent 70%)` }}
       />
 
       <div className="relative z-10">
@@ -188,14 +188,14 @@ function SectionHeader({
   return (
     <div className="mb-4 flex items-center justify-between">
       <div className="flex items-center gap-2.5">
-        <span className="text-[#38E044]">{icon}</span>
+        <span className="text-[color:var(--ui-accent)]">{icon}</span>
         <h2 className="text-sm font-bold text-white">{title}</h2>
       </div>
       {action && onAction && (
         <button
           type="button"
           onClick={onAction}
-          className="flex items-center gap-1 text-[11px] font-semibold text-neutral-500 transition-colors hover:text-[#38E044] cursor-pointer"
+          className="flex items-center gap-1 text-[11px] font-semibold text-neutral-500 transition-colors hover:text-[color:var(--ui-accent)] cursor-pointer"
         >
           {action}
           <ArrowRight className="h-3 w-3" />
@@ -254,7 +254,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           }}
         />
         {/* Green radial glow top-right */}
-        <div className="pointer-events-none absolute -top-12 -right-12 h-48 w-48 rounded-full bg-[#38E044]/10 blur-3xl" />
+        <div className="pointer-events-none absolute -top-12 -right-12 h-48 w-48 rounded-full bg-[rgba(var(--ui-accent-rgb),0.1)] blur-3xl" />
 
         <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
@@ -263,12 +263,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <img
                 src={user.avatarUrl}
                 alt={user.name}
-                className="h-12 w-12 rounded-2xl object-cover ring-2 ring-[#38E044]/30 shrink-0"
+                className="h-12 w-12 rounded-2xl object-cover ring-2 ring-[rgba(var(--ui-accent-rgb),0.3)] shrink-0"
                 referrerPolicy="no-referrer"
               />
             ) : (
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#38E044]/10 ring-2 ring-[#38E044]/30">
-                <span className="font-mono text-xl font-extrabold text-[#38E044]">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[rgba(var(--ui-accent-rgb),0.1)] ring-2 ring-[rgba(var(--ui-accent-rgb),0.3)]">
+                <span className="font-mono text-xl font-extrabold text-[color:var(--ui-accent)]">
                   {(user.name || 'C').charAt(0).toUpperCase()}
                 </span>
               </div>
@@ -276,10 +276,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-xl font-extrabold tracking-tight text-white sm:text-2xl">
-                  {greet}, <span className="text-[#38E044]">{firstName}</span>
+                  {greet}, <span className="text-[color:var(--ui-accent)]">{firstName}</span>
                 </h1>
-                <span className="inline-flex items-center gap-1 rounded-full border border-[#38E044]/30 bg-[#38E044]/10 px-2 py-0.5 text-[10px] font-bold text-[#38E044]">
-                  <span className="h-1.5 w-1.5 rounded-full bg-[#38E044] shadow-[0_0_6px_#38E044]" />
+                <span className="inline-flex items-center gap-1 rounded-full border border-[rgba(var(--ui-accent-rgb),0.3)] bg-[rgba(var(--ui-accent-rgb),0.1)] px-2 py-0.5 text-[10px] font-bold text-[color:var(--ui-accent)]">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--ui-accent)] shadow-[0_0_6px_var(--ui-accent)]" />
                   En ligne
                 </span>
               </div>
@@ -313,7 +313,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <button
               type="button"
               onClick={onOpenStore}
-              className="flex items-center gap-2 rounded-xl bg-[#38E044] px-4 py-2 text-xs font-extrabold text-black shadow-lg shadow-[#38E044]/20 transition-all hover:bg-[#2fcf3a] hover:shadow-[#38E044]/30 cursor-pointer"
+              className="flex items-center gap-2 rounded-xl bg-[color:var(--ui-accent)] px-4 py-2 text-xs font-extrabold text-black shadow-lg shadow-[rgba(var(--ui-accent-rgb),0.2)] transition-all hover:bg-[#2fcf3a] hover:shadow-[rgba(var(--ui-accent-rgb),0.3)] cursor-pointer"
             >
               <ShoppingBag className="h-3.5 w-3.5" />
               Boutique
@@ -329,7 +329,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           label="Commandes"
           value={orders.length}
           sub={`${deliveredOrders.length} livrée(s) · ${pendingOrders.length} en transit`}
-          accent="text-[#38E044]"
+          accent="text-[color:var(--ui-accent)]"
           icon={<Package className="h-4 w-4" />}
           delay={0.05}
           onClick={() => onNavigate('orders')}
@@ -396,7 +396,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <button
                   type="button"
                   onClick={onOpenStore}
-                  className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#38E044] px-5 py-2.5 text-xs font-extrabold text-black shadow-lg shadow-[#38E044]/20 transition hover:bg-[#2fcf3a] cursor-pointer"
+                  className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[color:var(--ui-accent)] px-5 py-2.5 text-xs font-extrabold text-black shadow-lg shadow-[rgba(var(--ui-accent-rgb),0.2)] transition hover:bg-[#2fcf3a] cursor-pointer"
                 >
                   Découvrir la boutique
                   <ArrowRight className="h-3.5 w-3.5" />
@@ -483,7 +483,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     onClick={() => onNavigate('invoices')}
                     className="mt-3 flex items-center gap-1.5 mx-auto rounded-xl border border-white/[0.06] px-4 py-2 text-xs font-semibold text-neutral-300 transition hover:bg-white/[0.06] cursor-pointer"
                   >
-                    Demander une facture <ChevronRight className="h-3.5 w-3.5 text-[#38E044]" />
+                    Demander une facture <ChevronRight className="h-3.5 w-3.5 text-[color:var(--ui-accent)]" />
                   </button>
                 )}
               </div>
@@ -506,7 +506,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       className="group cursor-pointer rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4 transition-all hover:bg-white/[0.04] hover:border-white/10"
                     >
                       <div className="mb-3 flex items-start justify-between gap-2">
-                        <span className="font-mono text-[11px] font-bold text-[#38E044] bg-[#38E044]/10 px-2 py-0.5 rounded-md">
+                        <span className="font-mono text-[11px] font-bold text-[color:var(--ui-accent)] bg-[rgba(var(--ui-accent-rgb),0.1)] px-2 py-0.5 rounded-md">
                           {inv.invoiceNumber}
                         </span>
                         <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${cls}`}>
@@ -535,7 +535,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             className="rounded-3xl border border-white/[0.06] bg-[#0F1214] p-5 shadow-lg"
           >
             <div className="mb-4 flex items-center gap-2.5">
-              <span className="text-[#38E044]"><User className="h-4 w-4" /></span>
+              <span className="text-[color:var(--ui-accent)]"><User className="h-4 w-4" /></span>
               <h3 className="text-sm font-bold text-white">Identité & Conformité</h3>
             </div>
 
@@ -547,7 +547,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   <Mail className="h-3 w-3 shrink-0" />
                   <span className="truncate">{user.email || '—'}</span>
                   {user.emailVerified && (
-                    <CheckCircle2 className="ml-auto h-3.5 w-3.5 shrink-0 text-[#38E044]" />
+                    <CheckCircle2 className="ml-auto h-3.5 w-3.5 shrink-0 text-[color:var(--ui-accent)]" />
                   )}
                 </div>
                 {user.phone && (
@@ -560,14 +560,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
               {/* Company / Siret */}
               {user.siretVerified && user.companyName ? (
-                <div className="rounded-2xl border border-[#38E044]/20 bg-[#38E044]/5 p-3.5 space-y-2">
+                <div className="rounded-2xl border border-[rgba(var(--ui-accent-rgb),0.2)] bg-[rgba(var(--ui-accent-rgb),0.05)] p-3.5 space-y-2">
                   <div className="flex items-center gap-2">
-                    <Building2 className="h-4 w-4 text-[#38E044] shrink-0" />
+                    <Building2 className="h-4 w-4 text-[color:var(--ui-accent)] shrink-0" />
                     <span className="font-bold text-white truncate">{user.companyName}</span>
                   </div>
                   <div className="flex items-center justify-between text-[11px]">
                     <span className="font-mono text-neutral-400">SIRET : {user.siret}</span>
-                    <span className="inline-flex items-center gap-1 rounded-full border border-[#38E044]/30 bg-[#38E044]/10 px-2 py-0.5 text-[10px] font-bold text-[#38E044]">
+                    <span className="inline-flex items-center gap-1 rounded-full border border-[rgba(var(--ui-accent-rgb),0.3)] bg-[rgba(var(--ui-accent-rgb),0.1)] px-2 py-0.5 text-[10px] font-bold text-[color:var(--ui-accent)]">
                       <ShieldCheck className="h-3 w-3" />
                       Certifié INSEE
                     </span>
@@ -617,7 +617,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-white/[0.05] bg-white/[0.03] px-4 py-2.5 text-xs font-semibold text-neutral-400 transition hover:bg-white/[0.06] hover:text-neutral-200 cursor-pointer"
             >
               Gérer les paramètres
-              <ChevronRight className="h-3.5 w-3.5 text-[#38E044]" />
+              <ChevronRight className="h-3.5 w-3.5 text-[color:var(--ui-accent)]" />
             </button>
           </motion.div>
 
@@ -629,13 +629,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             className="rounded-3xl border border-white/[0.06] bg-[#0F1214] p-5 shadow-lg"
           >
             <div className="mb-4 flex items-center gap-2.5">
-              <span className="text-[#38E044]"><Zap className="h-4 w-4" /></span>
+              <span className="text-[color:var(--ui-accent)]"><Zap className="h-4 w-4" /></span>
               <h3 className="text-sm font-bold text-white">Actions Rapides</h3>
             </div>
 
             <div className="space-y-2">
               <QuickAction
-                icon={<ShoppingBag className="h-5 w-5 text-[#38E044]" />}
+                icon={<ShoppingBag className="h-5 w-5 text-[color:var(--ui-accent)]" />}
                 label="Boutique PIXIATECH"
                 sub="Matériel informatique haute performance"
                 onClick={onOpenStore}
@@ -701,7 +701,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           >
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[10px] text-neutral-600">
               <span className="flex items-center gap-1.5">
-                <ShieldCheck className="h-3 w-3 text-[#38E044]" />
+                <ShieldCheck className="h-3 w-3 text-[color:var(--ui-accent)]" />
                 TLS 1.3
               </span>
               <span className="flex items-center gap-1.5">

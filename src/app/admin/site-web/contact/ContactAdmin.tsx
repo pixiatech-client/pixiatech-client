@@ -67,7 +67,7 @@ export function ContactAdmin() {
       <div className={`bg-[#0A0D0E] border border-neutral-800 rounded-3xl p-5 sm:p-6 text-white ${BACKOFFICE_HEADER}`}>
         <div className="flex items-center gap-4 min-w-0">
           <div className={HEADER_ICON_TILE}>
-            <Mail className="w-6 h-6 text-[#38E044]" />
+            <Mail className="w-6 h-6 text-[color:var(--ui-accent)]" />
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
@@ -83,7 +83,7 @@ export function ContactAdmin() {
 
         <div className="flex items-center gap-2.5 flex-wrap shrink-0">
           <button type="button" onClick={handleRefresh} className={BTN_SECONDARY} title="Actualiser">
-            <RefreshCw className="w-3.5 h-3.5 text-[#38E044]" />
+            <RefreshCw className="w-3.5 h-3.5 text-[color:var(--ui-accent)]" />
             <span>Actualiser</span>
           </button>
         </div>

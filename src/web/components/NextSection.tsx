@@ -90,7 +90,7 @@ export const NextSection: React.FC<NextSectionProps> = ({
                 overflow: 'hidden',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = 'var(--ui-accent, #C3F910)';
+                e.currentTarget.style.borderColor = 'var(--ui-accent, var(--ui-accent))';
                 e.currentTarget.style.background = 'rgba(var(--ui-accent-rgb),0.05)';
                 e.currentTarget.style.boxShadow = '0 8px 30px rgba(var(--ui-accent-rgb),0.12)';
               }}
@@ -104,7 +104,7 @@ export const NextSection: React.FC<NextSectionProps> = ({
                 style={{
                   fontSize: '10.5px',
                   letterSpacing: '.22em',
-                  color: 'var(--ui-accent, #C3F910)',
+                  color: 'var(--ui-accent, var(--ui-accent))',
                   marginBottom: '14px',
                   textTransform: 'uppercase',
                   fontWeight: 700,

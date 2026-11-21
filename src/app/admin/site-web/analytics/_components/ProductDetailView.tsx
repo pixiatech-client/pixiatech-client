@@ -107,7 +107,7 @@ export default function ProductDetailView({ slug, from, to, filter, t, onBack }:
                   <XAxis dataKey="day" tick={{ fontSize: 10, fill: 'currentColor', opacity: 0.6 }} axisLine={false} tickLine={false} minTickGap={24} />
                   <YAxis tick={{ fontSize: 10, fill: 'currentColor', opacity: 0.6 }} axisLine={false} tickLine={false} width={40} />
                   <Tooltip contentStyle={{ background: '#0A0D0E', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, fontSize: 12, color: '#fff', boxShadow: '0 12px 32px rgba(0,0,0,0.4)' }} />
-                  <Area type="monotone" dataKey="views" name={g('colViews')} stroke="#38E044" strokeWidth={2} fill="#38E044" fillOpacity={0.2} isAnimationActive={false} />
+                  <Area type="monotone" dataKey="views" name={g('colViews')} stroke="var(--ui-accent, #38E044)" strokeWidth={2} fill="var(--ui-accent, #38E044)" fillOpacity={0.2} isAnimationActive={false} />
                   <Area type="monotone" dataKey="clicks" name={g('colClicks')} stroke="#38B6FF" strokeWidth={2} fill="#38B6FF" fillOpacity={0.15} isAnimationActive={false} />
                 </AreaChart>
               </ResponsiveContainer>

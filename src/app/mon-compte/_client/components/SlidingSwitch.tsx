@@ -52,7 +52,7 @@ export function SlidingSwitch({ options, activeId, onChange, className = '', siz
 
             <div className="relative z-10 flex items-center gap-2">
               {/* Always reserve space for the dot to prevent layout shift */}
-              <span className={`h-2 w-2 shrink-0 rounded-full transition-all ${isActive ? 'bg-[#38E044] shadow-[0_0_8px_#38E044]' : 'opacity-0'}`} />
+              <span className={`h-2 w-2 shrink-0 rounded-full transition-all ${isActive ? 'bg-[color:var(--ui-accent)] shadow-[0_0_8px_var(--ui-accent)]' : 'opacity-0'}`} />
 
               {option.icon && <span className={`shrink-0 ${isActive ? 'text-white' : 'text-neutral-500'}`}>{option.icon}</span>}
 

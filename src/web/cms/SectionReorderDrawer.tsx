@@ -208,11 +208,11 @@ export function SectionReorderDrawer({ open, onClose }: SectionReorderDrawerProp
         role="dialog"
         aria-label="Réorganiser les sections"
         className="fixed right-0 top-0 bottom-0 z-[291] flex flex-col w-[320px] bg-[#0e0e0d] border-l border-[#262624] shadow-2xl font-mono text-[#F5F4F0] select-none"
-        style={{ paddingTop: 'var(--admin-bar-h, 0px)' }}
+        style={{ paddingTop: 'calc(var(--admin-bar-h, 0px) + var(--preview-bar-h, 0px) + var(--cms-section-bar-h, 0px))' }}
       >
         {/* En-tête */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-[#262624]">
-          <span className="flex items-center gap-2 text-[#C3F910] font-bold text-[12px] tracking-wider uppercase">
+          <span className="flex items-center gap-2 text-[color:var(--ui-accent)] font-bold text-[12px] tracking-wider uppercase">
             <GripVertical className="w-4 h-4" />
             Réorganiser les sections
           </span>
@@ -248,9 +248,9 @@ export function SectionReorderDrawer({ open, onClose }: SectionReorderDrawerProp
                 className={[
                   'flex items-center gap-2 px-3 py-2 mx-2 my-0.5 rounded border transition-all',
                   isDragging
-                    ? 'opacity-40 border-[#C3F910]/50 bg-[#C3F910]/10'
+                    ? 'opacity-40 border-[rgba(var(--ui-accent-rgb),0.5)] bg-[rgba(var(--ui-accent-rgb),0.1)]'
                     : isDropTarget
-                    ? 'border-[#C3F910] bg-[#C3F910]/15 scale-[1.02]'
+                    ? 'border-[color:var(--ui-accent)] bg-[rgba(var(--ui-accent-rgb),0.15)] scale-[1.02]'
                     : 'border-[#2B2B28] bg-[#141413] hover:border-[#3a3a36] hover:bg-[#1a1a18]',
                 ].join(' ')}
               >
@@ -262,7 +262,7 @@ export function SectionReorderDrawer({ open, onClose }: SectionReorderDrawerProp
                   value={index + 1}
                   onChange={(e) => handlePositionInput(index, e.target.value)}
                   onBlur={(e) => handlePositionInput(index, e.target.value)}
-                  className="w-9 text-center bg-[#0a0a09] border border-[#2B2B28] rounded text-[10px] text-[#C3F910] py-0.5 font-mono focus:outline-none focus:border-[#C3F910]/70"
+                  className="w-9 text-center bg-[#0a0a09] border border-[#2B2B28] rounded text-[10px] text-[color:var(--ui-accent)] py-0.5 font-mono focus:outline-none focus:border-[rgba(var(--ui-accent-rgb),0.7)]"
                   title="Numéro de position (1-based)"
                 />
 
@@ -280,7 +280,7 @@ export function SectionReorderDrawer({ open, onClose }: SectionReorderDrawerProp
                     type="button"
                     onClick={() => moveUp(index)}
                     disabled={index === 0}
-                    className="w-5 h-4 flex items-center justify-center rounded text-[#6b6b64] hover:text-[#C3F910] disabled:opacity-20 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                    className="w-5 h-4 flex items-center justify-center rounded text-[#6b6b64] hover:text-[color:var(--ui-accent)] disabled:opacity-20 disabled:cursor-not-allowed transition-colors cursor-pointer"
                     title="Déplacer vers le haut"
                   >
                     <ChevronUp className="w-3.5 h-3.5" />
@@ -289,7 +289,7 @@ export function SectionReorderDrawer({ open, onClose }: SectionReorderDrawerProp
                     type="button"
                     onClick={() => moveDown(index)}
                     disabled={index === order.length - 1}
-                    className="w-5 h-4 flex items-center justify-center rounded text-[#6b6b64] hover:text-[#C3F910] disabled:opacity-20 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                    className="w-5 h-4 flex items-center justify-center rounded text-[#6b6b64] hover:text-[color:var(--ui-accent)] disabled:opacity-20 disabled:cursor-not-allowed transition-colors cursor-pointer"
                     title="Déplacer vers le bas"
                   >
                     <ChevronDown className="w-3.5 h-3.5" />
@@ -319,7 +319,7 @@ export function SectionReorderDrawer({ open, onClose }: SectionReorderDrawerProp
               'flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded border text-[11px] font-bold transition-all cursor-pointer',
               saved
                 ? 'bg-emerald-500/20 border-emerald-500/60 text-emerald-400'
-                : 'bg-[#C3F910] border-[#C3F910] text-[#080808] hover:bg-[#d4ff20] active:scale-[0.98]',
+                : 'bg-[color:var(--ui-accent)] border-[color:var(--ui-accent)] text-[#080808] hover:bg-[#d4ff20] active:scale-[0.98]',
               saving ? 'opacity-60 cursor-wait' : '',
             ].join(' ')}
           >

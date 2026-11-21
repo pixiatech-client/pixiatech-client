@@ -94,7 +94,7 @@ export const AboutExperienceSection: React.FC<AboutExperienceSectionProps> = ({
         <div className="relative z-10 wrap pb-20 pt-36">
           <div
             className="text-[11px] font-mono tracking-[0.24em] uppercase font-bold mb-6"
-            style={{ color: 'var(--accent, #C3F910)' }}
+            style={{ color: 'var(--accent, var(--ui-accent))' }}
           >
             {t.eyebrow}
           </div>
@@ -115,7 +115,7 @@ export const AboutExperienceSection: React.FC<AboutExperienceSectionProps> = ({
                 window.location.href = '/web/contact';
               }}
               className="px-7 py-4 text-black font-bold text-[13px] tracking-wider uppercase hover:bg-white transition-colors cursor-pointer"
-              style={{ backgroundColor: 'var(--accent, #C3F910)' }}
+              style={{ backgroundColor: 'var(--accent, var(--ui-accent))' }}
             >
               {t.visitBtn}
             </button>
@@ -155,7 +155,7 @@ export const AboutExperienceSection: React.FC<AboutExperienceSectionProps> = ({
                 <div>
                   <div
                     className="text-[12px] font-mono tracking-[0.2em] font-bold mb-4"
-                    style={{ color: 'var(--accent, #C3F910)' }}
+                    style={{ color: 'var(--accent, var(--ui-accent))' }}
                   >
                     {st.num}
                   </div>

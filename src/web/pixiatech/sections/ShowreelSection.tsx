@@ -601,8 +601,8 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
                 width: 7,
                 height: 7,
                 borderRadius: '50%',
-                background: 'var(--accent, #C3F910)',
-                boxShadow: '0 0 10px var(--accent, #C3F910)',
+                background: 'var(--accent, var(--ui-accent))',
+                boxShadow: '0 0 10px var(--accent, var(--ui-accent))',
                 animation: 'xr-blink 1.4s ease-in-out infinite',
               }}
             />
@@ -656,7 +656,7 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
                 style={{
                   background: 'transparent',
                   border: 'none',
-                  color: 'var(--accent, #C3F910)',
+                  color: 'var(--accent, var(--ui-accent))',
                   padding: 4,
                   cursor: 'pointer',
                   display: 'flex',
@@ -678,7 +678,7 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
                 style={{
                   background: 'transparent',
                   border: 'none',
-                  color: 'var(--accent, #C3F910)',
+                  color: 'var(--accent, var(--ui-accent))',
                   padding: 4,
                   cursor: 'pointer',
                   display: 'flex',
@@ -781,7 +781,7 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
                   fontSize: 16.5,
                   fontWeight: 700,
                   letterSpacing: '-.01em',
-                  color: 'var(--accent, #C3F910)',
+                  color: 'var(--accent, var(--ui-accent))',
                   fontFamily: 'var(--font-mono, monospace)',
                 }}
               >
@@ -830,7 +830,7 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
                 <div style={{ fontSize: 9, letterSpacing: '.18em', color: '#6B7280', fontFamily: 'var(--font-mono)' }}>
                   GENLOCK
                 </div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent, #C3F910)', marginTop: 2 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent, var(--ui-accent))', marginTop: 2 }}>
                   7,680 Hz
                 </div>
               </div>
@@ -857,7 +857,7 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
             style={{
               fontSize: 11,
               letterSpacing: '.24em',
-              color: 'var(--accent, #C3F910)',
+              color: 'var(--accent, var(--ui-accent))',
               fontWeight: 700,
               marginBottom: 16,
               fontFamily: 'var(--font-mono)',
@@ -947,7 +947,7 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
                 style={{
                   fontSize: 11,
                   letterSpacing: '.24em',
-                  color: 'var(--accent, #C3F910)',
+                  color: 'var(--accent, var(--ui-accent))',
                   fontWeight: 700,
                   marginBottom: 14,
                   fontFamily: 'var(--font-mono)',
@@ -1013,7 +1013,7 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
                       textTransform: 'none',
                       letterSpacing: '.06em',
                       border: 0,
-                      background: 'var(--accent, #C3F910)',
+                      background: 'var(--accent, var(--ui-accent))',
                       color: '#05070B',
                       fontWeight: 800,
                       borderRadius: 999,
@@ -1076,8 +1076,8 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
                 top: 0,
                 bottom: 0,
                 width: `${(scrollProgress * 100).toFixed(1)}%`,
-                background: 'var(--accent, #C3F910)',
-                boxShadow: '0 0 12px var(--accent, #C3F910)',
+                background: 'var(--accent, var(--ui-accent))',
+                boxShadow: '0 0 12px var(--accent, var(--ui-accent))',
                 transition: 'width 80ms linear',
               }}
             />
@@ -1107,7 +1107,7 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
                     border: 'none',
                     padding: '4px 8px',
                     cursor: 'pointer',
-                    color: active ? 'var(--accent, #C3F910)' : '#6B7280',
+                    color: active ? 'var(--accent, var(--ui-accent))' : '#6B7280',
                     fontWeight: active ? 700 : 500,
                     display: 'flex',
                     alignItems: 'center',
@@ -1126,8 +1126,8 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
                       width: 5,
                       height: 5,
                       borderRadius: '50%',
-                      background: active ? 'var(--accent, #C3F910)' : 'rgba(255,255,255,0.2)',
-                      boxShadow: active ? '0 0 8px var(--accent, #C3F910)' : 'none',
+                      background: active ? 'var(--accent, var(--ui-accent))' : 'rgba(255,255,255,0.2)',
+                      boxShadow: active ? '0 0 8px var(--accent, var(--ui-accent))' : 'none',
                     }}
                   />
                   <span>{stName}</span>

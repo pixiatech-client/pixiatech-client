@@ -70,20 +70,20 @@ export default function InsightsModule({ current, previous, conversions, prevCon
   return (
     <div className="rounded-2xl border border-neutral-200/80 dark:border-white/10 bg-white dark:bg-zinc-900 p-4 sm:p-5 shadow-sm">
       <div className="flex items-center gap-2 mb-3">
-        <Sparkles className="h-4 w-4 text-[#38E044]" aria-hidden="true" />
+        <Sparkles className="h-4 w-4 text-[color:var(--ui-accent)]" aria-hidden="true" />
         <h3 className="text-sm font-black tracking-tight text-neutral-900 dark:text-white">{g('insightsTitle')}</h3>
       </div>
       <ul className="space-y-2">
         {items.map((i) => (
           <li key={i.key} className="flex items-start gap-2">
-            <span className="mt-[5px] h-1.5 w-1.5 shrink-0 rounded-full bg-[#38E044]/60" aria-hidden="true" />
+            <span className="mt-[5px] h-1.5 w-1.5 shrink-0 rounded-full bg-[rgba(var(--ui-accent-rgb),0.6)]" aria-hidden="true" />
             <button
               type="button"
               disabled={!i.slug}
               onClick={() => i.slug && onSelectProduct(i.slug)}
               className={`text-sm text-left text-neutral-700 dark:text-neutral-300 ${
                 i.slug
-                  ? 'cursor-pointer underline decoration-dotted underline-offset-4 hover:text-[#38E044] focus-visible:outline-none focus-visible:text-[#38E044]'
+                  ? 'cursor-pointer underline decoration-dotted underline-offset-4 hover:text-[color:var(--ui-accent)] focus-visible:outline-none focus-visible:text-[color:var(--ui-accent)]'
                   : 'cursor-default'
               }`}
             >

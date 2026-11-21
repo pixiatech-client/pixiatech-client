@@ -216,7 +216,7 @@ export function PublicInfoTab({ refreshToken, onSaved }: PublicInfoTabProps) {
       <div className={`bg-[#0A0D0E] border border-neutral-800 rounded-3xl p-5 sm:p-6 text-white ${BACKOFFICE_HEADER}`}>
         <div className="flex items-start gap-4 min-w-0">
           <div className="w-12 h-12 rounded-2xl bg-[#141B1E] border border-neutral-700 flex items-center justify-center shrink-0">
-            <Building2 className="w-6 h-6 text-[#38E044]" />
+            <Building2 className="w-6 h-6 text-[color:var(--ui-accent)]" />
           </div>
           <div className="min-w-0">
             <h2 className="text-base font-bold tracking-tight">Coordonnées publiques</h2>
@@ -233,7 +233,7 @@ export function PublicInfoTab({ refreshToken, onSaved }: PublicInfoTabProps) {
           rel="noreferrer"
           className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-neutral-800/80 hover:bg-neutral-700 text-white text-xs font-bold border border-white/10 transition-all cursor-pointer shadow-sm active:scale-95 shrink-0"
         >
-          <ExternalLink className="w-3.5 h-3.5 text-[#38E044]" />
+          <ExternalLink className="w-3.5 h-3.5 text-[color:var(--ui-accent)]" />
           <span>Voir la page publique</span>
         </a>
       </div>

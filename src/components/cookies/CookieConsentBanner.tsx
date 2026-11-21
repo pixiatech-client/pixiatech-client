@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { MobileBottomSheet, useIsMobile } from '@/components/ui/bottom-sheet';
 import {
   Cookie,
   ShieldCheck,
@@ -12,6 +13,40 @@ import {
   Info,
   Lock,
 } from 'lucide-react';
+
+/** Coquille du panneau de préférences : sheet sur mobile, modale sur desktop. */
+function PreferencesShell({
+  isMobile,
+  onClose,
+  children,
+}: {
+  isMobile: boolean;
+  onClose: () => void;
+  children: React.ReactNode;
+}) {
+  if (isMobile) {
+    return (
+      <MobileBottomSheet
+        open
+        onClose={onClose}
+        title="Préférences cookies"
+        tone="dark"
+        contentClassName="px-0 pb-0"
+      >
+        {children}
+      </MobileBottomSheet>
+    );
+  }
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
+    >
+      {children}
+    </div>
+  );
+}
 
 /** Toggle accordé avec var(--accent) */
 function AccentToggle({
@@ -59,6 +94,7 @@ export function CookieConsentBanner() {
   const [mounted, setMounted] = useState(false);
   const [showBanner, setShowBanner] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const isMobile = useIsMobile();
   const [preferences, setPreferences] = useState<CookiePreferences>({
     necessary: true,
     analytics: false,
@@ -235,11 +271,7 @@ export function CookieConsentBanner() {
 
       {/* 2. Modal for Customization (Detailed categories) */}
       {showModal && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
-        >
+        <PreferencesShell isMobile={isMobile} onClose={() => setShowModal(false)}>
           <div className="w-full max-w-2xl max-h-[90vh] flex flex-col rounded-2xl bg-[#0c0c0b] border border-[#272725] text-white shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Header */}
             <div className="flex items-center justify-between p-5 border-b border-[#1f1f1f]">
@@ -360,7 +392,7 @@ export function CookieConsentBanner() {
               </button>
             </div>
           </div>
-        </div>
+        </PreferencesShell>
       )}
 
       {/* 3. Small Floating Trigger in bottom-left to reopen preferences anytime */}
@@ -368,7 +400,7 @@ export function CookieConsentBanner() {
         <button
           type="button"
           onClick={() => setShowModal(true)}
-          className="fixed bottom-4 left-4 z-40 w-10 h-10 rounded-full bg-[#11110f]/90 hover:bg-[#1a1a17] text-[#a3a3a3] border border-[#272725] backdrop-blur-md shadow-lg flex items-center justify-center transition-all cursor-pointer group"
+          className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-4 z-40 h-11 w-11 rounded-full bg-[#11110f]/90 hover:bg-[#1a1a17] text-[#a3a3a3] border border-[#272725] backdrop-blur-md shadow-lg flex items-center justify-center transition-all cursor-pointer group"
           style={{ '--hover-color': 'var(--accent)' } as React.CSSProperties}
           onMouseEnter={e => {
             e.currentTarget.style.color = 'var(--accent)';

@@ -22,7 +22,7 @@ export const HEADER_ICON_TILE =
 
 /** Badge « BACKOFFICE » vert vif. */
 export const BACKOFFICE_BADGE =
-  'text-[10px] font-mono font-extrabold bg-[#38E044] text-black px-2.5 py-0.5 rounded-full shadow-[0_0_10px_rgba(56,224,68,0.4)]';
+  'text-[10px] font-mono font-extrabold bg-[color:var(--ui-accent)] text-black px-2.5 py-0.5 rounded-full shadow-[0_0_10px_rgba(var(--ui-accent-rgb),0.4)]';
 
 /** Bouton secondaire (« Actualiser »). */
 export const BTN_SECONDARY =
@@ -34,7 +34,7 @@ export const BTN_GHOST =
 
 /** Bouton primaire vert (action d'enregistrement). */
 export const BTN_PRIMARY =
-  'flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#38E044] hover:bg-[#2fcb3c] text-black text-xs font-extrabold transition-all cursor-pointer shadow-[0_0_16px_rgba(56,224,68,0.35)] active:scale-95 disabled:opacity-50 disabled:shadow-none disabled:cursor-not-allowed';
+  'flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[color:var(--ui-accent)] hover:bg-[color:var(--ui-accent-hover)] text-black text-xs font-extrabold transition-all cursor-pointer shadow-[0_0_16px_rgba(var(--ui-accent-rgb),0.35)] active:scale-95 disabled:opacity-50 disabled:shadow-none disabled:cursor-not-allowed';
 
 /** Bouton danger (suppression). */
 export const BTN_DANGER =

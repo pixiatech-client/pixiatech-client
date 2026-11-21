@@ -199,9 +199,9 @@ export const EditableWrapper: React.FC<EditableWrapperProps> = ({
           : undefined,
         outline: isEditing
           ? isSelected
-            ? '2px solid var(--accent, #C3F910)'
+            ? '2px solid var(--accent, var(--ui-accent))'
             : isHovered
-            ? '2px dashed var(--accent-border, rgba(195, 249, 16, 0.7))'
+            ? '2px dashed var(--accent-border, rgba(var(--ui-accent-rgb), 0.7))'
             : !isVisible
             ? '2px dashed rgba(255, 68, 68, 0.5)'
             : 'none'
@@ -247,7 +247,7 @@ export const EditableWrapper: React.FC<EditableWrapperProps> = ({
               e.stopPropagation();
               toggleVisibility();
             }}
-            className="flex items-center gap-1.5 bg-[#C3F910] text-black px-4 py-2 rounded-md font-mono text-xs font-bold hover:bg-white transition-colors cursor-pointer shadow-xl"
+            className="flex items-center gap-1.5 bg-[color:var(--ui-accent)] text-black px-4 py-2 rounded-md font-mono text-xs font-bold hover:bg-white transition-colors cursor-pointer shadow-xl"
           >
             <Eye className="w-3.5 h-3.5" />
             <span>RÉAFFICHER LA SECTION</span>

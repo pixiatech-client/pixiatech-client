@@ -72,14 +72,14 @@ export const BoutiqueModal: React.FC<BoutiqueModalProps> = ({
         <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-2xl bg-[#0A0D0E] text-white">
-              <ShoppingBag className="w-5 h-5 text-[#38E044]" />
+              <ShoppingBag className="w-5 h-5 text-[color:var(--ui-accent)]" />
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-base font-bold text-neutral-900">
                   Solutions & Murs LED PIXIATECH
                 </h2>
-                <span className="text-[10px] font-bold bg-[#38E044] text-black px-2 py-0.5 rounded-full shadow-xs">
+                <span className="text-[10px] font-bold bg-[color:var(--ui-accent)] text-black px-2 py-0.5 rounded-full shadow-xs">
                   CATALOGUE LED OFFICIEL
                 </span>
               </div>
@@ -155,7 +155,7 @@ export const BoutiqueModal: React.FC<BoutiqueModalProps> = ({
                   onClick={() => handleSimulatePurchase(activeProduct)}
                   className="w-full mt-3 py-3 px-5 rounded-xl bg-black hover:bg-neutral-900 text-white font-bold text-xs transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 active:scale-[0.99]"
                 >
-                  <ShoppingBag className="w-4 h-4 text-[#38E044]" />
+                  <ShoppingBag className="w-4 h-4 text-[color:var(--ui-accent)]" />
                   <span>{isOrdering ? 'Traitement de la commande...' : 'Commander ce produit'}</span>
                   <ArrowRight className="w-3.5 h-3.5 text-white ml-0.5" />
                 </button>
@@ -191,7 +191,7 @@ export const BoutiqueModal: React.FC<BoutiqueModalProps> = ({
                     />
                     {isSelected && (
                       <span className="absolute top-2 right-2 bg-black text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-xs">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#38E044]" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-[color:var(--ui-accent)]" />
                         Sélectionné
                       </span>
                     )}

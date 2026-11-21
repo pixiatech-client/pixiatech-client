@@ -352,17 +352,17 @@ export const VisualInPlaceEditor: React.FC = () => {
     styleEl.id = 'pixia-visual-editor-styles';
     styleEl.innerHTML = `
       .pixia-editable-text-hover {
-        outline: 2px dashed #C3F910 !important;
+        outline: 2px dashed var(--ui-accent, #C3F910) !important;
         outline-offset: 3px !important;
         cursor: text !important;
         position: relative !important;
       }
       .pixia-el-selected {
-        outline: 2px solid #C3F910 !important;
+        outline: 2px solid var(--ui-accent, #C3F910) !important;
         outline-offset: 3px !important;
       }
       .pixia-el-selected:not([data-cms-preview-state="hover"]):not([data-cms-preview-state="active"]) {
-        box-shadow: 0 0 0 4px rgba(195, 249, 16, 0.15) !important;
+        box-shadow: 0 0 0 4px rgba(var(--ui-accent-rgb), 0.15) !important;
       }
       .pixia-el-selected.pixia-el-media {
         outline-color: #00E5FF !important;
@@ -379,10 +379,10 @@ export const VisualInPlaceEditor: React.FC = () => {
         position: relative !important;
       }
       [contenteditable="true"]:focus {
-        outline: 2px solid #C3F910 !important;
+        outline: 2px solid var(--ui-accent, #C3F910) !important;
         outline-offset: 3px !important;
-        background: rgba(195, 249, 16, 0.08) !important;
-        box-shadow: 0 0 15px rgba(195, 249, 16, 0.3) !important;
+        background: rgba(var(--ui-accent-rgb), 0.08) !important;
+        box-shadow: 0 0 15px rgba(var(--ui-accent-rgb), 0.3) !important;
       }
       /* En mode édition CMS : tous les éléments de contenu data-reveal doivent être visibles et éditables immédiatement */
       #pixia-web [data-reveal="true"]:not([data-cms-offset]) {
@@ -825,8 +825,8 @@ export const VisualInPlaceEditor: React.FC = () => {
             toast.tone === 'error'
               ? 'bg-[#ff4444] text-white'
               : toast.tone === 'pending'
-              ? 'bg-[#0e0e0d] text-[#C3F910] border border-[#C3F910]'
-              : 'bg-[#C3F910] text-[#080808]'
+              ? 'bg-[#0e0e0d] text-[color:var(--ui-accent)] border border-[color:var(--ui-accent)]'
+              : 'bg-[color:var(--ui-accent)] text-[#080808]'
           }`}
         >
           {toast.tone === 'pending' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
@@ -835,8 +835,8 @@ export const VisualInPlaceEditor: React.FC = () => {
       )}
 
       {/* Floating Mode Indicator Badge */}
-      <div className="fixed bottom-6 right-6 z-[250] bg-[#0E0E0D]/95 backdrop-blur-md border border-[#C3F910] text-[#F5F4F0] px-4 py-2.5 rounded-full font-mono text-xs font-semibold shadow-2xl flex items-center gap-3 select-none pointer-events-auto">
-        <span className="w-2.5 h-2.5 rounded-full bg-[#C3F910] animate-pulse" />
+      <div className="fixed bottom-6 right-6 z-[250] bg-[#0E0E0D]/95 backdrop-blur-md border border-[color:var(--ui-accent)] text-[#F5F4F0] px-4 py-2.5 rounded-full font-mono text-xs font-semibold shadow-2xl flex items-center gap-3 select-none pointer-events-auto">
+        <span className="w-2.5 h-2.5 rounded-full bg-[color:var(--ui-accent)] animate-pulse" />
         <span>ÉDITEUR DIRECT : CLIQUEZ SUR UN TEXTE OU UNE IMAGE</span>
       </div>
 
@@ -850,7 +850,7 @@ export const VisualInPlaceEditor: React.FC = () => {
             {/* Header */}
             <div className="flex items-center justify-between pb-4 border-b border-[#222220] mb-5">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-[#C3F910]/15 text-[#C3F910] flex items-center justify-center">
+                <div className="w-8 h-8 rounded-lg bg-[rgba(var(--ui-accent-rgb),0.15)] text-[color:var(--ui-accent)] flex items-center justify-center">
                   {isMediaVideo(newImageSrc || activeImageTarget.currentSrc) ? (
                     <Film className="w-4 h-4" />
                   ) : (
@@ -860,7 +860,7 @@ export const VisualInPlaceEditor: React.FC = () => {
                 <div>
                   <h3 className="text-base font-bold text-white m-0 flex items-center gap-2">
                     <span>Modifier / Remplacer ce média</span>
-                    <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-[#C3F910]/20 text-[#C3F910]">
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-[rgba(var(--ui-accent-rgb),0.2)] text-[color:var(--ui-accent)]">
                       {isMediaVideo(newImageSrc || activeImageTarget.currentSrc) ? 'VIDÉO' : 'IMAGE'}
                     </span>
                   </h3>
@@ -920,12 +920,12 @@ export const VisualInPlaceEditor: React.FC = () => {
                 <label className="block text-[11px] font-mono text-[#8a8880] uppercase mb-2 flex items-center justify-between">
                   <span>Nouvelle sélection</span>
                   {newImageSrc && (
-                    <span className="text-[10px] font-mono text-[#C3F910]">
+                    <span className="text-[10px] font-mono text-[color:var(--ui-accent)]">
                       {isMediaVideo(newImageSrc) ? 'Vidéo détectée' : 'Image détectée'}
                     </span>
                   )}
                 </label>
-                <div className="relative h-44 rounded-xl overflow-hidden border border-[#C3F910]/40 bg-[#141414] flex items-center justify-center">
+                <div className="relative h-44 rounded-xl overflow-hidden border border-[rgba(var(--ui-accent-rgb),0.4)] bg-[#141414] flex items-center justify-center">
                   {newImageSrc ? (
                     isMediaVideo(newImageSrc) ? (
                       <video
@@ -964,7 +964,7 @@ export const VisualInPlaceEditor: React.FC = () => {
               {/* En-tête de section avec Interrupteur ON/OFF */}
               <div className="flex items-center justify-between pb-3 border-b border-[#222220] mb-4">
                 <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-md bg-[#C3F910]/15 text-[#C3F910] flex items-center justify-center">
+                  <div className="w-6 h-6 rounded-md bg-[rgba(var(--ui-accent-rgb),0.15)] text-[color:var(--ui-accent)] flex items-center justify-center">
                     <Layers className="w-3.5 h-3.5" />
                   </div>
                   <div>
@@ -985,10 +985,10 @@ export const VisualInPlaceEditor: React.FC = () => {
                     onChange={(e) => setOverlayConfig((prev) => ({ ...prev, enabled: e.target.checked }))}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-[#222220] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#333] after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#C3F910]" />
+                  <div className="w-11 h-6 bg-[#222220] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#333] after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[color:var(--ui-accent)]" />
                   <span className="ml-2.5 font-mono text-xs font-bold text-[#f5f4f0]">
                     {overlayConfig.enabled ? (
-                      <span className="text-[#C3F910]">ACTIVÉ</span>
+                      <span className="text-[color:var(--ui-accent)]">ACTIVÉ</span>
                     ) : (
                       <span className="text-[#666]">DÉSACTIVÉ</span>
                     )}
@@ -1001,7 +1001,7 @@ export const VisualInPlaceEditor: React.FC = () => {
                   {/* Switch Dégradé ON/OFF */}
                   <div className="flex items-center justify-between bg-[#191917] p-2.5 rounded-xl border border-[#2b2b28]">
                     <span className="font-mono text-xs text-[#ddd] flex items-center gap-1.5">
-                      <Sliders className="w-3.5 h-3.5 text-[#C3F910]" />
+                      <Sliders className="w-3.5 h-3.5 text-[color:var(--ui-accent)]" />
                       <span>Mode Dégradé (Gradient)</span>
                     </span>
                     <button
@@ -1011,7 +1011,7 @@ export const VisualInPlaceEditor: React.FC = () => {
                       }
                       className={`px-3 py-1 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer ${
                         overlayConfig.gradientEnabled
-                          ? 'bg-[#C3F910] text-[#080808] shadow-sm'
+                          ? 'bg-[color:var(--ui-accent)] text-[#080808] shadow-sm'
                           : 'bg-[#222220] text-[#888] hover:text-white'
                       }`}
                     >
@@ -1048,7 +1048,7 @@ export const VisualInPlaceEditor: React.FC = () => {
                               setOverlayConfig((prev) => ({ ...prev, color: e.target.value }))
                             }
                             placeholder="#000000"
-                            className="flex-1 bg-[#141412] border border-[#333] rounded-lg px-2.5 py-1.5 text-xs text-white font-mono uppercase focus:border-[#C3F910] focus:outline-none"
+                            className="flex-1 bg-[#141412] border border-[#333] rounded-lg px-2.5 py-1.5 text-xs text-white font-mono uppercase focus:border-[color:var(--ui-accent)] focus:outline-none"
                           />
                         </div>
 
@@ -1080,7 +1080,7 @@ export const VisualInPlaceEditor: React.FC = () => {
                           <label className="text-[11px] font-mono text-[#8a8880] uppercase">
                             Opacité
                           </label>
-                          <span className="font-mono text-xs font-bold text-[#C3F910]">
+                          <span className="font-mono text-xs font-bold text-[color:var(--ui-accent)]">
                             {overlayConfig.opacity ?? 45} %
                           </span>
                         </div>
@@ -1093,7 +1093,7 @@ export const VisualInPlaceEditor: React.FC = () => {
                           onChange={(e) =>
                             setOverlayConfig((prev) => ({ ...prev, opacity: Number(e.target.value) }))
                           }
-                          className="w-full h-1.5 bg-[#262624] rounded-lg appearance-none cursor-pointer accent-[#C3F910]"
+                          className="w-full h-1.5 bg-[#262624] rounded-lg appearance-none cursor-pointer accent-[color:var(--ui-accent)]"
                         />
                         {/* Paliers rapides d'opacité */}
                         <div className="flex items-center justify-between mt-2.5 text-[10px] font-mono text-[#777]">
@@ -1103,7 +1103,7 @@ export const VisualInPlaceEditor: React.FC = () => {
                               type="button"
                               onClick={() => setOverlayConfig((prev) => ({ ...prev, opacity: step }))}
                               className={`px-1.5 py-0.5 rounded hover:text-white transition-colors cursor-pointer ${
-                                overlayConfig.opacity === step ? 'text-[#C3F910] font-bold bg-[#C3F910]/15' : ''
+                                overlayConfig.opacity === step ? 'text-[color:var(--ui-accent)] font-bold bg-[rgba(var(--ui-accent-rgb),0.15)]' : ''
                               }`}
                             >
                               {step}%
@@ -1141,12 +1141,12 @@ export const VisualInPlaceEditor: React.FC = () => {
                               onChange={(e) =>
                                 setOverlayConfig((prev) => ({ ...prev, gradientStartColor: e.target.value }))
                               }
-                              className="flex-1 bg-[#1a1a18] border border-[#333] rounded px-2 py-1 text-xs text-white font-mono uppercase focus:border-[#C3F910] focus:outline-none"
+                              className="flex-1 bg-[#1a1a18] border border-[#333] rounded px-2 py-1 text-xs text-white font-mono uppercase focus:border-[color:var(--ui-accent)] focus:outline-none"
                             />
                           </div>
                           <div className="flex items-center justify-between text-[10.5px] font-mono text-[#aaa] mb-1">
                             <span>Opacité départ</span>
-                            <span className="text-[#C3F910] font-bold">{overlayConfig.gradientStartOpacity ?? 45} %</span>
+                            <span className="text-[color:var(--ui-accent)] font-bold">{overlayConfig.gradientStartOpacity ?? 45} %</span>
                           </div>
                           <input
                             type="range"
@@ -1159,7 +1159,7 @@ export const VisualInPlaceEditor: React.FC = () => {
                                 gradientStartOpacity: Number(e.target.value),
                               }))
                             }
-                            className="w-full h-1.5 bg-[#262624] rounded-lg appearance-none cursor-pointer accent-[#C3F910]"
+                            className="w-full h-1.5 bg-[#262624] rounded-lg appearance-none cursor-pointer accent-[color:var(--ui-accent)]"
                           />
                         </div>
 
@@ -1188,12 +1188,12 @@ export const VisualInPlaceEditor: React.FC = () => {
                               onChange={(e) =>
                                 setOverlayConfig((prev) => ({ ...prev, gradientEndColor: e.target.value }))
                               }
-                              className="flex-1 bg-[#1a1a18] border border-[#333] rounded px-2 py-1 text-xs text-white font-mono uppercase focus:border-[#C3F910] focus:outline-none"
+                              className="flex-1 bg-[#1a1a18] border border-[#333] rounded px-2 py-1 text-xs text-white font-mono uppercase focus:border-[color:var(--ui-accent)] focus:outline-none"
                             />
                           </div>
                           <div className="flex items-center justify-between text-[10.5px] font-mono text-[#aaa] mb-1">
                             <span>Opacité arrivée</span>
-                            <span className="text-[#C3F910] font-bold">{overlayConfig.gradientEndOpacity ?? 85} %</span>
+                            <span className="text-[color:var(--ui-accent)] font-bold">{overlayConfig.gradientEndOpacity ?? 85} %</span>
                           </div>
                           <input
                             type="range"
@@ -1206,7 +1206,7 @@ export const VisualInPlaceEditor: React.FC = () => {
                                 gradientEndOpacity: Number(e.target.value),
                               }))
                             }
-                            className="w-full h-1.5 bg-[#262624] rounded-lg appearance-none cursor-pointer accent-[#C3F910]"
+                            className="w-full h-1.5 bg-[#262624] rounded-lg appearance-none cursor-pointer accent-[color:var(--ui-accent)]"
                           />
                         </div>
                       </div>
@@ -1235,7 +1235,7 @@ export const VisualInPlaceEditor: React.FC = () => {
                               }
                               className={`flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-[10.5px] font-mono transition-all cursor-pointer border ${
                                 (overlayConfig.gradientDirection || 'to bottom') === dir
-                                  ? 'bg-[#C3F910] text-[#080808] font-bold border-[#C3F910] shadow-sm'
+                                  ? 'bg-[color:var(--ui-accent)] text-[#080808] font-bold border-[color:var(--ui-accent)] shadow-sm'
                                   : 'bg-[#141412] text-[#8a8880] hover:text-white border-[#262624]'
                               }`}
                             >
@@ -1254,7 +1254,7 @@ export const VisualInPlaceEditor: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setOverlayConfig((prev) => ({ ...prev, enabled: true }))}
-                    className="text-[#C3F910] hover:underline cursor-pointer font-bold text-[11px]"
+                    className="text-[color:var(--ui-accent)] hover:underline cursor-pointer font-bold text-[11px]"
                   >
                     + Activer l&apos;overlay
                   </button>
@@ -1265,7 +1265,7 @@ export const VisualInPlaceEditor: React.FC = () => {
             {/* Input URL Directe */}
             <div className="mb-5">
               <label className="block text-[11px] font-mono text-[#8a8880] uppercase mb-2 flex items-center gap-1.5">
-                <LinkIcon className="w-3.5 h-3.5 text-[#C3F910]" />
+                <LinkIcon className="w-3.5 h-3.5 text-[color:var(--ui-accent)]" />
                 <span>URL ou chemin du média (Image ou Vidéo)</span>
               </label>
               <div className="flex gap-2">
@@ -1274,7 +1274,7 @@ export const VisualInPlaceEditor: React.FC = () => {
                   value={newImageSrc}
                   onChange={(e) => setNewImageSrc(e.target.value)}
                   placeholder="/uploads/... ou /youtube-video.mp4 ou https://..."
-                  className="flex-1 bg-[#171715] border border-[#2b2b28] rounded-xl px-3.5 py-2.5 text-xs text-white font-mono focus:border-[#C3F910] focus:outline-none"
+                  className="flex-1 bg-[#171715] border border-[#2b2b28] rounded-xl px-3.5 py-2.5 text-xs text-white font-mono focus:border-[color:var(--ui-accent)] focus:outline-none"
                 />
                 <button
                   type="button"
@@ -1282,7 +1282,7 @@ export const VisualInPlaceEditor: React.FC = () => {
                   disabled={isUploading}
                   className="flex items-center gap-1.5 bg-[#20201d] hover:bg-[#2b2b28] text-white px-3.5 py-2.5 rounded-xl text-xs font-mono font-bold transition-colors cursor-pointer border border-[#333]"
                 >
-                  <Upload className="w-3.5 h-3.5 text-[#C3F910]" />
+                  <Upload className="w-3.5 h-3.5 text-[color:var(--ui-accent)]" />
                   <span>{isUploading ? 'Chargement...' : 'Uploader'}</span>
                 </button>
                 <input
@@ -1301,7 +1301,7 @@ export const VisualInPlaceEditor: React.FC = () => {
             {/* Bibliothèque de médias réelle (démo + uploads admin) */}
             <div className="mb-6">
               <label className="block text-[11px] font-mono text-[#8a8880] uppercase mb-2.5 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-[#C3F910]" />
+                <Sparkles className="w-3.5 h-3.5 text-[color:var(--ui-accent)]" />
                 <span>Bibliothèque de médias du site</span>
                 {libraryItems && (
                   <span className="text-[#555] normal-case">
@@ -1318,7 +1318,7 @@ export const VisualInPlaceEditor: React.FC = () => {
                   value={libraryQuery}
                   onChange={(e) => setLibraryQuery(e.target.value)}
                   placeholder="Rechercher par nom ou extension…"
-                  className="flex-1 min-w-[200px] bg-[#171715] border border-[#2b2b28] rounded-lg px-3 py-2 text-xs text-white font-mono focus:border-[#C3F910] focus:outline-none"
+                  className="flex-1 min-w-[200px] bg-[#171715] border border-[#2b2b28] rounded-lg px-3 py-2 text-xs text-white font-mono focus:border-[color:var(--ui-accent)] focus:outline-none"
                 />
                 <div className="flex rounded-lg overflow-hidden border border-[#2b2b28]">
                   <button
@@ -1326,7 +1326,7 @@ export const VisualInPlaceEditor: React.FC = () => {
                     onClick={() => setLibraryFilter('all')}
                     className={`px-2.5 py-2 text-[10.5px] font-mono cursor-pointer transition-colors ${
                       libraryFilter === 'all'
-                        ? 'bg-[#C3F910] text-[#080808] font-bold'
+                        ? 'bg-[color:var(--ui-accent)] text-[#080808] font-bold'
                         : 'bg-[#171715] text-[#8a8880] hover:text-white'
                     }`}
                   >
@@ -1337,7 +1337,7 @@ export const VisualInPlaceEditor: React.FC = () => {
                     onClick={() => setLibraryFilter('image')}
                     className={`px-2.5 py-2 text-[10.5px] font-mono cursor-pointer transition-colors ${
                       libraryFilter === 'image'
-                        ? 'bg-[#C3F910] text-[#080808] font-bold'
+                        ? 'bg-[color:var(--ui-accent)] text-[#080808] font-bold'
                         : 'bg-[#171715] text-[#8a8880] hover:text-white'
                     }`}
                   >
@@ -1348,7 +1348,7 @@ export const VisualInPlaceEditor: React.FC = () => {
                     onClick={() => setLibraryFilter('video')}
                     className={`px-2.5 py-2 text-[10.5px] font-mono cursor-pointer transition-colors ${
                       libraryFilter === 'video'
-                        ? 'bg-[#C3F910] text-[#080808] font-bold'
+                        ? 'bg-[color:var(--ui-accent)] text-[#080808] font-bold'
                         : 'bg-[#171715] text-[#8a8880] hover:text-white'
                     }`}
                   >
@@ -1359,7 +1359,7 @@ export const VisualInPlaceEditor: React.FC = () => {
                     onClick={() => setLibraryFilter('used')}
                     className={`px-2.5 py-2 text-[10.5px] font-mono cursor-pointer transition-colors ${
                       libraryFilter === 'used'
-                        ? 'bg-[#C3F910] text-[#080808] font-bold'
+                        ? 'bg-[color:var(--ui-accent)] text-[#080808] font-bold'
                         : 'bg-[#171715] text-[#8a8880] hover:text-white'
                     }`}
                   >
@@ -1396,7 +1396,7 @@ export const VisualInPlaceEditor: React.FC = () => {
                         onClick={() => setNewImageSrc(img.url)}
                         className={`relative rounded-xl overflow-hidden h-20 border transition-all cursor-pointer group bg-[#111] select-none ${
                           newImageSrc === img.url
-                            ? 'border-[#C3F910] ring-2 ring-[#C3F910]/50'
+                            ? 'border-[color:var(--ui-accent)] ring-2 ring-[rgba(var(--ui-accent-rgb),0.5)]'
                             : 'border-[#222] hover:border-[#444]'
                         }`}
                         title={used ? 'Média actuellement utilisé sur le site' : 'Média disponible (non utilisé)'}
@@ -1413,11 +1413,11 @@ export const VisualInPlaceEditor: React.FC = () => {
                             {/* Overlay sombre discret + icône play */}
                             <div className="absolute inset-0 bg-black/25 group-hover:bg-black/10 transition-colors flex items-center justify-center pointer-events-none">
                               <div className="w-5 h-5 rounded-full bg-black/60 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white/90 shadow">
-                                <Play className="w-2.5 h-2.5 fill-current ml-0.5 text-[#C3F910]" />
+                                <Play className="w-2.5 h-2.5 fill-current ml-0.5 text-[color:var(--ui-accent)]" />
                               </div>
                             </div>
                             {/* Badge VIDÉO discret en haut à droite */}
-                            <span className="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded bg-black/75 backdrop-blur-sm border border-[#C3F910]/40 text-[#C3F910] text-[7.5px] font-mono font-bold tracking-wider">
+                            <span className="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded bg-black/75 backdrop-blur-sm border border-[rgba(var(--ui-accent-rgb),0.4)] text-[color:var(--ui-accent)] text-[7.5px] font-mono font-bold tracking-wider">
                               VIDÉO
                             </span>
                           </div>
@@ -1535,7 +1535,7 @@ export const VisualInPlaceEditor: React.FC = () => {
                 type="button"
                 onClick={() => void handleApplyImage()}
                 disabled={isApplying}
-                className="flex items-center gap-2 bg-[#C3F910] hover:bg-[#b0e20e] disabled:opacity-60 text-[#080808] font-mono font-bold text-xs px-5 py-2.5 rounded-xl transition-all cursor-pointer shadow-[0_0_15px_rgba(195,249,16,0.25)]"
+                className="flex items-center gap-2 bg-[color:var(--ui-accent)] hover:bg-[color:var(--ui-accent-hover)] disabled:opacity-60 text-[#080808] font-mono font-bold text-xs px-5 py-2.5 rounded-xl transition-all cursor-pointer shadow-[0_0_15px_rgba(var(--ui-accent-rgb),0.25)]"
               >
                 {isApplying ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                 <span>

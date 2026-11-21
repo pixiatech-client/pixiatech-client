@@ -24,7 +24,7 @@ const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const CARD =
   'bg-white dark:bg-zinc-900 border border-neutral-200/80 dark:border-white/10 rounded-2xl shadow-sm';
 const BTN_PRIMARY =
-  'flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#38E044] hover:bg-[#2fcb3c] text-black text-xs font-extrabold transition-all cursor-pointer shadow-[0_0_16px_rgba(56,224,68,0.35)] active:scale-95 disabled:opacity-50 disabled:shadow-none disabled:cursor-not-allowed';
+  'flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[color:var(--ui-accent)] hover:bg-[color:var(--ui-accent-hover)] text-black text-xs font-extrabold transition-all cursor-pointer shadow-[0_0_16px_rgba(var(--ui-accent-rgb),0.35)] active:scale-95 disabled:opacity-50 disabled:shadow-none disabled:cursor-not-allowed';
 const BTN_SECONDARY =
   'flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-neutral-800/80 hover:bg-neutral-700 text-white text-xs font-bold border border-white/10 transition-all cursor-pointer shadow-sm active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed';
 const BTN_GHOST =
@@ -161,7 +161,7 @@ function SliderCard({ index, title, currentUrl, currentRef, onSave }: SliderCard
             <p className="text-xs font-bold">Envoi en cours… {progress}%</p>
             <div className="w-2/3 h-1.5 rounded-full bg-white/20 overflow-hidden">
               <div
-                className="h-full bg-[#38E044] transition-all duration-200"
+                className="h-full bg-[color:var(--ui-accent)] transition-all duration-200"
                 style={{ width: `${progress}%` }}
               />
             </div>
@@ -272,11 +272,11 @@ export default function HeroSlidersAdmin() {
       <div className="bg-[#0A0D0E] border border-neutral-800 rounded-3xl p-5 sm:p-6 text-white flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl">
         <div className="flex items-center gap-4 min-w-0">
           <div className="w-12 h-12 rounded-2xl bg-[#141B1E] border border-neutral-700 flex items-center justify-center shrink-0">
-            <ImageIcon className="w-6 h-6 text-[#38E044]" />
+            <ImageIcon className="w-6 h-6 text-[color:var(--ui-accent)]" />
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <p className="text-[10px] font-mono font-extrabold bg-[#38E044] text-black px-2.5 py-0.5 rounded-full shadow-[0_0_10px_rgba(56,224,68,0.4)]">
+              <p className="text-[10px] font-mono font-extrabold bg-[color:var(--ui-accent)] text-black px-2.5 py-0.5 rounded-full shadow-[0_0_10px_rgba(var(--ui-accent-rgb),0.4)]">
                 BACKOFFICE
               </p>
               <p className="text-[10px] font-mono font-bold text-white/40 uppercase tracking-widest">
@@ -298,7 +298,7 @@ export default function HeroSlidersAdmin() {
             </span>
           )}
           {saveStatus === 'saved' && (
-            <span className="text-xs font-bold text-[#38E044]">Enregistré ✓</span>
+            <span className="text-xs font-bold text-[color:var(--ui-accent)]">Enregistré ✓</span>
           )}
           {saveStatus === 'error' && (
             <span className="text-xs font-bold text-rose-400">Erreur d'enregistrement</span>

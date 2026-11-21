@@ -165,7 +165,7 @@ export function LitigeConversation({
             }`}
           >
             <span>{isSending ? t('admin.litiges.sending') : t('admin.litiges.send')}</span>
-            <Send className="w-3.5 h-3.5 text-[#38E044]" />
+            <Send className="w-3.5 h-3.5 text-[color:var(--ui-accent)]" />
           </Button>
         </form>
       )}

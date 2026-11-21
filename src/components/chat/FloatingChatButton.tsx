@@ -246,7 +246,7 @@ export function FloatingChatButton({ allProducts, settings, laborSettings, deliv
                     lineHeight: 1.45,
                     fontWeight: 600,
                     boxShadow: '0 20px 45px rgba(0,0,0,0.35)',
-                    border: '1px solid rgba(195, 249, 16, 0.6)',
+                    border: '1px solid rgba(var(--ui-accent-rgb), 0.6)',
                     willChange: 'opacity',
                     pointerEvents: 'none',
                     opacity: bubbleFading ? 0 : 1,

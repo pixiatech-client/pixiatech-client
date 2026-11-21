@@ -128,11 +128,11 @@ export function LegalPageLayout({ pageData, pageKey, isCookiePage = false }: Leg
             <div className="flex items-center gap-2">
               <a href="/web" className="hover:text-white transition-colors">PIXIATECH</a>
               <span>/</span>
-              <span className="text-[#C3F910] uppercase">{resolvedPageData.name}</span>
+              <span className="text-[color:var(--ui-accent)] uppercase">{resolvedPageData.name}</span>
             </div>
             <div className="flex items-center gap-4">
               <span className="flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-[#C3F910]" />
+                <Calendar className="w-3.5 h-3.5 text-[color:var(--ui-accent)]" />
                 Mise à jour : {mergedHeader.lastUpdated}
               </span>
               <button
@@ -159,8 +159,8 @@ export function LegalPageLayout({ pageData, pageKey, isCookiePage = false }: Leg
           {/* Hero Header */}
           <EditableWrapper sectionKey="header" sectionLabel="En-tête de la page">
             <header className="mb-14 pb-10 border-b border-[#1f1f1f]">
-              <div data-reveal="true" className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#121210] border border-[#262624] text-[11px] font-mono text-[#C3F910] tracking-wider mb-6">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#C3F910] animate-pulse" />
+              <div data-reveal="true" className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#121210] border border-[#262624] text-[11px] font-mono text-[color:var(--ui-accent)] tracking-wider mb-6">
+                <span className="w-1.5 h-1.5 rounded-full bg-[color:var(--ui-accent)] animate-pulse" />
                 {mergedHeader.badge}
               </div>
 
@@ -174,10 +174,10 @@ export function LegalPageLayout({ pageData, pageKey, isCookiePage = false }: Leg
 
               {/* Special interactive banner for Cookie Management */}
               {isCookiePage && (
-                <div data-reveal="true" className="mt-8 p-5 sm:p-6 rounded-2xl bg-gradient-to-r from-[#12140d] via-[#10100f] to-[#0c0c0b] border border-[#C3F910]/30 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+                <div data-reveal="true" className="mt-8 p-5 sm:p-6 rounded-2xl bg-gradient-to-r from-[#12140d] via-[#10100f] to-[#0c0c0b] border border-[rgba(var(--ui-accent-rgb),0.3)] flex flex-col sm:flex-row sm:items-center justify-between gap-5">
                   <div className="space-y-1.5">
                     <div className="flex items-center gap-2 text-sm font-bold text-white">
-                      <SlidersHorizontal className="w-4 h-4 text-[#C3F910]" />
+                      <SlidersHorizontal className="w-4 h-4 text-[color:var(--ui-accent)]" />
                       <span>Centre de préférences cookies & traceurs</span>
                     </div>
                     <p className="text-xs text-[#a3a3a3] max-w-xl leading-relaxed">
@@ -187,7 +187,7 @@ export function LegalPageLayout({ pageData, pageKey, isCookiePage = false }: Leg
                   <button
                     type="button"
                     onClick={openCookiePreferences}
-                    className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#C3F910] hover:bg-[#b0e20e] text-[#0a0a09] font-bold text-xs uppercase tracking-wider transition-all shadow-[0_0_25px_rgba(195,249,16,0.25)] hover:shadow-[0_0_35px_rgba(195,249,16,0.4)] shrink-0 cursor-pointer"
+                    className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[color:var(--ui-accent)] hover:bg-[color:var(--ui-accent-hover)] text-[#0a0a09] font-bold text-xs uppercase tracking-wider transition-all shadow-[0_0_25px_rgba(var(--ui-accent-rgb),0.25)] hover:shadow-[0_0_35px_rgba(var(--ui-accent-rgb),0.4)] shrink-0 cursor-pointer"
                   >
                     <SlidersHorizontal className="w-4 h-4" />
                     <span>Paramétrer mes choix</span>
@@ -216,7 +216,7 @@ export function LegalPageLayout({ pageData, pageKey, isCookiePage = false }: Leg
                         href={`#${secKey}`}
                         className={`group flex items-start gap-2.5 py-2 px-3 rounded-lg transition-all ${
                           isActive
-                            ? 'bg-[#151513] text-[#C3F910] font-semibold border-l-2 border-[#C3F910]'
+                            ? 'bg-[#151513] text-[color:var(--ui-accent)] font-semibold border-l-2 border-[color:var(--ui-accent)]'
                             : 'text-[#8a8880] hover:text-[#f5f4f0] hover:bg-[#111110]'
                         }`}
                       >
@@ -232,7 +232,7 @@ export function LegalPageLayout({ pageData, pageKey, isCookiePage = false }: Leg
                 {/* Direct Contact Card */}
                 <div className="mt-8 p-4 rounded-xl bg-[#10100f] border border-[#1f1f1f] space-y-3">
                   <div className="flex items-center gap-2 text-xs font-bold text-white">
-                    <Shield className="w-3.5 h-3.5 text-[#C3F910]" />
+                    <Shield className="w-3.5 h-3.5 text-[color:var(--ui-accent)]" />
                     <span>Conformité & Juridique</span>
                   </div>
                   <p className="text-[11px] text-[#7a7a76] leading-relaxed">
@@ -240,7 +240,7 @@ export function LegalPageLayout({ pageData, pageKey, isCookiePage = false }: Leg
                   </p>
                   <a
                     href="mailto:contact@pixiatech.com"
-                    className="inline-flex items-center gap-1.5 text-xs text-[#C3F910] font-mono hover:underline"
+                    className="inline-flex items-center gap-1.5 text-xs text-[color:var(--ui-accent)] font-mono hover:underline"
                   >
                     <Mail className="w-3.5 h-3.5" />
                     contact@pixiatech.com
@@ -274,7 +274,7 @@ export function LegalPageLayout({ pageData, pageKey, isCookiePage = false }: Leg
                     >
                       {/* Section Badge */}
                       {displayBadge && (
-                        <div className="text-[10.5px] font-mono uppercase tracking-[0.2em] text-[#C3F910] mb-3">
+                        <div className="text-[10.5px] font-mono uppercase tracking-[0.2em] text-[color:var(--ui-accent)] mb-3">
                           {displayBadge}
                         </div>
                       )}
@@ -303,7 +303,7 @@ export function LegalPageLayout({ pageData, pageKey, isCookiePage = false }: Leg
                         <ul className="space-y-3 mt-4">
                           {sec.bullets.map((bullet, bIdx) => (
                             <li key={bIdx} className="flex items-start gap-3 text-sm text-[#c9c7c1] leading-relaxed">
-                              <span className="w-1.5 h-1.5 rounded-full bg-[#C3F910] mt-2 shrink-0" />
+                              <span className="w-1.5 h-1.5 rounded-full bg-[color:var(--ui-accent)] mt-2 shrink-0" />
                               <span>{bullet}</span>
                             </li>
                           ))}
@@ -316,7 +316,7 @@ export function LegalPageLayout({ pageData, pageKey, isCookiePage = false }: Leg
                           {sec.cards.map((card, cIdx) => (
                             <div
                               key={cIdx}
-                              className="p-4 rounded-xl bg-[#141412] border border-[#222220] hover:border-[#C3F910]/40 transition-colors"
+                              className="p-4 rounded-xl bg-[#141412] border border-[#222220] hover:border-[rgba(var(--ui-accent-rgb),0.4)] transition-colors"
                             >
                               <div className="text-[10px] font-mono uppercase tracking-wider text-[#7a7a76] mb-1">
                                 {card.label}
@@ -340,7 +340,7 @@ export function LegalPageLayout({ pageData, pageKey, isCookiePage = false }: Leg
 
               {/* End of Document Stamp */}
               <div className="p-8 rounded-2xl bg-[#090908] border border-[#1a1a19] text-center space-y-4">
-                <div className="w-10 h-10 rounded-full bg-[#151512] border border-[#2a2a26] text-[#C3F910] flex items-center justify-center mx-auto">
+                <div className="w-10 h-10 rounded-full bg-[#151512] border border-[#2a2a26] text-[color:var(--ui-accent)] flex items-center justify-center mx-auto">
                   <Shield className="w-5 h-5" />
                 </div>
                 <h4 className="text-base font-bold text-white">Engagement de Conformité PIXIATECH</h4>
@@ -348,11 +348,11 @@ export function LegalPageLayout({ pageData, pageKey, isCookiePage = false }: Leg
                   L'ensemble de nos documents contractuels et politiques de données sont rédigés dans le strict respect de la législation française et des règlements européens (RGPD 2016/679).
                 </p>
                 <div className="pt-2 flex flex-wrap items-center justify-center gap-4 text-xs font-mono text-[#a3a3a3]">
-                  <a href="/mentions-legales" className="hover:text-[#C3F910] transition-colors">Mentions Légales</a>
+                  <a href="/mentions-legales" className="hover:text-[color:var(--ui-accent)] transition-colors">Mentions Légales</a>
                   <span>•</span>
-                  <a href="/politique-confidentialite" className="hover:text-[#C3F910] transition-colors">Politique de Confidentialité</a>
+                  <a href="/politique-confidentialite" className="hover:text-[color:var(--ui-accent)] transition-colors">Politique de Confidentialité</a>
                   <span>•</span>
-                  <a href="/gestion-cookies" className="hover:text-[#C3F910] transition-colors">Gestion des Cookies</a>
+                  <a href="/gestion-cookies" className="hover:text-[color:var(--ui-accent)] transition-colors">Gestion des Cookies</a>
                 </div>
               </div>
             </div>

@@ -79,7 +79,7 @@ export const OrdersView: React.FC<OrdersViewProps> = ({
       <div className="bg-white rounded-3xl border border-neutral-200/80 p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-2xl bg-[#0A0D0E] text-white flex items-center justify-center shrink-0 shadow-md">
-            <Package className="w-6 h-6 text-[#38E044]" />
+            <Package className="w-6 h-6 text-[color:var(--ui-accent)]" />
           </div>
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-neutral-900 tracking-tight">
@@ -96,7 +96,7 @@ export const OrdersView: React.FC<OrdersViewProps> = ({
           href="/boutique"
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0A0D0E] text-white text-xs font-bold hover:bg-neutral-800 transition-all shadow-sm cursor-pointer"
         >
-          <ShoppingBag className="w-4 h-4 text-[#38E044]" />
+          <ShoppingBag className="w-4 h-4 text-[color:var(--ui-accent)]" />
           <span>Accéder à la boutique</span>
           <ExternalLink className="w-3.5 h-3.5 text-neutral-400" />
         </Link>
@@ -152,7 +152,7 @@ export const OrdersView: React.FC<OrdersViewProps> = ({
             href="/boutique"
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#0A0D0E] text-white font-bold text-xs hover:bg-neutral-800 transition-all shadow-md cursor-pointer"
           >
-            <ShoppingBag className="w-4 h-4 text-[#38E044]" />
+            <ShoppingBag className="w-4 h-4 text-[color:var(--ui-accent)]" />
             <span>Découvrir notre boutique</span>
             <ExternalLink className="w-3.5 h-3.5 text-neutral-400" />
           </Link>
@@ -202,7 +202,7 @@ export const OrdersView: React.FC<OrdersViewProps> = ({
                         className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-neutral-900 hover:bg-black text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
                         title="Demander une facture pour cette commande"
                       >
-                        <FileText className="w-3.5 h-3.5 text-[#38E044]" />
+                        <FileText className="w-3.5 h-3.5 text-[color:var(--ui-accent)]" />
                         <span>Demander une facture</span>
                       </button>
                     ) : invoiceStatus === 'EN ATTENTE' ? (

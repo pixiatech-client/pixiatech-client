@@ -195,9 +195,9 @@ export const SpecsSection: React.FC<SpecsSectionProps> = ({ lang = 'FR', specs, 
               textTransform: 'uppercase',
             }}
           >
-            <span style={{ color: 'var(--ui-accent, #C3F910)', fontWeight: 700 }}>{modelCount}</span>{' '}
+            <span style={{ color: 'var(--ui-accent, var(--ui-accent))', fontWeight: 700 }}>{modelCount}</span>{' '}
             {lang === 'FR' ? 'MODÈLES — DÉFILEMENT HORIZONTAL' : 'MODELS — SCROLL HORIZONTALLY'}{' '}
-            <span style={{ color: 'var(--ui-accent, #C3F910)' }}>→</span>
+            <span style={{ color: 'var(--ui-accent, var(--ui-accent))' }}>→</span>
           </span>
 
           <div style={{ display: 'flex', gap: '8px' }}>
@@ -211,7 +211,7 @@ export const SpecsSection: React.FC<SpecsSectionProps> = ({ lang = 'FR', specs, 
                 height: '44px',
                 border: `1px solid ${canScrollLeft ? 'rgba(var(--ui-accent-rgb),0.4)' : 'var(--dark-line-3, #2a2a2a)'}`,
                 background: 'transparent',
-                color: canScrollLeft ? 'var(--ui-accent, #C3F910)' : '#3A3A3A',
+                color: canScrollLeft ? 'var(--ui-accent, var(--ui-accent))' : '#3A3A3A',
                 cursor: canScrollLeft ? 'pointer' : 'default',
                 fontSize: '16px',
                 display: 'flex',
@@ -221,7 +221,7 @@ export const SpecsSection: React.FC<SpecsSectionProps> = ({ lang = 'FR', specs, 
               }}
               onMouseEnter={(e) => {
                 if (canScrollLeft) {
-                  e.currentTarget.style.borderColor = 'var(--ui-accent, #C3F910)';
+                  e.currentTarget.style.borderColor = 'var(--ui-accent, var(--ui-accent))';
                   e.currentTarget.style.background = 'rgba(var(--ui-accent-rgb),0.12)';
                   e.currentTarget.style.boxShadow = '0 0 12px rgba(var(--ui-accent-rgb),0.3)';
                 }
@@ -246,7 +246,7 @@ export const SpecsSection: React.FC<SpecsSectionProps> = ({ lang = 'FR', specs, 
                 height: '44px',
                 border: `1px solid ${canScrollRight ? 'rgba(var(--ui-accent-rgb),0.4)' : 'var(--dark-line-3, #2a2a2a)'}`,
                 background: 'transparent',
-                color: canScrollRight ? 'var(--ui-accent, #C3F910)' : '#3A3A3A',
+                color: canScrollRight ? 'var(--ui-accent, var(--ui-accent))' : '#3A3A3A',
                 cursor: canScrollRight ? 'pointer' : 'default',
                 fontSize: '16px',
                 display: 'flex',
@@ -256,7 +256,7 @@ export const SpecsSection: React.FC<SpecsSectionProps> = ({ lang = 'FR', specs, 
               }}
               onMouseEnter={(e) => {
                 if (canScrollRight) {
-                  e.currentTarget.style.borderColor = 'var(--ui-accent, #C3F910)';
+                  e.currentTarget.style.borderColor = 'var(--ui-accent, var(--ui-accent))';
                   e.currentTarget.style.background = 'rgba(var(--ui-accent-rgb),0.12)';
                   e.currentTarget.style.boxShadow = '0 0 12px rgba(var(--ui-accent-rgb),0.3)';
                 }
@@ -363,24 +363,24 @@ export const SpecsSection: React.FC<SpecsSectionProps> = ({ lang = 'FR', specs, 
                       style={{
                         display: 'inline-block',
                         marginTop: '10px',
-                        border: '1px solid var(--ui-accent, #C3F910)',
+                        border: '1px solid var(--ui-accent, var(--ui-accent))',
                         padding: '6px 12px',
                         fontSize: '10px',
                         letterSpacing: '.16em',
                         color: '#000000',
-                        background: 'var(--ui-accent, #C3F910)',
+                        background: 'var(--ui-accent, var(--ui-accent))',
                         cursor: 'pointer',
                         transition: 'all .2s ease',
                         fontWeight: 700,
                         textDecoration: 'none',
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'var(--ui-accent-hover, #b0e20e)';
-                        e.currentTarget.style.borderColor = 'var(--ui-accent-hover, #b0e20e)';
+                        e.currentTarget.style.background = 'var(--ui-accent-hover, var(--ui-accent-hover))';
+                        e.currentTarget.style.borderColor = 'var(--ui-accent-hover, var(--ui-accent-hover))';
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'var(--ui-accent, #C3F910)';
-                        e.currentTarget.style.borderColor = 'var(--ui-accent, #C3F910)';
+                        e.currentTarget.style.background = 'var(--ui-accent, var(--ui-accent))';
+                        e.currentTarget.style.borderColor = 'var(--ui-accent, var(--ui-accent))';
                       }}
                     >
                       {lang === 'FR' ? SHOP_LINK_BUTTON_LABELS[shopType].fr : SHOP_LINK_BUTTON_LABELS[shopType].en}
@@ -435,7 +435,7 @@ export const SpecsSection: React.FC<SpecsSectionProps> = ({ lang = 'FR', specs, 
                       // back-office, hex côté CMS). On consomme donc le token
                       // dérivé `--ui-accent`, valide dans les deux cas : le filet
                       // et le libellé changent ensemble avec le thème actif.
-                      boxShadow: 'inset 2px 0 0 var(--ui-accent, #C3F910)',
+                      boxShadow: 'inset 2px 0 0 var(--ui-accent, var(--ui-accent))',
                       // Fond opaque SOUS le voile vert : la colonne reste
                       // masquante pendant le défilement horizontal.
                       backgroundColor: '#0A0A09',
@@ -448,7 +448,7 @@ export const SpecsSection: React.FC<SpecsSectionProps> = ({ lang = 'FR', specs, 
                       // PHYSICAL, OPTIQUE, OPTICAL… partagent ce seul rendu, donc
                       // quelle que soit la langue du libellé du PDF, le titre de
                       // catégorie reste vert Pixiatech — jamais blanc.
-                      color: 'var(--ui-accent, #C3F910)',
+                      color: 'var(--ui-accent, var(--ui-accent))',
                       fontWeight: 700,
                       textTransform: 'uppercase',
                       display: 'flex',

@@ -50,8 +50,8 @@ export const PixiaFooterCredit: React.FC<PixiaFooterCreditProps> = ({
           --px-bg: ${background || 'var(--black-4, #050505)'};
           --px-text: #8E8E93;
           --px-strong: #FFFFFF;
-          --px-accent: var(--accent, #C3F910);
-          --px-accent2: #38E044;
+          --px-accent: var(--ui-accent, var(--accent, #C3F910));
+          --px-accent2: var(--ui-accent-hover, #b0e20e);
           position: relative;
           background: var(--px-bg);
           color: var(--px-text);
@@ -208,10 +208,10 @@ export const PixiaFooterCredit: React.FC<PixiaFooterCreditProps> = ({
 
         @keyframes px-pulse {
           70% {
-            box-shadow: 0 0 0 7px rgba(195, 249, 16, 0);
+            box-shadow: 0 0 0 7px rgba(var(--ui-accent-rgb), 0);
           }
           100% {
-            box-shadow: 0 0 0 0 rgba(195, 249, 16, 0);
+            box-shadow: 0 0 0 0 rgba(var(--ui-accent-rgb), 0);
           }
         }
 

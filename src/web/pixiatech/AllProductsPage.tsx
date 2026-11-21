@@ -2,7 +2,8 @@
 
 import React, { useMemo, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, X } from 'lucide-react';
+import { Search, X, SlidersHorizontal } from 'lucide-react';
+import { MobileBottomSheet, useIsMobile } from '@/components/ui/bottom-sheet';
 import '../pixiatech.css';
 import { PixiaHeader } from './PixiaHeader';
 import { PixiaFooter } from './PixiaFooter';
@@ -15,9 +16,167 @@ import { getCmsText } from '@/lib/site-web/cms-i18n';
 import { EditableWrapper } from '../cms/EditableWrapper';
 import { useI18n } from '@/lib/i18n';
 import { ProductsProvider, useProducts } from '@/lib/products/products-context';
-import type { ProductCategoryGroup, ProductRecord } from '@/lib/products/types';
+import type { ProductCategory, ProductCategoryGroup, ProductRecord } from '@/lib/products/types';
 import { categoryDisplayName, groupDisplayName, productCategoryIds } from '@/lib/products/types';
 import { trackProductClick, setLang as trackerSetLang } from '@/lib/analytics/tracker';
+
+/** Contrôles de filtres partagés entre la barre desktop et le Bottom Sheet mobile. */
+function ProductFilterControls({
+  sections,
+  filters,
+  setFilters,
+  query,
+  setQuery,
+  t,
+  lang,
+  loading,
+}: {
+  sections: Array<{ group: ProductCategoryGroup; options: ProductCategory[] }>;
+  loading: boolean;
+  filters: Record<string, string>;
+  setFilters: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+  query: string;
+  setQuery: (value: string) => void;
+  t: Record<string, string>;
+  lang: Language;
+}) {
+  return (
+    <>
+      {/* Recherche */}
+      <div style={{ minWidth: 280, flex: '0 1 340px' }}>
+        <div
+          style={{
+            fontSize: 10.5,
+            letterSpacing: '.2em',
+            color: '#8A8880',
+            marginBottom: 12,
+            fontFamily: 'var(--font-mono)',
+            fontWeight: 700,
+            textTransform: 'uppercase',
+          }}
+        >
+          {t.search}
+        </div>
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+          <Search
+            className="lucide"
+            style={{
+              position: 'absolute',
+              left: 14,
+              width: 15,
+              height: 15,
+              color: '#8A8880',
+              pointerEvents: 'none',
+            }}
+          />
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={t.searchPlaceholder}
+            style={{
+              width: '100%',
+              minHeight: 44,
+              padding: '11px 38px 11px 40px',
+              fontSize: 16,
+              fontFamily: 'inherit',
+              color: '#111110',
+              background: '#fff',
+              border: '1px solid #c9c7c2',
+              outline: 'none',
+              transition: 'border-color .18s ease',
+            }}
+            onFocus={(e) => {
+              e.currentTarget.style.borderColor = '#111110';
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.borderColor = '#c9c7c2';
+            }}
+          />
+          {query && (
+            <button
+              type="button"
+              aria-label={t.clearSearch}
+              onClick={() => setQuery('')}
+              style={{
+                position: 'absolute',
+                right: 6,
+                width: 32,
+                height: 32,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: 'none',
+                background: 'transparent',
+                color: '#8A8880',
+                cursor: 'pointer',
+              }}
+            >
+              <X className="lucide" style={{ width: 16, height: 16 }} />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {!loading &&
+        sections.map(({ group, options }, index) => {
+          const activeId = filters[group.key] ?? 'All';
+          const setFilter = (id: string) =>
+            setFilters((prev) => ({ ...prev, [group.key]: id }));
+          return (
+            <div key={group.id} style={index === 0 ? {} : { flex: 1, minWidth: 320 }}>
+              <div
+                style={{
+                  fontSize: 10.5,
+                  letterSpacing: '.2em',
+                  color: '#8A8880',
+                  marginBottom: 12,
+                  fontFamily: 'var(--font-mono)',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                }}
+              >
+                {groupDisplayName(group, lang)}
+              </div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {[
+                  { id: 'All', name: t.all },
+                  ...options.map((c) => ({ id: c.id, name: categoryDisplayName(c, lang) })),
+                ].map((f) => {
+                  const active = activeId === f.id;
+                  return (
+                    <button
+                      key={f.id}
+                      type="button"
+                      className={`chip${active ? ' on' : ''}`}
+                      onClick={() => setFilter(f.id)}
+                      style={{
+                        minHeight: 44,
+                        fontSize: 11,
+                        letterSpacing: '.1em',
+                        fontFamily: 'var(--font-mono)',
+                        fontWeight: 700,
+                        textTransform: 'uppercase',
+                        padding: '8px 16px',
+                        cursor: 'pointer',
+                        border: '1px solid',
+                        borderColor: active ? '#111110' : '#c9c7c2',
+                        background: active ? '#111110' : 'transparent',
+                        color: active ? '#f5f4f0' : '#4A4A46',
+                        transition: 'all .18s ease',
+                      }}
+                    >
+                      {f.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+    </>
+  );
+}
 
 interface AllProductsPageProps {
   onOpenConsultation?: () => void;
@@ -135,6 +294,9 @@ function AllProductsView({
   /** Filtre actif par groupe = ID de catégorie CMS (ou 'All'). */
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [query, setQuery] = useState('');
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const activeFilterCount = Object.values(filters).filter((v) => v && v !== 'All').length;
+  const isMobile = useIsMobile();
   const [hovered, setHovered] = useState<string | null>(null);
   const { pages, setCurrentPageId } = useCms();
 
@@ -298,177 +460,103 @@ function AllProductsView({
           </p>
           </EditableWrapper>
 
-          {/* Filter bar */}
-          <div
-            style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: 32,
-              alignItems: 'flex-start',
-              borderTop: '1px solid #DFDDD5',
-              borderBottom: '1px solid #DFDDD5',
-              padding: '24px 0',
-              marginBottom: 48,
-            }}
-          >
-            {/* Search */}
-            <div style={{ minWidth: 280, flex: '0 1 340px' }}>
-              <div
+          {/* Filtres : barre complète sur desktop, Bottom Sheet sur mobile */}
+          {isMobile ? (
+            <div className="mb-8 flex items-center justify-between gap-3 border-y border-[#DFDDD5] py-4">
+              <button
+                type="button"
+                onClick={() => setFiltersOpen(true)}
+                className="flex min-h-[48px] items-center gap-2 rounded-xl border border-[#c9c7c2] px-4 text-xs font-bold uppercase tracking-widest"
+                aria-haspopup="dialog"
+              >
+                <SlidersHorizontal className="h-4 w-4" />
+                {t.search} / Filtres
+                {activeFilterCount > 0 && (
+                  <span className="rounded-full bg-[color:var(--ui-accent)] px-2 py-0.5 text-[10px] text-black">
+                    {activeFilterCount}
+                  </span>
+                )}
+              </button>
+              <span
                 style={{
-                  fontSize: 10.5,
-                  letterSpacing: '.2em',
+                  fontSize: 12,
+                  letterSpacing: '.14em',
                   color: '#8A8880',
-                  marginBottom: 12,
                   fontFamily: 'var(--font-mono)',
                   fontWeight: 700,
-                  textTransform: 'uppercase',
                 }}
               >
-                {t.search}
-              </div>
-              <div
-                style={{
-                  position: 'relative',
-                  display: 'flex',
-                  alignItems: 'center',
-                }}
-              >
-                <Search
-                  className="lucide"
-                  style={{
-                    position: 'absolute',
-                    left: 14,
-                    width: 15,
-                    height: 15,
-                    color: '#8A8880',
-                    pointerEvents: 'none',
-                  }}
-                />
-                <input
-                  type="text"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder={t.searchPlaceholder}
-                  style={{
-                    width: '100%',
-                    padding: '11px 38px 11px 40px',
-                    fontSize: 13,
-                    fontFamily: 'inherit',
-                    color: '#111110',
-                    background: '#fff',
-                    border: '1px solid #c9c7c2',
-                    outline: 'none',
-                    transition: 'border-color .18s ease',
-                  }}
-                  onFocus={(e) => {
-                    e.currentTarget.style.borderColor = '#111110';
-                  }}
-                  onBlur={(e) => {
-                    e.currentTarget.style.borderColor = '#c9c7c2';
-                  }}
-                />
-                {query && (
-                  <button
-                    type="button"
-                    aria-label={t.clearSearch}
-                    onClick={() => setQuery('')}
-                    style={{
-                      position: 'absolute',
-                      right: 8,
-                      width: 26,
-                      height: 26,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      border: 'none',
-                      background: 'transparent',
-                      color: '#8A8880',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <X className="lucide" style={{ width: 15, height: 15 }} />
-                  </button>
-                )}
-              </div>
+                {filtered.length} {t.series}
+              </span>
             </div>
-
-            {/* Sections de filtres — uniquement les catégories actives avec au moins 1 produit.
-                Pendant le chargement du catalogue, les options sont dérivées d'un
-                catalogue vide : les afficher reviendrait à proposer des filtres
-                qui ne correspondent à aucun produit. */}
-            {!loading &&
-              sections.map(({ group, options }, index) => {
-              const activeId = filters[group.key] ?? 'All';
-              const setFilter = (id: string) =>
-                setFilters((prev) => ({ ...prev, [group.key]: id }));
-              return (
-                <div key={group.id} style={index === 0 ? {} : { flex: 1, minWidth: 320 }}>
-                  <div
-                    style={{
-                      fontSize: 10.5,
-                      letterSpacing: '.2em',
-                      color: '#8A8880',
-                      marginBottom: 12,
-                      fontFamily: 'var(--font-mono)',
-                      fontWeight: 700,
-                      textTransform: 'uppercase',
-                    }}
-                  >
-                    {groupDisplayName(group, lang)}
-                  </div>
-                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                    {[
-                      { id: 'All', name: t.all },
-                      ...options.map((c) => ({ id: c.id, name: categoryDisplayName(c, lang) })),
-                    ].map((f) => {
-                      const active = activeId === f.id;
-                      return (
-                        <button
-                          key={f.id}
-                          type="button"
-                          className={`chip${active ? ' on' : ''}`}
-                          onClick={() => setFilter(f.id)}
-                          style={{
-                            fontSize: 11,
-                            letterSpacing: '.1em',
-                            fontFamily: 'var(--font-mono)',
-                            fontWeight: 700,
-                            textTransform: 'uppercase',
-                            padding: '8px 16px',
-                            cursor: 'pointer',
-                            border: '1px solid',
-                            borderColor: active ? '#111110' : '#c9c7c2',
-                            background: active ? '#111110' : 'transparent',
-                            color: active ? '#f5f4f0' : '#4A4A46',
-                            transition: 'all .18s ease',
-                          }}
-                        >
-                          {f.name}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
-
-            {/* Count */}
+          ) : (
             <div
               style={{
-                fontSize: 12,
-                letterSpacing: '.14em',
-                color: '#8A8880',
-                fontFamily: 'var(--font-mono)',
-                fontWeight: 700,
-                alignSelf: 'flex-end',
-                paddingBottom: 10,
-                textTransform: 'uppercase',
-                whiteSpace: 'nowrap',
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: 32,
+                alignItems: 'flex-start',
+                borderTop: '1px solid #DFDDD5',
+                borderBottom: '1px solid #DFDDD5',
+                padding: '24px 0',
+                marginBottom: 48,
               }}
             >
-              {filtered.length} {t.series}
+              <ProductFilterControls
+                sections={sections}
+                filters={filters}
+                setFilters={setFilters}
+                query={query}
+                setQuery={setQuery}
+                t={t}
+                lang={lang}
+                loading={loading}
+              />
+              <div
+                style={{
+                  fontSize: 12,
+                  letterSpacing: '.14em',
+                  color: '#8A8880',
+                  fontFamily: 'var(--font-mono)',
+                  fontWeight: 700,
+                  alignSelf: 'flex-end',
+                  paddingBottom: 10,
+                  textTransform: 'uppercase',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {filtered.length} {t.series}
+              </div>
             </div>
-          </div>
+          )}
+
+          <MobileBottomSheet
+            open={filtersOpen && isMobile}
+            onClose={() => setFiltersOpen(false)}
+            title={lang === 'FR' ? 'Recherche & filtres' : 'Search & filters'}
+            description={lang === 'FR' ? 'Affinez la sélection de produits' : 'Refine the product selection'}
+            tone="light"
+            footer={
+              <button
+                type="button"
+                onClick={() => setFiltersOpen(false)}
+                className="mb-[max(0px,env(safe-area-inset-bottom))] h-12 w-full rounded-xl bg-[color:var(--ui-accent)] text-sm font-bold text-black"
+              >
+                {lang === 'FR' ? `Voir ${filtered.length} produits` : `View ${filtered.length} products`}
+              </button>
+            }
+          >
+            <ProductFilterControls
+              sections={sections}
+              filters={filters}
+              setFilters={setFilters}
+              query={query}
+              setQuery={setQuery}
+              t={t}
+              lang={lang}
+              loading={loading}
+            />
+          </MobileBottomSheet>
 
           {/* Products grid */}
           <div
@@ -761,7 +849,7 @@ function AllProductsView({
                 whiteSpace: 'nowrap',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = '#C3F910';
+                e.currentTarget.style.background = 'var(--ui-accent, #C3F910)';
                 e.currentTarget.style.color = '#080808';
               }}
               onMouseLeave={(e) => {

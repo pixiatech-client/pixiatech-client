@@ -2,11 +2,222 @@
 
 import * as React from "react"
 import * as SelectPrimitive from "@radix-ui/react-select"
-import { Check, ChevronDown, ChevronUp } from "lucide-react"
+import { Check, ChevronDown, ChevronUp, Search } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import {
+  BottomSheetOptionRows,
+  MobileBottomSheet,
+  useIsMobile,
+  type BottomSheetOption,
+} from "@/components/ui/bottom-sheet"
 
-const Select = SelectPrimitive.Root
+/* -------------------------------------------------------------------------- */
+/*          Select : desktop Radix intact, mobile = Bottom Sheet unique        */
+/* -------------------------------------------------------------------------- */
+
+type SelectRootProps = React.ComponentPropsWithoutRef<typeof SelectPrimitive.Root>
+
+function nodeToText(node: React.ReactNode): string {
+  if (node === null || node === undefined || typeof node === "boolean") return ""
+  if (typeof node === "string" || typeof node === "number") return String(node)
+  if (Array.isArray(node)) return node.map(nodeToText).join("")
+  if (React.isValidElement(node)) return nodeToText((node.props as { children?: React.ReactNode }).children)
+  return ""
+}
+
+function isContent(child: React.ReactElement): boolean {
+  return child.type === SelectContent || child.type === SelectPrimitive.Content
+}
+
+function isValue(child: React.ReactElement): boolean {
+  return child.type === SelectValue || child.type === SelectPrimitive.Value
+}
+
+function isItem(child: React.ReactElement): boolean {
+  return child.type === SelectItem || child.type === SelectPrimitive.Item
+}
+
+function collectOptions(nodes: React.ReactNode, out: BottomSheetOption[] = []): BottomSheetOption[] {
+  React.Children.forEach(nodes, (child) => {
+    if (!React.isValidElement(child)) return
+    const props = child.props as {
+      value?: string
+      children?: React.ReactNode
+      disabled?: boolean
+      placeholder?: string
+    }
+    if (isItem(child) && props.value !== undefined) {
+      out.push({
+        value: String(props.value),
+        label: props.children,
+        searchText: nodeToText(props.children),
+        disabled: props.disabled,
+      })
+      return
+    }
+    if (props.children) collectOptions(props.children, out)
+  })
+  return out
+}
+
+function findPlaceholder(nodes: React.ReactNode, fallback = "Sélectionner…"): string {
+  let found = ""
+  const walk = (children: React.ReactNode) => {
+    React.Children.forEach(children, (child) => {
+      if (!React.isValidElement(child) || found) return
+      const props = child.props as { children?: React.ReactNode; placeholder?: string }
+      if (isValue(child) && props.placeholder) {
+        found = props.placeholder
+        return
+      }
+      if (props.children) walk(props.children)
+    })
+  }
+  walk(nodes)
+  return found || fallback
+}
+
+function prepareMobileChildren(nodes: React.ReactNode, label: string): React.ReactNode {
+  return React.Children.map(nodes, (child) => {
+    if (!React.isValidElement(child)) return child
+    if (isContent(child)) return null
+    const props = child.props as { children?: React.ReactNode }
+    if (isValue(child)) {
+      return React.cloneElement(child as React.ReactElement<{ children?: React.ReactNode }>, {
+        children: label,
+      })
+    }
+    if (props.children) {
+      return React.cloneElement(child as React.ReactElement<{ children?: React.ReactNode }>, {
+        children: prepareMobileChildren(props.children, label),
+      })
+    }
+    return child
+  })
+}
+
+function Select({
+  children,
+  value,
+  defaultValue,
+  onValueChange,
+  onOpenChange,
+  ...rest
+}: SelectRootProps) {
+  const isMobile = useIsMobile()
+  const [internalValue, setInternalValue] = React.useState<string | undefined>(defaultValue ?? value ?? "")
+  const [sheetOpen, setSheetOpen] = React.useState(false)
+  const [query, setQuery] = React.useState("")
+
+  const currentValue = value !== undefined ? value : internalValue ?? ""
+  const options = React.useMemo(() => collectOptions(children), [children])
+  const selected = options.find((option) => option.value === currentValue)
+  const selectedLabel = selected ? nodeToText(selected.label) : ""
+  const placeholder = findPlaceholder(children)
+  const disabled = Boolean((rest as { disabled?: boolean }).disabled)
+
+  // Desktop : comportement Radix strictement inchangé.
+  if (!isMobile) {
+    return (
+      <SelectPrimitive.Root
+        value={value}
+        defaultValue={defaultValue}
+        onValueChange={onValueChange}
+        onOpenChange={onOpenChange}
+        {...rest}
+      >
+        {children}
+      </SelectPrimitive.Root>
+    )
+  }
+
+  const close = () => {
+    setSheetOpen(false)
+    onOpenChange?.(false)
+  }
+
+  const handleChange = (next: string) => {
+    if (value === undefined) setInternalValue(next)
+    onValueChange?.(next)
+    close()
+  }
+
+  const filtered = query.trim()
+    ? options.filter((option) =>
+        (option.searchText ?? "").toLowerCase().includes(query.trim().toLowerCase()),
+      )
+    : options
+
+  return (
+    <>
+      <SelectPrimitive.Root
+        {...rest}
+        value={currentValue}
+        onValueChange={handleChange}
+        onOpenChange={(next) => {
+          if (next && !disabled) {
+            setQuery("")
+            setSheetOpen(true)
+            onOpenChange?.(true)
+          } else if (!next) {
+            onOpenChange?.(false)
+          }
+        }}
+      >
+        {prepareMobileChildren(children, selectedLabel)}
+      </SelectPrimitive.Root>
+
+      {typeof rest.name === "string" && (
+        <select
+          name={rest.name}
+          value={currentValue}
+          onChange={() => {}}
+          tabIndex={-1}
+          aria-hidden="true"
+          className="sr-only"
+        >
+          {options.map((option) => (
+            <option key={option.value} value={option.value}>
+              {nodeToText(option.label)}
+            </option>
+          ))}
+        </select>
+      )}
+
+      <MobileBottomSheet
+        open={sheetOpen}
+        onClose={close}
+        title={placeholder}
+        tone="light"
+      >
+        {options.length > 8 && (
+          <div className="relative mb-3">
+            <Search
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 opacity-50"
+              aria-hidden="true"
+            />
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Rechercher…"
+              aria-label="Rechercher une option"
+              autoComplete="off"
+              className="h-12 w-full rounded-xl border border-gray-200 bg-gray-50 pl-10 pr-3 text-sm outline-none placeholder:text-gray-400"
+            />
+          </div>
+        )}
+        <BottomSheetOptionRows
+          options={filtered}
+          selected={[currentValue]}
+          multiple={false}
+          onToggle={handleChange}
+          tone="light"
+        />
+      </MobileBottomSheet>
+    </>
+  )
+}
 
 const SelectGroup = SelectPrimitive.Group
 
@@ -64,8 +275,7 @@ const SelectScrollDownButton = React.forwardRef<
     <ChevronDown className="h-4 w-4" />
   </SelectPrimitive.ScrollDownButton>
 ))
-SelectScrollDownButton.displayName =
-  SelectPrimitive.ScrollDownButton.displayName
+SelectScrollDownButton.displayName = SelectPrimitive.ScrollDownButton.displayName
 
 const SelectContent = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Content>,

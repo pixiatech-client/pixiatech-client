@@ -527,7 +527,7 @@ export const DisputesView: React.FC<DisputesViewProps> = ({
                     }`}
                   >
                     <span>Envoyer</span>
-                    <Send className="w-3.5 h-3.5 text-[#38E044]" />
+                    <Send className="w-3.5 h-3.5 text-[color:var(--ui-accent)]" />
                   </button>
                 </form>
               </div>

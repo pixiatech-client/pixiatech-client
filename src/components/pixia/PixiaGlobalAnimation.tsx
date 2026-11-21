@@ -922,7 +922,7 @@ export function PixiaGlobalAnimation({
             onPointerDown={handlePointerDown}
             onPointerUp={handlePointerUp}
             onKeyDown={handleKeyDown}
-            className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C3F910]"
+            className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ui-accent)]"
             style={{
               position: 'absolute',
               left: videoLeft,
@@ -977,7 +977,7 @@ export function PixiaGlobalAnimation({
         onPointerDown={handlePointerDown}
         onPointerUp={handlePointerUp}
         onKeyDown={handleKeyDown}
-        className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C3F910]"
+        className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ui-accent)]"
         style={{
           position: 'fixed',
           left: 0,
@@ -1024,7 +1024,7 @@ export function PixiaGlobalAnimation({
             lineHeight: 1.45,
             fontWeight: 600,
             boxShadow: '0 20px 45px rgba(0,0,0,0.35)',
-            border: '1px solid rgba(195, 249, 16, 0.6)',
+            border: '1px solid rgba(var(--ui-accent-rgb), 0.6)',
             opacity: 0,
             willChange: 'opacity, transform',
             pointerEvents: 'none',

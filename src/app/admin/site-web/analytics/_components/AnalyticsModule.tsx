@@ -155,12 +155,12 @@ export default function AnalyticsModule() {
       <div className="bg-[#0A0D0E] border border-neutral-800 rounded-3xl p-5 sm:p-6 text-white flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-2xl bg-[#141B1E] border border-neutral-700 flex items-center justify-center shrink-0">
-            <BarChart3 className="w-6 h-6 text-[#38E044]" />
+            <BarChart3 className="w-6 h-6 text-[color:var(--ui-accent)]" />
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-xl font-bold tracking-tight">{g('title')}</h1>
-              <span className="text-[10px] font-mono font-extrabold bg-[#38E044] text-black px-2.5 py-0.5 rounded-full shadow-[0_0_10px_rgba(56,224,68,0.4)]">
+              <span className="text-[10px] font-mono font-extrabold bg-[color:var(--ui-accent)] text-black px-2.5 py-0.5 rounded-full shadow-[0_0_10px_rgba(var(--ui-accent-rgb),0.4)]">
                 {g('liveBadge')}
               </span>
             </div>

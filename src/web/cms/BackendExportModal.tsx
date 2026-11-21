@@ -54,7 +54,7 @@ export const BackendExportModal: React.FC<BackendExportModalProps> = ({ isOpen, 
       <div className="relative w-full max-w-3xl max-h-[90vh] bg-[#0E0E0D] border border-[#2B2B28] text-[#F5F4F0] rounded-2xl shadow-2xl flex flex-col font-sans overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 bg-[#141413] border-b border-[#222220]">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-[#C3F910]/20 text-[#C3F910] flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-[rgba(var(--ui-accent-rgb),0.2)] text-[color:var(--ui-accent)] flex items-center justify-center">
               <Server className="w-4 h-4" />
             </div>
             <div>
@@ -84,7 +84,7 @@ export const BackendExportModal: React.FC<BackendExportModalProps> = ({ isOpen, 
               type="button"
               onClick={() => setActiveTab(key)}
               className={`py-3 px-4 border-b-2 font-semibold transition-colors cursor-pointer ${
-                activeTab === key ? 'border-[#C3F910] text-[#C3F910]' : 'border-transparent text-[#7A7A76] hover:text-white'
+                activeTab === key ? 'border-[color:var(--ui-accent)] text-[color:var(--ui-accent)]' : 'border-transparent text-[#7A7A76] hover:text-white'
               }`}
             >
               {label}
@@ -107,8 +107,8 @@ export const BackendExportModal: React.FC<BackendExportModalProps> = ({ isOpen, 
                   >
                     {copied ? (
                       <>
-                        <Check className="w-3.5 h-3.5 text-[#C3F910]" />
-                        <span className="text-[#C3F910]">Copié !</span>
+                        <Check className="w-3.5 h-3.5 text-[color:var(--ui-accent)]" />
+                        <span className="text-[color:var(--ui-accent)]">Copié !</span>
                       </>
                     ) : (
                       <>
@@ -120,7 +120,7 @@ export const BackendExportModal: React.FC<BackendExportModalProps> = ({ isOpen, 
                   <button
                     type="button"
                     onClick={handleDownload}
-                    className="flex items-center gap-1.5 bg-[#C3F910] hover:bg-[#b0e20e] text-[#080808] font-bold px-3 py-1.5 rounded transition-colors cursor-pointer"
+                    className="flex items-center gap-1.5 bg-[color:var(--ui-accent)] hover:bg-[color:var(--ui-accent-hover)] text-[#080808] font-bold px-3 py-1.5 rounded transition-colors cursor-pointer"
                   >
                     <Download className="w-3.5 h-3.5" />
                     <span>Télécharger .json</span>
@@ -177,7 +177,7 @@ export const BackendExportModal: React.FC<BackendExportModalProps> = ({ isOpen, 
                 </div>
               </div>
               <div className="flex gap-2 pt-1">
-                <span className="px-2.5 py-1 rounded bg-[#C3F910]/10 border border-[#C3F910]/30 text-[#C3F910] text-[10px] flex items-center gap-1.5">
+                <span className="px-2.5 py-1 rounded bg-[rgba(var(--ui-accent-rgb),0.1)] border border-[rgba(var(--ui-accent-rgb),0.3)] text-[color:var(--ui-accent)] text-[10px] flex items-center gap-1.5">
                   <BookOpen className="w-3.5 h-3.5" /> Authentification unique : session admin Next.js existante
                 </span>
                 <span className="px-2.5 py-1 rounded bg-[#171715] border border-[#2B2B28] text-[#9A9A94] text-[10px] flex items-center gap-1.5">
@@ -195,7 +195,7 @@ export const BackendExportModal: React.FC<BackendExportModalProps> = ({ isOpen, 
                   type="text"
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
-                  className="w-full bg-[#171715] border border-[#2B2B28] rounded-lg p-3 text-white focus:border-[#C3F910] focus:outline-none"
+                  className="w-full bg-[#171715] border border-[#2B2B28] rounded-lg p-3 text-white focus:border-[color:var(--ui-accent)] focus:outline-none"
                   placeholder="PIXIATECH"
                 />
                 <p className="text-[10px] text-[#7A7A76] mt-1.5">
@@ -205,7 +205,7 @@ export const BackendExportModal: React.FC<BackendExportModalProps> = ({ isOpen, 
               <button
                 type="button"
                 onClick={handleSaveConfig}
-                className="bg-[#C3F910] hover:bg-[#b0e20e] text-[#080808] font-bold px-4 py-2.5 rounded-lg transition-colors cursor-pointer"
+                className="bg-[color:var(--ui-accent)] hover:bg-[color:var(--ui-accent-hover)] text-[#080808] font-bold px-4 py-2.5 rounded-lg transition-colors cursor-pointer"
               >
                 ENREGISTRER LES PARAMÈTRES
               </button>

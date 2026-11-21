@@ -29,14 +29,14 @@ export function ClientPageHeader({
     >
       <div className="flex items-center gap-4 min-w-0">
         <div className="w-12 h-12 rounded-2xl bg-[#0A0D0E] text-white flex items-center justify-center shrink-0 shadow-md">
-          <Icon className={cn('w-6 h-6 text-[#38E044]', iconClassName)} />
+          <Icon className={cn('w-6 h-6 text-[color:var(--ui-accent)]', iconClassName)} />
         </div>
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <h1 className="text-xl sm:text-2xl font-bold text-neutral-900 tracking-tight">{title}</h1>
             {online && (
               <span className="inline-flex items-center gap-1 text-[11px] font-semibold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full border border-emerald-200">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#38E044]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-[color:var(--ui-accent)]" />
                 En ligne
               </span>
             )}

@@ -265,7 +265,7 @@ export const StudioRulerGuides: React.FC<StudioRulerGuidesProps> = ({
           onClick={() => setShowRulers((v) => !v)}
           className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-mono font-bold transition-colors cursor-pointer ${
             showRulers
-              ? 'bg-[#C3F910]/20 text-[#C3F910] border border-[#C3F910]/40'
+              ? 'bg-[rgba(var(--ui-accent-rgb),0.2)] text-[color:var(--ui-accent)] border border-[rgba(var(--ui-accent-rgb),0.4)]'
               : 'text-[#888] hover:text-[#EDEBE6] hover:bg-[#1a1a18]'
           }`}
           title="Afficher/Masquer les règles graduées"

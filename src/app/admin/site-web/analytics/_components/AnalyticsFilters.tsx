@@ -69,7 +69,7 @@ export default function AnalyticsFilters({
   };
 
   const selectCls =
-    'w-full px-3 py-2.5 bg-neutral-50 dark:bg-white/5 border border-neutral-200 dark:border-white/10 rounded-xl text-sm text-neutral-900 dark:text-white focus:ring-2 focus:ring-[#38E044]/50 outline-none transition-all';
+    'w-full px-3 py-2.5 bg-neutral-50 dark:bg-white/5 border border-neutral-200 dark:border-white/10 rounded-xl text-sm text-neutral-900 dark:text-white focus:ring-2 focus:ring-[rgba(var(--ui-accent-rgb),0.5)] outline-none transition-all';
   const labelCls = 'text-[10px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mb-1.5 block';
 
   return (
@@ -83,9 +83,9 @@ export default function AnalyticsFilters({
               type="button"
               aria-pressed={preset === key}
               onClick={() => applyPreset(key)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#38E044]/50 ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(var(--ui-accent-rgb),0.5)] ${
                 preset === key
-                  ? 'bg-[#38E044] text-black'
+                  ? 'bg-[color:var(--ui-accent)] text-black'
                   : 'bg-neutral-100 dark:bg-white/5 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-white/10'
               }`}
             >
@@ -116,7 +116,7 @@ export default function AnalyticsFilters({
             <button
               type="button"
               onClick={applyCustom}
-              className="px-3 py-2.5 rounded-xl bg-[#0A0D0E] dark:bg-white text-white dark:text-neutral-900 text-xs font-bold cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#38E044]/50"
+              className="px-3 py-2.5 rounded-xl bg-[#0A0D0E] dark:bg-white text-white dark:text-neutral-900 text-xs font-bold cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(var(--ui-accent-rgb),0.5)]"
             >
               {g('apply')}
             </button>

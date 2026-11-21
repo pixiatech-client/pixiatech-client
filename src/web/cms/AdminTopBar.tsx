@@ -62,13 +62,13 @@ export const AdminTopBar: React.FC<AdminTopBarProps> = ({ onOpenBackendModal, cu
             <span
               data-accent-badge
               className="w-2 h-2 rounded-full animate-pulse"
-              style={{ backgroundColor: 'var(--accent, #C3F910)' }}
+              style={{ backgroundColor: 'var(--accent, var(--ui-accent))' }}
             />
             <span className="font-bold tracking-wider text-[#F5F4F0]">{settings.companyName} CMS</span>
             <span className="text-[#7A7A76] text-[10px] border-l border-[#333] pl-2">Site Web v3</span>
           </div>
           <div className="hidden sm:flex items-center gap-1.5 text-[#9A9A94] bg-[#121211] px-2 py-1 rounded">
-            <Layers data-accent-icon className="w-3.5 h-3.5" style={{ color: 'var(--accent, #C3F910)' }} />
+            <Layers data-accent-icon className="w-3.5 h-3.5" style={{ color: 'var(--accent, var(--ui-accent))' }} />
             <span>Page active :</span>
             <span className="text-white font-semibold">{currentPageTitle}</span>
           </div>
@@ -80,10 +80,10 @@ export const AdminTopBar: React.FC<AdminTopBarProps> = ({ onOpenBackendModal, cu
             onClick={() => setShowThemePanel((v) => !v)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-bold transition-all cursor-pointer border"
             style={{
-              backgroundColor: showThemePanel ? 'var(--accent-muted, rgba(195,249,16,0.2))' : '#1C1C1A',
-              borderColor: showThemePanel ? 'var(--accent, #C3F910)' : '#333330',
-              color: showThemePanel ? 'var(--accent, #C3F910)' : '#EDEBE6',
-              boxShadow: showThemePanel ? '0 0 12px var(--accent-glow, rgba(195,249,16,0.3))' : 'none',
+              backgroundColor: showThemePanel ? 'var(--accent-muted, rgba(var(--ui-accent-rgb),0.2))' : '#1C1C1A',
+              borderColor: showThemePanel ? 'var(--accent, var(--ui-accent))' : '#333330',
+              color: showThemePanel ? 'var(--accent, var(--ui-accent))' : '#EDEBE6',
+              boxShadow: showThemePanel ? '0 0 12px var(--accent-glow, rgba(var(--ui-accent-rgb),0.3))' : 'none',
             }}
             title="Personnaliser les couleurs et l'identité visuelle du site"
           >
@@ -98,10 +98,10 @@ export const AdminTopBar: React.FC<AdminTopBarProps> = ({ onOpenBackendModal, cu
             style={
               isEditing
                 ? {
-                    backgroundColor: 'var(--accent, #C3F910)',
-                    borderColor: 'var(--accent, #C3F910)',
+                    backgroundColor: 'var(--accent, var(--ui-accent))',
+                    borderColor: 'var(--accent, var(--ui-accent))',
                     color: '#080808',
-                    boxShadow: '0 0 15px var(--accent-glow, rgba(195,249,16,0.35))',
+                    boxShadow: '0 0 15px var(--accent-glow, rgba(var(--ui-accent-rgb),0.35))',
                   }
                 : {
                     backgroundColor: '#1C1C1A',
@@ -137,14 +137,14 @@ export const AdminTopBar: React.FC<AdminTopBarProps> = ({ onOpenBackendModal, cu
                   <>
                     <span
                       className="w-3 h-3 border-2 border-t-transparent rounded-full animate-spin"
-                      style={{ borderColor: 'var(--accent, #C3F910)' }}
+                      style={{ borderColor: 'var(--accent, var(--ui-accent))' }}
                     />
                     <span>Enregistrement...</span>
                   </>
                 ) : saveStatus === 'saved' ? (
                   <>
-                    <CheckCircle2 className="w-3.5 h-3.5" style={{ color: 'var(--accent, #C3F910)' }} />
-                    <span className="font-bold" style={{ color: 'var(--accent, #C3F910)' }}>✓ Enregistré</span>
+                    <CheckCircle2 className="w-3.5 h-3.5" style={{ color: 'var(--accent, var(--ui-accent))' }} />
+                    <span className="font-bold" style={{ color: 'var(--accent, var(--ui-accent))' }}>✓ Enregistré</span>
                   </>
                 ) : saveStatus === 'error' ? (
                   <>
@@ -175,7 +175,7 @@ export const AdminTopBar: React.FC<AdminTopBarProps> = ({ onOpenBackendModal, cu
 
           <a
             href="/admin/site-web"
-            className="p-1.5 text-[#7A7A76] hover:text-[#C3F910] rounded transition-colors cursor-pointer"
+            className="p-1.5 text-[#7A7A76] hover:text-[color:var(--ui-accent)] rounded transition-colors cursor-pointer"
             title="Retour au tableau de bord admin"
           >
             <LogOut className="w-3.5 h-3.5" />

@@ -408,12 +408,12 @@ export function AdminInvoicesView({ requests, loading, error, onRefresh }: Admin
       <div className="bg-[#0A0D0E] border border-neutral-800 rounded-3xl p-5 sm:p-6 text-white flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-2xl bg-[#141B1E] border border-neutral-700 flex items-center justify-center shrink-0">
-            <FileText className="w-6 h-6 text-[#38E044]" />
+            <FileText className="w-6 h-6 text-[color:var(--ui-accent)]" />
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-xl font-bold tracking-tight">{t('admin.factures.headerTitle')}</h1>
-              <span className="text-[10px] font-mono font-extrabold bg-[#38E044] text-black px-2.5 py-0.5 rounded-full shadow-[0_0_10px_rgba(56,224,68,0.4)]">
+              <span className="text-[10px] font-mono font-extrabold bg-[color:var(--ui-accent)] text-black px-2.5 py-0.5 rounded-full shadow-[0_0_10px_rgba(var(--ui-accent-rgb),0.4)]">
                 {t('admin.factures.backofficeBadge')}
               </span>
             </div>
@@ -438,12 +438,12 @@ export function AdminInvoicesView({ requests, loading, error, onRefresh }: Admin
             id="btn-pixiatech-connect"
             type="button"
             onClick={handleConnectClick}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-neutral-800 to-neutral-900 hover:from-neutral-700 hover:to-neutral-800 text-white text-xs font-bold border border-[#38E044]/30 transition-all cursor-pointer shadow-sm group"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-neutral-800 to-neutral-900 hover:from-neutral-700 hover:to-neutral-800 text-white text-xs font-bold border border-[rgba(var(--ui-accent-rgb),0.3)] transition-all cursor-pointer shadow-sm group"
             title={t('admin.factures.connectTooltip')}
           >
-            <div className="w-2 h-2 rounded-full bg-[#38E044] shadow-[0_0_8px_#38E044] group-hover:scale-125 transition-transform" />
+            <div className="w-2 h-2 rounded-full bg-[color:var(--ui-accent)] shadow-[0_0_8px_var(--ui-accent)] group-hover:scale-125 transition-transform" />
             <span className="tracking-wide">{t('admin.factures.connectLabel')}</span>
-            <span className="text-[9px] bg-[#1a3821] text-white border border-[#38E044]/30 px-1.5 py-0.5 rounded font-mono font-semibold">
+            <span className="text-[9px] bg-[#1a3821] text-white border border-[rgba(var(--ui-accent-rgb),0.3)] px-1.5 py-0.5 rounded font-mono font-semibold">
               {t('admin.factures.connectSoon')}
             </span>
           </button>
@@ -738,7 +738,7 @@ export function AdminInvoicesView({ requests, loading, error, onRefresh }: Admin
                             >
                               {isExpanded ? (
                                 <>
-                                  <ChevronUp className="w-3.5 h-3.5 text-[#38E044]" />
+                                  <ChevronUp className="w-3.5 h-3.5 text-[color:var(--ui-accent)]" />
                                   <span>{t('admin.factures.btnCollapse')}</span>
                                 </>
                               ) : (
@@ -933,7 +933,7 @@ export function AdminInvoicesView({ requests, loading, error, onRefresh }: Admin
                                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-neutral-800">
                                   <div>
                                     <div className="flex items-center gap-2">
-                                      <ShieldCheck className="w-4 h-4 text-[#38E044]" />
+                                      <ShieldCheck className="w-4 h-4 text-[color:var(--ui-accent)]" />
                                       <span className="text-xs font-bold uppercase tracking-wider text-neutral-200">
                                         {t('admin.factures.pennylanePanelTitle', { number: inv.invoiceNumber || inv.orderNumber })}
                                       </span>
@@ -943,13 +943,13 @@ export function AdminInvoicesView({ requests, loading, error, onRefresh }: Admin
 
                                   <div className="flex items-center gap-2 flex-wrap shrink-0">
                                     {inv.status === 'completed' ? (
-                                      <span className="inline-flex items-center gap-1.5 text-[10px] font-mono font-extrabold bg-[#38E044] text-black px-2.5 py-1 rounded-full shrink-0 shadow-sm">
+                                      <span className="inline-flex items-center gap-1.5 text-[10px] font-mono font-extrabold bg-[color:var(--ui-accent)] text-black px-2.5 py-1 rounded-full shrink-0 shadow-sm">
                                         <FileCheck className="w-3.5 h-3.5" />
                                         HOMOLOGUÉE &amp; PUBLIÉE
                                       </span>
                                     ) : inv.hasCustomCertPdf ? (
                                       <span className="inline-flex items-center gap-1.5 text-[10px] font-mono font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2.5 py-1 rounded-full shrink-0">
-                                        <CheckCircle2 className="w-3.5 h-3.5 text-[#38E044]" />
+                                        <CheckCircle2 className="w-3.5 h-3.5 text-[color:var(--ui-accent)]" />
                                         PDF CERTIFIÉ PRÊT
                                       </span>
                                     ) : (
@@ -961,16 +961,16 @@ export function AdminInvoicesView({ requests, loading, error, onRefresh }: Admin
                                     <button
                                       type="button"
                                       onClick={handleConnectClick}
-                                      className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-2xl bg-[#111713] hover:bg-[#16201a] text-white border border-[#38E044]/40 hover:border-[#38E044]/70 transition-all cursor-pointer shadow-[0_0_12px_rgba(56,224,68,0.15)] shrink-0 active:scale-95 group"
+                                      className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-2xl bg-[#111713] hover:bg-[#16201a] text-white border border-[rgba(var(--ui-accent-rgb),0.4)] hover:border-[rgba(var(--ui-accent-rgb),0.7)] transition-all cursor-pointer shadow-[0_0_12px_rgba(var(--ui-accent-rgb),0.15)] shrink-0 active:scale-95 group"
                                       title={t('admin.factures.transferTooltip')}
                                     >
-                                      <div className="w-2.5 h-2.5 rounded-full bg-[#38E044] shadow-[0_0_8px_#38E044] group-hover:scale-110 transition-transform shrink-0" />
+                                      <div className="w-2.5 h-2.5 rounded-full bg-[color:var(--ui-accent)] shadow-[0_0_8px_var(--ui-accent)] group-hover:scale-110 transition-transform shrink-0" />
                                       <span className="text-xs tracking-wide">
                                         <span className="text-neutral-300 font-semibold">{t('admin.factures.transferToConnect')}</span>
                                         <span className="text-white font-extrabold font-mono">PIXIATECH </span>
-                                        <span className="text-[#38E044] font-black font-mono">Connect</span>
+                                        <span className="text-[color:var(--ui-accent)] font-black font-mono">Connect</span>
                                       </span>
-                                      <span className="text-[10px] font-mono font-bold bg-[#1a3821] text-white px-2 py-0.5 rounded-md border border-[#38E044]/30 shadow-sm">
+                                      <span className="text-[10px] font-mono font-bold bg-[#1a3821] text-white px-2 py-0.5 rounded-md border border-[rgba(var(--ui-accent-rgb),0.3)] shadow-sm">
                                         {t('admin.factures.transferSoon')}
                                       </span>
                                     </button>
@@ -999,7 +999,7 @@ export function AdminInvoicesView({ requests, loading, error, onRefresh }: Admin
                                       onClick={() => handleDownloadModel(inv)}
                                       className="w-full py-2 px-3 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer border border-neutral-700 shadow-sm"
                                     >
-                                      <Download className="w-3.5 h-3.5 text-[#38E044]" />
+                                      <Download className="w-3.5 h-3.5 text-[color:var(--ui-accent)]" />
                                       <span>{t('admin.factures.step1Btn')}</span>
                                     </button>
                                   </div>
@@ -1008,7 +1008,7 @@ export function AdminInvoicesView({ requests, loading, error, onRefresh }: Admin
                                   <div
                                     className={`p-3.5 rounded-2xl bg-neutral-900/90 border transition-all space-y-2.5 flex flex-col justify-between ${
                                       inv.hasCustomCertPdf
-                                        ? 'border-emerald-500/50 shadow-[0_0_15px_rgba(56,224,68,0.1)]'
+                                        ? 'border-emerald-500/50 shadow-[0_0_15px_rgba(var(--ui-accent-rgb),0.1)]'
                                         : 'border-neutral-800'
                                     }`}
                                   >
@@ -1029,7 +1029,7 @@ export function AdminInvoicesView({ requests, loading, error, onRefresh }: Admin
 
                                         {inv.hasCustomCertPdf ? (
                                           <span className="inline-flex items-center gap-1 text-[10px] font-bold font-mono px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
-                                            <Check className="w-3 h-3 text-[#38E044]" />
+                                            <Check className="w-3 h-3 text-[color:var(--ui-accent)]" />
                                             <span>Fichier présent</span>
                                           </span>
                                         ) : (
@@ -1048,7 +1048,7 @@ export function AdminInvoicesView({ requests, loading, error, onRefresh }: Admin
                                       {inv.hasCustomCertPdf ? (
                                         <div className="p-2.5 rounded-xl bg-emerald-950/40 border border-emerald-500/40 space-y-2">
                                           <div className="flex items-start gap-2">
-                                            <FileCheck className="w-4 h-4 text-[#38E044] shrink-0 mt-0.5" />
+                                            <FileCheck className="w-4 h-4 text-[color:var(--ui-accent)] shrink-0 mt-0.5" />
                                             <div className="min-w-0 flex-1">
                                               <div className="font-mono text-xs font-bold text-white truncate" title={inv.certPdfName || 'facture-certifiee.pdf'}>
                                                 {inv.certPdfName || 'facture-certifiee.pdf'}
@@ -1074,7 +1074,7 @@ export function AdminInvoicesView({ requests, loading, error, onRefresh }: Admin
                                               className="flex-1 py-1 px-2 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 text-[10px] font-bold flex items-center justify-center gap-1 transition-colors cursor-pointer"
                                               title="Consulter le PDF certifié dans un nouvel onglet"
                                             >
-                                              <Eye className="w-3 h-3 text-[#38E044]" />
+                                              <Eye className="w-3 h-3 text-[color:var(--ui-accent)]" />
                                               <span>Voir le PDF</span>
                                             </button>
                                             <button
@@ -1131,7 +1131,7 @@ export function AdminInvoicesView({ requests, loading, error, onRefresh }: Admin
                                       inv.status === 'completed'
                                         ? 'border-emerald-500/30'
                                         : inv.hasCustomCertPdf
-                                          ? 'border-[#38E044]/40 shadow-[0_0_15px_rgba(56,224,68,0.1)]'
+                                          ? 'border-[rgba(var(--ui-accent-rgb),0.4)] shadow-[0_0_15px_rgba(var(--ui-accent-rgb),0.1)]'
                                           : 'border-neutral-800'
                                     }`}
                                   >
@@ -1145,12 +1145,12 @@ export function AdminInvoicesView({ requests, loading, error, onRefresh }: Admin
                                         </div>
 
                                         {inv.status === 'completed' ? (
-                                          <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-emerald-500/20 text-[#38E044] border border-emerald-500/40">
+                                          <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-emerald-500/20 text-[color:var(--ui-accent)] border border-emerald-500/40">
                                             <Check className="w-3 h-3" />
                                             En ligne
                                           </span>
                                         ) : inv.hasCustomCertPdf ? (
-                                          <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-[#38E044]/20 text-[#38E044] border border-[#38E044]/40 animate-pulse">
+                                          <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-[rgba(var(--ui-accent-rgb),0.2)] text-[color:var(--ui-accent)] border border-[rgba(var(--ui-accent-rgb),0.4)] animate-pulse">
                                             Prêt
                                           </span>
                                         ) : (
@@ -1170,7 +1170,7 @@ export function AdminInvoicesView({ requests, loading, error, onRefresh }: Admin
                                         </p>
                                       ) : (
                                         <p className="text-[11px] text-neutral-300 mt-1.5 leading-relaxed">
-                                          <span className="text-[#38E044] font-bold">✓ PDF certifié validé.</span> Cliquez pour publier la facture officielle sur l&apos;espace client.
+                                          <span className="text-[color:var(--ui-accent)] font-bold">✓ PDF certifié validé.</span> Cliquez pour publier la facture officielle sur l&apos;espace client.
                                         </p>
                                       )}
                                     </div>
@@ -1201,7 +1201,7 @@ export function AdminInvoicesView({ requests, loading, error, onRefresh }: Admin
                                         className={`w-full py-2.5 px-3 rounded-xl text-xs font-extrabold flex items-center justify-center gap-2 transition-all shadow-md ${
                                           !inv.hasCustomCertPdf
                                             ? 'bg-neutral-800 text-neutral-500 border border-neutral-700/60 cursor-not-allowed opacity-50'
-                                            : 'bg-[#38E044] hover:bg-[#2ecc3a] text-black cursor-pointer shadow-[0_0_20px_rgba(56,224,68,0.3)] active:scale-95'
+                                            : 'bg-[color:var(--ui-accent)] hover:bg-[color:var(--ui-accent-hover)] text-black cursor-pointer shadow-[0_0_20px_rgba(var(--ui-accent-rgb),0.3)] active:scale-95'
                                         }`}
                                       >
                                         {isBusy(inv.id) ? (
@@ -1239,7 +1239,7 @@ export function AdminInvoicesView({ requests, loading, error, onRefresh }: Admin
                                   className="flex items-center gap-2 px-4 py-2 rounded-xl bg-neutral-900 dark:bg-zinc-800 hover:bg-black text-white text-xs font-bold transition-all cursor-pointer shadow-md active:scale-95"
                                   title={t('admin.factures.footerCollapseTitle')}
                                 >
-                                  <ChevronUp className="w-4 h-4 text-[#38E044]" />
+                                  <ChevronUp className="w-4 h-4 text-[color:var(--ui-accent)]" />
                                   <span>{t('admin.factures.footerCollapseBtn')}</span>
                                 </button>
                               </div>
@@ -1374,19 +1374,19 @@ export function AdminInvoicesView({ requests, loading, error, onRefresh }: Admin
             <div
               className={`p-5 rounded-2xl bg-[#0A0D0E] text-white border transition-all space-y-3.5 ${
                 selectedInvoice.hasCustomCertPdf
-                  ? 'border-emerald-500/50 shadow-[0_0_15px_rgba(56,224,68,0.15)]'
+                  ? 'border-emerald-500/50 shadow-[0_0_15px_rgba(var(--ui-accent-rgb),0.15)]'
                   : 'border-neutral-800'
               }`}
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-[#38E044]" />
+                  <ShieldCheck className="w-4 h-4 text-[color:var(--ui-accent)]" />
                   <span className="text-xs font-bold uppercase tracking-wider text-neutral-200">
                     {t('admin.factures.step2UploadTitle')}
                   </span>
                 </div>
                 {selectedInvoice.hasCustomCertPdf ? (
-                  <span className="text-[10px] font-bold bg-[#38E044] text-black px-2.5 py-0.5 rounded-full font-mono flex items-center gap-1">
+                  <span className="text-[10px] font-bold bg-[color:var(--ui-accent)] text-black px-2.5 py-0.5 rounded-full font-mono flex items-center gap-1">
                     <Check className="w-3 h-3 text-black stroke-[3]" />
                     {t('admin.factures.certifieeBadge')}
                   </span>
@@ -1402,7 +1402,7 @@ export function AdminInvoicesView({ requests, loading, error, onRefresh }: Admin
               {selectedInvoice.hasCustomCertPdf ? (
                 <div className="p-3.5 rounded-xl bg-emerald-950/40 border border-emerald-500/40 space-y-2.5">
                   <div className="flex items-start gap-2.5">
-                    <FileCheck className="w-5 h-5 text-[#38E044] shrink-0 mt-0.5" />
+                    <FileCheck className="w-5 h-5 text-[color:var(--ui-accent)] shrink-0 mt-0.5" />
                     <div className="min-w-0 flex-1">
                       <div className="font-mono text-xs font-bold text-white truncate" title={selectedInvoice.certPdfName || 'facture-certifiee.pdf'}>
                         {selectedInvoice.certPdfName || 'facture-certifiee.pdf'}
@@ -1428,7 +1428,7 @@ export function AdminInvoicesView({ requests, loading, error, onRefresh }: Admin
                       className="flex-1 py-1.5 px-3 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                       title="Consulter le PDF certifié"
                     >
-                      <Eye className="w-3.5 h-3.5 text-[#38E044]" />
+                      <Eye className="w-3.5 h-3.5 text-[color:var(--ui-accent)]" />
                       <span>Consulter le PDF</span>
                     </button>
                     <button
@@ -1535,10 +1535,10 @@ export function AdminInvoicesView({ requests, loading, error, onRefresh }: Admin
                   }
                   className={`p-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
                     selectedInvoice.status === 'completed'
-                      ? 'bg-[#38E044] text-black shadow-sm font-black opacity-80 cursor-default'
+                      ? 'bg-[color:var(--ui-accent)] text-black shadow-sm font-black opacity-80 cursor-default'
                       : !selectedInvoice.hasCustomCertPdf
                         ? 'bg-neutral-200 dark:bg-zinc-800 text-neutral-400 border border-neutral-300 dark:border-white/10 cursor-not-allowed opacity-50'
-                        : 'bg-[#38E044] hover:bg-[#2ecc3a] text-black shadow-sm cursor-pointer'
+                        : 'bg-[color:var(--ui-accent)] hover:bg-[color:var(--ui-accent-hover)] text-black shadow-sm cursor-pointer'
                   }`}
                 >
                   {isBusy(selectedInvoice.id) ? (
@@ -1614,7 +1614,7 @@ export function AdminInvoicesView({ requests, loading, error, onRefresh }: Admin
                   onClick={() => window.print()}
                   className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#0A0D0E] hover:bg-neutral-800 text-white text-xs font-bold transition-all shadow-sm cursor-pointer print:hidden"
                 >
-                  <Printer className="w-3.5 h-3.5 text-[#38E044]" />
+                  <Printer className="w-3.5 h-3.5 text-[color:var(--ui-accent)]" />
                   <span>{t('admin.factures.btnPrint')}</span>
                 </button>
                 <button
@@ -1636,7 +1636,7 @@ export function AdminInvoicesView({ requests, loading, error, onRefresh }: Admin
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="font-extrabold text-2xl tracking-wider font-mono text-black">PIXIATECH</span>
-                    <span className="bg-[#38E044] text-black font-extrabold text-[10px] px-2 py-0.5 rounded-full font-mono">
+                    <span className="bg-[color:var(--ui-accent)] text-black font-extrabold text-[10px] px-2 py-0.5 rounded-full font-mono">
                       {t('admin.factures.printEmitter')}
                     </span>
                   </div>
@@ -1794,5 +1794,5 @@ function EyeIcon() {
 import { Eye as EyeIconRaw } from 'lucide-react';
 
 function EyeIconInner() {
-  return <EyeIconRaw className="w-3.5 h-3.5 text-[#38E044]" />;
+  return <EyeIconRaw className="w-3.5 h-3.5 text-[color:var(--ui-accent)]" />;
 }

@@ -85,7 +85,7 @@ export function ClientDisputeConversation({
             onChange={e => setText(e.target.value)}
             placeholder="Votre réponse..."
             rows={2}
-            className="flex-1 px-4 py-2.5 border border-neutral-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-[#38E044]/30 focus:border-[#38E044]/60 resize-none transition-all"
+            className="flex-1 px-4 py-2.5 border border-neutral-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-[rgba(var(--ui-accent-rgb),0.3)] focus:border-[rgba(var(--ui-accent-rgb),0.6)] resize-none transition-all"
           />
           <button
             type="submit"

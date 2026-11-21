@@ -348,9 +348,9 @@ export const PitchSection: React.FC<PitchSectionProps> = ({
                         fontSize: 11,
                         letterSpacing: '.05em',
                         fontFamily: 'var(--font-mono)',
-                        color: near ? 'var(--accent, #C3F910)' : '#A3A19B',
+                        color: near ? 'var(--accent, var(--ui-accent))' : '#A3A19B',
                         fontWeight: near ? 800 : 500,
-                        borderTop: near ? '2px solid var(--accent, #C3F910)' : '2px solid transparent',
+                        borderTop: near ? '2px solid var(--accent, var(--ui-accent))' : '2px solid transparent',
                         transition: 'color .2s ease, border-color .2s ease',
                       }}
                     >
@@ -450,8 +450,8 @@ export const PitchSection: React.FC<PitchSectionProps> = ({
                   transition: 'color .2s, border-color .2s',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.color = 'var(--accent, #C3F910)';
-                  e.currentTarget.style.borderBottomColor = 'var(--accent, #C3F910)';
+                  e.currentTarget.style.color = 'var(--accent, var(--ui-accent))';
+                  e.currentTarget.style.borderBottomColor = 'var(--accent, var(--ui-accent))';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.color = '#111110';
@@ -512,7 +512,7 @@ export const PitchSection: React.FC<PitchSectionProps> = ({
                   letterSpacing: '.22em',
                   fontFamily: 'var(--font-mono)',
                   fontWeight: 800,
-                  color: 'var(--accent, #C3F910)',
+                  color: 'var(--accent, var(--ui-accent))',
                   pointerEvents: 'none',
                 }}
               >
@@ -564,7 +564,7 @@ export const PitchSection: React.FC<PitchSectionProps> = ({
                     bottom: 8,
                     left: 0,
                     width: 2,
-                    background: 'var(--accent, #C3F910)',
+                    background: 'var(--accent, var(--ui-accent))',
                   }}
                 />
 

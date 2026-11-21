@@ -63,7 +63,7 @@ export const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
         <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-2xl bg-[#0A0D0E] text-white">
-              <Mail className="w-5 h-5 text-[#38E044]" />
+              <Mail className="w-5 h-5 text-[color:var(--ui-accent)]" />
             </div>
             <div>
               <h2 className="text-base font-bold text-neutral-900">
@@ -135,7 +135,7 @@ export const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
               className="px-5 py-2.5 rounded-xl bg-[#0A0D0E] text-white font-bold text-xs hover:bg-neutral-800 transition-all shadow-md cursor-pointer flex items-center gap-2"
             >
               <span>{isSubmitting ? 'Validation...' : 'Valider l\'adresse'}</span>
-              <ArrowRight className="w-3.5 h-3.5 text-[#38E044]" />
+              <ArrowRight className="w-3.5 h-3.5 text-[color:var(--ui-accent)]" />
             </button>
           </div>
         </form>

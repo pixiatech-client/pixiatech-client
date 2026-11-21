@@ -40,12 +40,12 @@ export default function RealtimeModule({ t }: RealtimeModuleProps) {
       <div className="flex items-center gap-2 mb-3">
         <span className="relative flex h-2.5 w-2.5">
           {data && data.online > 0 && (
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#38E044] opacity-60" />
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[color:var(--ui-accent)] opacity-60" />
           )}
-          <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${data && data.online > 0 ? 'bg-[#38E044]' : 'bg-neutral-300 dark:bg-neutral-600'}`} />
+          <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${data && data.online > 0 ? 'bg-[color:var(--ui-accent)]' : 'bg-neutral-300 dark:bg-neutral-600'}`} />
         </span>
         <h3 className="text-sm font-black tracking-tight text-neutral-900 dark:text-white">
-          {g('realtimeTitle')} <span className="tabular-nums text-[#38E044]">({data ? data.online : '…'})</span>
+          {g('realtimeTitle')} <span className="tabular-nums text-[color:var(--ui-accent)]">({data ? data.online : '…'})</span>
         </h3>
       </div>
       {error ? (
@@ -56,7 +56,7 @@ export default function RealtimeModule({ t }: RealtimeModuleProps) {
         <ul className="space-y-1.5 max-h-48 overflow-y-auto custom-scrollbar">
           {(data?.sessions ?? []).map((s) => (
             <li key={s.sid} className="flex items-center gap-2 text-xs">
-              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#38E044]" />
+              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[color:var(--ui-accent)]" />
               <span className="text-neutral-400 tabular-nums shrink-0">
                 {s.country ? s.country.toUpperCase() : '—'} · {s.lang ?? '—'} · {s.device ?? '—'}
               </span>

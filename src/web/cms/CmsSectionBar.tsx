@@ -204,11 +204,11 @@ export const CmsSectionBar: React.FC = () => {
       ref={barRef}
       data-cms-ui="true"
       aria-label="Barre de section CMS"
-      style={{ top: 'var(--admin-bar-h, 0px)' }}
+      style={{ top: 'calc(var(--admin-bar-h, 0px) + var(--preview-bar-h, 0px))' }}
       className="fixed left-0 right-0 z-[279] bg-[#0A0A09]/95 backdrop-blur-md border-b border-[#262624] text-[#F5F4F0] px-3 py-1.5 select-none shadow-lg"
     >
       <div className="mx-auto max-w-[1920px] flex items-center gap-2 flex-wrap font-mono text-[11px]">
-        <span className="flex items-center gap-1.5 font-bold tracking-wider" style={{ color: 'var(--accent, #C3F910)' }}>
+        <span className="flex items-center gap-1.5 font-bold tracking-wider" style={{ color: 'var(--accent, var(--ui-accent))' }}>
           <Layers className="w-3.5 h-3.5" />
           SECTION
         </span>
@@ -228,9 +228,9 @@ export const CmsSectionBar: React.FC = () => {
                 void saveCurrentPage();
               }}
               style={{
-                backgroundColor: isVisible ? 'var(--accent-muted, rgba(195, 249, 16, 0.12))' : 'rgba(255, 68, 68, 0.15)',
-                color: isVisible ? 'var(--accent, #C3F910)' : '#ff6666',
-                borderColor: isVisible ? 'var(--accent-border, rgba(195, 249, 16, 0.4))' : 'rgba(255, 68, 68, 0.5)',
+                backgroundColor: isVisible ? 'var(--accent-muted, rgba(var(--ui-accent-rgb), 0.12))' : 'rgba(255, 68, 68, 0.15)',
+                color: isVisible ? 'var(--accent, var(--ui-accent))' : '#ff6666',
+                borderColor: isVisible ? 'var(--accent-border, rgba(var(--ui-accent-rgb), 0.4))' : 'rgba(255, 68, 68, 0.5)',
               }}
               className="flex items-center gap-1.5 px-2 py-0.5 rounded border transition-colors cursor-pointer"
               title={isVisible ? 'Masquer cette section sur le site public' : 'Réafficher cette section'}
@@ -260,9 +260,9 @@ export const CmsSectionBar: React.FC = () => {
               style={
                 styleOpen
                   ? {
-                      color: 'var(--accent, #C3F910)',
-                      borderColor: 'var(--accent, #C3F910)',
-                      backgroundColor: 'var(--accent-muted, rgba(195, 249, 16, 0.15))',
+                      color: 'var(--accent, var(--ui-accent))',
+                      borderColor: 'var(--accent, var(--ui-accent))',
+                      backgroundColor: 'var(--accent-muted, rgba(var(--ui-accent-rgb), 0.15))',
                     }
                   : {}
               }
@@ -305,9 +305,9 @@ export const CmsSectionBar: React.FC = () => {
                     style={
                       i === activeHeroSlide
                         ? {
-                            backgroundColor: 'var(--accent, #C3F910)',
+                            backgroundColor: 'var(--accent, var(--ui-accent))',
                             color: '#080808',
-                            borderColor: 'var(--accent, #C3F910)',
+                            borderColor: 'var(--accent, var(--ui-accent))',
                           }
                         : {}
                     }

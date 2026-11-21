@@ -301,7 +301,7 @@ export const OverviewSection: React.FC<OverviewSectionProps> = ({
                     style={{
                       fontSize: '12px',
                       letterSpacing: '.2em',
-                      color: 'var(--accent, #C3F910)',
+                      color: 'var(--accent, var(--ui-accent))',
                       marginBottom: '14px',
                       fontWeight: 700,
                     }}

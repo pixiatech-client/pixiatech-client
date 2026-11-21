@@ -57,7 +57,7 @@ export function ClientSlidingSwitch({
             )}
             <span className="relative z-10 flex items-center gap-2">
               {isActive && (
-                <span className="w-2 h-2 rounded-full bg-[#38E044] shadow-[0_0_8px_#38E044] shrink-0" />
+                <span className="w-2 h-2 rounded-full bg-[color:var(--ui-accent)] shadow-[0_0_8px_var(--ui-accent)] shrink-0" />
               )}
               {option.icon && (
                 <span className={cn('shrink-0', isActive ? 'text-white' : 'text-neutral-500')}>

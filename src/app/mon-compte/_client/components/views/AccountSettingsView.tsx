@@ -175,7 +175,7 @@ export const AccountSettingsView: React.FC<AccountSettingsViewProps> = ({
       <div className="bg-white rounded-3xl border border-neutral-200/80 p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-2xl bg-[#0A0D0E] text-white flex items-center justify-center shrink-0 shadow-md">
-            <UserCheck className="w-6 h-6 text-[#38E044]" />
+            <UserCheck className="w-6 h-6 text-[color:var(--ui-accent)]" />
           </div>
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-neutral-900 tracking-tight">
@@ -233,7 +233,7 @@ export const AccountSettingsView: React.FC<AccountSettingsViewProps> = ({
                   className="absolute -bottom-2 -right-2 p-2.5 rounded-xl bg-[#0A0D0E] text-white hover:bg-neutral-800 shadow-lg transition-transform hover:scale-105 cursor-pointer"
                   title="Changer la photo de profil"
                 >
-                  <Camera className="w-4 h-4 text-[#38E044]" />
+                  <Camera className="w-4 h-4 text-[color:var(--ui-accent)]" />
                 </button>
                 <input
                   ref={fileInputRef}

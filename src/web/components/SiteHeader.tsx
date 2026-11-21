@@ -72,7 +72,7 @@ export const SiteHeader: React.FC<SiteHeaderProps> = ({
                 transition: 'height 0.35s ease',
               }}
             />
-            <span className="w-1.5 h-1.5 bg-[color:var(--ui-accent)] rounded-full shadow-[0_0_8px_var(--ui-accent, #C3F910)] shrink-0" />
+            <span className="w-1.5 h-1.5 bg-[color:var(--ui-accent)] rounded-full shadow-[0_0_8px_var(--ui-accent, var(--ui-accent))] shrink-0" />
           </div>
         </a>
 

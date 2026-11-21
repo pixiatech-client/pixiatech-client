@@ -295,7 +295,7 @@ export const MarketsSection: React.FC<MarketsSectionProps> = ({ lang = 'FR', onO
               width: 5,
               height: 5,
               borderRadius: '50%',
-              background: 'var(--accent, #C3F910)',
+              background: 'var(--accent, var(--ui-accent))',
               display: 'inline-block',
             }}
           />
@@ -357,7 +357,7 @@ export const MarketsSection: React.FC<MarketsSectionProps> = ({ lang = 'FR', onO
               fontSize: 11,
               letterSpacing: '.16em',
               fontWeight: 700,
-              color: 'var(--accent, #C3F910)',
+              color: 'var(--accent, var(--ui-accent))',
               cursor: 'pointer',
               textTransform: 'uppercase',
               width: 'fit-content',
@@ -393,7 +393,7 @@ export const MarketsSection: React.FC<MarketsSectionProps> = ({ lang = 'FR', onO
             position: 'absolute',
             inset: 0,
             backgroundImage:
-              'radial-gradient(circle at 50% 30%, rgba(195, 249, 16, 0.035) 0%, transparent 60%)',
+              'radial-gradient(circle at 50% 30%, rgba(var(--ui-accent-rgb), 0.035) 0%, transparent 60%)',
             pointerEvents: 'none',
           }}
         />
@@ -540,8 +540,8 @@ export const MarketsSection: React.FC<MarketsSectionProps> = ({ lang = 'FR', onO
           /* Card hover lift & glow */
           .mkt-showcase-card:hover {
             transform: translateY(-8px) scale(1.025);
-            border-color: var(--accent-border, rgba(195, 249, 16, 0.45)) !important;
-            box-shadow: 0 24px 48px -10px rgba(0, 0, 0, 0.95), 0 0 24px var(--accent-glow, rgba(195, 249, 16, 0.16)) !important;
+            border-color: var(--accent-border, rgba(var(--ui-accent-rgb), 0.45)) !important;
+            box-shadow: 0 24px 48px -10px rgba(0, 0, 0, 0.95), 0 0 24px var(--accent-glow, rgba(var(--ui-accent-rgb), 0.16)) !important;
             z-index: 10;
           }
 

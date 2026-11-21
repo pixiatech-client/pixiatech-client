@@ -110,7 +110,7 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({
                   onClick={handleDownload}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0A0D0E] text-white hover:bg-neutral-800 text-xs font-semibold transition-colors cursor-pointer"
                 >
-                  <Download className="w-3.5 h-3.5 text-[#38E044]" />
+                  <Download className="w-3.5 h-3.5 text-[color:var(--ui-accent)]" />
                   <span>Télécharger PDF</span>
                 </button>
               </>
@@ -139,7 +139,7 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({
                 <span className="font-extrabold text-2xl tracking-wider font-mono text-black">
                   PIXIATECH
                 </span>
-                <span className="bg-[#38E044] text-black font-extrabold text-[10px] px-2 py-0.5 rounded-full">
+                <span className="bg-[color:var(--ui-accent)] text-black font-extrabold text-[10px] px-2 py-0.5 rounded-full">
                   FACTURE
                 </span>
               </div>

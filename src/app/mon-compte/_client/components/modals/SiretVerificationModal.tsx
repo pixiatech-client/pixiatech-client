@@ -123,7 +123,7 @@ export const SiretVerificationModal: React.FC<SiretVerificationModalProps> = ({
         <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-2xl bg-[#0A0D0E] text-white">
-              <Building2 className="w-5 h-5 text-[#38E044]" />
+              <Building2 className="w-5 h-5 text-[color:var(--ui-accent)]" />
             </div>
             <div>
               <h2 className="text-base font-bold text-neutral-900">
@@ -171,7 +171,7 @@ export const SiretVerificationModal: React.FC<SiretVerificationModalProps> = ({
                 disabled={isSearching}
                 className="absolute right-1.5 top-1/2 -translate-y-1/2 px-3 py-1.5 rounded-lg bg-[#0A0D0E] text-white text-xs font-bold hover:bg-neutral-800 transition-colors flex items-center gap-1.5 cursor-pointer"
               >
-                <Search className="w-3.5 h-3.5 text-[#38E044]" />
+                <Search className="w-3.5 h-3.5 text-[color:var(--ui-accent)]" />
                 <span>{isSearching ? 'Recherche...' : 'Vérifier'}</span>
               </button>
             </div>
@@ -252,7 +252,7 @@ export const SiretVerificationModal: React.FC<SiretVerificationModalProps> = ({
                 : 'bg-neutral-200 text-neutral-400 cursor-not-allowed'
             }`}
           >
-            <Lock className="w-3.5 h-3.5 text-[#38E044]" />
+            <Lock className="w-3.5 h-3.5 text-[color:var(--ui-accent)]" />
             <span>Valider & Verrouiller définitivement</span>
           </button>
         </div>

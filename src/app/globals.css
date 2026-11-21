@@ -26,9 +26,9 @@
   --ui-accent-rgb: 195, 249, 16;
   --ui-accent-hover: #b0e20e;
   --ui-accent-active: #9acc0c;
-  --ui-accent-muted: rgba(195, 249, 16, 0.15);
-  --ui-accent-border: rgba(195, 249, 16, 0.4);
-  --ui-accent-glow: rgba(195, 249, 16, 0.35);
+  --ui-accent-muted: rgba(var(--ui-accent-rgb), 0.15);
+  --ui-accent-border: rgba(var(--ui-accent-rgb), 0.4);
+  --ui-accent-glow: rgba(var(--ui-accent-rgb), 0.35);
 }
 
 @keyframes pulse {

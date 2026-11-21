@@ -1271,7 +1271,7 @@ return (
                         key={p.slug}
                         className={`relative transition-colors ${
                           selected[p.slug]
-                            ? 'bg-[color:rgb(var(--ui-accent-rgb)/0.1)] dark:bg-[color:rgb(var(--ui-accent-rgb)/0.05)]'
+                            ? 'bg-[color:rgba(var(--ui-accent-rgb),0.1)] dark:bg-[color:rgba(var(--ui-accent-rgb),0.05)]'
                             : 'hover:bg-neutral-50/90 dark:hover:bg-white/[0.02]'
                         }`}
                       >
@@ -1606,7 +1606,7 @@ function SortableVariantColumn({
           onChange={(ev) => onUrlChange(ev.target.value)}
           placeholder="https://boutique…"
           aria-invalid={!blank && !valid}
-          className="flex-1 min-w-0 px-3 py-1.5 rounded-xl text-[11px] font-semibold bg-white dark:bg-zinc-800 text-neutral-900 dark:text-white border border-neutral-300 dark:border-white/10 focus:ring-2 focus:ring-[color:rgb(var(--ui-accent-rgb)/0.4)] outline-none transition-all"
+          className="flex-1 min-w-0 px-3 py-1.5 rounded-xl text-[11px] font-semibold bg-white dark:bg-zinc-800 text-neutral-900 dark:text-white border border-neutral-300 dark:border-white/10 focus:ring-2 focus:ring-[color:rgba(var(--ui-accent-rgb),0.4)] outline-none transition-all"
         />
         {valid && (
           <a
@@ -1614,7 +1614,7 @@ function SortableVariantColumn({
             target="_blank"
             rel="noopener noreferrer"
             title="Ouvrir le lien dans un nouvel onglet"
-            className="shrink-0 w-8 h-8 rounded-xl inline-flex items-center justify-center border border-neutral-300 dark:border-white/10 text-neutral-500 dark:text-neutral-300 hover:text-[color:var(--ui-accent)] hover:border-[color:rgb(var(--ui-accent-rgb)/0.6)] transition-colors"
+            className="shrink-0 w-8 h-8 rounded-xl inline-flex items-center justify-center border border-neutral-300 dark:border-white/10 text-neutral-500 dark:text-neutral-300 hover:text-[color:var(--ui-accent)] hover:border-[color:rgba(var(--ui-accent-rgb),0.6)] transition-colors"
           >
             <ExternalLink className="h-3.5 w-3.5" />
           </a>
@@ -2764,7 +2764,7 @@ function ProductForm({
                   }}
                   placeholder="ex. PXT Series"
                   autoFocus
-                  className="mt-3 w-full max-w-md px-4 py-3 bg-neutral-50 dark:bg-white/5 border border-neutral-200 dark:border-white/10 rounded-xl text-sm text-neutral-900 dark:text-white focus:ring-2 focus:ring-[color:rgb(var(--ui-accent-rgb)/0.5)] outline-none transition-all"
+                  className="mt-3 w-full max-w-md px-4 py-3 bg-neutral-50 dark:bg-white/5 border border-neutral-200 dark:border-white/10 rounded-xl text-sm text-neutral-900 dark:text-white focus:ring-2 focus:ring-[color:rgba(var(--ui-accent-rgb),0.5)] outline-none transition-all"
                 />
                 <div className="mt-1.5 flex items-center justify-between max-w-md">
                   <span className="text-[11px] font-semibold text-neutral-400">
@@ -2913,7 +2913,7 @@ function ProductForm({
                           setCustomSlug(slugify(e.target.value));
                         }
                       }}
-                      className="w-full px-4 py-3 bg-neutral-50 dark:bg-white/5 border border-neutral-200 dark:border-white/10 rounded-xl text-sm text-neutral-900 dark:text-white focus:ring-2 focus:ring-[color:rgb(var(--ui-accent-rgb)/0.5)] outline-none transition-all"
+                      className="w-full px-4 py-3 bg-neutral-50 dark:bg-white/5 border border-neutral-200 dark:border-white/10 rounded-xl text-sm text-neutral-900 dark:text-white focus:ring-2 focus:ring-[color:rgba(var(--ui-accent-rgb),0.5)] outline-none transition-all"
                     />
                     <div className="mt-1.5 flex items-center justify-between">
                       <span className="text-[11px] font-semibold text-neutral-400">
@@ -2966,7 +2966,7 @@ function ProductForm({
                         className={`w-full px-4 py-3 border rounded-xl text-sm font-mono outline-none transition-all ${
                           isTemplate
                             ? 'border-neutral-200 dark:border-white/10 text-neutral-400 dark:text-neutral-500 cursor-not-allowed bg-neutral-100/70 dark:bg-white/[0.02]'
-                            : 'bg-neutral-50 dark:bg-white/5 border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white focus:ring-2 focus:ring-[color:rgb(var(--ui-accent-rgb)/0.5)]'
+                            : 'bg-neutral-50 dark:bg-white/5 border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white focus:ring-2 focus:ring-[color:rgba(var(--ui-accent-rgb),0.5)]'
                         }`}
                       />
                     </div>
@@ -3287,7 +3287,7 @@ function ProductForm({
                         onClick={() => setActiveSummarySection(isActive ? null : card.key)}
                         className={`text-left flex items-start gap-3 p-3.5 rounded-2xl border transition-all cursor-pointer relative group ${
                           isActive
-                            ? 'bg-emerald-500/10 border-[color:var(--ui-accent)] ring-2 ring-[color:rgb(var(--ui-accent-rgb)/0.3)] shadow-sm'
+                            ? 'bg-emerald-500/10 border-[color:var(--ui-accent)] ring-2 ring-[color:rgba(var(--ui-accent-rgb),0.3)] shadow-sm'
                             : 'bg-neutral-50 dark:bg-white/[0.03] border-neutral-200/80 dark:border-white/[0.06] hover:border-neutral-300 dark:hover:border-white/20 hover:bg-white dark:hover:bg-white/[0.05]'
                         }`}
                       >
@@ -3369,7 +3369,7 @@ function ProductForm({
                                     setCustomSlug(slugify(e.target.value));
                                   }
                                 }}
-                                className="w-full px-3 py-2 rounded-xl text-xs bg-neutral-50 dark:bg-zinc-800 border border-neutral-300 dark:border-white/10 text-neutral-900 dark:text-white focus:ring-2 focus:ring-[color:rgb(var(--ui-accent-rgb)/0.4)] outline-none"
+                                className="w-full px-3 py-2 rounded-xl text-xs bg-neutral-50 dark:bg-zinc-800 border border-neutral-300 dark:border-white/10 text-neutral-900 dark:text-white focus:ring-2 focus:ring-[color:rgba(var(--ui-accent-rgb),0.4)] outline-none"
                                 placeholder="ex: PXT Fine"
                               />
                             </div>
@@ -3381,7 +3381,7 @@ function ProductForm({
                                 type="text"
                                 value={series}
                                 onChange={(e) => setSeries(e.target.value)}
-                                className="w-full px-3 py-2 rounded-xl text-xs bg-neutral-50 dark:bg-zinc-800 border border-neutral-300 dark:border-white/10 text-neutral-900 dark:text-white focus:ring-2 focus:ring-[color:rgb(var(--ui-accent-rgb)/0.4)] outline-none"
+                                className="w-full px-3 py-2 rounded-xl text-xs bg-neutral-50 dark:bg-zinc-800 border border-neutral-300 dark:border-white/10 text-neutral-900 dark:text-white focus:ring-2 focus:ring-[color:rgba(var(--ui-accent-rgb),0.4)] outline-none"
                                 placeholder="ex: PXT Fine Series"
                               />
                             </div>
@@ -3393,7 +3393,7 @@ function ProductForm({
                                 type="text"
                                 value={company}
                                 onChange={(e) => setCompany(e.target.value)}
-                                className="w-full px-3 py-2 rounded-xl text-xs bg-neutral-50 dark:bg-zinc-800 border border-neutral-300 dark:border-white/10 text-neutral-900 dark:text-white focus:ring-2 focus:ring-[color:rgb(var(--ui-accent-rgb)/0.4)] outline-none"
+                                className="w-full px-3 py-2 rounded-xl text-xs bg-neutral-50 dark:bg-zinc-800 border border-neutral-300 dark:border-white/10 text-neutral-900 dark:text-white focus:ring-2 focus:ring-[color:rgba(var(--ui-accent-rgb),0.4)] outline-none"
                                 placeholder="ex: PixiaTech"
                               />
                             </div>
@@ -3476,7 +3476,7 @@ function ProductForm({
                                       setCharacteristics(next);
                                     }}
                                     placeholder="Nom (ex: PIXEL PITCH)"
-                                    className="w-1/3 px-3 py-2 rounded-xl text-xs bg-neutral-50 dark:bg-zinc-800 border border-neutral-300 dark:border-white/10 text-neutral-900 dark:text-white focus:ring-2 focus:ring-[color:rgb(var(--ui-accent-rgb)/0.4)] outline-none uppercase font-semibold"
+                                    className="w-1/3 px-3 py-2 rounded-xl text-xs bg-neutral-50 dark:bg-zinc-800 border border-neutral-300 dark:border-white/10 text-neutral-900 dark:text-white focus:ring-2 focus:ring-[color:rgba(var(--ui-accent-rgb),0.4)] outline-none uppercase font-semibold"
                                   />
                                   <input
                                     type="text"
@@ -3487,7 +3487,7 @@ function ProductForm({
                                       setCharacteristics(next);
                                     }}
                                     placeholder="Valeur (ex: 1.2 – 3.1 mm)"
-                                    className="flex-1 px-3 py-2 rounded-xl text-xs bg-neutral-50 dark:bg-zinc-800 border border-neutral-300 dark:border-white/10 text-neutral-900 dark:text-white focus:ring-2 focus:ring-[color:rgb(var(--ui-accent-rgb)/0.4)] outline-none"
+                                    className="flex-1 px-3 py-2 rounded-xl text-xs bg-neutral-50 dark:bg-zinc-800 border border-neutral-300 dark:border-white/10 text-neutral-900 dark:text-white focus:ring-2 focus:ring-[color:rgba(var(--ui-accent-rgb),0.4)] outline-none"
                                   />
                                   <button
                                     type="button"
@@ -4046,7 +4046,7 @@ function ProductForm({
                       }}
                       placeholder="ex. IL-FISS-IRWP1.2 Lite"
                       autoFocus
-                      className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-neutral-50 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white outline-none focus:ring-2 focus:ring-[color:rgb(var(--ui-accent-rgb)/0.5)] transition-all"
+                      className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-neutral-50 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white outline-none focus:ring-2 focus:ring-[color:rgba(var(--ui-accent-rgb),0.5)] transition-all"
                     />
                   </div>
                   <div className="flex items-center justify-end gap-2 pt-2">
@@ -4083,7 +4083,7 @@ function ProductForm({
               </span>
               <a
                 href="/admin/site-web/categories"
-                className="inline-flex items-center gap-1.5 ml-auto px-3 py-1.5 rounded-xl text-[11px] font-bold border border-neutral-300 dark:border-white/10 text-neutral-700 dark:text-neutral-200 hover:border-[color:rgb(var(--ui-accent-rgb)/0.6)] hover:text-[color:var(--ui-accent)] transition-colors"
+                className="inline-flex items-center gap-1.5 ml-auto px-3 py-1.5 rounded-xl text-[11px] font-bold border border-neutral-300 dark:border-white/10 text-neutral-700 dark:text-neutral-200 hover:border-[color:rgba(var(--ui-accent-rgb),0.6)] hover:text-[color:var(--ui-accent)] transition-colors"
               >
                 <SlidersHorizontal className="h-3.5 w-3.5" />
                 Gérer les filtres (renommer / supprimer)
@@ -4156,7 +4156,7 @@ function ProductForm({
                                   }
                                 }}
                                 placeholder={`Nouveau filtre ${label}…`}
-                                className="w-56 px-3 py-1.5 rounded-xl text-[11px] font-semibold bg-white dark:bg-zinc-800 text-neutral-900 dark:text-white border border-neutral-300 dark:border-white/10 focus:ring-2 focus:ring-[color:rgb(var(--ui-accent-rgb)/0.4)] outline-none transition-all"
+                                className="w-56 px-3 py-1.5 rounded-xl text-[11px] font-semibold bg-white dark:bg-zinc-800 text-neutral-900 dark:text-white border border-neutral-300 dark:border-white/10 focus:ring-2 focus:ring-[color:rgba(var(--ui-accent-rgb),0.4)] outline-none transition-all"
                               />
                               <button
                                 type="button"
@@ -4189,7 +4189,7 @@ function ProductForm({
                                 setAddingGroup(type);
                                 setNewFilterName('');
                               }}
-                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-[11px] font-bold text-neutral-500 dark:text-neutral-400 border border-dashed border-neutral-300 dark:border-white/15 hover:text-[color:var(--ui-accent)] hover:border-[color:rgb(var(--ui-accent-rgb)/0.6)] transition-colors cursor-pointer"
+                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-[11px] font-bold text-neutral-500 dark:text-neutral-400 border border-dashed border-neutral-300 dark:border-white/15 hover:text-[color:var(--ui-accent)] hover:border-[color:rgba(var(--ui-accent-rgb),0.6)] transition-colors cursor-pointer"
                             >
                               <Plus className="h-3.5 w-3.5" />
                               Ajouter un filtre {label}
@@ -4255,7 +4255,7 @@ function UploadZone({
       className={`flex flex-col items-center justify-center gap-1.5 px-4 py-6 rounded-2xl border-2 border-dashed cursor-pointer transition-all text-center select-none ${
         dragOver
           ? 'border-[color:var(--ui-accent)] bg-emerald-50 dark:bg-emerald-500/10'
-          : 'border-neutral-300 dark:border-white/15 hover:border-[color:rgb(var(--ui-accent-rgb)/0.6)] hover:bg-neutral-50 dark:hover:bg-white/[0.03]'
+          : 'border-neutral-300 dark:border-white/15 hover:border-[color:rgba(var(--ui-accent-rgb),0.6)] hover:bg-neutral-50 dark:hover:bg-white/[0.03]'
       } ${disabled ? 'opacity-50 pointer-events-none' : ''}`}
     >
       {acceptsPdf ? (

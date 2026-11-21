@@ -93,7 +93,7 @@ function EditableCell({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder ?? '—'}
-      className="w-full min-w-0 bg-transparent border border-transparent rounded-lg px-2 py-1 text-xs text-neutral-800 dark:text-neutral-100 placeholder:text-neutral-300 dark:placeholder:text-neutral-600 hover:border-neutral-300 dark:hover:border-white/20 focus:outline-none focus:border-[#38E044]/70 focus:bg-white dark:focus:bg-white/5 transition-colors"
+      className="w-full min-w-0 bg-transparent border border-transparent rounded-lg px-2 py-1 text-xs text-neutral-800 dark:text-neutral-100 placeholder:text-neutral-300 dark:placeholder:text-neutral-600 hover:border-neutral-300 dark:hover:border-white/20 focus:outline-none focus:border-[rgba(var(--ui-accent-rgb),0.7)] focus:bg-white dark:focus:bg-white/5 transition-colors"
     />
   );
 }
@@ -136,12 +136,12 @@ function GroupLabelEditor({
             }
           }}
           onBlur={commit}
-          className="w-44 sm:w-64 bg-white dark:bg-white/5 border border-[#38E044]/60 rounded-lg px-2 py-0.5 text-xs font-bold text-neutral-900 dark:text-white focus:outline-none"
+          className="w-44 sm:w-64 bg-white dark:bg-white/5 border border-[rgba(var(--ui-accent-rgb),0.6)] rounded-lg px-2 py-0.5 text-xs font-bold text-neutral-900 dark:text-white focus:outline-none"
         />
         <button
           type="button"
           onClick={commit}
-          className="p-1 text-[#38E044] hover:text-[#2fcb3c] cursor-pointer"
+          className="p-1 text-[color:var(--ui-accent)] hover:text-[color:var(--ui-accent-hover)] cursor-pointer"
         >
           <Check className="w-3.5 h-3.5" />
         </button>
@@ -161,7 +161,7 @@ function GroupLabelEditor({
 
   return (
     <div className="flex items-center gap-1.5 shrink-0">
-      <span className="text-xs font-bold uppercase tracking-wider text-[#38E044] dark:text-[#38E044] truncate max-w-[280px]">
+      <span className="text-xs font-bold uppercase tracking-wider text-[color:var(--ui-accent)] dark:text-[color:var(--ui-accent)] truncate max-w-[280px]">
         {label || 'GÉNÉRAL'}
       </span>
       <button
@@ -225,12 +225,12 @@ function RowLabelEditor({
             }
           }}
           onBlur={commit}
-          className="flex-1 min-w-0 px-2 py-0.5 rounded-lg border border-[#38E044]/50 bg-white dark:bg-white/5 text-xs focus:outline-none"
+          className="flex-1 min-w-0 px-2 py-0.5 rounded-lg border border-[rgba(var(--ui-accent-rgb),0.5)] bg-white dark:bg-white/5 text-xs focus:outline-none"
         />
         <button
           type="button"
           onClick={commit}
-          className="p-1 text-[#38E044] cursor-pointer"
+          className="p-1 text-[color:var(--ui-accent)] cursor-pointer"
         >
           <Check className="w-3 h-3" />
         </button>
@@ -353,14 +353,14 @@ function SortableGroupTbody({
       ref={setNodeRef}
       style={style}
       className={`border-b last:border-b-0 border-neutral-200 dark:border-white/10 ${
-        isDragging ? 'ring-2 ring-[#38E044] bg-[#38E044]/5 shadow-xl' : ''
+        isDragging ? 'ring-2 ring-[color:var(--ui-accent)] bg-[rgba(var(--ui-accent-rgb),0.05)] shadow-xl' : ''
       }`}
     >
       {/* ── Ligne d'en-tête de catégorie/groupe ── */}
       <tr className="group bg-neutral-100/80 dark:bg-[#121619] border-b border-neutral-200 dark:border-white/10">
         <td
           colSpan={models.length + 1}
-          className="sticky left-0 px-3 py-2 border-l-4 border-l-[#38E044]"
+          className="sticky left-0 px-3 py-2 border-l-4 border-l-[var(--ui-accent)]"
         >
           <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap">
             <button
@@ -393,7 +393,7 @@ function SortableGroupTbody({
               {...attributes}
               {...listeners}
             >
-              <GripVertical className="w-3.5 h-3.5 shrink-0 text-neutral-400 hover:text-[#38E044] transition-colors" />
+              <GripVertical className="w-3.5 h-3.5 shrink-0 text-neutral-400 hover:text-[color:var(--ui-accent)] transition-colors" />
             </button>
 
             <GroupLabelEditor
@@ -409,7 +409,7 @@ function SortableGroupTbody({
                 setAddingRowForGroup(gi);
                 setNewRowLabel('');
               }}
-              className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-white dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-600 dark:text-neutral-300 hover:border-[#38E044]/60 hover:text-[#38E044] transition-colors cursor-pointer shadow-2xs"
+              className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-white dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-600 dark:text-neutral-300 hover:border-[rgba(var(--ui-accent-rgb),0.6)] hover:text-[color:var(--ui-accent)] transition-colors cursor-pointer shadow-2xs"
               title="Ajouter une caractéristique dans cette catégorie"
             >
               <Plus className="w-3 h-3" />
@@ -421,9 +421,9 @@ function SortableGroupTbody({
 
       {/* ── Ligne d'ajout d'une nouvelle caractéristique ── */}
       {!collapsed && addingRowForGroup === gi && (
-        <tr className="bg-[#38E044]/5 border-b border-neutral-200 dark:border-white/10">
+        <tr className="bg-[rgba(var(--ui-accent-rgb),0.05)] border-b border-neutral-200 dark:border-white/10">
           <td
-            className="sticky left-0 bg-[#38E044]/10 dark:bg-[#38E044]/[0.06] px-3 py-2 border-r border-neutral-200 dark:border-white/10"
+            className="sticky left-0 bg-[rgba(var(--ui-accent-rgb),0.1)] dark:bg-[rgba(var(--ui-accent-rgb),0.06)] px-3 py-2 border-r border-neutral-200 dark:border-white/10"
             style={{ width: ROW_LABEL_W }}
           >
             <div className="flex items-center gap-1.5">
@@ -439,12 +439,12 @@ function SortableGroupTbody({
                   }
                 }}
                 placeholder="ex. Luminosité (nits)…"
-                className="flex-1 min-w-0 px-2 py-1 rounded-lg border border-[#38E044]/50 bg-white dark:bg-zinc-900 text-xs text-neutral-900 dark:text-white focus:outline-none focus:border-[#38E044]"
+                className="flex-1 min-w-0 px-2 py-1 rounded-lg border border-[rgba(var(--ui-accent-rgb),0.5)] bg-white dark:bg-zinc-900 text-xs text-neutral-900 dark:text-white focus:outline-none focus:border-[color:var(--ui-accent)]"
               />
               <button
                 type="button"
                 onClick={() => addRow(gi)}
-                className="p-1 text-[#38E044] hover:text-[#2fcb3c] cursor-pointer"
+                className="p-1 text-[color:var(--ui-accent)] hover:text-[color:var(--ui-accent-hover)] cursor-pointer"
                 title="Valider"
               >
                 <Check className="w-3.5 h-3.5" />
@@ -737,7 +737,7 @@ export function SpecsMatrixEditor({
           <button
             type="button"
             onClick={onAddVariant}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#38E044] hover:bg-[#2fcb3c] text-black text-xs font-extrabold transition-all cursor-pointer shadow-sm active:scale-95"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[color:var(--ui-accent)] hover:bg-[color:var(--ui-accent-hover)] text-black text-xs font-extrabold transition-all cursor-pointer shadow-sm active:scale-95"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Ajouter une variante</span>
@@ -753,7 +753,7 @@ export function SpecsMatrixEditor({
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-3">
           <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-            <span className="text-[#38E044] font-extrabold">
+            <span className="text-[color:var(--ui-accent)] font-extrabold">
               {String(models.length).padStart(2, '0')}
             </span>{' '}
             modèle{models.length > 1 ? 's' : ''} configuré{models.length > 1 ? 's' : ''}
@@ -767,7 +767,7 @@ export function SpecsMatrixEditor({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Filtrer une caractéristique…"
-              className="pl-7 pr-2.5 py-1 text-xs rounded-xl border border-neutral-200 dark:border-white/10 bg-white dark:bg-white/5 text-neutral-800 dark:text-neutral-200 placeholder:text-neutral-400 focus:outline-none focus:border-[#38E044]/60 w-48 transition-all"
+              className="pl-7 pr-2.5 py-1 text-xs rounded-xl border border-neutral-200 dark:border-white/10 bg-white dark:bg-white/5 text-neutral-800 dark:text-neutral-200 placeholder:text-neutral-400 focus:outline-none focus:border-[rgba(var(--ui-accent-rgb),0.6)] w-48 transition-all"
             />
             {searchQuery && (
               <button
@@ -786,7 +786,7 @@ export function SpecsMatrixEditor({
             <button
               type="button"
               onClick={onAddVariant}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#38E044] hover:bg-[#2fcb3c] text-black text-xs font-extrabold transition-all cursor-pointer shadow-sm active:scale-95"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[color:var(--ui-accent)] hover:bg-[color:var(--ui-accent-hover)] text-black text-xs font-extrabold transition-all cursor-pointer shadow-sm active:scale-95"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Ajouter une variante</span>
@@ -801,7 +801,7 @@ export function SpecsMatrixEditor({
               disabled={!canScrollLeft}
               className={`p-1.5 rounded-xl border transition-all ${
                 canScrollLeft
-                  ? 'border-neutral-300 dark:border-white/20 text-neutral-800 dark:text-white hover:border-[#38E044] hover:text-[#38E044] cursor-pointer'
+                  ? 'border-neutral-300 dark:border-white/20 text-neutral-800 dark:text-white hover:border-[color:var(--ui-accent)] hover:text-[color:var(--ui-accent)] cursor-pointer'
                   : 'border-neutral-200 dark:border-white/5 text-neutral-300 dark:text-neutral-700 cursor-not-allowed'
               }`}
               title="Faire défiler vers la gauche"
@@ -814,7 +814,7 @@ export function SpecsMatrixEditor({
               disabled={!canScrollRight}
               className={`p-1.5 rounded-xl border transition-all ${
                 canScrollRight
-                  ? 'border-neutral-300 dark:border-white/20 text-neutral-800 dark:text-white hover:border-[#38E044] hover:text-[#38E044] cursor-pointer'
+                  ? 'border-neutral-300 dark:border-white/20 text-neutral-800 dark:text-white hover:border-[color:var(--ui-accent)] hover:text-[color:var(--ui-accent)] cursor-pointer'
                   : 'border-neutral-200 dark:border-white/5 text-neutral-300 dark:text-neutral-700 cursor-not-allowed'
               }`}
               title="Faire défiler vers la droite"
@@ -873,7 +873,7 @@ export function SpecsMatrixEditor({
                             {model.name}
                           </span>
                           {model.tag && (
-                            <span className="shrink-0 text-[9px] font-bold uppercase tracking-wider text-[#38E044] px-1 py-0.2 rounded bg-[#38E044]/10">
+                            <span className="shrink-0 text-[9px] font-bold uppercase tracking-wider text-[color:var(--ui-accent)] px-1 py-0.2 rounded bg-[rgba(var(--ui-accent-rgb),0.1)]">
                               {model.tag}
                             </span>
                           )}
@@ -972,12 +972,12 @@ export function SpecsMatrixEditor({
               }
             }}
             placeholder="Nom de la nouvelle catégorie (ex. Alimentation & Consommation)…"
-            className="flex-1 px-3 py-1.5 rounded-xl border border-neutral-300 dark:border-white/20 bg-white dark:bg-zinc-900 text-xs text-neutral-900 dark:text-white focus:outline-none focus:border-[#38E044]/60"
+            className="flex-1 px-3 py-1.5 rounded-xl border border-neutral-300 dark:border-white/20 bg-white dark:bg-zinc-900 text-xs text-neutral-900 dark:text-white focus:outline-none focus:border-[rgba(var(--ui-accent-rgb),0.6)]"
           />
           <button
             type="button"
             onClick={addGroup}
-            className="px-3 py-1.5 rounded-xl bg-[#38E044] text-black text-xs font-bold cursor-pointer hover:bg-[#2fcb3c] transition-colors"
+            className="px-3 py-1.5 rounded-xl bg-[color:var(--ui-accent)] text-black text-xs font-bold cursor-pointer hover:bg-[color:var(--ui-accent-hover)] transition-colors"
           >
             Créer la catégorie
           </button>
@@ -996,7 +996,7 @@ export function SpecsMatrixEditor({
         <button
           type="button"
           onClick={() => setAddingGroup(true)}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-dashed border-neutral-300 dark:border-white/15 text-neutral-600 dark:text-neutral-300 text-xs font-bold hover:border-[#38E044]/60 hover:text-[#38E044] transition-colors cursor-pointer"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-dashed border-neutral-300 dark:border-white/15 text-neutral-600 dark:text-neutral-300 text-xs font-bold hover:border-[rgba(var(--ui-accent-rgb),0.6)] hover:text-[color:var(--ui-accent)] transition-colors cursor-pointer"
         >
           <Plus className="w-3.5 h-3.5" />
           <span>Ajouter une catégorie de spécifications</span>

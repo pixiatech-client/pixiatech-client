@@ -40,7 +40,7 @@ export default function SourcesModule({ rows, t }: SourcesModuleProps) {
                     </span>
                   </div>
                   <div className="mt-1.5 h-1.5 rounded-full bg-neutral-100 dark:bg-white/10 overflow-hidden">
-                    <div className="h-full rounded-full bg-[#38E044]" style={{ width: `${(r.visits / maxVisits) * 100}%` }} />
+                    <div className="h-full rounded-full bg-[color:var(--ui-accent)]" style={{ width: `${(r.visits / maxVisits) * 100}%` }} />
                   </div>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">

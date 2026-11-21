@@ -112,7 +112,7 @@ export function DashboardNotifications({
               value={reason}
               onChange={e => setReason(e.target.value)}
               required
-              className="w-full h-9 px-2.5 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#38E044]/30 focus:border-[#38E044]/60"
+              className="w-full h-9 px-2.5 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[rgba(var(--ui-accent-rgb),0.3)] focus:border-[rgba(var(--ui-accent-rgb),0.6)]"
             >
               <option value="">Motif du litige</option>
               <option value="produit_non_recu">Produit non reçu</option>
@@ -131,7 +131,7 @@ export function DashboardNotifications({
               required
               placeholder="Décrivez votre problème..."
               rows={3}
-              className="w-full px-2.5 py-2 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#38E044]/30 focus:border-[#38E044]/60 resize-none"
+              className="w-full px-2.5 py-2 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[rgba(var(--ui-accent-rgb),0.3)] focus:border-[rgba(var(--ui-accent-rgb),0.6)] resize-none"
             />
           </div>
           {error && <p className="text-xs text-red-600">{error}</p>}

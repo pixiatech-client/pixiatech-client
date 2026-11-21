@@ -1,6 +1,16 @@
 'use client';
 
 import { useState } from 'react';
+import { BottomSheetSelect, type BottomSheetOption } from '@/components/ui/bottom-sheet';
+
+const REASONS: BottomSheetOption[] = [
+  { value: 'produit_non_recu', label: 'Produit non reçu' },
+  { value: 'produit_endommage', label: 'Produit endommagé' },
+  { value: 'produit_non_conforme', label: 'Produit non conforme' },
+  { value: 'livraison_tardive', label: 'Livraison tardive' },
+  { value: 'probleme_paiement', label: 'Problème de paiement' },
+  { value: 'autre', label: 'Autre' },
+];
 
 export function DisputeForm({ orderId, orderRef }: { orderId: string; orderRef: string }) {
   const [reason, setReason] = useState('');
@@ -42,20 +52,15 @@ export function DisputeForm({ orderId, orderRef }: { orderId: string; orderRef: 
   return (
     <form onSubmit={handleSubmit} className="mt-4 bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-3">
       <div>
-        <select
+        <BottomSheetSelect
+          options={REASONS}
           value={reason}
-          onChange={e => setReason(e.target.value)}
-          required
-          className="w-full h-9 px-2.5 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-900/20"
-        >
-          <option value="">Motif du litige</option>
-          <option value="produit_non_recu">Produit non reçu</option>
-          <option value="produit_endommage">Produit endommagé</option>
-          <option value="produit_non_conforme">Produit non conforme</option>
-          <option value="livraison_tardive">Livraison tardive</option>
-          <option value="probleme_paiement">Problème de paiement</option>
-          <option value="autre">Autre</option>
-        </select>
+          onChange={(next) => setReason(String(next))}
+          title="Motif du litige"
+          label="Motif du litige"
+          placeholder="Motif du litige"
+          triggerClassName="h-11 text-sm"
+        />
       </div>
       <div>
         <textarea

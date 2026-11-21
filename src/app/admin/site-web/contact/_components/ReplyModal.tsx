@@ -108,7 +108,7 @@ export function ReplyModal({ open, message, onClose, onReplied }: ReplyModalProp
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-neutral-800 bg-[#12161D]">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[#38E044]/10 border border-[#38E044]/30 flex items-center justify-center text-[#38E044]">
+            <div className="w-9 h-9 rounded-xl bg-[rgba(var(--ui-accent-rgb),0.1)] border border-[rgba(var(--ui-accent-rgb),0.3)] flex items-center justify-center text-[color:var(--ui-accent)]">
               <Mail className="w-4 h-4" />
             </div>
             <div>
@@ -133,7 +133,7 @@ export function ReplyModal({ open, message, onClose, onReplied }: ReplyModalProp
           <div className="rounded-xl bg-[#141923] border border-neutral-800/80 p-3.5 space-y-2.5">
             <div className="flex items-center justify-between gap-2 border-b border-neutral-800 pb-2">
               <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 flex items-center gap-1.5">
-                <FileText className="w-3 h-3 text-[#38E044]" />
+                <FileText className="w-3 h-3 text-[color:var(--ui-accent)]" />
                 Demande initiale
               </span>
               <span className="text-[10px] font-mono text-neutral-400 flex items-center gap-1">
@@ -206,7 +206,7 @@ export function ReplyModal({ open, message, onClose, onReplied }: ReplyModalProp
                       `Bonjour ${message.name},\n\nNous vous remercions pour votre demande.\n\nVotre projet d'écran LED a bien été étudié par notre bureau technique. Vous trouverez ci-joint notre proposition détaillée.\n\nRestant à votre entière écoute pour tout renseignement complémentaire,\n\nBien cordialement,\nL'équipe PIXIATECH`
                     )
                   }
-                  className="text-[10px] font-semibold text-[#38E044] hover:underline flex items-center gap-1 cursor-pointer"
+                  className="text-[10px] font-semibold text-[color:var(--ui-accent)] hover:underline flex items-center gap-1 cursor-pointer"
                 >
                   <Sparkles className="w-2.5 h-2.5" />
                   Modèle réponse technique
@@ -236,7 +236,7 @@ export function ReplyModal({ open, message, onClose, onReplied }: ReplyModalProp
             <button
               type="submit"
               disabled={isSending}
-              className="px-5 py-2.5 rounded-xl bg-[#38E044] hover:bg-[#2fcb3c] text-black text-xs font-extrabold transition-all cursor-pointer shadow-[0_0_16px_rgba(56,224,68,0.35)] active:scale-95 disabled:opacity-50 flex items-center gap-2"
+              className="px-5 py-2.5 rounded-xl bg-[color:var(--ui-accent)] hover:bg-[color:var(--ui-accent-hover)] text-black text-xs font-extrabold transition-all cursor-pointer shadow-[0_0_16px_rgba(var(--ui-accent-rgb),0.35)] active:scale-95 disabled:opacity-50 flex items-center gap-2"
             >
               {isSending ? (
                 <>

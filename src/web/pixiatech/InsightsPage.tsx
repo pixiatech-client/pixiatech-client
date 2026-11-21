@@ -12,7 +12,8 @@ import { useI18n } from '@/lib/i18n';
 import { useCms } from '@/lib/site-web/cms-context';
 import { getCmsText } from '@/lib/site-web/cms-i18n';
 import { EditableWrapper } from '../cms/EditableWrapper';
-import { Edit3, ArrowRight, ExternalLink } from 'lucide-react';
+import { Edit3, ArrowRight, ExternalLink, SlidersHorizontal } from 'lucide-react';
+import { MobileBottomSheet, useIsMobile } from '@/components/ui/bottom-sheet';
 import type { InsightArticle } from '../data/insights-articles-content';
 
 const CHIP_LABEL_FR: Record<string, string> = {
@@ -123,6 +124,8 @@ export function PixiaInsightsPage() {
   };
 
   const [chip, setChip] = useState('All');
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const isMobile = useIsMobile();
   const featured = liveArticles.find((a) => a.featured) ?? liveArticles[0];
   const grid = useMemo(() => liveArticles.filter((a) => !a.featured), [liveArticles]);
   const visible = chip === 'All' ? grid : grid.filter((a) => a.chip === chip);
@@ -152,38 +155,93 @@ export function PixiaInsightsPage() {
               </p>
             </EditableWrapper>
 
-            {/* 2. Filtres / Chips */}
+            {/* 2. Filtres : chips sur desktop, Bottom Sheet sur mobile */}
             <EditableWrapper sectionKey="insights_filter" sectionLabel="Ressources — Filtres & Catégories">
-              <div
-                data-reveal="true"
-                style={{
-                  display: 'flex',
-                  gap: 8,
-                  flexWrap: 'wrap',
-                  borderTop: '1px solid var(--line)',
-                  borderBottom: '1px solid var(--line)',
-                  padding: '20px 0',
-                  marginBottom: 64,
-                }}
-              >
-                {INSIGHT_CHIPS.map((c) => (
+              {isMobile ? (
+                <div className="mb-16 flex items-center justify-between gap-3 border-y border-[color:var(--line)] py-4">
                   <button
-                    key={c}
                     type="button"
-                    className={`chip${chip === c ? ' on' : ''}`}
-                    onClick={() => setChip(c)}
-                    style={{
-                      fontSize: 11,
-                      letterSpacing: '.1em',
-                      color: chip === c ? 'var(--paper)' : 'var(--body)',
-                      background: chip === c ? 'var(--ink)' : 'transparent',
-                      borderColor: chip === c ? 'var(--ink)' : '#c9c7c2',
-                    }}
+                    onClick={() => setFiltersOpen(true)}
+                    className="flex min-h-[48px] items-center gap-2 rounded-xl border border-[#c9c7c2] px-4 text-xs font-bold uppercase tracking-widest"
+                    aria-haspopup="dialog"
                   >
-                    {chipLabel(c, lang)}
+                    <SlidersHorizontal className="h-4 w-4" />
+                    {lang === 'FR' ? 'Filtrer les ressources' : 'Filter resources'}
                   </button>
-                ))}
-              </div>
+                  <span className="text-[11px] font-bold uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
+                    {chipLabel(chip, lang)}
+                  </span>
+                </div>
+              ) : (
+                <div
+                  data-reveal="true"
+                  style={{
+                    display: 'flex',
+                    gap: 8,
+                    flexWrap: 'wrap',
+                    borderTop: '1px solid var(--line)',
+                    borderBottom: '1px solid var(--line)',
+                    padding: '20px 0',
+                    marginBottom: 64,
+                  }}
+                >
+              {INSIGHT_CHIPS.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  className={`chip${chip === c ? ' on' : ''}`}
+                  onClick={() => setChip(c)}
+                  style={{
+                    minHeight: 44,
+                    fontSize: 11,
+                    letterSpacing: '.1em',
+                    color: chip === c ? 'var(--paper)' : 'var(--body)',
+                    background: chip === c ? 'var(--ink)' : 'transparent',
+                    borderColor: chip === c ? 'var(--ink)' : '#c9c7c2',
+                  }}
+                >
+                  {chipLabel(c, lang)}
+                </button>
+              ))}
+                </div>
+              )}
+
+              <MobileBottomSheet
+                open={filtersOpen && isMobile}
+                onClose={() => setFiltersOpen(false)}
+                title={lang === 'FR' ? 'Catégories' : 'Categories'}
+                tone="light"
+                footer={
+                  <button
+                    type="button"
+                    onClick={() => setFiltersOpen(false)}
+                    className="mb-[max(0px,env(safe-area-inset-bottom))] h-12 w-full rounded-xl bg-[color:var(--ui-accent)] text-sm font-bold text-black"
+                  >
+                    {lang === 'FR' ? 'Voir les articles' : 'View articles'}
+                  </button>
+                }
+              >
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {INSIGHT_CHIPS.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  className={`chip${chip === c ? ' on' : ''}`}
+                  onClick={() => setChip(c)}
+                  style={{
+                    minHeight: 44,
+                    fontSize: 11,
+                    letterSpacing: '.1em',
+                    color: chip === c ? 'var(--paper)' : 'var(--body)',
+                    background: chip === c ? 'var(--ink)' : 'transparent',
+                    borderColor: chip === c ? 'var(--ink)' : '#c9c7c2',
+                  }}
+                >
+                  {chipLabel(c, lang)}
+                </button>
+              ))}
+                </div>
+              </MobileBottomSheet>
             </EditableWrapper>
 
             {/* 3. Article À La Une */}
@@ -194,7 +252,7 @@ export function PixiaInsightsPage() {
                     <div style={{ position: 'absolute', top: 12, right: 12, zIndex: 10 }}>
                       <a
                         href={`/web/insights/${featured.slug}`}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#080808]/90 text-[#C3F910] border border-[#C3F910] rounded-lg text-xs font-mono font-bold hover:bg-[#C3F910] hover:text-[#080808] transition-all shadow-xl"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#080808]/90 text-[color:var(--ui-accent)] border border-[color:var(--ui-accent)] rounded-lg text-xs font-mono font-bold hover:bg-[color:var(--ui-accent)] hover:text-[#080808] transition-all shadow-xl"
                         title="Ouvrir la page de cet article pour modifier son contenu complet"
                       >
                         <Edit3 className="w-3.5 h-3.5" />
@@ -296,7 +354,7 @@ export function PixiaInsightsPage() {
                         <div style={{ position: 'absolute', top: 8, right: 8, zIndex: 10 }}>
                           <a
                             href={`/web/insights/${a.slug}`}
-                            className="inline-flex items-center gap-1 px-2 py-1 bg-[#080808]/90 text-[#C3F910] border border-[#C3F910] rounded text-[11px] font-mono font-bold hover:bg-[#C3F910] hover:text-[#080808] transition-all shadow-md"
+                            className="inline-flex items-center gap-1 px-2 py-1 bg-[#080808]/90 text-[color:var(--ui-accent)] border border-[color:var(--ui-accent)] rounded text-[11px] font-mono font-bold hover:bg-[color:var(--ui-accent)] hover:text-[#080808] transition-all shadow-md"
                             title={`Éditer l'article « ${cardTitle} »`}
                           >
                             <Edit3 className="w-3 h-3" />

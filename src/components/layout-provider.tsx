@@ -17,6 +17,7 @@ import { CookieConsentBanner } from '@/components/cookies/CookieConsentBanner';
 import { AnalyticsTracker } from '@/components/analytics/AnalyticsTracker';
 import { DynamicFavicon } from '@/components/ui/DynamicFavicon';
 import { Home, Store, ShoppingBag, User, LayoutDashboard, Package, Settings, LogOut } from 'lucide-react';
+import { BottomSheetProvider } from '@/components/ui/bottom-sheet';
 
 function useProtectMedia() {
   useEffect(() => {
@@ -143,6 +144,7 @@ export function LayoutProvider({
 
   return (
     <FirebaseClientProvider>
+      <BottomSheetProvider>
       <DynamicFavicon />
       <RoleProvider>
         <ThemeProvider initialThemeName={initialThemeName}>
@@ -209,6 +211,7 @@ export function LayoutProvider({
           }}
         />
       </RoleProvider>
+      </BottomSheetProvider>
     </FirebaseClientProvider>
   );
 }

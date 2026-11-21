@@ -1356,7 +1356,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                               <button
                                 key={value || i}
                                 onClick={() => handleOptionSelect(value, label, imageUrl, typeof option !== 'string' ? option.translationKey : undefined, typeof option !== 'string' ? option.translationParams : undefined)}
-                                className="px-5 py-2.5 rounded-2xl font-bold text-xs bg-white/10 text-white border border-white/15 shadow-lg hover:bg-[#C3F910] hover:text-black hover:border-[#C3F910] active:scale-95 transition-all uppercase tracking-wider"
+                                className="px-5 py-2.5 rounded-2xl font-bold text-xs bg-white/10 text-white border border-white/15 shadow-lg hover:bg-[color:var(--ui-accent)] hover:text-black hover:border-[color:var(--ui-accent)] active:scale-95 transition-all uppercase tracking-wider"
                               >
                                 {label}
                               </button>
@@ -2379,7 +2379,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                               handleOptionSelect(value, label, imageUrl, typeof option !== 'string' ? option.translationKey : undefined, typeof option !== 'string' ? option.translationParams : undefined);
                               setExpandedOptions(null);
                             }}
-                            className="w-full py-4 px-5 rounded-2xl font-bold text-sm bg-white/5 text-white hover:bg-[#C3F910] hover:text-black active:scale-[0.98] transition-all text-left border border-white/10"
+                            className="w-full py-4 px-5 rounded-2xl font-bold text-sm bg-white/5 text-white hover:bg-[color:var(--ui-accent)] hover:text-black active:scale-[0.98] transition-all text-left border border-white/10"
                           >
                             {label}
                           </button>

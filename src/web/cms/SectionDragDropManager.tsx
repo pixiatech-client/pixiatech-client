@@ -212,11 +212,11 @@ const DropIndicator: React.FC<{
     <div className="fixed left-0 right-0 z-[9995] pointer-events-none" style={{ top: y - 1 }}>
       <div
         className="h-[3px] w-full"
-        style={{ background: '#C3F910', boxShadow: '0 0 18px rgba(195,249,16,0.95)' }}
+        style={{ background: 'var(--ui-accent, #C3F910)', boxShadow: '0 0 18px rgba(var(--ui-accent-rgb),0.95)' }}
       />
       <div
         className="absolute left-4 -top-2.5 px-2 py-0.5 rounded-full font-mono text-[10px] font-bold"
-        style={{ background: '#C3F910', color: '#080808' }}
+        style={{ background: 'var(--ui-accent, #C3F910)', color: '#080808' }}
       >
         {targetPosition === 'after' ? 'APRÈS' : 'AVANT'} · {targetKey}
       </div>

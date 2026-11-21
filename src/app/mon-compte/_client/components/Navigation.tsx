@@ -93,13 +93,13 @@ export function Navigation({
                   {isActive && (
                     <motion.div
                       layoutId="active-top-nav-capsule"
-                      className="absolute inset-0 bg-[#161B1E] rounded-xl shadow-md border border-[#38E044]/30 pointer-events-none"
+                      className="absolute inset-0 bg-[#161B1E] rounded-xl shadow-md border border-[rgba(var(--ui-accent-rgb),0.3)] pointer-events-none"
                       transition={{ type: 'spring', stiffness: 360, damping: 28, mass: 0.7 }}
                     />
                   )}
 
                   <div className="relative z-10 flex items-center gap-2">
-                    {isActive && <span className="w-2 h-2 rounded-full bg-[#38E044] shadow-[0_0_8px_#38E044] shrink-0" />}
+                    {isActive && <span className="w-2 h-2 rounded-full bg-[color:var(--ui-accent)] shadow-[0_0_8px_var(--ui-accent)] shrink-0" />}
 
                     <span className={isActive ? 'text-white' : 'text-neutral-400'}>{item.icon}</span>
 
@@ -109,7 +109,7 @@ export function Navigation({
                       <span
                         className={`ml-1 text-[11px] px-2 py-0.5 rounded-full font-bold ${
                           isActive
-                            ? 'bg-[#38E044]/15 text-[#38E044] border border-[#38E044]/30'
+                            ? 'bg-[rgba(var(--ui-accent-rgb),0.15)] text-[color:var(--ui-accent)] border border-[rgba(var(--ui-accent-rgb),0.3)]'
                             : 'bg-white/[0.06] text-neutral-400 border border-white/[0.08]'
                         }`}
                       >
@@ -186,7 +186,7 @@ export function Navigation({
               <div className="p-4 bg-[#0A0D0E] text-white flex items-center justify-between border-b border-white/[0.08]">
                 <div className="flex items-center gap-2">
                   <span className="font-extrabold tracking-wider font-mono">PIXIATECH</span>
-                  <span className="bg-[#38E044] text-black font-extrabold text-[10px] px-2 py-0.5 rounded-full">
+                  <span className="bg-[color:var(--ui-accent)] text-black font-extrabold text-[10px] px-2 py-0.5 rounded-full">
                     CLIENT
                   </span>
                 </div>
@@ -208,7 +208,7 @@ export function Navigation({
                       referrerPolicy="no-referrer"
                     />
                   ) : (
-                    <span className="w-10 h-10 rounded-full bg-[#161B1E] text-[#38E044] text-lg font-bold flex items-center justify-center border border-white/10">
+                    <span className="w-10 h-10 rounded-full bg-[#161B1E] text-[color:var(--ui-accent)] text-lg font-bold flex items-center justify-center border border-white/10">
                       {mobileAvatarFallback}
                     </span>
                   )}
@@ -243,20 +243,20 @@ export function Navigation({
                       }}
                       className={`w-full flex items-center justify-between p-3 rounded-xl text-sm font-semibold transition-colors ${
                         isActive
-                          ? 'bg-[#161B1E] text-white border border-[#38E044]/30'
+                          ? 'bg-[#161B1E] text-white border border-[rgba(var(--ui-accent-rgb),0.3)]'
                           : 'text-neutral-300 hover:text-white hover:bg-white/[0.04]'
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        {isActive && <span className="w-2 h-2 rounded-full bg-[#38E044]" />}
-                        <span className={isActive ? 'text-[#38E044]' : 'text-neutral-400'}>{item.icon}</span>
+                        {isActive && <span className="w-2 h-2 rounded-full bg-[color:var(--ui-accent)]" />}
+                        <span className={isActive ? 'text-[color:var(--ui-accent)]' : 'text-neutral-400'}>{item.icon}</span>
                         <span>{item.label}</span>
                       </div>
                       {item.badge !== undefined && (
                         <span
                           className={`text-xs px-2 py-0.5 rounded-full font-bold ${
                             isActive
-                              ? 'bg-[#38E044]/15 text-[#38E044] border border-[#38E044]/30'
+                              ? 'bg-[rgba(var(--ui-accent-rgb),0.15)] text-[color:var(--ui-accent)] border border-[rgba(var(--ui-accent-rgb),0.3)]'
                               : 'bg-white/[0.06] text-neutral-400'
                           }`}
                         >

@@ -74,7 +74,7 @@ interface SiteWebSettingsModuleProps {
 function CharMeter({ value, max, soft }: { value: number; max: number; soft?: number }) {
   const hard = soft ?? max;
   const ratio = Math.min(100, Math.round((value / hard) * 100));
-  const tone = value > max ? 'bg-rose-500' : value > hard ? 'bg-amber-500' : 'bg-[#38E044]';
+  const tone = value > max ? 'bg-rose-500' : value > hard ? 'bg-amber-500' : 'bg-[color:var(--ui-accent)]';
   return (
     <div className="mt-2 flex items-center gap-2">
       <div className="h-1.5 flex-1 rounded-full bg-neutral-100 dark:bg-white/10 overflow-hidden">
@@ -186,7 +186,7 @@ export function SiteWebSettingsModule({ initialSettings }: SiteWebSettingsModule
       <div className={`bg-[#0A0D0E] border border-neutral-800 rounded-3xl p-5 sm:p-6 text-white ${BACKOFFICE_HEADER}`}>
         <div className="flex items-center gap-4 min-w-0">
           <div className="w-12 h-12 rounded-2xl bg-[#141B1E] border border-neutral-700 flex items-center justify-center shrink-0">
-            <Globe className="w-6 h-6 text-[#38E044]" />
+            <Globe className="w-6 h-6 text-[color:var(--ui-accent)]" />
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
@@ -212,7 +212,7 @@ export function SiteWebSettingsModule({ initialSettings }: SiteWebSettingsModule
             className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-neutral-800/80 hover:bg-neutral-700 text-white text-xs font-bold border border-white/10 transition-all cursor-pointer shadow-sm active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
             title={t('Discard changes')}
           >
-            <RefreshCw className="w-3.5 h-3.5 text-[#38E044]" />
+            <RefreshCw className="w-3.5 h-3.5 text-[color:var(--ui-accent)]" />
             <span>{t('Cancel')}</span>
           </button>
           <button type="button" onClick={handleSave} disabled={isSaving} className={BTN_PRIMARY}>

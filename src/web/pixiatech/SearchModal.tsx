@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { MobileBottomSheet, useIsMobile } from '@/components/ui/bottom-sheet';
 import { Language } from '../pixiatech-translations';
 
 export interface SearchProduct {
@@ -29,6 +30,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
 }) => {
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (open) {
@@ -94,7 +96,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
     }
   };
 
-  return (
+  const body = (
     <div
       style={{
         position: 'fixed',
@@ -196,7 +198,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                       transition: 'all .2s ease',
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = '#C3F910';
+                      e.currentTarget.style.borderColor = 'var(--ui-accent, var(--ui-accent))';
                       e.currentTarget.style.color = '#fff';
                     }}
                     onMouseLeave={(e) => {
@@ -246,7 +248,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                         transition: 'all .2s ease',
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.borderColor = '#C3F910';
+                        e.currentTarget.style.borderColor = 'var(--ui-accent, var(--ui-accent))';
                         e.currentTarget.style.background = '#181816';
                       }}
                       onMouseLeave={(e) => {
@@ -288,7 +290,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                             style={{
                               fontSize: 10,
                               fontFamily: 'var(--font-mono)',
-                              color: '#C3F910',
+                              color: 'var(--ui-accent, var(--ui-accent))',
                               letterSpacing: '.12em',
                             }}
                           >
@@ -318,4 +320,21 @@ export const SearchModal: React.FC<SearchModalProps> = ({
       </div>
     </div>
   );
+
+  // Mobile : même contenu, mais hébergé par le Bottom Sheet global.
+  if (isMobile) {
+    return (
+      <MobileBottomSheet
+        open={open}
+        onClose={onClose}
+        title={lang === 'FR' ? 'Recherche' : 'Search'}
+        tone="dark"
+        contentClassName="px-0 pb-0"
+      >
+        <div className="mobile-search-sheet">{body.props.children}</div>
+      </MobileBottomSheet>
+    );
+  }
+
+  return body;
 };

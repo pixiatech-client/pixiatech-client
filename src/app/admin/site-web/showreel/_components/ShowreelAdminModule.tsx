@@ -297,7 +297,7 @@ function SliderField({
         {label}
       </label>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-        <span style={{ fontSize: 11, fontWeight: 700, color: '#C3F910', minWidth: 48, textAlign: 'right', fontFamily: 'monospace' }}>
+        <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--ui-accent, #C3F910)', minWidth: 48, textAlign: 'right', fontFamily: 'monospace' }}>
           {value.toFixed(step < 0.1 ? 2 : 1)}{unit}
         </span>
         {onReset && defaultVal !== undefined && (
@@ -319,7 +319,7 @@ function SliderField({
           step={step}
           value={value}
           onChange={(e) => onChange(parseFloat(e.target.value))}
-          style={{ width: '100%', accentColor: '#C3F910', height: 4, cursor: 'pointer', display: 'block', boxSizing: 'border-box', margin: 0 }}
+          style={{ width: '100%', accentColor: 'var(--ui-accent, #C3F910)', height: 4, cursor: 'pointer', display: 'block', boxSizing: 'border-box', margin: 0 }}
         />
       </div>
     </div>
@@ -461,7 +461,7 @@ function VideoUploadPanel({
           />
           {pendingFile && (
             <div style={{ position: 'absolute', top: 8, left: 8, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-              <span style={{ background: 'rgba(195,249,16,0.9)', color: '#05070B', fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 99, fontFamily: 'monospace' }}>
+              <span style={{ background: 'rgba(var(--ui-accent-rgb),0.9)', color: '#05070B', fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 99, fontFamily: 'monospace' }}>
                 APERÇU LOCAL
               </span>
             </div>
@@ -471,7 +471,7 @@ function VideoUploadPanel({
 
       {/* File info */}
       {pendingFile && (
-        <div style={{ background: 'rgba(195,249,16,0.06)', border: '1px solid rgba(195,249,16,0.2)', borderRadius: 10, padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+        <div style={{ background: 'rgba(var(--ui-accent-rgb),0.06)', border: '1px solid rgba(var(--ui-accent-rgb),0.2)', borderRadius: 10, padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
           <div>
             <div style={{ fontSize: 12, fontWeight: 700, color: '#F5F4F0' }}>{pendingFile.name}</div>
             <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>
@@ -502,12 +502,12 @@ function VideoUploadPanel({
         onDrop={handleDrop}
         onClick={() => inputRef.current?.click()}
         style={{
-          border: `2px dashed ${dragOver ? '#C3F910' : 'rgba(255,255,255,0.15)'}`,
+          border: `2px dashed ${dragOver ? 'var(--ui-accent, #C3F910)' : 'rgba(255,255,255,0.15)'}`,
           borderRadius: 12,
           padding: '24px 16px',
           textAlign: 'center',
           cursor: 'pointer',
-          background: dragOver ? 'rgba(195,249,16,0.04)' : 'transparent',
+          background: dragOver ? 'rgba(var(--ui-accent-rgb),0.04)' : 'transparent',
           transition: 'all 200ms ease',
         }}
       >
@@ -532,10 +532,10 @@ function VideoUploadPanel({
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
             <span style={{ fontSize: 11, color: '#9CA3AF' }}>Téléversement en cours…</span>
-            <span style={{ fontSize: 11, color: '#C3F910', fontFamily: 'monospace' }}>{uploadProgress}%</span>
+            <span style={{ fontSize: 11, color: 'var(--ui-accent, #C3F910)', fontFamily: 'monospace' }}>{uploadProgress}%</span>
           </div>
           <div style={{ height: 4, background: 'rgba(255,255,255,0.1)', borderRadius: 99, overflow: 'hidden' }}>
-            <div style={{ height: '100%', background: '#C3F910', width: `${uploadProgress}%`, transition: 'width 200ms ease', borderRadius: 99 }} />
+            <div style={{ height: '100%', background: 'var(--ui-accent, #C3F910)', width: `${uploadProgress}%`, transition: 'width 200ms ease', borderRadius: 99 }} />
           </div>
         </div>
       )}
@@ -556,9 +556,9 @@ function VideoUploadPanel({
             onClick={handleUpload}
             style={{
               flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-              padding: '10px 16px', borderRadius: 10, background: '#C3F910', color: '#05070B',
+              padding: '10px 16px', borderRadius: 10, background: 'var(--ui-accent, #C3F910)', color: '#05070B',
               fontSize: 12, fontWeight: 800, border: 'none', cursor: 'pointer',
-              boxShadow: '0 4px 20px rgba(195,249,16,0.3)',
+              boxShadow: '0 4px 20px rgba(var(--ui-accent-rgb),0.3)',
             }}
           >
             <Upload style={{ width: 14, height: 14 }} />
@@ -566,7 +566,7 @@ function VideoUploadPanel({
           </button>
         )}
         {uploading && (
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 16px', borderRadius: 10, background: 'rgba(195,249,16,0.1)', color: '#C3F910', fontSize: 12, fontWeight: 700 }}>
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 16px', borderRadius: 10, background: 'rgba(var(--ui-accent-rgb),0.1)', color: 'var(--ui-accent, #C3F910)', fontSize: 12, fontWeight: 700 }}>
             <Loader2 style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} />
             Envoi en cours…
           </div>
@@ -659,7 +659,7 @@ function MasterImagePanel({
               style={{ width: '100%', maxHeight: 200, objectFit: 'cover', display: 'block' }}
             />
             {!isDefault && (
-              <div style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(195,249,16,0.9)', color: '#05070B', fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 99, fontFamily: 'monospace' }}>
+              <div style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(var(--ui-accent-rgb),0.9)', color: '#05070B', fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 99, fontFamily: 'monospace' }}>
                 PERSONNALISÉE
               </div>
             )}
@@ -691,9 +691,9 @@ function MasterImagePanel({
         </div>
 
         {uploading && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: 'rgba(195,249,16,0.08)', borderRadius: 10, marginTop: 12 }}>
-            <Loader2 style={{ width: 14, height: 14, color: '#C3F910', animation: 'spin 1s linear infinite' }} />
-            <span style={{ fontSize: 12, color: '#C3F910', fontWeight: 600 }}>Téléversement en cours…</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: 'rgba(var(--ui-accent-rgb),0.08)', borderRadius: 10, marginTop: 12 }}>
+            <Loader2 style={{ width: 14, height: 14, color: 'var(--ui-accent, #C3F910)', animation: 'spin 1s linear infinite' }} />
+            <span style={{ fontSize: 12, color: 'var(--ui-accent, #C3F910)', fontWeight: 600 }}>Téléversement en cours…</span>
           </div>
         )}
 
@@ -1054,7 +1054,7 @@ function VirtualCameraStudioCanvas({
     activeOnKeyframeChange(selectedKf.id, { [key]: parseFloat((current + delta).toFixed(3)) });
   };
 
-  const HANDLE_COLOR = '#C3F910';
+  const HANDLE_COLOR = 'var(--ui-accent, #C3F910)';
   const HANDLE_SIZE = 9;
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -1072,9 +1072,9 @@ function VirtualCameraStudioCanvas({
             onClick={() => setStudioMode('camera')}
             style={{
               display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', borderRadius: 8,
-              border: studioMode === 'camera' ? '1px solid #C3F910' : '1px solid rgba(255,255,255,0.1)',
-              background: studioMode === 'camera' ? 'rgba(195,249,16,0.15)' : 'rgba(255,255,255,0.05)',
-              color: studioMode === 'camera' ? '#C3F910' : '#9CA3AF',
+              border: studioMode === 'camera' ? '1px solid var(--ui-accent)' : '1px solid rgba(255,255,255,0.1)',
+              background: studioMode === 'camera' ? 'rgba(var(--ui-accent-rgb),0.15)' : 'rgba(255,255,255,0.05)',
+              color: studioMode === 'camera' ? 'var(--ui-accent, #C3F910)' : '#9CA3AF',
               fontSize: 11, fontWeight: 700, cursor: 'pointer', transition: 'all 150ms',
             }}
           >
@@ -1085,9 +1085,9 @@ function VirtualCameraStudioCanvas({
             onClick={() => setStudioMode('led')}
             style={{
               display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', borderRadius: 8,
-              border: studioMode === 'led' ? '1px solid #C3F910' : '1px solid rgba(255,255,255,0.1)',
-              background: studioMode === 'led' ? 'rgba(195,249,16,0.15)' : 'rgba(255,255,255,0.05)',
-              color: studioMode === 'led' ? '#C3F910' : '#9CA3AF',
+              border: studioMode === 'led' ? '1px solid var(--ui-accent)' : '1px solid rgba(255,255,255,0.1)',
+              background: studioMode === 'led' ? 'rgba(var(--ui-accent-rgb),0.15)' : 'rgba(255,255,255,0.05)',
+              color: studioMode === 'led' ? 'var(--ui-accent, #C3F910)' : '#9CA3AF',
               fontSize: 11, fontWeight: 700, cursor: 'pointer', transition: 'all 150ms',
             }}
           >
@@ -1098,9 +1098,9 @@ function VirtualCameraStudioCanvas({
             onClick={() => setStudioMode('screen')}
             style={{
               display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', borderRadius: 8,
-              border: studioMode === 'screen' ? '1px solid #C3F910' : '1px solid rgba(255,255,255,0.1)',
-              background: studioMode === 'screen' ? 'rgba(195,249,16,0.15)' : 'rgba(255,255,255,0.05)',
-              color: studioMode === 'screen' ? '#C3F910' : '#9CA3AF',
+              border: studioMode === 'screen' ? '1px solid var(--ui-accent)' : '1px solid rgba(255,255,255,0.1)',
+              background: studioMode === 'screen' ? 'rgba(var(--ui-accent-rgb),0.15)' : 'rgba(255,255,255,0.05)',
+              color: studioMode === 'screen' ? 'var(--ui-accent, #C3F910)' : '#9CA3AF',
               fontSize: 11, fontWeight: 700, cursor: 'pointer', transition: 'all 150ms',
             }}
           >
@@ -1160,7 +1160,7 @@ function VirtualCameraStudioCanvas({
         <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
           {sorted.map((kf) => {
             const isSelected = activeSelectedKeyId === kf.id;
-            const accentColor = isLedMode ? '#38BDF8' : '#C3F910';
+            const accentColor = isLedMode ? '#38BDF8' : 'var(--ui-accent, #C3F910)';
             return (
               <button
                 key={kf.id}
@@ -1322,7 +1322,7 @@ function VirtualCameraStudioCanvas({
                   top: `${screen.top}%`,
                   width: `${screen.width}%`,
                   height: `${screen.height}%`,
-                  border: `${Math.max(1, 1.25 * invZ)}px solid #C3F910`,
+                  border: `${Math.max(1, 1.25 * invZ)}px solid var(--ui-accent)`,
                   outline: `${Math.max(1, 1 * invZ)}px solid rgba(0,0,0,0.75)`,
                   outlineOffset: -1,
                   boxSizing: 'border-box',
@@ -1343,7 +1343,7 @@ function VirtualCameraStudioCanvas({
                   backdropFilter: 'blur(8px)',
                   border: '1px solid rgba(255, 255, 255, 0.15)',
                   boxShadow: '0 4px 16px rgba(0,0,0,0.6)',
-                  color: '#C3F910',
+                  color: 'var(--ui-accent, #C3F910)',
                   fontSize: 10,
                   fontWeight: 700,
                   fontFamily: 'var(--font-mono, monospace)',
@@ -1422,7 +1422,7 @@ function VirtualCameraStudioCanvas({
         {/* Timecode */}
         <div style={{
           position: 'absolute', top: 10, left: 10, background: 'rgba(0,0,0,0.7)',
-          color: '#C3F910', fontSize: 10, fontFamily: 'monospace', fontWeight: 700,
+          color: 'var(--ui-accent, #C3F910)', fontSize: 10, fontFamily: 'monospace', fontWeight: 700,
           padding: '3px 8px', borderRadius: 6, backdropFilter: 'blur(4px)',
           pointerEvents: 'none', zIndex: 30,
         }}>
@@ -1481,7 +1481,7 @@ function VirtualCameraStudioCanvas({
                   <div style={{ fontSize: 15, fontWeight: 800, color: '#F5F4F0', letterSpacing: '-0.01em' }}>
                     Supprimer l&apos;image clé ?
                   </div>
-                  <div style={{ fontSize: 11, color: '#C3F910', marginTop: 2, fontFamily: 'monospace' }}>
+                  <div style={{ fontSize: 11, color: 'var(--ui-accent, #C3F910)', marginTop: 2, fontFamily: 'monospace' }}>
                     {keyToDelete.name} &bull; Position : {(keyToDelete.time * 100).toFixed(1)}%
                   </div>
                 </div>
@@ -1490,7 +1490,7 @@ function VirtualCameraStudioCanvas({
               <div style={{ fontSize: 12, color: '#D1D5DB', lineHeight: 1.6 }}>
                 Voulez-vous supprimer cette image clé de caméra ? Le mouvement de zoom se reconnectera automatiquement et de façon fluide entre les clés restantes.
                 <div style={{ marginTop: 10, padding: '10px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', fontSize: 11, color: '#9CA3AF' }}>
-                  💡 <strong style={{ color: '#F5F4F0' }}>Sécurité :</strong> Vous pourrez immédiatement annuler cette action en appuyant sur <kbd style={{ padding: '2px 6px', borderRadius: 4, background: 'rgba(195,249,16,0.15)', color: '#C3F910', fontFamily: 'monospace', fontWeight: 700 }}>Ctrl+Z</kbd>.
+                  💡 <strong style={{ color: '#F5F4F0' }}>Sécurité :</strong> Vous pourrez immédiatement annuler cette action en appuyant sur <kbd style={{ padding: '2px 6px', borderRadius: 4, background: 'rgba(var(--ui-accent-rgb),0.15)', color: 'var(--ui-accent, #C3F910)', fontFamily: 'monospace', fontWeight: 700 }}>Ctrl+Z</kbd>.
                 </div>
               </div>
 
@@ -1542,8 +1542,8 @@ function VirtualCameraStudioCanvas({
         {/* Mode badge */}
         <div style={{
           position: 'absolute', top: 10, right: 10, background: studioMode === 'led'
-            ? 'rgba(195,249,16,0.95)' : studioMode === 'camera'
-            ? 'rgba(195,249,16,0.85)' : 'rgba(59,130,246,0.85)',
+            ? 'rgba(var(--ui-accent-rgb),0.95)' : studioMode === 'camera'
+            ? 'rgba(var(--ui-accent-rgb),0.85)' : 'rgba(59,130,246,0.85)',
           color: '#05070B', fontSize: 9, fontFamily: 'monospace', fontWeight: 800,
           padding: '3px 8px', borderRadius: 6, pointerEvents: 'none', zIndex: 30, letterSpacing: '.08em',
         }}>
@@ -1560,7 +1560,7 @@ function VirtualCameraStudioCanvas({
             fontFamily: 'monospace', fontSize: 9,
           }}>
             <span style={{ color: '#9CA3AF' }}>DIST: <strong style={{ color: '#FFFFFF' }}>{simProgress >= 0.70 && simProgress <= 0.88 ? '239 mm' : `${(5.5 - simProgress * 5).toFixed(1)} m`}</strong></span>
-            <span style={{ color: '#C3F910', fontWeight: 700 }}>3 Diodes RGB (P0.9)</span>
+            <span style={{ color: 'var(--ui-accent, #C3F910)', fontWeight: 700 }}>3 Diodes RGB (P0.9)</span>
             <span style={{ color: '#9CA3AF' }}>AU CŒUR DES LEDS</span>
           </div>
         )}
@@ -1610,12 +1610,12 @@ function VirtualCameraStudioCanvas({
                 width: 32,
                 height: 32,
                 borderRadius: 8,
-                background: ledCustomImageSrc ? 'rgba(59,130,246,0.15)' : 'rgba(195,249,16,0.15)',
-                border: `1px solid ${ledCustomImageSrc ? '#3B82F6' : '#C3F910'}`,
+                background: ledCustomImageSrc ? 'rgba(59,130,246,0.15)' : 'rgba(var(--ui-accent-rgb),0.15)',
+                border: `1px solid ${ledCustomImageSrc ? '#3B82F6' : 'var(--ui-accent, #C3F910)'}`,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: ledCustomImageSrc ? '#3B82F6' : '#C3F910',
+                color: ledCustomImageSrc ? '#3B82F6' : 'var(--ui-accent, #C3F910)',
               }}>
                 <Sparkles style={{ width: 16, height: 16 }} />
               </div>
@@ -1638,9 +1638,9 @@ function VirtualCameraStudioCanvas({
                 disabled={uploadingLedImage}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px',
-                  borderRadius: 8, background: '#C3F910', color: '#05070B',
+                  borderRadius: 8, background: 'var(--ui-accent, #C3F910)', color: '#05070B',
                   fontSize: 11, fontWeight: 800, border: 'none', cursor: 'pointer',
-                  boxShadow: '0 0 15px rgba(195,249,16,0.3)',
+                  boxShadow: '0 0 15px rgba(var(--ui-accent-rgb),0.3)',
                 }}
               >
                 <Upload style={{ width: 12, height: 12 }} />
@@ -1674,7 +1674,7 @@ function VirtualCameraStudioCanvas({
             padding: '5px 10px', borderRadius: 8, backdropFilter: 'blur(4px)',
             pointerEvents: 'none', zIndex: 30, lineHeight: 1.6,
           }}>
-            <span style={{ color: '#C3F910', fontWeight: 800 }}>{selectedKf.name}</span>
+            <span style={{ color: 'var(--ui-accent, #C3F910)', fontWeight: 800 }}>{selectedKf.name}</span>
             {'  '}zoom: {cam.zoom.toFixed(2)}×{'  '}x: {cam.x.toFixed(1)}%{'  '}y: {cam.y.toFixed(1)}%
           </div>
         )}
@@ -1690,9 +1690,9 @@ function VirtualCameraStudioCanvas({
             onClick={() => setPlaying((p) => !p)}
             style={{
               display: 'flex', alignItems: 'center', gap: 6, padding: '6px 13px', borderRadius: 8,
-              background: playing ? 'rgba(239,68,68,0.15)' : 'rgba(195,249,16,0.15)',
-              border: `1px solid ${playing ? 'rgba(239,68,68,0.4)' : '#C3F910'}`,
-              color: playing ? '#EF4444' : '#C3F910', fontWeight: 700, fontSize: 11, cursor: 'pointer',
+              background: playing ? 'rgba(239,68,68,0.15)' : 'rgba(var(--ui-accent-rgb),0.15)',
+              border: `1px solid ${playing ? 'rgba(239,68,68,0.4)' : 'var(--ui-accent, #C3F910)'}`,
+              color: playing ? '#EF4444' : 'var(--ui-accent, #C3F910)', fontWeight: 700, fontSize: 11, cursor: 'pointer',
             }}
           >
             {playing ? <Pause style={{ width: 11, height: 11 }} /> : <Play style={{ width: 11, height: 11 }} />}
@@ -1745,7 +1745,7 @@ function VirtualCameraStudioCanvas({
           </div>
 
           {/* Timecode badge */}
-          <div style={{ fontFamily: 'monospace', fontSize: 11, color: '#C3F910', background: 'rgba(195,249,16,0.08)', padding: '4px 10px', borderRadius: 6, border: '1px solid rgba(195,249,16,0.2)' }}>
+          <div style={{ fontFamily: 'monospace', fontSize: 11, color: 'var(--ui-accent, #C3F910)', background: 'rgba(var(--ui-accent-rgb),0.08)', padding: '4px 10px', borderRadius: 6, border: '1px solid rgba(var(--ui-accent-rgb),0.2)' }}>
             {(simProgress * 100).toFixed(1)}%
           </div>
 
@@ -1757,9 +1757,9 @@ function VirtualCameraStudioCanvas({
             onClick={() => activeOnAddKeyframe(parseFloat(simProgress.toFixed(3)))}
             style={{
               display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 8,
-              background: isLedMode ? 'rgba(56, 189, 248, 0.12)' : 'rgba(195,249,16,0.12)',
-              border: isLedMode ? '1px solid rgba(56, 189, 248, 0.35)' : '1px solid rgba(195,249,16,0.3)',
-              color: isLedMode ? '#38BDF8' : '#C3F910',
+              background: isLedMode ? 'rgba(56, 189, 248, 0.12)' : 'rgba(var(--ui-accent-rgb),0.12)',
+              border: isLedMode ? '1px solid rgba(56, 189, 248, 0.35)' : '1px solid rgba(var(--ui-accent-rgb),0.3)',
+              color: isLedMode ? '#38BDF8' : 'var(--ui-accent, #C3F910)',
               fontSize: 11, fontWeight: 700, cursor: 'pointer'
             }}
           >
@@ -1837,8 +1837,8 @@ function VirtualCameraStudioCanvas({
             disabled={isSaving}
             style={{
               display: 'flex', alignItems: 'center', gap: 5, padding: '6px 13px', borderRadius: 8,
-              background: hasUnsaved ? '#C3F910' : 'rgba(195,249,16,0.12)',
-              color: hasUnsaved ? '#05070B' : '#C3F910',
+              background: hasUnsaved ? 'var(--ui-accent, #C3F910)' : 'rgba(var(--ui-accent-rgb),0.12)',
+              color: hasUnsaved ? '#05070B' : 'var(--ui-accent, #C3F910)',
               border: 'none', fontSize: 11, fontWeight: 800, cursor: isSaving ? 'not-allowed' : 'pointer',
             }}
           >
@@ -1871,7 +1871,7 @@ function VirtualCameraStudioCanvas({
             {/* Keyframe diamonds */}
             {sorted.map((kf) => {
               const isSelected = kf.id === activeSelectedKeyId;
-              const diamondColor = isLedMode ? '#38BDF8' : '#C3F910';
+              const diamondColor = isLedMode ? '#38BDF8' : 'var(--ui-accent, #C3F910)';
               return (
                 <div
                   key={kf.id}
@@ -1962,14 +1962,14 @@ function VirtualCameraStudioCanvas({
               setSimProgress(parseInt(e.target.value, 10) / 1000);
               setPlaying(false);
             }}
-            style={{ width: '100%', marginTop: 6, accentColor: '#C3F910', cursor: 'pointer', height: 3 }}
+            style={{ width: '100%', marginTop: 6, accentColor: 'var(--ui-accent, #C3F910)', cursor: 'pointer', height: 3 }}
           />
         </div>
 
         {/* ── Selected keyframe inspector ───────────────────────────────── */}
         {selectedKf && (
           <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '12px 14px' }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: isLedMode ? '#38BDF8' : '#C3F910', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: isLedMode ? '#38BDF8' : 'var(--ui-accent, #C3F910)', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
               <Crosshair style={{ width: 12, height: 12 }} />
               {isLedMode ? 'Structure LED — ' : 'Caméra Globale — '}{selectedKf.name} — Paramètres
             </div>
@@ -1987,14 +1987,14 @@ function VirtualCameraStudioCanvas({
                   <div key={key} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span style={{ fontSize: 9, color: '#6B7280', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '.06em' }}>{label}</span>
-                      <span style={{ fontSize: 9, color: '#C3F910', fontFamily: 'monospace', fontWeight: 700 }}>{fmt(val)}</span>
+                      <span style={{ fontSize: 9, color: 'var(--ui-accent, #C3F910)', fontFamily: 'monospace', fontWeight: 700 }}>{fmt(val)}</span>
                     </div>
                     <input
                       type="range"
                       min={min} max={max} step={step}
                       value={val}
                       onChange={(e) => activeOnKeyframeChange(selectedKf.id, { [key]: parseFloat(parseFloat(e.target.value).toFixed(3)) })}
-                      style={{ accentColor: '#C3F910', cursor: 'pointer' }}
+                      style={{ accentColor: 'var(--ui-accent, #C3F910)', cursor: 'pointer' }}
                     />
                   </div>
                 );
@@ -2012,8 +2012,8 @@ function VirtualCameraStudioCanvas({
                     onClick={() => activeOnKeyframeChange(selectedKf.id, { easing: e })}
                     style={{
                       padding: '3px 9px', borderRadius: 6, fontSize: 9, fontWeight: 700, cursor: 'pointer',
-                      border: selectedKf.easing === e ? '1px solid #C3F910' : '1px solid rgba(255,255,255,0.1)',
-                      background: selectedKf.easing === e ? '#C3F910' : 'rgba(255,255,255,0.05)',
+                      border: selectedKf.easing === e ? '1px solid var(--ui-accent)' : '1px solid rgba(255,255,255,0.1)',
+                      background: selectedKf.easing === e ? 'var(--ui-accent, #C3F910)' : 'rgba(255,255,255,0.05)',
                       color: selectedKf.easing === e ? '#05070B' : '#6B7280',
                     }}
                   >
@@ -2052,8 +2052,8 @@ function VirtualCameraStudioCanvas({
               padding: '5px 10px',
               borderRadius: 7,
               border: '1px solid rgba(255,255,255,0.1)',
-              background: showVideoOutline ? 'rgba(195,249,16,0.12)' : 'rgba(255,255,255,0.05)',
-              color: showVideoOutline ? '#C3F910' : '#9CA3AF',
+              background: showVideoOutline ? 'rgba(var(--ui-accent-rgb),0.12)' : 'rgba(255,255,255,0.05)',
+              color: showVideoOutline ? 'var(--ui-accent, #C3F910)' : '#9CA3AF',
               fontSize: 10,
               fontWeight: 700,
               cursor: 'pointer',
@@ -2071,7 +2071,7 @@ function VirtualCameraStudioCanvas({
           <button
             type="button"
             onClick={onToggleLockAspect}
-            style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 7, cursor: 'pointer', border: `1px solid ${lockAspect ? '#C3F910' : 'rgba(255,255,255,0.1)'}`, background: lockAspect ? 'rgba(195,249,16,0.12)' : 'rgba(255,255,255,0.05)', color: lockAspect ? '#C3F910' : '#9CA3AF', fontSize: 10, fontWeight: 700 }}
+            style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 7, cursor: 'pointer', border: `1px solid ${lockAspect ? 'var(--ui-accent, #C3F910)' : 'rgba(255,255,255,0.1)'}`, background: lockAspect ? 'rgba(var(--ui-accent-rgb),0.12)' : 'rgba(255,255,255,0.05)', color: lockAspect ? 'var(--ui-accent, #C3F910)' : '#9CA3AF', fontSize: 10, fontWeight: 700 }}
           >
             {lockAspect ? <Lock style={{ width: 10, height: 10 }} /> : <Unlock style={{ width: 10, height: 10 }} />}
             Ratio {lockAspect ? 'verrouillé' : 'libre'}
@@ -2208,9 +2208,9 @@ function VideoScreenSettingsPanel({
               gap: 6,
               padding: '8px 12px',
               borderRadius: 8,
-              border: `1px solid ${lockAspect ? '#C3F910' : 'rgba(255,255,255,0.1)'}`,
-              background: lockAspect ? 'rgba(195,249,16,0.12)' : 'rgba(255,255,255,0.05)',
-              color: lockAspect ? '#C3F910' : '#9CA3AF',
+              border: `1px solid ${lockAspect ? 'var(--ui-accent, #C3F910)' : 'rgba(255,255,255,0.1)'}`,
+              background: lockAspect ? 'rgba(var(--ui-accent-rgb),0.12)' : 'rgba(255,255,255,0.05)',
+              color: lockAspect ? 'var(--ui-accent, #C3F910)' : '#9CA3AF',
               fontSize: 11,
               fontWeight: 700,
               cursor: 'pointer',
@@ -2231,9 +2231,9 @@ function VideoScreenSettingsPanel({
               gap: 6,
               padding: '8px 12px',
               borderRadius: 8,
-              border: `1px solid ${showVideoOutline ? '#C3F910' : 'rgba(255,255,255,0.1)'}`,
-              background: showVideoOutline ? 'rgba(195,249,16,0.12)' : 'rgba(255,255,255,0.05)',
-              color: showVideoOutline ? '#C3F910' : '#9CA3AF',
+              border: `1px solid ${showVideoOutline ? 'var(--ui-accent, #C3F910)' : 'rgba(255,255,255,0.1)'}`,
+              background: showVideoOutline ? 'rgba(var(--ui-accent-rgb),0.12)' : 'rgba(255,255,255,0.05)',
+              color: showVideoOutline ? 'var(--ui-accent, #C3F910)' : '#9CA3AF',
               fontSize: 11,
               fontWeight: 700,
               cursor: 'pointer',
@@ -2349,11 +2349,11 @@ function ScreenSidebarControls({
           borderRadius: 10,
           border: 'none',
           cursor: isSaving ? 'not-allowed' : 'pointer',
-          background: hasUnsaved ? '#C3F910' : 'rgba(195,249,16,0.15)',
-          color: hasUnsaved ? '#05070B' : '#C3F910',
+          background: hasUnsaved ? 'var(--ui-accent, #C3F910)' : 'rgba(var(--ui-accent-rgb),0.15)',
+          color: hasUnsaved ? '#05070B' : 'var(--ui-accent, #C3F910)',
           fontSize: 12,
           fontWeight: 700,
-          boxShadow: hasUnsaved ? '0 4px 16px rgba(195,249,16,0.25)' : 'none',
+          boxShadow: hasUnsaved ? '0 4px 16px rgba(var(--ui-accent-rgb),0.25)' : 'none',
           transition: 'all 200ms ease',
         }}
       >
@@ -2372,9 +2372,9 @@ function ScreenSidebarControls({
           gap: 8,
           padding: '10px 14px',
           borderRadius: 10,
-          border: '1px solid rgba(195, 249, 16, 0.4)',
-          background: 'rgba(195, 249, 16, 0.12)',
-          color: '#C3F910',
+          border: '1px solid rgba(var(--ui-accent-rgb), 0.4)',
+          background: 'rgba(var(--ui-accent-rgb), 0.12)',
+          color: 'var(--ui-accent, #C3F910)',
           fontSize: 12,
           fontWeight: 700,
           cursor: 'pointer',
@@ -2400,9 +2400,9 @@ function ScreenSidebarControls({
             gap: 8,
             padding: '8px 12px',
             borderRadius: 8,
-            border: `1px solid ${lockAspect ? '#C3F910' : 'rgba(255,255,255,0.1)'}`,
-            background: lockAspect ? 'rgba(195, 249, 16, 0.15)' : 'rgba(255,255,255,0.04)',
-            color: lockAspect ? '#C3F910' : '#D1D5DB',
+            border: `1px solid ${lockAspect ? 'var(--ui-accent, #C3F910)' : 'rgba(255,255,255,0.1)'}`,
+            background: lockAspect ? 'rgba(var(--ui-accent-rgb), 0.15)' : 'rgba(255,255,255,0.04)',
+            color: lockAspect ? 'var(--ui-accent, #C3F910)' : '#D1D5DB',
             fontSize: 11,
             fontWeight: 600,
             cursor: 'pointer',
@@ -3250,7 +3250,7 @@ export default function ShowreelAdminModule() {
       {/* ── Header ── */}
       <div style={{ padding: '16px 24px', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(12px)', position: 'sticky', top: 0, zIndex: 50 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg, #C3F910 0%, #8BE800 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg, var(--ui-accent) 0%, #8BE800 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <Film style={{ width: 18, height: 18, color: '#05070B' }} />
           </div>
           <div>
@@ -3278,7 +3278,7 @@ export default function ShowreelAdminModule() {
             rel="noopener noreferrer"
             style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#D1D5DB', fontSize: 12, fontWeight: 600, textDecoration: 'none', cursor: 'pointer' }}
           >
-            <ExternalLink style={{ width: 13, height: 13, color: '#C3F910' }} />
+            <ExternalLink style={{ width: 13, height: 13, color: 'var(--ui-accent, #C3F910)' }} />
             Voir le Showreel
           </Link>
 
@@ -3297,10 +3297,10 @@ export default function ShowreelAdminModule() {
             disabled={saving || saveStatus === 'saving'}
             style={{
               display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10,
-              background: hasUnsaved ? '#C3F910' : 'rgba(195,249,16,0.15)',
-              color: hasUnsaved ? '#05070B' : '#C3F910',
+              background: hasUnsaved ? 'var(--ui-accent, #C3F910)' : 'rgba(var(--ui-accent-rgb),0.15)',
+              color: hasUnsaved ? '#05070B' : 'var(--ui-accent, #C3F910)',
               border: 'none', fontSize: 12, fontWeight: 800, cursor: saving ? 'not-allowed' : 'pointer',
-              boxShadow: hasUnsaved ? '0 4px 20px rgba(195,249,16,0.3)' : 'none',
+              boxShadow: hasUnsaved ? '0 4px 20px rgba(var(--ui-accent-rgb),0.3)' : 'none',
               opacity: saving ? 0.7 : 1, transition: 'all 200ms ease',
             }}
           >
@@ -3377,8 +3377,8 @@ export default function ShowreelAdminModule() {
                   style={{
                     flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
                     padding: '12px 4px', border: 'none', background: 'transparent', cursor: 'pointer',
-                    color: active ? '#C3F910' : '#6B7280',
-                    borderBottom: active ? '2px solid #C3F910' : '2px solid transparent',
+                    color: active ? 'var(--ui-accent, #C3F910)' : '#6B7280',
+                    borderBottom: active ? '2px solid var(--ui-accent)' : '2px solid transparent',
                     transition: 'all 180ms ease', fontSize: 10, fontWeight: active ? 700 : 500,
                     letterSpacing: '.04em',
                   }}
@@ -3413,9 +3413,9 @@ export default function ShowreelAdminModule() {
                         onClick={() => handleSetVideoLangMode('shared')}
                         style={{
                           padding: '7px 14px', borderRadius: 8, cursor: 'pointer',
-                          background: videoLangMode === 'shared' ? '#C3F910' : 'rgba(255,255,255,0.06)',
+                          background: videoLangMode === 'shared' ? 'var(--ui-accent, #C3F910)' : 'rgba(255,255,255,0.06)',
                           color: videoLangMode === 'shared' ? '#05070B' : '#9CA3AF',
-                          border: videoLangMode === 'shared' ? '1px solid #C3F910' : '1px solid rgba(255,255,255,0.1)',
+                          border: videoLangMode === 'shared' ? '1px solid var(--ui-accent)' : '1px solid rgba(255,255,255,0.1)',
                           fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6,
                           transition: 'all 0.15s ease',
                         }}
@@ -3428,9 +3428,9 @@ export default function ShowreelAdminModule() {
                         onClick={() => handleSetVideoLangMode('independent')}
                         style={{
                           padding: '7px 14px', borderRadius: 8, cursor: 'pointer',
-                          background: videoLangMode === 'independent' ? '#C3F910' : 'rgba(255,255,255,0.06)',
+                          background: videoLangMode === 'independent' ? 'var(--ui-accent, #C3F910)' : 'rgba(255,255,255,0.06)',
                           color: videoLangMode === 'independent' ? '#05070B' : '#9CA3AF',
-                          border: videoLangMode === 'independent' ? '1px solid #C3F910' : '1px solid rgba(255,255,255,0.1)',
+                          border: videoLangMode === 'independent' ? '1px solid var(--ui-accent)' : '1px solid rgba(255,255,255,0.1)',
                           fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6,
                           transition: 'all 0.15s ease',
                         }}
@@ -3516,7 +3516,7 @@ export default function ShowreelAdminModule() {
                         type="button"
                         onClick={() => handleSetVideoLangMode('shared')}
                         style={{
-                          fontSize: 10, color: '#C3F910', background: 'transparent', border: 'none', cursor: 'pointer', textDecoration: 'underline'
+                          fontSize: 10, color: 'var(--ui-accent, #C3F910)', background: 'transparent', border: 'none', cursor: 'pointer', textDecoration: 'underline'
                         }}
                       >
                         Unifier comme vidéo commune
@@ -3581,19 +3581,19 @@ export default function ShowreelAdminModule() {
                 {/* Animation toggle */}
                 <div style={{
                   padding: '12px 16px',
-                  background: animationEnabled ? 'rgba(195,249,16,0.06)' : 'rgba(255,255,255,0.03)',
-                  border: `1px solid ${animationEnabled ? 'rgba(195,249,16,0.25)' : 'rgba(255,255,255,0.08)'}`,
+                  background: animationEnabled ? 'rgba(var(--ui-accent-rgb),0.06)' : 'rgba(255,255,255,0.03)',
+                  border: `1px solid ${animationEnabled ? 'rgba(var(--ui-accent-rgb),0.25)' : 'rgba(255,255,255,0.08)'}`,
                   borderRadius: 12,
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
                 }}>
                   <div>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: animationEnabled ? '#C3F910' : '#6B7280', marginBottom: 2 }}>Animation activée</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: animationEnabled ? 'var(--ui-accent, #C3F910)' : '#6B7280', marginBottom: 2 }}>Animation activée</div>
                     <div style={{ fontSize: 10, color: '#4B5563', lineHeight: 1.4 }}>
                       {animationEnabled ? 'Le zoom scroll-progressif est actif.' : 'Animation suspendue — les réglages sont conservés.'}
                     </div>
                   </div>
                   <button type="button" onClick={handleToggleAnimation}
-                    style={{ flexShrink: 0, width: 44, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer', background: animationEnabled ? '#C3F910' : 'rgba(255,255,255,0.15)', position: 'relative', transition: 'background 200ms ease' }}>
+                    style={{ flexShrink: 0, width: 44, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer', background: animationEnabled ? 'var(--ui-accent, #C3F910)' : 'rgba(255,255,255,0.15)', position: 'relative', transition: 'background 200ms ease' }}>
                     <span style={{ position: 'absolute', top: 3, left: animationEnabled ? 23 : 3, width: 18, height: 18, borderRadius: '50%', background: animationEnabled ? '#05070B' : '#6B7280', transition: 'left 200ms ease' }} />
                   </button>
                 </div>
@@ -3608,13 +3608,13 @@ export default function ShowreelAdminModule() {
                         onClick={() => setSelectedKeyId(kf.id)}
                         style={{
                           padding: '10px 14px',
-                          background: isSelected ? 'rgba(195,249,16,0.08)' : 'rgba(255,255,255,0.03)',
-                          border: `1px solid ${isSelected ? 'rgba(195,249,16,0.4)' : 'rgba(255,255,255,0.08)'}`,
+                          background: isSelected ? 'rgba(var(--ui-accent-rgb),0.08)' : 'rgba(255,255,255,0.03)',
+                          border: `1px solid ${isSelected ? 'rgba(var(--ui-accent-rgb),0.4)' : 'rgba(255,255,255,0.08)'}`,
                           borderRadius: 10, cursor: 'pointer', transition: 'all 150ms',
                         }}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                          <span style={{ fontSize: 12, fontWeight: 700, color: isSelected ? '#C3F910' : '#D1D5DB' }}>{kf.name}</span>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: isSelected ? 'var(--ui-accent, #C3F910)' : '#D1D5DB' }}>{kf.name}</span>
                           <span style={{ fontSize: 10, color: '#6B7280', fontFamily: 'monospace' }}>{(kf.time * 100).toFixed(1)}%</span>
                         </div>
                         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -3661,7 +3661,7 @@ export default function ShowreelAdminModule() {
                         onClick={() => setSelectedLang(lang)}
                         style={{
                           padding: '5px 14px', borderRadius: 8, border: 'none', cursor: 'pointer',
-                          background: selectedLang === lang ? '#C3F910' : 'transparent',
+                          background: selectedLang === lang ? 'var(--ui-accent, #C3F910)' : 'transparent',
                           color: selectedLang === lang ? '#05070B' : '#9CA3AF',
                           fontSize: 12, fontWeight: 700,
                         }}
@@ -3718,7 +3718,7 @@ export default function ShowreelAdminModule() {
                         key={section.id}
                         style={{
                           background: 'rgba(255,255,255,0.03)',
-                          border: `1px solid ${isOpen ? 'rgba(195,249,16,0.35)' : 'rgba(255,255,255,0.08)'}`,
+                          border: `1px solid ${isOpen ? 'rgba(var(--ui-accent-rgb),0.35)' : 'rgba(255,255,255,0.08)'}`,
                           borderRadius: 12,
                           overflow: 'hidden',
                           transition: 'border-color 200ms ease, background 200ms ease',
@@ -3747,7 +3747,7 @@ export default function ShowreelAdminModule() {
                             gap: 8,
                             cursor: 'pointer',
                             userSelect: 'none',
-                            background: isOpen ? 'rgba(195,249,16,0.05)' : 'transparent',
+                            background: isOpen ? 'rgba(var(--ui-accent-rgb),0.05)' : 'transparent',
                             transition: 'background 180ms ease',
                             boxSizing: 'border-box',
                           }}
@@ -3760,7 +3760,7 @@ export default function ShowreelAdminModule() {
                                 fontFamily: 'var(--font-mono, monospace)',
                                 padding: '2px 6px',
                                 borderRadius: 6,
-                                background: isOpen ? '#C3F910' : 'rgba(255,255,255,0.08)',
+                                background: isOpen ? 'var(--ui-accent, #C3F910)' : 'rgba(255,255,255,0.08)',
                                 color: isOpen ? '#05070B' : '#9CA3AF',
                                 flexShrink: 0,
                                 transition: 'all 180ms ease',
@@ -3783,7 +3783,7 @@ export default function ShowreelAdminModule() {
                           </div>
                           <span
                             style={{
-                              color: isOpen ? '#C3F910' : '#6B7280',
+                              color: isOpen ? 'var(--ui-accent, #C3F910)' : '#6B7280',
                               display: 'flex',
                               alignItems: 'center',
                               transition: 'color 180ms ease',
@@ -3859,10 +3859,10 @@ export default function ShowreelAdminModule() {
               style={{
                 flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                 padding: '10px', borderRadius: 10, border: 'none',
-                background: hasUnsaved ? '#C3F910' : 'rgba(195,249,16,0.12)',
-                color: hasUnsaved ? '#05070B' : '#C3F910',
+                background: hasUnsaved ? 'var(--ui-accent, #C3F910)' : 'rgba(var(--ui-accent-rgb),0.12)',
+                color: hasUnsaved ? '#05070B' : 'var(--ui-accent, #C3F910)',
                 fontSize: 12, fontWeight: 800, cursor: saving ? 'not-allowed' : 'pointer',
-                boxShadow: hasUnsaved ? '0 4px 20px rgba(195,249,16,0.25)' : 'none',
+                boxShadow: hasUnsaved ? '0 4px 20px rgba(var(--ui-accent-rgb),0.25)' : 'none',
                 opacity: saving ? 0.7 : 1, transition: 'all 200ms ease',
               }}
             >

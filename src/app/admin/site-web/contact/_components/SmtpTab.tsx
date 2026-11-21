@@ -219,7 +219,7 @@ export function SmtpTab({ refreshToken }: SmtpTabProps) {
             type="checkbox"
             checked={form.enabled}
             onChange={(e) => set('enabled', e.target.checked)}
-            className="h-4 w-4 rounded border-neutral-300 dark:border-white/20 accent-[#38E044]"
+            className="h-4 w-4 rounded border-neutral-300 dark:border-white/20 accent-[color:var(--ui-accent)]"
           />
           <span className="text-xs font-semibold text-neutral-800 dark:text-neutral-200">
             Activer l’envoi SMTP des demandes reçues
@@ -237,7 +237,7 @@ export function SmtpTab({ refreshToken }: SmtpTabProps) {
                 key={preset.name}
                 type="button"
                 onClick={() => applyPreset(preset)}
-                className="px-2.5 py-1 rounded-xl text-[11px] font-semibold text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 hover:border-[#38E044]/60 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-all cursor-pointer active:scale-95"
+                className="px-2.5 py-1 rounded-xl text-[11px] font-semibold text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 hover:border-[rgba(var(--ui-accent-rgb),0.6)] hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-all cursor-pointer active:scale-95"
               >
                 {preset.name}
               </button>
@@ -281,7 +281,7 @@ export function SmtpTab({ refreshToken }: SmtpTabProps) {
             type="checkbox"
             checked={form.secure}
             onChange={(e) => set('secure', e.target.checked)}
-            className="h-4 w-4 mt-0.5 rounded border-neutral-300 dark:border-white/20 accent-[#38E044]"
+            className="h-4 w-4 mt-0.5 rounded border-neutral-300 dark:border-white/20 accent-[color:var(--ui-accent)]"
           />
           <span className="text-xs text-neutral-700 dark:text-neutral-300 leading-relaxed">
             Connexion sécurisée directe (SSL/TLS, port 465). Décochez pour STARTTLS (port 587).
@@ -387,9 +387,9 @@ export function SmtpTab({ refreshToken }: SmtpTabProps) {
             />
             <button type="button" onClick={handleTest} disabled={isTesting} className={BTN_SECONDARY}>
               {isTesting ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin text-[#38E044]" />
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-[color:var(--ui-accent)]" />
               ) : (
-                <Send className="w-3.5 h-3.5 text-[#38E044]" />
+                <Send className="w-3.5 h-3.5 text-[color:var(--ui-accent)]" />
               )}
               <span>Tester l’envoi</span>
             </button>

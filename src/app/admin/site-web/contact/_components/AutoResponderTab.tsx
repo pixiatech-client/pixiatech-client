@@ -156,7 +156,7 @@ export function AutoResponderTab({ refreshToken }: AutoResponderTabProps) {
             {/* Entête avec switch d'activation */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-neutral-200 dark:border-white/10">
               <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[#38E044]/10 border border-[#38E044]/20 flex items-center justify-center text-[#38E044] shrink-0 mt-0.5">
+                <div className="w-10 h-10 rounded-xl bg-[rgba(var(--ui-accent-rgb),0.1)] border border-[rgba(var(--ui-accent-rgb),0.2)] flex items-center justify-center text-[color:var(--ui-accent)] shrink-0 mt-0.5">
                   <Bot className="w-5 h-5" />
                 </div>
                 <div>
@@ -218,7 +218,7 @@ export function AutoResponderTab({ refreshToken }: AutoResponderTabProps) {
                   <button
                     type="button"
                     onClick={() => insertVariable('{{client_name}}')}
-                    className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-[#38E044]/10 hover:bg-[#38E044]/20 text-[#38E044] border border-[#38E044]/30 transition-colors cursor-pointer"
+                    className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-[rgba(var(--ui-accent-rgb),0.1)] hover:bg-[rgba(var(--ui-accent-rgb),0.2)] text-[color:var(--ui-accent)] border border-[rgba(var(--ui-accent-rgb),0.3)] transition-colors cursor-pointer"
                     title="Insère le nom complet du client"
                   >
                     + {'{{client_name}}'}
@@ -290,7 +290,7 @@ export function AutoResponderTab({ refreshToken }: AutoResponderTabProps) {
           {/* Prévisualisation en direct */}
           <div className={`${CARD} lg:col-span-5 p-5 sm:p-6 space-y-4`}>
             <div className="flex items-center gap-2 pb-3 border-b border-neutral-200 dark:border-white/10">
-              <Eye className="w-4 h-4 text-[#38E044]" />
+              <Eye className="w-4 h-4 text-[color:var(--ui-accent)]" />
               <h3 className="text-sm font-bold text-neutral-900 dark:text-white uppercase tracking-wider">
                 Aperçu client en direct
               </h3>
@@ -305,7 +305,7 @@ export function AutoResponderTab({ refreshToken }: AutoResponderTabProps) {
             <div className="rounded-xl bg-[#0c0d12] border border-[#1e293b] p-4 text-white space-y-3 shadow-lg">
               <div className="border-b border-[#1e293b] pb-3">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-[10px] font-mono font-bold bg-[#38E044]/10 text-[#38E044] px-2 py-0.5 rounded border border-[#38E044]/30">
+                  <span className="text-[10px] font-mono font-bold bg-[rgba(var(--ui-accent-rgb),0.1)] text-[color:var(--ui-accent)] px-2 py-0.5 rounded border border-[rgba(var(--ui-accent-rgb),0.3)]">
                     PIXIATECH
                   </span>
                   <span className="text-[10px] text-neutral-500 font-mono">À l&apos;instant</span>
@@ -328,7 +328,7 @@ export function AutoResponderTab({ refreshToken }: AutoResponderTabProps) {
             </div>
 
             <div className="p-3.5 rounded-xl bg-neutral-50 dark:bg-white/[0.03] border border-neutral-200/80 dark:border-white/10 text-xs text-neutral-500 dark:text-neutral-400 flex items-start gap-2.5">
-              <Sparkles className="w-4 h-4 text-[#38E044] shrink-0 mt-0.5" />
+              <Sparkles className="w-4 h-4 text-[color:var(--ui-accent)] shrink-0 mt-0.5" />
               <span>
                 Cet accusé de réception rassure immédiatement vos prospects avant que votre équipe ne
                 prenne le relais.

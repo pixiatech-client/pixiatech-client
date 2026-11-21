@@ -121,7 +121,7 @@ export const PixiaFooter: React.FC<PixiaFooterProps> = ({
               style={{
                 fontSize: 11,
                 letterSpacing: '.24em',
-                color: 'var(--accent, #C3F910)',
+                color: 'var(--accent, var(--ui-accent))',
                 marginBottom: 20,
                 fontFamily: 'var(--font-mono)',
                 fontWeight: 700,
@@ -147,7 +147,7 @@ export const PixiaFooter: React.FC<PixiaFooterProps> = ({
                 href={webLink('/products')}
                 data-element-key="footer_col1_all_series"
                 style={{
-                  color: 'var(--accent, #C3F910)',
+                  color: 'var(--accent, var(--ui-accent))',
                   fontWeight: 700,
                   marginTop: 6,
                   display: 'inline-flex',
@@ -169,7 +169,7 @@ export const PixiaFooter: React.FC<PixiaFooterProps> = ({
               style={{
                 fontSize: 11,
                 letterSpacing: '.24em',
-                color: 'var(--accent, #C3F910)',
+                color: 'var(--accent, var(--ui-accent))',
                 marginBottom: 20,
                 fontFamily: 'var(--font-mono)',
                 fontWeight: 700,
@@ -233,7 +233,7 @@ export const PixiaFooter: React.FC<PixiaFooterProps> = ({
               style={{
                 fontSize: 11,
                 letterSpacing: '.24em',
-                color: 'var(--accent, #C3F910)',
+                color: 'var(--accent, var(--ui-accent))',
                 marginBottom: 20,
                 fontFamily: 'var(--font-mono)',
                 fontWeight: 700,
@@ -261,7 +261,7 @@ export const PixiaFooter: React.FC<PixiaFooterProps> = ({
                   border: 0,
                   padding: 0,
                   textAlign: 'left',
-                  color: 'var(--accent, #C3F910)',
+                  color: 'var(--accent, var(--ui-accent))',
                   cursor: 'pointer',
                   fontSize: 14,
                   fontWeight: 700,
@@ -282,7 +282,7 @@ export const PixiaFooter: React.FC<PixiaFooterProps> = ({
               style={{
                 fontSize: 11,
                 letterSpacing: '.24em',
-                color: 'var(--accent, #C3F910)',
+                color: 'var(--accent, var(--ui-accent))',
                 marginBottom: 20,
                 fontFamily: 'var(--font-mono)',
                 fontWeight: 700,
@@ -320,18 +320,18 @@ export const PixiaFooter: React.FC<PixiaFooterProps> = ({
                 style={{
                   color: 'var(--dark-text-2, #c9c7c1)',
                   textDecoration: 'none',
-                  border: '1px solid var(--accent-border, rgba(195, 249, 16, 0.25))',
+                  border: '1px solid var(--accent-border, rgba(var(--ui-accent-rgb), 0.25))',
                   padding: '6px 12px',
                   borderRadius: 2,
                   transition: 'all .2s ease',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--accent, #C3F910)';
-                  e.currentTarget.style.color = 'var(--accent, #C3F910)';
-                  e.currentTarget.style.background = 'var(--accent-muted, rgba(195, 249, 16, 0.08))';
+                  e.currentTarget.style.borderColor = 'var(--accent, var(--ui-accent))';
+                  e.currentTarget.style.color = 'var(--accent, var(--ui-accent))';
+                  e.currentTarget.style.background = 'var(--accent-muted, rgba(var(--ui-accent-rgb), 0.08))';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--accent-border, rgba(195, 249, 16, 0.25))';
+                  e.currentTarget.style.borderColor = 'var(--accent-border, rgba(var(--ui-accent-rgb), 0.25))';
                   e.currentTarget.style.color = 'var(--dark-text-2, #c9c7c1)';
                   e.currentTarget.style.background = 'transparent';
                 }}
@@ -346,18 +346,18 @@ export const PixiaFooter: React.FC<PixiaFooterProps> = ({
                 style={{
                   color: 'var(--dark-text-2, #c9c7c1)',
                   textDecoration: 'none',
-                  border: '1px solid var(--accent-border, rgba(195, 249, 16, 0.25))',
+                  border: '1px solid var(--accent-border, rgba(var(--ui-accent-rgb), 0.25))',
                   padding: '6px 12px',
                   borderRadius: 2,
                   transition: 'all .2s ease',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--accent, #C3F910)';
-                  e.currentTarget.style.color = 'var(--accent, #C3F910)';
-                  e.currentTarget.style.background = 'var(--accent-muted, rgba(195, 249, 16, 0.08))';
+                  e.currentTarget.style.borderColor = 'var(--accent, var(--ui-accent))';
+                  e.currentTarget.style.color = 'var(--accent, var(--ui-accent))';
+                  e.currentTarget.style.background = 'var(--accent-muted, rgba(var(--ui-accent-rgb), 0.08))';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--accent-border, rgba(195, 249, 16, 0.25))';
+                  e.currentTarget.style.borderColor = 'var(--accent-border, rgba(var(--ui-accent-rgb), 0.25))';
                   e.currentTarget.style.color = 'var(--dark-text-2, #c9c7c1)';
                   e.currentTarget.style.background = 'transparent';
                 }}
@@ -407,8 +407,8 @@ export const PixiaFooter: React.FC<PixiaFooterProps> = ({
                   width: 6,
                   height: 6,
                   borderRadius: '50%',
-                  background: 'var(--accent, #C3F910)',
-                  boxShadow: '0 0 8px var(--accent-glow, #C3F910)',
+                  background: 'var(--accent, var(--ui-accent))',
+                  boxShadow: '0 0 8px var(--accent-glow, var(--ui-accent))',
                   display: 'inline-block',
                 }}
               />
@@ -440,7 +440,7 @@ export const PixiaFooter: React.FC<PixiaFooterProps> = ({
                 {t.legal}
               </a>
             </div>
-            <span style={{ color: 'var(--accent, #C3F910)', fontWeight: 700 }}>{lang === 'FR' ? 'FR' : 'EN'}</span>
+            <span style={{ color: 'var(--accent, var(--ui-accent))', fontWeight: 700 }}>{lang === 'FR' ? 'FR' : 'EN'}</span>
           </div>
         </div>
 

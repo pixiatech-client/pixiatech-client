@@ -75,7 +75,7 @@ export default function ExportMenu({ current, previous, conversions, prevConvers
 
   const btn = (mode: string, busyMode: string | null) =>
     `px-3 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer ${
-      busyMode === mode ? 'bg-neutral-100 dark:bg-white/5 opacity-60' : mode === 'pdf' ? 'bg-[#38E044] text-black hover:bg-[#4af257]' : 'bg-white/5 hover:bg-white/10 border border-white/10 text-white'
+      busyMode === mode ? 'bg-neutral-100 dark:bg-white/5 opacity-60' : mode === 'pdf' ? 'bg-[color:var(--ui-accent)] text-black hover:bg-[color:var(--ui-accent-glow)]' : 'bg-white/5 hover:bg-white/10 border border-white/10 text-white'
     }`;
 
   return (
@@ -122,7 +122,7 @@ export default function ExportMenu({ current, previous, conversions, prevConvers
                 void exportReportPdf();
                 setOpen(false);
               }}
-              className="flex items-center gap-2 w-full px-3 py-2 rounded-xl text-xs font-black text-black hover:shadow-lg transition-all cursor-pointer text-left bg-[#38E044]"
+              className="flex items-center gap-2 w-full px-3 py-2 rounded-xl text-xs font-black text-black hover:shadow-lg transition-all cursor-pointer text-left bg-[color:var(--ui-accent)]"
             >
               {busy === 'pdf' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileText className="h-3.5 w-3.5" />}
               {g('exportPdf')}

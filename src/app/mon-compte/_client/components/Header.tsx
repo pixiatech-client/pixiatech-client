@@ -62,7 +62,7 @@ export function Header({ user, notifications, onNavigate, onLogout, onMarkNotifi
             title="Accueil PIXIATECH Client"
           >
             <span className="font-extrabold text-lg sm:text-xl tracking-wider text-white font-mono">PIXIATECH</span>
-            <span className="bg-[#38E044] text-black font-extrabold text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full tracking-wide shadow-[0_0_12px_rgba(56,224,68,0.45)]">
+            <span className="bg-[color:var(--ui-accent)] text-black font-extrabold text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full tracking-wide shadow-[0_0_12px_rgba(var(--ui-accent-rgb),0.45)]">
               CLIENT
             </span>
           </div>
@@ -96,7 +96,7 @@ export function Header({ user, notifications, onNavigate, onLogout, onMarkNotifi
             >
               <Bell className="w-4 h-4" />
               {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#38E044] text-black text-[10px] font-bold rounded-full flex items-center justify-center animate-bounce">
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-[color:var(--ui-accent)] text-black text-[10px] font-bold rounded-full flex items-center justify-center animate-bounce">
                   {unreadCount}
                 </span>
               )}
@@ -131,7 +131,7 @@ export function Header({ user, notifications, onNavigate, onLogout, onMarkNotifi
                         >
                           <div className="flex items-start gap-2.5">
                             <div className="p-1.5 rounded-lg bg-neutral-800 shrink-0 mt-0.5">
-                              {notif.type === 'invoice' && <FileText className="w-3.5 h-3.5 text-[#38E044]" />}
+                              {notif.type === 'invoice' && <FileText className="w-3.5 h-3.5 text-[color:var(--ui-accent)]" />}
                               {notif.type === 'delivery' && <Truck className="w-3.5 h-3.5 text-sky-400" />}
                               {notif.type === 'dispute' && <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />}
                               {notif.type === 'order' && <CheckCircle2 className="w-3.5 h-3.5 text-purple-400" />}
@@ -172,7 +172,7 @@ export function Header({ user, notifications, onNavigate, onLogout, onMarkNotifi
                     setShowLangMenu(false);
                   }}
                   className={`w-full text-left px-3 py-1.5 text-xs rounded-lg transition-colors cursor-pointer ${
-                    language === 'FR' ? 'bg-[#38E044] text-black font-bold' : 'text-neutral-300 hover:bg-neutral-800'
+                    language === 'FR' ? 'bg-[color:var(--ui-accent)] text-black font-bold' : 'text-neutral-300 hover:bg-neutral-800'
                   }`}
                 >
                   🇫🇷 Français
@@ -183,7 +183,7 @@ export function Header({ user, notifications, onNavigate, onLogout, onMarkNotifi
                     setShowLangMenu(false);
                   }}
                   className={`w-full text-left px-3 py-1.5 text-xs rounded-lg transition-colors cursor-pointer ${
-                    language === 'EN' ? 'bg-[#38E044] text-black font-bold' : 'text-neutral-300 hover:bg-neutral-800'
+                    language === 'EN' ? 'bg-[color:var(--ui-accent)] text-black font-bold' : 'text-neutral-300 hover:bg-neutral-800'
                   }`}
                 >
                   🇬🇧 English
@@ -207,7 +207,7 @@ export function Header({ user, notifications, onNavigate, onLogout, onMarkNotifi
                   referrerPolicy="no-referrer"
                 />
               ) : (
-                <span className="w-7 h-7 rounded-full bg-[#38E044] text-black text-xs font-bold flex items-center justify-center border border-neutral-700">
+                <span className="w-7 h-7 rounded-full bg-[color:var(--ui-accent)] text-black text-xs font-bold flex items-center justify-center border border-neutral-700">
                   {avatarFallback}
                 </span>
               )}
@@ -229,12 +229,12 @@ export function Header({ user, notifications, onNavigate, onLogout, onMarkNotifi
                     <div className="text-[11px] text-neutral-400 truncate">{user?.email || ''}</div>
                     {user?.companyName ? (
                       <div className="mt-1.5 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-950/70 border border-emerald-800/50 text-[10px] text-emerald-300">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#38E044]" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-[color:var(--ui-accent)]" />
                         <span className="truncate max-w-[170px]">{user.companyName}</span>
                       </div>
                     ) : (
                       <div className="mt-1.5 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-neutral-800 text-[10px] text-neutral-300">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#38E044]" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-[color:var(--ui-accent)]" />
                         <span>Espace Client</span>
                       </div>
                     )}

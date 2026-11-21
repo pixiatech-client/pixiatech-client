@@ -901,7 +901,7 @@ const TONE_DARK: Tone = {
   '--ct-surface-focus': 'rgba(var(--accent-rgb, 195, 249, 16), .06)',
   '--ct-placeholder': '#7a7a76',
   '--ct-error': '#ffb3a4',
-  '--ct-accent': 'var(--accent, #C3F910)',
+  '--ct-accent': 'var(--accent, var(--ui-accent))',
   /* Sur le noir le voile peut monter : le texte clair garde son contraste. */
   '--ct-mesh-op': '.24',
 };
@@ -926,7 +926,7 @@ const TONE_LIGHT: Tone = {
 /* Lime : hexadécimal littéral, jamais `var(--accent)`. Le CMS peut redéfinir
    `--accent` à l'exécution, ce qui rendait les chips sélectionnés illisibles
    (noir sur noir). Ici la couleur est fixe. */
-const ACCENT = 'var(--accent, #C3F910)';
+const ACCENT = 'var(--accent, var(--ui-accent))';
 
 /* Le lime n'est lisible qu'en fond ou en texte sur fond noir (15:1). Sur le
    papier il tombe à 1.5:1 : sur section blanche, l'accent en texte devient
@@ -1794,7 +1794,7 @@ function FaqList({ faq }: { faq: PageContentConfig['faq'] }) {
                       fontWeight: 700,
                       letterSpacing: '.06em',
                       textTransform: 'uppercase',
-                      color: 'var(--accent, #C3F910)',
+                      color: 'var(--accent, var(--ui-accent))',
                     }}
                   >
                     {item.subtitle}

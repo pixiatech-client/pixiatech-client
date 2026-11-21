@@ -7,6 +7,7 @@ import { CATALOG_PRODUCTS, type CatalogProduct } from './pixiatech-catalog';
 import { Language } from '../pixiatech-translations';
 import { useI18n } from '@/lib/i18n';
 import { SearchModal } from './SearchModal';
+import { MobileBottomSheet } from '@/components/ui/bottom-sheet';
 import { Shield, Globe } from 'lucide-react';
 import { ProductsProvider, useProducts } from '@/lib/products/products-context';
 import type { ProductRecord, MegaMenu, MegaMenuItem } from '@/lib/products/types';
@@ -238,7 +239,7 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
   const [mobileSubMenu, setMobileSubMenu] = useState<'main' | 'products'>('main');
   const [searchOpen, setSearchOpen] = useState(false);
   // Couleur d'accent courante — se met à jour quand ThemePanel dispatch l'événement
-  const [accentColor, setAccentColor] = useState<string>('var(--accent, #C3F910)');
+  const [accentColor, setAccentColor] = useState<string>('var(--accent, var(--ui-accent))');
 
   // Écouter les changements de thème pour forcer un re-render des couleurs inline
   useEffect(() => {
@@ -505,19 +506,31 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
         // Aucune <section> détectée : scan DOM réel sous le centre du header
         // pour détecter la couleur de fond de la page (pages intérieures, main, div…)
         const probeX = typeof window !== 'undefined' ? window.innerWidth / 2 : 0;
-        let cur: HTMLElement | null = null;
+        const isKnownLightPage =
+          pathname.includes('nos-conseils') ||
+          pathname.includes('insights') ||
+          pathname.includes('products') ||
+          pathname.includes('contact');
+
+        // Récupérer la pile complète d'éléments à ces coordonnées (évite d'être bloqué par le header fixed zIndex 200)
+        let stack: Element[] = [];
         try {
-          cur = document.elementFromPoint(probeX, probeY) as HTMLElement | null;
-        } catch {
-          cur = null;
-        }
-        // Traverser vers le haut jusqu'à trouver une couleur de fond non transparente
-        let found = false;
-        while (cur && cur !== document.documentElement && cur !== document.body) {
-          if (headerRootRef.current && headerRootRef.current.contains(cur)) {
-            cur = cur.parentElement;
-            continue;
+          if (typeof document !== 'undefined' && document.elementsFromPoint) {
+            stack = document.elementsFromPoint(probeX, probeY);
           }
+        } catch {
+          stack = [];
+        }
+
+        // Trouver le premier élément réel SOUS le header
+        const underElement = (stack.find(
+          (el) => el !== headerRootRef.current && !headerRootRef.current?.contains(el)
+        ) || null) as HTMLElement | null;
+
+        let cur: HTMLElement | null = underElement;
+        let found = false;
+
+        while (cur && cur !== document.documentElement && cur !== document.body) {
           const bg = window.getComputedStyle(cur).backgroundColor;
           if (bg && bg !== 'transparent' && bg !== 'rgba(0, 0, 0, 0)') {
             const m = bg.match(/\d+/g);
@@ -536,9 +549,11 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
           }
           cur = cur.parentElement;
         }
-        // Si toujours rien de concluant, laisser le thème sombre (défaut)
+
+        // Si la couleur n'a pas pu être résolue par la pile (ex: tout en haut de page),
+        // utiliser la nature de la page : les pages intérieures (Nos conseils, Produits) ont un fond clair !
         if (!found) {
-          light = false;
+          light = isKnownLightPage;
         }
       }
 
@@ -1299,7 +1314,7 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                   </p>
                 </div>
 
-                <div>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 14 }}>
                   <button
                     type="button"
                     onClick={() => preview && navigateTo(preview)}
@@ -1329,7 +1344,7 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                         : 'Series currently unavailable'}
                   </button>
 
-                  {/* ALL PRODUCTS → */}
+                  {/* ALL PRODUCTS → sur une ligne dédiée */}
                   <a
                     href={webLink('/products')}
                     onClick={() => setMegaOpen(false)}
@@ -1337,7 +1352,6 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                       display: 'inline-flex',
                       alignItems: 'center',
                       gap: 6,
-                      marginTop: 14,
                       fontSize: 11.5,
                       letterSpacing: '.12em',
                       fontWeight: 700,
@@ -1362,20 +1376,15 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
           </div>
         )}
 
-        {/* Mobile Menu with Drill-down & Back behavior */}
-        {mobileMenuOpen && (
-          <div
-            className="nav-mobile"
-            style={{
-              background: 'rgba(8,8,8,.98)',
-              backdropFilter: 'blur(20px)',
-              borderBottom: '1px solid #1F1F1F',
-              padding: '20px clamp(16px, 2.8vw, 60px) 32px',
-              maxHeight: 'calc(100vh - 88px)',
-              overflowY: 'auto',
-              color: '#f5f4f0',
-            }}
-          >
+        {/* Menu mobile unifié : Bottom Sheet pleine largeur, contenu inchangé */}
+        <MobileBottomSheet
+          open={mobileMenuOpen}
+          onClose={() => setMobileMenuOpen(false)}
+          title={activeLang === 'FR' ? 'Navigation' : 'Navigation'}
+          tone="dark"
+          contentClassName="px-0 pb-0"
+        >
+          <div className="nav-mobile" style={{ animation: 'none' }}>
             {/* Langue & Espace Admin (en tête de menu mobile) */}
             <div
               style={{
@@ -1461,8 +1470,8 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                 justifyContent: 'space-between',
                 padding: '13px 16px',
                 borderRadius: 10,
-                background: 'linear-gradient(135deg, rgba(195, 249, 16, 0.12) 0%, rgba(255, 255, 255, 0.03) 100%)',
-                border: '1px solid rgba(195, 249, 16, 0.32)',
+                background: 'linear-gradient(135deg, rgba(var(--ui-accent-rgb), 0.12) 0%, rgba(255, 255, 255, 0.03) 100%)',
+                border: '1px solid rgba(var(--ui-accent-rgb), 0.32)',
                 color: '#FFFFFF',
                 textDecoration: 'none',
                 marginBottom: 12,
@@ -1475,7 +1484,7 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                     width: 34,
                     height: 34,
                     borderRadius: 8,
-                    background: 'rgba(195, 249, 16, 0.18)',
+                    background: 'rgba(var(--ui-accent-rgb), 0.18)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -1789,7 +1798,7 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: 10,
-                    boxShadow: '0 4px 18px rgba(195, 249, 16, 0.28)',
+                    boxShadow: '0 4px 18px rgba(var(--ui-accent-rgb), 0.28)',
                   }}
                 >
                   <span>{activeLang === 'FR' ? 'Démarrer un projet' : 'Start a Project'}</span>
@@ -2028,7 +2037,8 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
               </div>
             )}
           </div>
-        )}
+        </MobileBottomSheet>
+
       </div>
 
       {/* Global Search Modal */}

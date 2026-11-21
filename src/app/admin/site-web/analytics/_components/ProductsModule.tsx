@@ -107,7 +107,7 @@ export default function ProductsModule({ current, t, onSelect }: ProductsModuleP
                 : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-white'
             }`}
           >
-            <LayoutGrid className="w-3.5 h-3.5 text-[#38E044]" />
+            <LayoutGrid className="w-3.5 h-3.5 text-[color:var(--ui-accent)]" />
             <span>Cartes photos</span>
           </button>
           <button
@@ -215,17 +215,17 @@ export default function ProductsModule({ current, t, onSelect }: ProductsModuleP
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between text-[11px] font-semibold text-neutral-500">
                       <span>Niveau d'intérêt</span>
-                      <span className="text-[#38E044] font-bold">{formatPercent(p.interestRate, 0)}</span>
+                      <span className="text-[color:var(--ui-accent)] font-bold">{formatPercent(p.interestRate, 0)}</span>
                     </div>
                     <div className="h-2 w-full rounded-full bg-neutral-100 dark:bg-white/10 overflow-hidden">
                       <div
-                        className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-[#38E044]"
+                        className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-[color:var(--ui-accent)]"
                         style={{ width: `${Math.min(100, Math.round(p.interestRate * 100))}%` }}
                       />
                     </div>
                   </div>
 
-                  <div className="pt-2 border-t border-neutral-100 dark:border-white/5 flex items-center justify-between text-xs font-bold text-[#38E044] group-hover:translate-x-1 transition-transform">
+                  <div className="pt-2 border-t border-neutral-100 dark:border-white/5 flex items-center justify-between text-xs font-bold text-[color:var(--ui-accent)] group-hover:translate-x-1 transition-transform">
                     <span>Consulter les détails</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </div>
@@ -270,7 +270,7 @@ export default function ProductsModule({ current, t, onSelect }: ProductsModuleP
                           <button
                             type="button"
                             onClick={() => onSelect(p.slug)}
-                            className="flex items-center gap-1.5 font-bold text-neutral-900 dark:text-white hover:text-[#38E044] transition-colors cursor-pointer text-left truncate"
+                            className="flex items-center gap-1.5 font-bold text-neutral-900 dark:text-white hover:text-[color:var(--ui-accent)] transition-colors cursor-pointer text-left truncate"
                           >
                             <span className="truncate">{p.name ?? p.slug}</span>
                             <ExternalLink className="h-3.5 w-3.5 shrink-0 opacity-60" />
@@ -288,7 +288,7 @@ export default function ProductsModule({ current, t, onSelect }: ProductsModuleP
                       <div className="flex items-center gap-2.5">
                         <div className="h-2 w-20 rounded-full bg-neutral-100 dark:bg-white/10 overflow-hidden">
                           <div
-                            className="h-full rounded-full bg-[#38E044]"
+                            className="h-full rounded-full bg-[color:var(--ui-accent)]"
                             style={{ width: `${Math.min(100, Math.round(p.interestRate * 100))}%` }}
                           />
                         </div>
@@ -299,7 +299,7 @@ export default function ProductsModule({ current, t, onSelect }: ProductsModuleP
                       <button
                         type="button"
                         onClick={() => onSelect(p.slug)}
-                        className="px-3 py-1.5 rounded-lg text-xs font-bold text-[#38E044] hover:bg-[#38E044]/10 transition-colors cursor-pointer"
+                        className="px-3 py-1.5 rounded-lg text-xs font-bold text-[color:var(--ui-accent)] hover:bg-[rgba(var(--ui-accent-rgb),0.1)] transition-colors cursor-pointer"
                       >
                         Consulter
                       </button>

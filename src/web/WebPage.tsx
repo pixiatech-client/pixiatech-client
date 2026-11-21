@@ -110,6 +110,7 @@ function WebPageView({ seedProduct }: { seedProduct?: Product } = {}) {
         companyName={brandName}
         onOpenConsultation={() => setIsConsultationOpen(true)}
         forceSolidDark={false}
+        productSections={anchors}
       />
 
       {/* Main Product Sections */}
@@ -123,7 +124,6 @@ function WebPageView({ seedProduct }: { seedProduct?: Product } = {}) {
             onOpenQuote={() => setIsConsultationOpen(true)}
             lang={lang}
             series={text(product?.series)}
-            sections={anchors}
           />
         </EditableWrapper>
 

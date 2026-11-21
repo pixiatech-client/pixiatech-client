@@ -475,7 +475,7 @@ export function PixiaInsightDetailPage({ article }: InsightDetailPageProps) {
           style={{
             height: '100%',
             width: `${scrollProgress}%`,
-            background: 'var(--accent,#C3F910)',
+            background: 'var(--accent,var(--ui-accent))',
             transition: 'width 0.12s linear',
           }}
         />
@@ -685,7 +685,7 @@ export function PixiaInsightDetailPage({ article }: InsightDetailPageProps) {
                           fontWeight: isActive ? 700 : 400,
                           borderLeft: `2px solid ${
                             isActive
-                              ? 'var(--accent,#C3F910)'
+                              ? 'var(--accent,var(--ui-accent))'
                               : 'transparent'
                           }`,
                           transition: 'color .2s, border-color .2s',
@@ -818,8 +818,8 @@ export function PixiaInsightDetailPage({ article }: InsightDetailPageProps) {
                       alignItems: 'center',
                       gap: 4,
                       background: '#111110',
-                      color: '#C3F910',
-                      border: '1px solid #C3F910',
+                      color: 'var(--ui-accent, #C3F910)',
+                      border: '1px solid var(--ui-accent)',
                       borderRadius: 6,
                       padding: '4px 8px',
                       fontSize: 10,
@@ -856,8 +856,8 @@ export function PixiaInsightDetailPage({ article }: InsightDetailPageProps) {
                   data-cms-ui
                   style={{
                     background: '#111110',
-                    color: '#C3F910',
-                    border: '1px solid #C3F910',
+                    color: 'var(--ui-accent, #C3F910)',
+                    border: '1px solid var(--ui-accent)',
                     borderRadius: 6,
                     padding: '8px 14px',
                     fontSize: 11,
@@ -983,7 +983,7 @@ export function PixiaInsightDetailPage({ article }: InsightDetailPageProps) {
                               style={{
                                 margin: '8px 0',
                                 padding: '18px 0 18px 20px',
-                                borderLeft: '3px solid var(--accent,#C3F910)',
+                                borderLeft: '3px solid var(--accent,var(--ui-accent))',
                                 fontSize: 'clamp(17px,1.3vw,20px)',
                                 fontStyle: 'italic',
                                 lineHeight: 1.55,
@@ -1171,7 +1171,7 @@ export function PixiaInsightDetailPage({ article }: InsightDetailPageProps) {
                         letterSpacing: '.14em',
                         textTransform: 'uppercase',
                         color: 'var(--ink,#111110)',
-                        borderBottom: '2px solid var(--accent,#C3F910)',
+                        borderBottom: '2px solid var(--accent,var(--ui-accent))',
                         paddingBottom: 2,
                       }}
                     >
@@ -1202,8 +1202,8 @@ export function PixiaInsightDetailPage({ article }: InsightDetailPageProps) {
             gap: 10,
             padding: '12px 22px',
             background: '#111110',
-            color: '#C3F910',
-            border: '1.5px solid #C3F910',
+            color: 'var(--ui-accent, #C3F910)',
+            border: '1.5px solid var(--ui-accent)',
             borderRadius: 999,
             fontWeight: 800,
             fontSize: 13,

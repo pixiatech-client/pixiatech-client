@@ -505,15 +505,15 @@ export default function CategoriesModule() {
   );
 
   const inputCls =
-    'mt-1.5 w-full px-3 py-2.5 bg-neutral-50 dark:bg-white/5 border border-neutral-200 dark:border-white/10 rounded-xl text-sm text-neutral-900 dark:text-white focus:ring-2 focus:ring-[#38E044]/50 outline-none transition-all';
+    'mt-1.5 w-full px-3 py-2.5 bg-neutral-50 dark:bg-white/5 border border-neutral-200 dark:border-white/10 rounded-xl text-sm text-neutral-900 dark:text-white focus:ring-2 focus:ring-[rgba(var(--ui-accent-rgb),0.5)] outline-none transition-all';
 
   const fieldLabelCls = 'text-xs font-bold text-neutral-600 dark:text-neutral-300 uppercase tracking-wider';
 
   const selectCls =
-    'mt-1.5 w-full px-3 py-2.5 bg-neutral-50 dark:bg-white/5 border border-neutral-200 dark:border-white/10 rounded-xl text-sm text-neutral-900 dark:text-white focus:ring-2 focus:ring-[#38E044]/50 outline-none transition-all';
+    'mt-1.5 w-full px-3 py-2.5 bg-neutral-50 dark:bg-white/5 border border-neutral-200 dark:border-white/10 rounded-xl text-sm text-neutral-900 dark:text-white focus:ring-2 focus:ring-[rgba(var(--ui-accent-rgb),0.5)] outline-none transition-all';
 
   const btnPrimaryCls =
-    'px-3 py-2 rounded-xl bg-[#38E044] hover:bg-[#4af257] text-black text-xs font-black transition-colors flex items-center gap-2 cursor-pointer';
+    'px-3 py-2 rounded-xl bg-[color:var(--ui-accent)] hover:bg-[color:var(--ui-accent-glow)] text-black text-xs font-black transition-colors flex items-center gap-2 cursor-pointer';
 
   const btnGhostCls =
     'px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-bold transition-colors flex items-center gap-2 cursor-pointer';
@@ -525,7 +525,7 @@ export default function CategoriesModule() {
     <div className="space-y-6">
       <div className="bg-[#0A0D0E] border border-neutral-800 rounded-3xl p-5 sm:p-6 text-white flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl">
         <div>
-          <div className="text-[11px] font-mono uppercase tracking-widest text-[#38E044] mb-1">{t('admin.categories.eyebrow')}</div>
+          <div className="text-[11px] font-mono uppercase tracking-widest text-[color:var(--ui-accent)] mb-1">{t('admin.categories.eyebrow')}</div>
           <h1 className="text-2xl font-bold tracking-tight">{t('admin.categories.title')}</h1>
           <p className="text-sm text-white/50 mt-1 max-w-2xl">{t('admin.categories.subtitle')}</p>
         </div>
@@ -888,7 +888,7 @@ export default function CategoriesModule() {
                       <button
                         type="button"
                         onClick={() => openNewOption(group.key)}
-                        className="inline-flex items-center gap-1.5 ml-1 px-3 py-1.5 rounded-xl text-[11px] font-black bg-[#38E044] text-black hover:bg-[#4af257] transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1.5 ml-1 px-3 py-1.5 rounded-xl text-[11px] font-black bg-[color:var(--ui-accent)] text-black hover:bg-[color:var(--ui-accent-glow)] transition-colors cursor-pointer"
                       >
                         <Plus className="h-3.5 w-3.5" />
                         {t('admin.categories.addGroupOption')}

@@ -539,13 +539,13 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                     "hidden md:inline-flex items-center gap-2 px-4 h-11 rounded-xl text-white text-xs font-bold transition-all cursor-pointer shadow-sm group shrink-0",
                     isSiteWeb
                       ? "bg-gradient-to-r from-rose-950 to-neutral-900 hover:from-rose-900 hover:to-neutral-800 border border-rose-500/30 hover:border-rose-500/60"
-                      : "bg-gradient-to-r from-[#0d2a10] to-neutral-900 hover:from-[#133d18] hover:to-neutral-800 border border-[#38E044]/30 hover:border-[#38E044]/60"
+                      : "bg-gradient-to-r from-[#0d2a10] to-neutral-900 hover:from-[#133d18] hover:to-neutral-800 border border-[rgba(var(--ui-accent-rgb),0.3)] hover:border-[rgba(var(--ui-accent-rgb),0.6)]"
                   )}
                 >
                   {isSiteWeb ? (
                     <UserCog className="w-3.5 h-3.5 text-rose-400 group-hover:scale-110 transition-transform" />
                   ) : (
-                    <Globe className="w-3.5 h-3.5 text-[#38E044] group-hover:scale-110 transition-transform" />
+                    <Globe className="w-3.5 h-3.5 text-[color:var(--ui-accent)] group-hover:scale-110 transition-transform" />
                   )}
                   <span className="tracking-wide text-white">PIXIATECH</span>
                   <span
@@ -553,7 +553,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                       "text-[9px] px-1.5 py-0.5 rounded font-mono font-bold text-white",
                       isSiteWeb
                         ? "bg-rose-500/20 border border-rose-500/30"
-                        : "bg-[#1a3821] border border-[#38E044]/30"
+                        : "bg-[#1a3821] border border-[rgba(var(--ui-accent-rgb),0.3)]"
                     )}
                   >
                     {isSiteWeb ? 'ADMIN' : 'SITE WEB'}

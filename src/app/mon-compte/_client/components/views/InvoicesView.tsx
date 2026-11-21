@@ -221,7 +221,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
       <div className="bg-white rounded-3xl border border-neutral-200/80 p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-2xl bg-[#0A0D0E] text-white flex items-center justify-center shrink-0 shadow-md">
-            <FileText className="w-6 h-6 text-[#38E044]" />
+            <FileText className="w-6 h-6 text-[color:var(--ui-accent)]" />
           </div>
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-neutral-900 tracking-tight">
@@ -316,7 +316,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                   href="/boutique"
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#0A0D0E] text-white font-bold text-sm hover:bg-neutral-800 transition-all shadow-md cursor-pointer"
                 >
-                  <ShoppingBag className="w-4 h-4 text-[#38E044]" />
+                  <ShoppingBag className="w-4 h-4 text-[color:var(--ui-accent)]" />
                   <span>Découvrez notre boutique</span>
                   <ExternalLink className="w-3.5 h-3.5 text-neutral-400" />
                 </a>
@@ -325,7 +325,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                   onClick={() => setActiveTab('request')}
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#0A0D0E] text-white font-bold text-sm hover:bg-neutral-800 transition-all shadow-md cursor-pointer"
                 >
-                  <FileCheck2 className="w-4 h-4 text-[#38E044]" />
+                  <FileCheck2 className="w-4 h-4 text-[color:var(--ui-accent)]" />
                   <span>Demander ma première facture</span>
                 </button>
               )}
@@ -365,7 +365,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                           className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-800 text-sm font-semibold transition-colors cursor-pointer"
                           title="Consulter et télécharger la facture certifiée"
                         >
-                          <Download className="w-4 h-4 text-[#38E044]" />
+                          <Download className="w-4 h-4 text-[color:var(--ui-accent)]" />
                           <span>Télécharger PDF</span>
                         </button>
                       ) : (
@@ -517,7 +517,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                   href="/boutique"
                   className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-[#0A0D0E] text-white font-bold text-sm hover:bg-neutral-800 transition-all shadow-md cursor-pointer"
                 >
-                  <ShoppingBag className="w-4 h-4 text-[#38E044]" />
+                  <ShoppingBag className="w-4 h-4 text-[color:var(--ui-accent)]" />
                   <span>Découvrez notre boutique</span>
                   <ExternalLink className="w-3.5 h-3.5" />
                 </a>
@@ -621,7 +621,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                         }`}
                       >
                         {billingType === 'particulier' && (
-                          <span className="w-2 h-2 rounded-full bg-[#38E044]" />
+                          <span className="w-2 h-2 rounded-full bg-[color:var(--ui-accent)]" />
                         )}
                       </div>
                       <div className="space-y-1">
@@ -653,7 +653,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                         }`}
                       >
                         {billingType === 'entreprise' && (
-                          <span className="w-2 h-2 rounded-full bg-[#38E044]" />
+                          <span className="w-2 h-2 rounded-full bg-[color:var(--ui-accent)]" />
                         )}
                       </div>
                       <div className="space-y-1">
@@ -799,7 +799,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                                   onClick={handleSendEmailCode}
                                   className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#0A0D0E] text-white text-xs font-bold hover:bg-neutral-800 transition-all shadow-sm cursor-pointer disabled:opacity-50"
                                 >
-                                  <Send className="w-3.5 h-3.5 text-[#38E044]" />
+                                  <Send className="w-3.5 h-3.5 text-[color:var(--ui-accent)]" />
                                   <span>{isSendingCode ? 'Envoi du code...' : 'Recevoir le code à 4 chiffres'}</span>
                                 </button>
                               </div>
@@ -827,7 +827,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                                     type="button"
                                     disabled={isVerifyingCode || emailCodeDigits.join('').length !== 4}
                                     onClick={handleVerifyEmailCode}
-                                    className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#38E044] text-black text-xs font-extrabold hover:bg-[#2ecc3a] transition-all shadow-sm cursor-pointer disabled:opacity-50"
+                                    className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[color:var(--ui-accent)] text-black text-xs font-extrabold hover:bg-[color:var(--ui-accent-hover)] transition-all shadow-sm cursor-pointer disabled:opacity-50"
                                   >
                                     {isVerifyingCode ? (
                                       <span>Vérification...</span>
@@ -888,7 +888,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                       }`}
                     >
                       <span>Continuer vers le choix de la commande</span>
-                      <ArrowRight className="w-4 h-4 text-[#38E044]" />
+                      <ArrowRight className="w-4 h-4 text-[color:var(--ui-accent)]" />
                     </button>
                   </div>
                 </div>
@@ -954,7 +954,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                                     : 'border-neutral-300 bg-white'
                                 }`}
                               >
-                                {isSelected && <span className="w-2 h-2 rounded-full bg-[#38E044]" />}
+                                {isSelected && <span className="w-2 h-2 rounded-full bg-[color:var(--ui-accent)]" />}
                               </div>
 
                               <img
@@ -1013,7 +1013,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                       }`}
                     >
                       <span>Vérifier le récapitulatif</span>
-                      <ArrowRight className="w-4 h-4 text-[#38E044]" />
+                      <ArrowRight className="w-4 h-4 text-[color:var(--ui-accent)]" />
                     </button>
                   </div>
                 </div>
@@ -1133,7 +1133,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                       ) : (
                         <>
                           <span>Transmettre la demande de facture</span>
-                          <CheckCircle2 className="w-4 h-4 text-[#38E044]" />
+                          <CheckCircle2 className="w-4 h-4 text-[color:var(--ui-accent)]" />
                         </>
                       )}
                     </button>

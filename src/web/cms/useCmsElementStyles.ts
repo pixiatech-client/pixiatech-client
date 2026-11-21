@@ -332,15 +332,15 @@ export function registerElementDynamicStyles(styledId: string, style: ElementSty
   if (hasNormalOverridable || hasHover || hasActive || hasButtonEffect) {
     rules += `${base} {\n`;
     if (hasNormalColor) {
-      const c = (style.color?.toUpperCase() === '#C3F910') ? 'var(--accent, #C3F910)' : style.color;
+      const c = (style.color?.toUpperCase() === '#C3F910') ? 'var(--accent, var(--ui-accent))' : style.color;
       rules += `  color: ${c} !important;\n`;
     }
     if (hasNormalBg) {
-      const bg = (style.backgroundColor?.toUpperCase() === '#C3F910') ? 'var(--accent, #C3F910)' : style.backgroundColor;
+      const bg = (style.backgroundColor?.toUpperCase() === '#C3F910') ? 'var(--accent, var(--ui-accent))' : style.backgroundColor;
       rules += `  background-color: ${bg} !important;\n`;
     }
     if (hasNormalBorderColor) {
-      const bc = (style.borderColor?.toUpperCase() === '#C3F910') ? 'var(--accent, #C3F910)' : style.borderColor;
+      const bc = (style.borderColor?.toUpperCase() === '#C3F910') ? 'var(--accent, var(--ui-accent))' : style.borderColor;
       rules += `  border-color: ${bc} !important;\n`;
     }
     if (hasNormalBorderWidth) {
@@ -359,7 +359,7 @@ export function registerElementDynamicStyles(styledId: string, style: ElementSty
     const eff = style.buttonEffect;
     const intensity = eff.intensity ?? 60; // 0 à 100
     const duration = eff.duration ?? 300; // ms
-    const effectColor = (eff.color?.toUpperCase() === '#C3F910' ? 'var(--accent, #C3F910)' : eff.color) || 'var(--accent, #C3F910)';
+    const effectColor = (eff.color?.toUpperCase() === '#C3F910' ? 'var(--accent, var(--ui-accent))' : eff.color) || 'var(--accent, var(--ui-accent))';
     const amp = eff.amplitude ?? 4; // px
 
     rules += `${base} {\n`;
@@ -524,7 +524,7 @@ export function registerElementDynamicStyles(styledId: string, style: ElementSty
         rules += `  color: ${userHoverColor || '#080808'} !important;\n`;
         rules += `  border-color: transparent !important;\n`;
         rules += `  transform: scale(${sc}) !important;\n`;
-        rules += `  box-shadow: 0 0 ${Math.round(intensity * 0.3 + 10)}px rgba(195, 249, 16, 0.5) !important;\n`;
+        rules += `  box-shadow: 0 0 ${Math.round(intensity * 0.3 + 10)}px rgba(var(--ui-accent-rgb), 0.5) !important;\n`;
         rules += `}\n`;
         rules += `${baseHoverStar}, ${previewHoverStar} {\n`;
         rules += `  color: ${userHoverColor || '#080808'} !important;\n`;
@@ -789,14 +789,14 @@ export function applyElementStyle(el: HTMLElement, style: ElementStyle, lang?: s
   if (!useStylesheet) {
     // Pas de hover/active → inline direct (comportement historique préservé)
     if (style.color !== undefined) {
-      el.style.color = (style.color?.toUpperCase() === '#C3F910') ? 'var(--accent, #C3F910)' : style.color;
+      el.style.color = (style.color?.toUpperCase() === '#C3F910') ? 'var(--accent, var(--ui-accent))' : style.color;
     }
     if (style.backgroundColor !== undefined) {
-      el.style.backgroundColor = (style.backgroundColor?.toUpperCase() === '#C3F910') ? 'var(--accent, #C3F910)' : style.backgroundColor;
+      el.style.backgroundColor = (style.backgroundColor?.toUpperCase() === '#C3F910') ? 'var(--accent, var(--ui-accent))' : style.backgroundColor;
     }
     if (style.borderRadius !== undefined) el.style.borderRadius = style.borderRadius;
     if (style.borderColor !== undefined) {
-      el.style.borderColor = (style.borderColor?.toUpperCase() === '#C3F910') ? 'var(--accent, #C3F910)' : style.borderColor;
+      el.style.borderColor = (style.borderColor?.toUpperCase() === '#C3F910') ? 'var(--accent, var(--ui-accent))' : style.borderColor;
     }
     if (style.borderWidth !== undefined) {
       el.style.borderWidth = style.borderWidth;

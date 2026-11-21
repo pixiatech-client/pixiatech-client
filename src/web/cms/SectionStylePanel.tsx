@@ -246,40 +246,40 @@ export const SectionStylePanel: React.FC<SectionStylePanelProps> = ({
   );
 
   const inputCls =
-    'w-full bg-[#171715] border border-[#2a2a27] rounded px-2 py-1 text-[11px] text-white font-mono focus:border-[#C3F910] focus:outline-none';
+    'w-full bg-[#171715] border border-[#2a2a27] rounded px-2 py-1 text-[11px] text-white font-mono focus:border-[color:var(--ui-accent)] focus:outline-none';
 
   return (
     <div
       data-cms-ui
       style={{
         position: 'fixed',
-        top: 'calc(var(--admin-bar-h, 0px) + var(--cms-section-bar-h, 0px) + 12px)',
+        top: 'calc(var(--admin-bar-h, 0px) + var(--preview-bar-h, 0px) + var(--cms-section-bar-h, 0px) + 12px)',
         left: 16,
         zIndex: 160,
         width: 268,
       }}
-      className="bg-[#0e0e0d]/98 backdrop-blur-md border border-[#C3F910] rounded-lg shadow-2xl font-sans select-none"
+      className="bg-[#0e0e0d]/98 backdrop-blur-md border border-[color:var(--ui-accent)] rounded-lg shadow-2xl font-sans select-none"
       onClick={(e) => e.stopPropagation()}
       onPointerDown={(e) => e.stopPropagation()}
     >
       {/* En-tête (non scrollable) */}
       <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-[#2a2a27]">
         <div className="flex items-center gap-2 min-w-0">
-          <span className="text-[#C3F910] font-mono text-[10px] font-bold uppercase truncate">
+          <span className="text-[color:var(--ui-accent)] font-mono text-[10px] font-bold uppercase truncate">
             {sectionLabel}
           </span>
           <span className="text-[#6b6b64] font-mono text-[9px]">/ style</span>
         </div>
         <div className="flex items-center gap-1">
-          {status === 'saving' && <Loader2 className="w-3 h-3 animate-spin text-[#C3F910]" />}
-          {status === 'saved' && <span className="text-[#C3F910] font-mono text-[9px]">✓ sauvegardé</span>}
+          {status === 'saving' && <Loader2 className="w-3 h-3 animate-spin text-[color:var(--ui-accent)]" />}
+          {status === 'saved' && <span className="text-[color:var(--ui-accent)] font-mono text-[9px]">✓ sauvegardé</span>}
           {status === 'dirty' && <span className="text-[#9A9A94] font-mono text-[9px]">non sauvegardé…</span>}
           {status === 'error' && <span className="text-[#ff6666] font-mono text-[9px]">échec</span>}
           <button
             type="button"
             onClick={resetAll}
             title="Réinitialiser tous les styles de la section"
-            className="p-1 text-[#6b6b64] hover:text-[#C3F910] transition-colors"
+            className="p-1 text-[#6b6b64] hover:text-[color:var(--ui-accent)] transition-colors"
           >
             <RotateCcw className="w-3 h-3" />
           </button>
@@ -353,7 +353,7 @@ export const SectionStylePanel: React.FC<SectionStylePanelProps> = ({
                       step={meta.step}
                       value={values[key] === '' ? meta.min : Number(values[key]) || meta.min}
                       onChange={(e) => apply(key, e.target.value)}
-                      className="flex-1 accent-[#C3F910] h-1"
+                      className="flex-1 accent-[color:var(--ui-accent)] h-1"
                     />
                     <input
                       type="number"

@@ -38,7 +38,7 @@ export default function DimensionsModule({ geo, languages, devices, current, t }
                   {c.code === 'zz' ? '—' : c.code}
                 </span>
                 <div className="flex-1 h-1.5 rounded-full bg-neutral-100 dark:bg-white/10 overflow-hidden">
-                  <div className="h-full rounded-full bg-[#38E044]" style={{ width: `${(c.sessions / totalSessions) * 100}%` }} />
+                  <div className="h-full rounded-full bg-[color:var(--ui-accent)]" style={{ width: `${(c.sessions / totalSessions) * 100}%` }} />
                 </div>
                 <span className="text-xs tabular-nums text-neutral-700 dark:text-neutral-300 w-14 text-right">{formatNumber(c.sessions)}</span>
               </li>

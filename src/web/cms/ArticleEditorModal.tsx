@@ -161,12 +161,12 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
         {/* Header modal */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#222] bg-[#181816]">
           <div className="flex items-center gap-3">
-            <span className="p-2 rounded-lg bg-[#C3F910]/15 text-[#C3F910]">
+            <span className="p-2 rounded-lg bg-[rgba(var(--ui-accent-rgb),0.15)] text-[color:var(--ui-accent)]">
               <FileText className="w-5 h-5" />
             </span>
             <div>
               <h2 className="font-bold text-base text-white flex items-center gap-2">
-                Éditer l’article : <span className="font-mono text-[#C3F910] text-sm">{article.slug}</span>
+                Éditer l’article : <span className="font-mono text-[color:var(--ui-accent)] text-sm">{article.slug}</span>
               </h2>
               <p className="text-xs text-[#888] font-mono">
                 Modifications enregistrées directement dans la source de vérité PixiaTech
@@ -189,7 +189,7 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
             onClick={() => setActiveTab('content')}
             className={`px-4 py-2 border-b-2 font-bold transition-all ${
               activeTab === 'content'
-                ? 'border-[#C3F910] text-[#C3F910]'
+                ? 'border-[color:var(--ui-accent)] text-[color:var(--ui-accent)]'
                 : 'border-transparent text-[#888] hover:text-white'
             }`}
           >
@@ -200,7 +200,7 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
             onClick={() => setActiveTab('metadata')}
             className={`px-4 py-2 border-b-2 font-bold transition-all ${
               activeTab === 'metadata'
-                ? 'border-[#C3F910] text-[#C3F910]'
+                ? 'border-[color:var(--ui-accent)] text-[color:var(--ui-accent)]'
                 : 'border-transparent text-[#888] hover:text-white'
             }`}
           >
@@ -211,7 +211,7 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
             onClick={() => setActiveTab('faqs')}
             className={`px-4 py-2 border-b-2 font-bold transition-all ${
               activeTab === 'faqs'
-                ? 'border-[#C3F910] text-[#C3F910]'
+                ? 'border-[color:var(--ui-accent)] text-[color:var(--ui-accent)]'
                 : 'border-transparent text-[#888] hover:text-white'
             }`}
           >
@@ -240,7 +240,7 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
                     type="text"
                     value={titleFr}
                     onChange={(e) => setTitleFr(e.target.value)}
-                    className="w-full bg-[#181816] border border-[#333] rounded-lg px-3 py-2 text-sm text-white focus:border-[#C3F910] focus:outline-none"
+                    className="w-full bg-[#181816] border border-[#333] rounded-lg px-3 py-2 text-sm text-white focus:border-[color:var(--ui-accent)] focus:outline-none"
                   />
                 </div>
                 <div>
@@ -251,7 +251,7 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
                     type="text"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    className="w-full bg-[#181816] border border-[#333] rounded-lg px-3 py-2 text-sm text-white focus:border-[#C3F910] focus:outline-none"
+                    className="w-full bg-[#181816] border border-[#333] rounded-lg px-3 py-2 text-sm text-white focus:border-[color:var(--ui-accent)] focus:outline-none"
                   />
                 </div>
               </div>
@@ -266,7 +266,7 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
                     rows={3}
                     value={descFr}
                     onChange={(e) => setDescFr(e.target.value)}
-                    className="w-full bg-[#181816] border border-[#333] rounded-lg px-3 py-2 text-xs text-white focus:border-[#C3F910] focus:outline-none resize-y"
+                    className="w-full bg-[#181816] border border-[#333] rounded-lg px-3 py-2 text-xs text-white focus:border-[color:var(--ui-accent)] focus:outline-none resize-y"
                   />
                 </div>
                 <div>
@@ -277,7 +277,7 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
                     rows={3}
                     value={desc}
                     onChange={(e) => setDesc(e.target.value)}
-                    className="w-full bg-[#181816] border border-[#333] rounded-lg px-3 py-2 text-xs text-white focus:border-[#C3F910] focus:outline-none resize-y"
+                    className="w-full bg-[#181816] border border-[#333] rounded-lg px-3 py-2 text-xs text-white focus:border-[color:var(--ui-accent)] focus:outline-none resize-y"
                   />
                 </div>
               </div>
@@ -296,7 +296,7 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
                   rows={14}
                   value={contentFr}
                   onChange={(e) => setContentFr(e.target.value)}
-                  className="w-full bg-[#181816] border border-[#333] rounded-lg p-3 text-xs font-mono text-white focus:border-[#C3F910] focus:outline-none leading-relaxed resize-y"
+                  className="w-full bg-[#181816] border border-[#333] rounded-lg p-3 text-xs font-mono text-white focus:border-[color:var(--ui-accent)] focus:outline-none leading-relaxed resize-y"
                 />
               </div>
 
@@ -308,7 +308,7 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
                   rows={8}
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
-                  className="w-full bg-[#181816] border border-[#333] rounded-lg p-3 text-xs font-mono text-white focus:border-[#C3F910] focus:outline-none leading-relaxed resize-y"
+                  className="w-full bg-[#181816] border border-[#333] rounded-lg p-3 text-xs font-mono text-white focus:border-[color:var(--ui-accent)] focus:outline-none leading-relaxed resize-y"
                 />
               </div>
             </div>
@@ -335,10 +335,10 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
                       value={img}
                       onChange={(e) => setImg(e.target.value)}
                       placeholder="https://... ou /uploads/site/..."
-                      className="w-full bg-[#181816] border border-[#333] rounded-lg px-3 py-2 text-xs text-white font-mono focus:border-[#C3F910] focus:outline-none"
+                      className="w-full bg-[#181816] border border-[#333] rounded-lg px-3 py-2 text-xs text-white font-mono focus:border-[color:var(--ui-accent)] focus:outline-none"
                     />
                     <label className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#222] hover:bg-[#333] text-white rounded-lg text-xs font-mono cursor-pointer transition-colors">
-                      <Upload className="w-3.5 h-3.5 text-[#C3F910]" />
+                      <Upload className="w-3.5 h-3.5 text-[color:var(--ui-accent)]" />
                       <span>Téléverser une image</span>
                       <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
                     </label>
@@ -353,7 +353,7 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
                   <select
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
-                    className="w-full bg-[#181816] border border-[#333] rounded-lg px-3 py-2 text-xs text-white font-mono focus:border-[#C3F910] focus:outline-none"
+                    className="w-full bg-[#181816] border border-[#333] rounded-lg px-3 py-2 text-xs text-white font-mono focus:border-[color:var(--ui-accent)] focus:outline-none"
                   >
                     <option value="GUIDE">GUIDE</option>
                     <option value="GUIDE — FEATURED">GUIDE — FEATURED (À la une)</option>
@@ -372,7 +372,7 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
                     type="text"
                     value={chip}
                     onChange={(e) => setChip(e.target.value)}
-                    className="w-full bg-[#181816] border border-[#333] rounded-lg px-3 py-2 text-xs text-white font-mono focus:border-[#C3F910] focus:outline-none"
+                    className="w-full bg-[#181816] border border-[#333] rounded-lg px-3 py-2 text-xs text-white font-mono focus:border-[color:var(--ui-accent)] focus:outline-none"
                   />
                 </div>
                 <div>
@@ -381,7 +381,7 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
                     type="text"
                     value={read}
                     onChange={(e) => setRead(e.target.value)}
-                    className="w-full bg-[#181816] border border-[#333] rounded-lg px-3 py-2 text-xs text-white font-mono focus:border-[#C3F910] focus:outline-none"
+                    className="w-full bg-[#181816] border border-[#333] rounded-lg px-3 py-2 text-xs text-white font-mono focus:border-[color:var(--ui-accent)] focus:outline-none"
                   />
                 </div>
               </div>
@@ -394,7 +394,7 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
                     type="text"
                     value={dateFr}
                     onChange={(e) => setDateFr(e.target.value)}
-                    className="w-full bg-[#181816] border border-[#333] rounded-lg px-3 py-2 text-xs text-white font-mono focus:border-[#C3F910] focus:outline-none"
+                    className="w-full bg-[#181816] border border-[#333] rounded-lg px-3 py-2 text-xs text-white font-mono focus:border-[color:var(--ui-accent)] focus:outline-none"
                   />
                 </div>
                 <div>
@@ -403,7 +403,7 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
                     type="text"
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
-                    className="w-full bg-[#181816] border border-[#333] rounded-lg px-3 py-2 text-xs text-white font-mono focus:border-[#C3F910] focus:outline-none"
+                    className="w-full bg-[#181816] border border-[#333] rounded-lg px-3 py-2 text-xs text-white font-mono focus:border-[color:var(--ui-accent)] focus:outline-none"
                   />
                 </div>
               </div>
@@ -411,7 +411,7 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
               {/* Produit associé */}
               <div className="border border-[#333] rounded-xl p-4 bg-[#141412] space-y-3">
                 <div className="flex items-center gap-2">
-                  <Package className="w-4 h-4 text-[#C3F910]" />
+                  <Package className="w-4 h-4 text-[color:var(--ui-accent)]" />
                   <span className="text-xs font-mono font-bold text-[#aaa]">Produit PixiaTech associé</span>
                 </div>
                 <p className="text-[11px] font-mono text-[#666] leading-relaxed">
@@ -433,7 +433,7 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
                           setRelatedProductName('');
                         }
                       }}
-                      className="w-full bg-[#181816] border border-[#333] rounded-lg px-3 py-2 text-xs text-white font-mono focus:border-[#C3F910] focus:outline-none"
+                      className="w-full bg-[#181816] border border-[#333] rounded-lg px-3 py-2 text-xs text-white font-mono focus:border-[color:var(--ui-accent)] focus:outline-none"
                     >
                       <option value="">— Aucun / Défaut automatique —</option>
                       {/* Si un produit actuellement configuré sur l'article n'est pas encore dans availableProducts, on l'affiche */}
@@ -456,12 +456,12 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
                       value={relatedProductName}
                       onChange={(e) => setRelatedProductName(e.target.value)}
                       placeholder={relatedProductSlug ? (availableProducts.find(p => p.slug === relatedProductSlug)?.name ?? relatedProductName ?? '') : 'Sélectionnez un produit'}
-                      className="w-full bg-[#181816] border border-[#333] rounded-lg px-3 py-2 text-xs text-white font-mono focus:border-[#C3F910] focus:outline-none"
+                      className="w-full bg-[#181816] border border-[#333] rounded-lg px-3 py-2 text-xs text-white font-mono focus:border-[color:var(--ui-accent)] focus:outline-none"
                     />
                   </div>
                 </div>
                 {relatedProductSlug && (
-                  <div className="flex items-center gap-2 text-[11px] font-mono text-[#C3F910]">
+                  <div className="flex items-center gap-2 text-[11px] font-mono text-[color:var(--ui-accent)]">
                     <Check className="w-3 h-3" />
                     <span>Sera affiché : <strong>{relatedProductName || '—'}</strong> → /web/product/{relatedProductSlug}</span>
                   </div>
@@ -481,7 +481,7 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
                     setFaqs([...faqs, { question: 'Nouvelle question ?', answer: 'Réponse...' }]);
                     setFaqsFr([...faqsFr, { question: 'Nouvelle question ?', answer: 'Réponse...' }]);
                   }}
-                  className="px-3 py-1 bg-[#C3F910] text-[#080808] rounded text-xs font-mono font-bold hover:bg-[#b0e20e]"
+                  className="px-3 py-1 bg-[color:var(--ui-accent)] text-[#080808] rounded text-xs font-mono font-bold hover:bg-[color:var(--ui-accent-hover)]"
                 >
                   + Ajouter une FAQ
                 </button>
@@ -490,7 +490,7 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
               {faqs.map((faq, idx) => (
                 <div key={idx} className="bg-[#181816] border border-[#333] p-4 rounded-xl space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-mono text-[#C3F910] font-bold">FAQ #{idx + 1}</span>
+                    <span className="text-xs font-mono text-[color:var(--ui-accent)] font-bold">FAQ #{idx + 1}</span>
                     <button
                       type="button"
                       onClick={() => {
@@ -512,7 +512,7 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
                         next[idx] = { ...(next[idx] || faq), question: e.target.value };
                         setFaqsFr(next);
                       }}
-                      className="w-full bg-[#111] border border-[#444] rounded px-3 py-1.5 text-xs text-white focus:border-[#C3F910]"
+                      className="w-full bg-[#111] border border-[#444] rounded px-3 py-1.5 text-xs text-white focus:border-[color:var(--ui-accent)]"
                     />
                   </div>
                   <div>
@@ -525,7 +525,7 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
                         next[idx] = { ...(next[idx] || faq), answer: e.target.value };
                         setFaqsFr(next);
                       }}
-                      className="w-full bg-[#111] border border-[#444] rounded px-3 py-1.5 text-xs text-white focus:border-[#C3F910] resize-y"
+                      className="w-full bg-[#111] border border-[#444] rounded px-3 py-1.5 text-xs text-white focus:border-[color:var(--ui-accent)] resize-y"
                     />
                   </div>
                 </div>
@@ -552,7 +552,7 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
               type="button"
               onClick={handleSave}
               disabled={saving}
-              className="flex items-center gap-1.5 px-5 py-2 rounded-lg bg-[#C3F910] hover:bg-[#b0e20e] text-[#080808] text-xs font-mono font-bold shadow-lg transition-all"
+              className="flex items-center gap-1.5 px-5 py-2 rounded-lg bg-[color:var(--ui-accent)] hover:bg-[color:var(--ui-accent-hover)] text-[#080808] text-xs font-mono font-bold shadow-lg transition-all"
             >
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
               <span>ENREGISTRER L’ARTICLE</span>
