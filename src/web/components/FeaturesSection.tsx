@@ -48,33 +48,56 @@ export const FeaturesSection: React.FC<FeaturesSectionProps> = ({ lang = 'FR', d
   // grille passe en pleine largeur au lieu d'afficher un cadre noir vide.
   const hasStageImages = Boolean(visualUrl) || featureList.some((item) => item.img);
 
-  // Scroll listener using IntersectionObserver to switch active feature seamlessly
+  // Scroll listener tracking which step is at eye level (~45% of viewport)
   useEffect(() => {
-    const observers: IntersectionObserver[] = [];
+    if (typeof window === 'undefined') return;
 
-    stepRefs.current.forEach((el, index) => {
-      if (!el) return;
-      const obs = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting && !isClickingRef.current) {
-              setActiveIndex(index);
-            }
-          });
-        },
-        {
-          rootMargin: '-30% 0px -40% 0px',
-          threshold: 0.2,
+    let rafId: number | null = null;
+
+    const updateActiveOnScroll = () => {
+      if (isClickingRef.current) return;
+      if (!stepRefs.current.length) return;
+
+      const triggerY = window.innerHeight * 0.45;
+      let closestIdx = 0;
+      let minDistance = Infinity;
+
+      stepRefs.current.forEach((el, idx) => {
+        if (!el) return;
+        const rect = el.getBoundingClientRect();
+        // If element spans across the trigger line
+        if (rect.top <= triggerY && rect.bottom >= triggerY) {
+          closestIdx = idx;
+          minDistance = 0;
+        } else if (minDistance !== 0) {
+          const dist = Math.abs(rect.top - triggerY);
+          if (dist < minDistance) {
+            minDistance = dist;
+            closestIdx = idx;
+          }
         }
-      );
-      obs.observe(el);
-      observers.push(obs);
-    });
+      });
+
+      setActiveIndex((prev) => (prev !== closestIdx ? closestIdx : prev));
+    };
+
+    const onScroll = () => {
+      if (rafId) return;
+      rafId = window.requestAnimationFrame(() => {
+        rafId = null;
+        updateActiveOnScroll();
+      });
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    // Run once on mount / update
+    updateActiveOnScroll();
 
     return () => {
-      observers.forEach((obs) => obs.disconnect());
+      window.removeEventListener('scroll', onScroll);
+      if (rafId) window.cancelAnimationFrame(rafId);
     };
-  }, []);
+  }, [featureList.length]);
 
   const handleStepClick = (index: number) => {
     setActiveIndex(index);
@@ -122,39 +145,26 @@ export const FeaturesSection: React.FC<FeaturesSectionProps> = ({ lang = 'FR', d
           {hasStageImages && (
           <div className="fstage-stage">
             <div className="fstage-frame">
-              {[
-                ...(visualUrl
-                  ? [
-                      {
-                        num: '',
-                        indexStr: '',
-                        title: text(data?.visual?.title) ?? text(data?.visual?.description) ?? '',
-                        desc: '',
-                        img: visualUrl ?? '',
-                        contain: false,
-                      },
-                    ]
-                  : []),
-                ...featureList.filter((item) => item.img),
-              ].map((item, idx) => {
+              {featureList.map((item, idx) => {
+                const imgSrc = item.img || visualUrl;
+                if (!imgSrc) return null;
                 const isActive = idx === activeIndex;
                 return (
                   <div
-                    key={`${item.title}-${idx}`}
+                    key={`fstage-img-${idx}`}
                     className={`fstage-img ${isActive ? 'on' : ''}`}
                     style={{
                       opacity: isActive ? 1 : 0,
                       transform: isActive ? 'translateX(0) scale(1)' : 'translateX(3%) scale(1.05)',
+                      pointerEvents: isActive ? 'auto' : 'none',
                     }}
                     aria-hidden={!isActive}
                   >
-                    {item.img ? (
-                      <img
-                        src={item.img}
-                        alt={item.title}
-                        className={`slot-img ${item.contain ? 'slot-contain' : ''}`}
-                      />
-                    ) : null}
+                    <img
+                      src={imgSrc}
+                      alt={item.title}
+                      className={`slot-img ${item.contain ? 'slot-contain' : ''}`}
+                    />
                   </div>
                 );
               })}
@@ -257,10 +267,10 @@ export const FeaturesSection: React.FC<FeaturesSectionProps> = ({ lang = 'FR', d
                     <h3
                       data-text-key={`feature_${idx}_title`}
                       style={{
-                        fontSize: 'clamp(28px, 2.6vw, 42px)',
-                        lineHeight: 1.06,
+                        fontSize: 'clamp(26px, 2.3vw, 38px)',
+                        lineHeight: 1.15,
                         letterSpacing: '-.015em',
-                        margin: '16px 0 16px',
+                        margin: '10px 0 12px',
                         fontWeight: 700,
                         color: 'var(--dark-text, #f5f4f0)',
                       }}

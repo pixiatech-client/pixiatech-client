@@ -17,8 +17,9 @@
  *      `/pixiaicon.webm`), se réduit progressivement et s'efface exactement à
  *      l'arrivée — le corps disparaît au moment même où il atteint l'icône ;
  *   3. icône dockée → seule l'icône WebM transparente est visible, sans cercle
- *      ni fond, juste au-dessus du bouton « retour en haut » existant (dont la
- *      position réelle est lue à l'écran) ;
+ *      ni fond. Sur le site public elle reste au-dessus du bouton « retour en
+ *      haut » (position réelle lue à l'écran) ; sur l'application mobile elle
+ *      prend la position du bouton cookies flottant, en miroir à droite ;
  *   4. retour vers le haut → la courbe est parcourue à l'envers : le robot
  *      ressort de son icône, reprend sa taille, retrouve immédiatement sa
  *      liberté de déplacement et la bulle de bienvenue réapparaît ;
@@ -235,56 +236,77 @@ function readBackToTop(bottomInset = 0): { cx: number; top: number } {
   };
 }
 
+/** Dernier relevé de la sonde « bouton cookies absent » (évite un
+ *  aller-retour DOM à chaque frame d'animation). */
+let cookieProbeCache:
+  | { vw: number; vh: number; cx: number; cy: number; half: number }
+  | null = null;
+
 /**
- * Ancrage « dans le menu » (application mobile uniquement).
+ * Ancrage « miroir du bouton cookies » (application mobile uniquement).
  *
- * La barre d'onglets est centrée dans une enveloppe pleine largeur : il reste
- * de chaque côté un espace libre. Quand cet espace peut accueillir la tête,
- * on y descend l'icône au lieu de la laisser flotter au-dessus du bouton
- * « retour en haut ». Le côté droit est privilégié (c'est là que l'icône
- * était ancrée avant la descente), le gauche sert de repli si le droit est
- * trop serré, et l'ancre historique reprise si aucun des deux ne convient.
+ * Le bouton flottant de gestion des cookies est fixé en bas à gauche avec
+ * `bottom-[max(1rem,env(safe-area-inset-bottom))] left-4 h-11 w-11`. Quand il
+ * est monté, on lit son rectangle réel ; sinon on le reconstitue une seule fois
+ * avec une sonde CSS identique (safe-area incluse), mise en cache jusqu'au
+ * prochain redimensionnement. La tête dockée de Pixia prend exactement la même
+ * hauteur et la même distance au bord, mais à DROITE.
+ *
+ * L'ancre historique (`readBackToTop`) reste utilisée sur `/web` et sur desktop.
  */
-function readMenuAnchor(
+function readCookieMirrorAnchor(
   bottomInset: number,
-  selector: string | undefined,
   headH: number
 ): { cx: number; top: number } {
   const fallback = () => readBackToTop(bottomInset);
-  if (!selector || document.documentElement.clientWidth >= 640) return fallback();
-
-  const bar = document.querySelector<HTMLElement>(selector);
-  if (!bar) return fallback();
-  const barRect = bar.getBoundingClientRect();
-  if (barRect.width <= 0 || barRect.height <= 0) return fallback();
-
-  const buttons = Array.from(bar.querySelectorAll('button'))
-    .map((b) => b.getBoundingClientRect())
-    .filter((r) => r.width > 0 && r.height > 0);
-  if (buttons.length === 0) return fallback();
-
   const vw = document.documentElement.clientWidth;
-  const margin = 8;
-  const minRoom = Math.max(44, headH + 4);
-  const firstLeft = Math.min(...buttons.map((r) => r.left));
-  const lastRight = Math.max(...buttons.map((r) => r.right));
-  const barCenterY = barRect.top + barRect.height / 2;
-  // `anchor.top` est la hauteur du bouton « retour en haut » : la frame en
-  // déduit le centre de la tête avec `top - DOCK_GAP - headH / 2`.
-  const top = barCenterY + DOCK_GAP + headH / 2;
+  const vh = document.documentElement.clientHeight;
+  if (vw >= 640) return fallback();
 
-  // La barre est CENTRÉE dans son enveloppe pleine largeur : le placement
-  // disponible est entre son bord et le bord de l'écran, pas dans la barre.
-  const zones = [
-    { from: Math.max(lastRight, barRect.right) + margin, to: vw - margin },
-    { from: margin, to: Math.max(0, Math.min(firstLeft, barRect.left)) - margin },
-  ];
-  for (const zone of zones) {
-    if (zone.to - zone.from >= minRoom) {
-      return { cx: (zone.from + zone.to) / 2, top };
+  let cx: number;
+  let cy: number;
+  let half: number;
+
+  const cookie = document.querySelector<HTMLElement>(
+    'button[aria-label="Gérer les cookies & vie privée"]'
+  );
+  const rect = cookie?.getBoundingClientRect();
+  if (rect && rect.width > 0 && rect.height > 0) {
+    cx = vw - (rect.left + rect.width / 2);
+    cy = rect.top + rect.height / 2;
+    half = rect.width / 2;
+  } else {
+    if (!cookieProbeCache || cookieProbeCache.vw !== vw || cookieProbeCache.vh !== vh) {
+      const probe = document.createElement('div');
+      probe.style.cssText =
+        'position:fixed;bottom:max(1rem,env(safe-area-inset-bottom));right:1rem;' +
+        'width:2.75rem;height:2.75rem;visibility:hidden;pointer-events:none;';
+      document.body.appendChild(probe);
+      const r = probe.getBoundingClientRect();
+      probe.remove();
+      cookieProbeCache =
+        r.width > 0 && r.height > 0
+          ? {
+              vw,
+              vh,
+              cx: vw - (r.left + r.width / 2),
+              cy: r.top + r.height / 2,
+              half: r.width / 2,
+            }
+          : null;
     }
+    if (!cookieProbeCache) return fallback();
+    ({ cx, cy, half } = cookieProbeCache);
   }
-  return fallback();
+
+  // `anchor.top` est la hauteur du bouton « retour en haut » : la frame en
+  // déduit le centre de la tête avec `top - DOCK_GAP - headH / 2`. On compense
+  // ce décalage pour que le centre de la tête tombe exactement sur `cy`.
+  const top = cy + DOCK_GAP + headH / 2;
+  return {
+    cx: clamp(cx, half + 4, vw - half - 4),
+    top,
+  };
 }
 
 /* -------------------------------------------------------------------------- */
@@ -301,9 +323,9 @@ interface PixiaGlobalAnimationProps {
    *  une barre d'onglets fixe (application mobile). Sans effet sur `/web`, où
    *  l'icône reste ancrée sur `#back-to-top-btn`. */
   dockBottomInset?: number;
-  /** Sélecteur de la barre d'onglets mobile : quand il est fourni et qu'il
-   *  reste de la place à côté des onglets, la tête dockée descend DANS le menu
-   *  au lieu de flotter au-dessus. Jamais transmis sur `/web` ni sur desktop. */
+  /** Présence de la barre d'onglets mobile : quand elle est fournie (via son
+   *  sélecteur), la tête dockée prend la position du bouton cookies flottant
+   *  en miroir, à droite. Jamais transmis sur `/web` ni sur desktop. */
   dockBarSelector?: string;
   /** Masque temporairement la mascotte (Configuration Guidée) sans démonter
    *  le composant : le relais reste actif, donc aucun ancien robot ne réapparaît
@@ -464,10 +486,12 @@ export function PixiaGlobalAnimation({
     const curY = dragRect.top + dragRect.height / 2;
 
     /* --- Cible RÉELLE : centre du contenu de l'icône. Sur l'application
-       mobile, elle descend dans l'espace libre du menu bas ; sinon elle reste
-       au-dessus du bouton « retour en haut ». --- */
+       mobile, elle prend la place du bouton cookies (en miroir, à droite) ;
+       sinon elle reste au-dessus du bouton « retour en haut ». --- */
     const headH = ICON_HEAD_H * D;
-    const anchor = readMenuAnchor(dockBottomInset, dockBarSelector, headH);
+    const anchor = dockBarSelector
+      ? readCookieMirrorAnchor(dockBottomInset, headH)
+      : readBackToTop(dockBottomInset);
     // Jamais coupée par un bord (zoom, petite fenêtre, barre de défilement) :
     // on borne le centre de la tête à l'intérieur de la zone visible.
     const headX = clamp(anchor.cx, D / 2 + 4, Math.max(D / 2 + 4, vw - D / 2 - 4));

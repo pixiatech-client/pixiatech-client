@@ -324,14 +324,14 @@ export const ProductDatasheetPdfDocument: React.FC<ProductDatasheetPdfDocumentPr
             {/* Médias & Visuels Aperçu */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '10px' }}>
               <div style={{ border: '1px solid #e5e5e5', borderRadius: '3px', overflow: 'hidden', backgroundColor: '#fcfcfc' }}>
-                <div style={{ height: '115px', backgroundColor: '#0c0c0c', position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ height: '125px', backgroundColor: '#090909', position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {photoOverview ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={photoOverview}
                       alt={productName}
                       crossOrigin="anonymous"
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                     />
                   ) : (
                     <span style={{ fontSize: '8.5px', color: '#666666', letterSpacing: '0.1em' }}>VISUEL PRINCIPAL PRODUIT</span>
@@ -376,7 +376,7 @@ export const ProductDatasheetPdfDocument: React.FC<ProductDatasheetPdfDocumentPr
           </div>
 
           {/* Section 02 : CONCEPTION & FORMAT (Début) */}
-          <div style={{ marginTop: '18px', paddingTop: '14px', borderTop: '1px dashed #dcdcd8' }}>
+          <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px dashed #dcdcd8' }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
               <div style={{ fontSize: '24px', fontWeight: 900, lineHeight: 1, color: '#111111' }}>
                 02
@@ -405,17 +405,17 @@ export const ProductDatasheetPdfDocument: React.FC<ProductDatasheetPdfDocumentPr
               ))}
             </div>
 
-            {/* Visuels techniques & Configurations d'installation (intégrés sur Page 1 pour structurer et combler l'espace) */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '12px' }}>
+            {/* Visuel technique Châssis CNC Monobloc & Configurations (Aéré, plein format sans superposition) */}
+            <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: '12px', marginTop: '10px' }}>
               <div style={{ border: '1px solid #e5e5e5', borderRadius: '3px', overflow: 'hidden', backgroundColor: '#fcfcfc' }}>
-                <div style={{ height: '110px', backgroundColor: '#0c0c0c', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ height: '120px', backgroundColor: '#090909', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {photoDesign ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={photoDesign}
                       alt="Usinage châssis"
                       crossOrigin="anonymous"
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                     />
                   ) : (
                     <span style={{ fontSize: '8.5px', color: '#666666' }}>VISUEL CHÂSSIS & USINAGE CNC</span>
@@ -427,32 +427,46 @@ export const ProductDatasheetPdfDocument: React.FC<ProductDatasheetPdfDocumentPr
                 </div>
               </div>
 
-              {/* Configurations d'installation */}
-              <div>
-                <div style={{ fontSize: '7.8px', fontWeight: 800, letterSpacing: '0.12em', color: '#555555', textTransform: 'uppercase', marginBottom: '6px' }}>
+              {/* Configurations d'installation : 3 cartes bien aérées */}
+              <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div style={{ fontSize: '7.8px', fontWeight: 800, letterSpacing: '0.12em', color: '#555555', textTransform: 'uppercase', marginBottom: '4px' }}>
                   CONFIGURATIONS D’INSTALLATION
                 </div>
-                {configs.map((c, idx) => (
-                  <div key={idx} style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', marginBottom: '7px' }}>
-                    <span
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {configs.map((c, idx) => (
+                    <div
+                      key={idx}
                       style={{
-                        fontSize: '8px',
-                        fontWeight: 900,
-                        backgroundColor: '#111111',
-                        color: '#ffffff',
-                        padding: '2px 5px',
-                        borderRadius: '2px',
-                        lineHeight: 1,
+                        display: 'flex',
+                        gap: '8px',
+                        alignItems: 'flex-start',
+                        backgroundColor: '#fafaf9',
+                        border: '1px solid #e9e9e7',
+                        padding: '6px 8px',
+                        borderRadius: '3px',
                       }}
                     >
-                      {c.num}
-                    </span>
-                    <div>
-                      <div style={{ fontSize: '8.2px', fontWeight: 800, color: '#000000' }}>{c.title}</div>
-                      <div style={{ fontSize: '7.2px', color: '#555555', lineHeight: '1.25' }}>{c.description}</div>
+                      <span
+                        style={{
+                          fontSize: '8px',
+                          fontWeight: 900,
+                          backgroundColor: '#111111',
+                          color: '#ffffff',
+                          padding: '2px 5px',
+                          borderRadius: '2px',
+                          lineHeight: 1,
+                          flexShrink: 0,
+                        }}
+                      >
+                        {c.num}
+                      </span>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: '8px', fontWeight: 800, color: '#000000' }}>{c.title}</div>
+                        <div style={{ fontSize: '7px', color: '#555555', lineHeight: '1.3' }}>{c.description}</div>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
           </div>

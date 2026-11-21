@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { useState, useEffect, useCallback, useRef, useLayoutEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Star, ShoppingBag, Store, Minus, Plus, Copy, CalendarDays, FileText, Download, Play, Maximize2, Monitor, Cpu, Zap, Eye, LayoutGrid, Sun, Truck, Layers, Settings2, X, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Info, User, Mail, Phone, Building2, Calculator, Package, Activity, Smartphone, Tv, Grid, Maximize, SunMedium, Upload, File, Folder, Image as ImageIcon, Video, Music, Printer, Bluetooth, Wifi, Tablet, Laptop, Mouse, Keyboard, Headphones, Speaker, Mic, Camera, Settings, Heart, Bell, Home, Search, MessageSquare, Calendar, Clock, MapPin, Globe, Lock, HelpCircle, AlertTriangle, CheckCircle, XCircle, Edit, Trash2, Share2, Link as LinkIcon, Gift, ShieldCheck, CreditCard, Award, BookOpen, ShoppingCart, Users, RefreshCw, Menu, Send, Navigation, ZoomIn, ZoomOut, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCart } from '@/contexts/CartContext';
@@ -281,10 +281,6 @@ export default function ProductDetailPage() {
   const [comboboxOpen2, setComboboxOpen2] = useState(false);
   const [dropdownRect1, setDropdownRect1] = useState<DOMRect | null>(null);
   const [dropdownRect2, setDropdownRect2] = useState<DOMRect | null>(null);
-  const variantWrapRef1 = useRef<HTMLDivElement>(null);
-  const variantWrapRef2 = useRef<HTMLDivElement>(null);
-  const [variantOverflow1, setVariantOverflow1] = useState(false);
-  const [variantOverflow2, setVariantOverflow2] = useState(false);
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (comboboxRef1.current && !comboboxRef1.current.contains(e.target as Node)) setComboboxOpen1(false);
@@ -293,25 +289,6 @@ export default function ProductDetailPage() {
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
-  useLayoutEffect(() => {
-    const checkWrap = (el: HTMLDivElement) => {
-      const children = Array.from(el.children) as HTMLElement[];
-      if (children.length < 2) return false;
-      const firstTop = children[0].offsetTop;
-      return children.some(c => c.offsetTop > firstTop);
-    };
-    const el1 = variantWrapRef1.current;
-    const el2 = variantWrapRef2.current;
-    if (el1) setVariantOverflow1(checkWrap(el1));
-    if (el2) setVariantOverflow2(checkWrap(el2));
-    const ro = new ResizeObserver(() => {
-      if (el1) setVariantOverflow1(checkWrap(el1));
-      if (el2) setVariantOverflow2(checkWrap(el2));
-    });
-    if (el1) ro.observe(el1);
-    if (el2) ro.observe(el2);
-    return () => ro.disconnect();
-  });
 
   useEffect(() => {
     if (selectedMedia < thumbStart) {
@@ -458,6 +435,10 @@ export default function ProductDetailPage() {
   const effectiveOldPrice = product?.oldPrice && (!selectedVariant || selectedVariant.price < product.oldPrice) ? product.oldPrice : undefined;
   const displayVariants = (product?.variants || []).filter(v => v.active && v.name);
   const hasVariants = displayVariants.length > 0;
+  // Jusqu'à 6 variantes actives, on affiche toutes les variantes sous forme de
+  // boutons. À partir de la 7e, on bascule automatiquement en liste déroulante.
+  const MAX_VARIANT_BUTTONS = 6;
+  const useVariantDropdown = displayVariants.length > MAX_VARIANT_BUTTONS;
   const availableRentalStock = normalizeStockQuantity(product?.rentalStock ?? product?.stock ?? null);
   const availableSaleStock = hasVariants
     ? effectiveVariantStock(selectedVariant ?? null, product?.stock)
@@ -1295,7 +1276,7 @@ export default function ProductDetailPage() {
             </section>
 
             {/* Mobile purchase info */}
-            <div className="lg:hidden flex flex-col mb-6 bg-[#F8FAFC]">
+            <div className="lg:hidden flex flex-col mt-6 mb-6 bg-[#F8FAFC]">
               <span className="text-xs font-bold uppercase tracking-widest text-blue-500 mb-2">{product.category}</span>
               <h1 className="text-xl font-bold text-gray-900 mb-2">{product.name}</h1>
               {product.description && product.description.length <= 60 && (
@@ -1381,7 +1362,7 @@ export default function ProductDetailPage() {
               </div>
               {displayVariants.length > 0 && (
                 <div className="mb-4">
-                  {variantOverflow1 ? (
+                  {useVariantDropdown ? (
                     <div ref={comboboxRef1}>
                       <button
                         ref={comboboxBtn1Ref}
@@ -1434,7 +1415,7 @@ export default function ProductDetailPage() {
                       )}
                     </div>
                   ) : (
-                    <div ref={variantWrapRef1} className="flex flex-col lg:flex-row lg:flex-wrap gap-2">
+                    <div className="flex flex-col lg:flex-row lg:flex-wrap gap-2">
                       {displayVariants.map((v, vIdx) => (
                         <button key={`${v.name}-${vIdx}`}
                           onMouseEnter={() => setHoveredVariant(v)}
@@ -1448,37 +1429,6 @@ export default function ProductDetailPage() {
                   )}
                 </div>
               )}
-
-              <section>
-                <div>
-                  <div className="p-8 pb-0 flex items-center justify-between mb-8">
-                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-[0.3em] flex items-center gap-3">
-                      <Settings2 size={16} className="text-slate-400" />
-                      {t('product.technicalSpecs')}
-                    </h4>
-                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_12px_rgba(34,197,94,0.6)]" />
-                  </div>
-                  <div className="p-8 pt-0 grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-8">
-                    {Object.entries(product.specs).map(([key, value], idx) => {
-                      const mapping = specIcons[key.toLowerCase()];
-                      const Icon = mapping?.icon || Settings2;
-                      const colorKey = mapping?.color || specColors[idx % specColors.length];
-                      const colors = colorClasses[colorKey];
-                      return (
-                        <div key={key} className="flex items-center gap-4 group">
-                          <div className={`w-12 h-12 rounded-2xl ${colors.bg} flex items-center justify-center ${colors.text} transition-all duration-500 group-hover:scale-110 shadow-sm border border-slate-200`}>
-                            <Icon size={16} />
-                          </div>
-                          <div className="flex flex-col">
-                            <div className="text-[10px] text-slate-400 uppercase font-black tracking-widest mb-0.5">{key}</div>
-                            <div className="text-sm font-display font-black text-slate-800 uppercase tracking-tight">{value}</div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </section>
 
               <div className="flex flex-col gap-3 min-w-0">
               {!canQuote && !canRent && (
@@ -1591,6 +1541,39 @@ export default function ProductDetailPage() {
               )}
               </div>
               </div>
+
+              {/* Caractéristiques techniques : placées sous les boutons d'action
+                  (Ajouter / Louer) pour faire remonter le bouton « Location ». */}
+              <section>
+                <div>
+                  <div className="p-8 pb-0 flex items-center justify-between mb-8">
+                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-[0.3em] flex items-center gap-3">
+                      <Settings2 size={16} className="text-slate-400" />
+                      {t('product.technicalSpecs')}
+                    </h4>
+                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_12px_rgba(34,197,94,0.6)]" />
+                  </div>
+                  <div className="p-8 pt-0 grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-8">
+                    {Object.entries(product.specs).map(([key, value], idx) => {
+                      const mapping = specIcons[key.toLowerCase()];
+                      const Icon = mapping?.icon || Settings2;
+                      const colorKey = mapping?.color || specColors[idx % specColors.length];
+                      const colors = colorClasses[colorKey];
+                      return (
+                        <div key={key} className="flex items-center gap-4 group">
+                          <div className={`w-12 h-12 rounded-2xl ${colors.bg} flex items-center justify-center ${colors.text} transition-all duration-500 group-hover:scale-110 shadow-sm border border-slate-200`}>
+                            <Icon size={16} />
+                          </div>
+                          <div className="flex flex-col">
+                            <div className="text-[10px] text-slate-400 uppercase font-black tracking-widest mb-0.5">{key}</div>
+                            <div className="text-sm font-display font-black text-slate-800 uppercase tracking-tight">{value}</div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </section>
             </div>
 
             <div className="mt-28 border-t border-gray-200/40 pt-16 space-y-24">
@@ -1751,7 +1734,7 @@ export default function ProductDetailPage() {
             {/* Variants */}
             {displayVariants.length > 0 && (
               <div className="space-y-3 mb-4">
-                {variantOverflow2 ? (
+                {useVariantDropdown ? (
                   <div ref={comboboxRef2}>
                     <button
                       ref={comboboxBtn2Ref}
@@ -1804,7 +1787,7 @@ export default function ProductDetailPage() {
                     )}
                   </div>
                 ) : (
-                  <div ref={variantWrapRef2} className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2">
                     {displayVariants.map((v, vIdx) => (
                       <button
                         key={`${v.name}-${vIdx}`}
