@@ -34,6 +34,10 @@ export interface BottomSheetProps {
   dismissible?: boolean;
   /** Hauteur max : 92dvh par défaut (≈ 95 % sur les petits écrans). */
   maxHeight?: string;
+  /** Décalage bas optionnel (safe area / barre navigateur). */
+  bottomOffset?: string;
+  /** Hauteur minimale optionnelle, plafonnée par maxHeight. */
+  minHeight?: string;
   tone?: 'light' | 'dark';
   ariaLabel?: string;
 }
@@ -58,6 +62,8 @@ export function MobileBottomSheet({
   showHandle = true,
   dismissible = true,
   maxHeight = '92dvh',
+  bottomOffset,
+  minHeight,
   tone = 'light',
   ariaLabel,
 }: BottomSheetProps) {
@@ -178,7 +184,7 @@ export function MobileBottomSheet({
                 ? { duration: 0.15 }
                 : { type: 'spring', damping: 28, stiffness: 280, mass: 0.9 }
             }
-            style={{ maxHeight, overscrollBehavior: 'contain' }}
+            style={{ maxHeight, minHeight, bottom: bottomOffset, overscrollBehavior: 'contain' }}
             className={cn(
               'fixed inset-x-0 bottom-0 z-[1200] flex w-full flex-col overflow-hidden rounded-t-[28px] shadow-[0_-12px_48px_rgba(0,0,0,0.35)] outline-none',
               'border-t',
@@ -330,6 +336,7 @@ function OptionRows({
   multiple,
   onToggle,
   tone,
+  compact = false,
   emptyLabel = 'Aucune option disponible',
 }: {
   options: BottomSheetOption[];
@@ -337,6 +344,7 @@ function OptionRows({
   multiple: boolean;
   onToggle: (value: string) => void;
   tone: 'light' | 'dark';
+  compact?: boolean;
   emptyLabel?: string;
 }) {
   const isDark = tone === 'dark';
@@ -348,7 +356,11 @@ function OptionRows({
     );
   }
   return (
-    <div role="listbox" aria-multiselectable={multiple || undefined} className="space-y-2">
+    <div
+      role="listbox"
+      aria-multiselectable={multiple || undefined}
+      className={cn('space-y-2', compact && 'space-y-1')}
+    >
       {options.map((option) => {
         const active = selected.includes(option.value);
         return (
@@ -361,7 +373,10 @@ function OptionRows({
             disabled={option.disabled}
             onClick={() => onToggle(option.value)}
             className={cn(
-              'flex min-h-[52px] w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left transition-colors',
+              'flex w-full items-center rounded-2xl border text-left transition-colors',
+              compact
+                ? 'min-h-[46px] gap-2 px-3 py-2'
+                : 'min-h-[52px] gap-3 px-4 py-3',
               option.disabled
                 ? 'cursor-not-allowed opacity-40'
                 : 'cursor-pointer active:scale-[0.99]',
@@ -376,11 +391,14 @@ function OptionRows({
           >
             {option.icon && <span className="shrink-0">{option.icon}</span>}
             <span className="min-w-0 flex-1">
-              <span className="block truncate text-sm font-semibold">{option.label}</span>
+              <span className={cn('block truncate font-semibold', compact ? 'text-[13px]' : 'text-sm')}>
+                {option.label}
+              </span>
               {option.description && (
                 <span
                   className={cn(
-                    'mt-0.5 block truncate text-xs',
+                    'mt-0.5 block truncate',
+                    compact ? 'text-[11px]' : 'text-xs',
                     isDark ? 'text-white/50' : 'text-gray-500',
                   )}
                 >
@@ -392,7 +410,8 @@ function OptionRows({
             <span
               aria-hidden="true"
               className={cn(
-                'flex h-6 w-6 shrink-0 items-center justify-center border',
+                'flex shrink-0 items-center justify-center border',
+                compact ? 'h-5 w-5' : 'h-6 w-6',
                 multiple ? 'rounded-md' : 'rounded-full',
                 active
                   ? 'border-[color:var(--ui-accent)] bg-[color:var(--ui-accent)] text-black'
@@ -401,7 +420,7 @@ function OptionRows({
                     : 'border-gray-300',
               )}
             >
-              {active && <Check className="h-4 w-4" strokeWidth={3} />}
+              {active && <Check className={compact ? 'h-3.5 w-3.5' : 'h-4 w-4'} strokeWidth={3} />}
             </span>
           </button>
         );

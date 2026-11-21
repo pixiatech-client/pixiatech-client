@@ -448,12 +448,12 @@ export default function ProductDetailPage() {
     searchText: variant.name,
     description: variant.reference || undefined,
     icon: (
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gray-100 text-[11px] font-black uppercase text-gray-500">
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-[10px] font-black uppercase text-gray-500">
         {variant.name?.charAt(0)}
       </span>
     ),
     badge: variant.price > 0 ? (
-      <span className="shrink-0 text-xs font-bold text-gray-700">{formatPrice(variant.price)}</span>
+      <span className="shrink-0 text-[11px] font-bold text-gray-700">{formatPrice(variant.price)}</span>
     ) : undefined,
   }));
   const selectedVariantValue = selectedVariant
@@ -1397,12 +1397,18 @@ export default function ProductDetailPage() {
                       open={variantSheetOpen}
                       onClose={() => setVariantSheetOpen(false)}
                       title={t('product.chooseVariant')}
+                      maxHeight="calc(100svh - env(safe-area-inset-bottom, 0px) - 1rem)"
+                      bottomOffset="env(safe-area-inset-bottom, 0px)"
+                      minHeight="min(360px, calc(100svh - env(safe-area-inset-bottom, 0px) - 1rem))"
+                      className="pb-3"
+                      contentClassName="pb-3"
                     >
                       <BottomSheetOptionRows
                         options={variantOptions}
                         selected={selectedVariantValue ? [selectedVariantValue] : []}
                         multiple={false}
                         tone="light"
+                        compact
                         onToggle={(value) => {
                           const idx = Number(value.split('-').pop());
                           const variant = displayVariants[idx];
@@ -1527,6 +1533,21 @@ export default function ProductDetailPage() {
               )}
               </div>
               </div>
+
+              {/* Message TVA — visible uniquement sur mobile (bloc lg:hidden) */}
+              {vatMessageEnabled && (() => {
+                const s = VAT_MESSAGE_STYLES[vatMessageColor] ?? VAT_MESSAGE_STYLES.orange;
+                return (
+                  <div className={`mt-3 flex items-start gap-2.5 px-3 py-2.5 ${s.container} rounded-xl`}>
+                    <svg className={`w-4 h-4 ${s.icon} shrink-0 mt-0.5`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <path d="M12 16v-4"></path>
+                      <path d="M12 8h.01"></path>
+                    </svg>
+                    <p className={`text-[11px] ${s.text} leading-relaxed`}>{vatMessage}</p>
+                  </div>
+                );
+              })()}
 
               {/* Caractéristiques techniques : placées sous les boutons d'action
                   (Ajouter / Louer) pour faire remonter le bouton « Location ». */}
