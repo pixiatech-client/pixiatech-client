@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useMediaQuery } from 'usehooks-ts';
 
 import './layout-selector.css';
 
@@ -9,13 +10,17 @@ export type LayoutMode = 1 | 2 | 3 | 4;
 interface LayoutSelectorProps {
   value?: LayoutMode;
   onChange?: (value: LayoutMode) => void;
+  isMobile?: boolean;
 }
 
 export default function LayoutSelector({
   value: controlledValue,
   onChange,
+  isMobile: isMobileProp,
 }: LayoutSelectorProps) {
   const [internalValue, setInternalValue] = useState<LayoutMode>(3);
+  const isMobileMedia = useMediaQuery('(max-width: 767px)');
+  const isMobile = isMobileProp ?? isMobileMedia;
 
   const value = controlledValue ?? internalValue;
 
@@ -28,7 +33,21 @@ export default function LayoutSelector({
   };
 
   const handleClick = () => {
-    const next = value === 4 ? 1 : ((value + 1) as LayoutMode);
+    let next: LayoutMode;
+    if (isMobile) {
+      // Sur mobile : 3 choix uniquement (1 colonne -> 2 colonnes -> ligne/liste -> 1 colonne)
+      // On saute la vue 3 colonnes qui est inadaptée aux petits écrans
+      if (value === 1) {
+        next = 2;
+      } else if (value === 2) {
+        next = 4;
+      } else {
+        next = 1;
+      }
+    } else {
+      // Sur PC / Desktop : les 4 choix complets (1 -> 2 -> 3 -> 4 -> 1)
+      next = value === 4 ? 1 : ((value + 1) as LayoutMode);
+    }
     changeLayout(next);
   };
 

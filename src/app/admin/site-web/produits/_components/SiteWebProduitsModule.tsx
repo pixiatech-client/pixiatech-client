@@ -908,46 +908,62 @@ function ProductList({
    */
   const [statusPending, setStatusPending] = useState<Record<string, boolean>>({});
   const [unpublishAsk, setUnpublishAsk] = useState<string | null>(null);
-  const [pdfProgress, setPdfProgress] = useState<{
-    slug: string;
-    percent: number;
-    step: string;
-    status: 'starting' | 'rendering' | 'compiling' | 'completed' | 'error';
-  } | null>(null);
+  /** Suivi de la progression PDF par slug de produit (supporte plusieurs téléchargements simultanés) */
+  const [pdfProgressMap, setPdfProgressMap] = useState<
+    Record<
+      string,
+      {
+        percent: number;
+        step: string;
+        status: 'starting' | 'rendering' | 'compiling' | 'completed' | 'error';
+      }
+    >
+  >({});
 
   const handleDownloadPdf = async (product: Product) => {
+    if (pdfProgressMap[product.slug]) return;
     try {
-      setPdfProgress({
-        slug: product.slug,
-        percent: 5,
-        step: 'Initialisation…',
-        status: 'starting',
-      });
+      setPdfProgressMap((prev) => ({
+        ...prev,
+        [product.slug]: {
+          percent: 5,
+          step: 'Initialisation…',
+          status: 'starting',
+        },
+      }));
       const { exportProductToPdf } = await import('@/lib/products/export-product-pdf');
       await exportProductToPdf(product, {
         lang: 'FR',
         onProgress: (p) => {
-          setPdfProgress({
-            slug: product.slug,
-            percent: p.percent,
-            step: p.step,
-            status: p.status,
-          });
+          setPdfProgressMap((prev) => ({
+            ...prev,
+            [product.slug]: {
+              percent: p.percent,
+              step: p.step,
+              status: p.status,
+            },
+          }));
         },
       });
       // Maintien du statut 100% "Fiche complète !" pour une confirmation visuelle claire
-      setPdfProgress({
-        slug: product.slug,
-        percent: 100,
-        step: 'Fiche complète !',
-        status: 'completed',
-      });
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      setPdfProgressMap((prev) => ({
+        ...prev,
+        [product.slug]: {
+          percent: 100,
+          step: 'Fiche complète !',
+          status: 'completed',
+        },
+      }));
+      await new Promise((resolve) => setTimeout(resolve, 2500));
     } catch (err) {
       console.error('Erreur export PDF:', err);
-      toast.error('Erreur lors du téléchargement de la fiche technique PDF');
+      toast.error(`Erreur lors du téléchargement de la fiche technique PDF (${product.name})`);
     } finally {
-      setPdfProgress(null);
+      setPdfProgressMap((prev) => {
+        const next = { ...prev };
+        delete next[product.slug];
+        return next;
+      });
     }
   };
 
@@ -1328,10 +1344,10 @@ return (
       ) : (
         <div className="bg-white dark:bg-zinc-900 border border-neutral-200/80 dark:border-white/10 rounded-3xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
+            <table className="w-full text-left border-collapse text-xs table-fixed min-w-[950px]">
               <thead>
                 <tr className="bg-neutral-50 dark:bg-white/[0.02] border-b border-neutral-200 dark:border-white/10 font-mono text-neutral-500 uppercase tracking-wider text-[11px]">
-                  <th className="p-4 w-10">
+                  <th className="p-4 w-12 shrink-0">
                     <SelectBox
                       checked={allVisibleSelected}
                       indeterminate={someVisibleSelected}
@@ -1343,10 +1359,10 @@ return (
                       }
                     />
                   </th>
-                  <th className="p-4">Photo</th>
-                  <th className="p-4">Nom</th>
-                  <th className="p-4">Statut</th>
-                  <th className="p-4 text-right">Actions</th>
+                  <th className="p-4 w-20 shrink-0">Photo</th>
+                  <th className="p-4 min-w-[200px]">Nom</th>
+                  <th className="p-4 w-44 shrink-0 text-center">Statut</th>
+                  <th className="p-4 w-[380px] shrink-0 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-100 dark:divide-white/5">
@@ -1393,7 +1409,7 @@ return (
                             : 'hover:bg-neutral-50/90 dark:hover:bg-white/[0.02]'
                         }`}
                       >
-                        <td className="p-4">
+                        <td className="p-4 w-12 shrink-0">
                           <SelectBox
                             checked={Boolean(selected[p.slug])}
                             onChange={() => toggleOne(p.slug)}
@@ -1405,7 +1421,7 @@ return (
                             }
                           />
                         </td>
-                        <td className="p-4">
+                        <td className="p-4 w-20 shrink-0">
                           {photo ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img
@@ -1419,7 +1435,7 @@ return (
                             </div>
                           )}
                         </td>
-                        <td className="p-4">
+                        <td className="p-4 min-w-[200px]">
                           <div className="flex items-center gap-2 flex-wrap">
                             <div className="font-extrabold text-neutral-900 dark:text-white text-xs">{p.name}</div>
                             {isTemplate && (
@@ -1434,7 +1450,7 @@ return (
                           </div>
                           <div className="text-[11px] text-neutral-400 font-mono mt-0.5">/web/product/{p.slug}</div>
                         </td>
-                        <td className="p-4">
+                        <td className="p-4 w-44 shrink-0 text-center">
                           {/* Le statut EST l'action : un brouillon affiche un
                               bouton « Publier » plein et contrasté ; un produit
                               en ligne affiche « Publié » avec la coche, et un
@@ -1450,7 +1466,7 @@ return (
                               // reste en ligne tant que l'admin n'a pas confirmé.
                               if (unpublishAsk === p.slug) {
                                 return (
-                                  <div className="flex flex-col gap-1.5">
+                                  <div className="flex flex-col gap-1.5 items-center">
                                     <div className="flex items-center gap-1.5">
                                       <button
                                         type="button"
@@ -1507,27 +1523,27 @@ return (
                             );
                           })()}
                         </td>
-                        <td className="p-4 text-right">
+                        <td className="p-4 w-[380px] shrink-0 text-right">
                           <div className="inline-flex items-center justify-end gap-2.5">
-                            {/* Barre de progression segmentée haute technologie (conforme modèle) */}
-                            {pdfProgress && pdfProgress.slug === p.slug && (
+                            {/* Barre de progression segmentée individuelle pour ce produit */}
+                            {pdfProgressMap[p.slug] && (
                               <CyberProgressBar
-                                percent={pdfProgress.percent}
-                                step={pdfProgress.step}
-                                status={pdfProgress.status}
-                                barsCount={38}
+                                percent={pdfProgressMap[p.slug].percent}
+                                step={pdfProgressMap[p.slug].step}
+                                status={pdfProgressMap[p.slug].status}
+                                barsCount={30}
                               />
                             )}
 
                             <button
                               type="button"
                               onClick={() => void handleDownloadPdf(p)}
-                              disabled={Boolean(pdfProgress && pdfProgress.slug === p.slug)}
-                              className="p-2 rounded-xl text-neutral-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-500/10 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-wait"
+                              disabled={Boolean(pdfProgressMap[p.slug])}
+                              className="p-2 rounded-xl text-neutral-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-500/10 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-wait shrink-0"
                               title="Télécharger la fiche technique PDF"
                               aria-label={`Télécharger la fiche technique PDF de « ${p.name} »`}
                             >
-                              {pdfProgress && pdfProgress.slug === p.slug ? (
+                              {pdfProgressMap[p.slug] ? (
                                 <Loader2 className="w-4 h-4 animate-spin text-[#ff552e]" />
                               ) : (
                                 <FileDown className="w-4 h-4" />

@@ -17,6 +17,8 @@ import { DEFAULT_COUNTRY_OPTIONS } from '@/lib/customer-form-utils';
 import LiquidLoader from '@/components/LiquidLoader';
 import { useProfile } from '@/contexts/ProfileContext';
 import { useI18n } from '@/lib/i18n';
+import { BottomSheetOptionRows, MobileBottomSheet, type BottomSheetOption } from '@/components/ui/bottom-sheet';
+import { useIsMobile } from '@/hooks/use-mobile';
 import QRCode from 'qrcode';
 
 const ICON_MAP: Record<string, any> = {
@@ -273,17 +275,14 @@ export default function ProductDetailPage() {
   const [budgetOpen, setBudgetOpen] = useState(false);
   const [hoveredVariant, setHoveredVariant] = useState<ProductVariant | null>(null);
   const committedVariantRef = useRef<ProductVariant | null>(null);
-  const comboboxRef1 = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
+  const [variantSheetOpen, setVariantSheetOpen] = useState(false);
   const comboboxRef2 = useRef<HTMLDivElement>(null);
-  const comboboxBtn1Ref = useRef<HTMLButtonElement>(null);
   const comboboxBtn2Ref = useRef<HTMLButtonElement>(null);
-  const [comboboxOpen1, setComboboxOpen1] = useState(false);
   const [comboboxOpen2, setComboboxOpen2] = useState(false);
-  const [dropdownRect1, setDropdownRect1] = useState<DOMRect | null>(null);
   const [dropdownRect2, setDropdownRect2] = useState<DOMRect | null>(null);
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (comboboxRef1.current && !comboboxRef1.current.contains(e.target as Node)) setComboboxOpen1(false);
       if (comboboxRef2.current && !comboboxRef2.current.contains(e.target as Node)) setComboboxOpen2(false);
     };
     document.addEventListener('mousedown', handler);
@@ -435,10 +434,31 @@ export default function ProductDetailPage() {
   const effectiveOldPrice = product?.oldPrice && (!selectedVariant || selectedVariant.price < product.oldPrice) ? product.oldPrice : undefined;
   const displayVariants = (product?.variants || []).filter(v => v.active && v.name);
   const hasVariants = displayVariants.length > 0;
-  // Jusqu'à 6 variantes actives, on affiche toutes les variantes sous forme de
-  // boutons. À partir de la 7e, on bascule automatiquement en liste déroulante.
-  const MAX_VARIANT_BUTTONS = 6;
-  const useVariantDropdown = displayVariants.length > MAX_VARIANT_BUTTONS;
+
+  const selectVariant = (variant: ProductVariant) => {
+    setSelectedVariant(variant);
+    committedVariantRef.current = variant;
+    const imgIdx = mediaItems.findIndex(m => m.type === 'image' && m.url === variant.image);
+    if (imgIdx >= 0) setSelectedMedia(imgIdx);
+  };
+
+  const variantOptions: BottomSheetOption[] = displayVariants.map((variant, idx) => ({
+    value: `${variant.name}-${idx}`,
+    label: variant.name,
+    searchText: variant.name,
+    description: variant.reference || undefined,
+    icon: (
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gray-100 text-[11px] font-black uppercase text-gray-500">
+        {variant.name?.charAt(0)}
+      </span>
+    ),
+    badge: variant.price > 0 ? (
+      <span className="shrink-0 text-xs font-bold text-gray-700">{formatPrice(variant.price)}</span>
+    ) : undefined,
+  }));
+  const selectedVariantValue = selectedVariant
+    ? `${selectedVariant.name}-${displayVariants.indexOf(selectedVariant)}`
+    : '';
   const availableRentalStock = normalizeStockQuantity(product?.rentalStock ?? product?.stock ?? null);
   const availableSaleStock = hasVariants
     ? effectiveVariantStock(selectedVariant ?? null, product?.stock)
@@ -1362,70 +1382,36 @@ export default function ProductDetailPage() {
               </div>
               {displayVariants.length > 0 && (
                 <div className="mb-4">
-                  {useVariantDropdown ? (
-                    <div ref={comboboxRef1}>
-                      <button
-                        ref={comboboxBtn1Ref}
-                        onClick={() => {
-                          const rect = comboboxBtn1Ref.current?.getBoundingClientRect() ?? null;
-                          setDropdownRect1(rect);
-                          setComboboxOpen1(o => !o);
+                  <button
+                    type="button"
+                    onClick={() => setVariantSheetOpen(true)}
+                    aria-haspopup="listbox"
+                    aria-expanded={variantSheetOpen}
+                    className="inline-flex items-center justify-between w-full text-sm font-bold text-gray-600 bg-white border-2 border-gray-200 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-900 rounded-2xl px-4 py-3.5 transition-all"
+                  >
+                    <span>{selectedVariant?.name || t('product.chooseVariant')}</span>
+                    <ChevronDown size={16} className={`transition-transform duration-200 ${variantSheetOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
+                  </button>
+                  {isMobile && (
+                    <MobileBottomSheet
+                      open={variantSheetOpen}
+                      onClose={() => setVariantSheetOpen(false)}
+                      title={t('product.chooseVariant')}
+                    >
+                      <BottomSheetOptionRows
+                        options={variantOptions}
+                        selected={selectedVariantValue ? [selectedVariantValue] : []}
+                        multiple={false}
+                        tone="light"
+                        onToggle={(value) => {
+                          const idx = Number(value.split('-').pop());
+                          const variant = displayVariants[idx];
+                          if (!variant) return;
+                          selectVariant(variant);
+                          setVariantSheetOpen(false);
                         }}
-                        className="inline-flex items-center justify-between w-full text-sm font-bold text-gray-600 bg-white border-2 border-gray-200 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-900 rounded-2xl px-4 py-3.5 transition-all"
-                      >
-                        <span>{selectedVariant?.name || t('product.chooseVariant')}</span>
-                        <ChevronDown size={16} className={`transition-transform duration-200 ${comboboxOpen1 ? 'rotate-180' : ''}`} />
-                      </button>
-                      {comboboxOpen1 && dropdownRect1 && (
-                        <div
-                          className="bg-white border border-gray-200 rounded-2xl shadow-2xl overflow-y-auto"
-                          style={{
-                            position: 'fixed',
-                            zIndex: 9999,
-                            top: dropdownRect1.bottom + 6,
-                            left: dropdownRect1.left,
-                            width: dropdownRect1.width,
-                            maxHeight: 320,
-                            scrollbarWidth: 'thin',
-                            scrollbarColor: '#e5e7eb transparent',
-                          }}
-                        >
-                          <ul className="py-1">
-                            {displayVariants.map((v, vIdx) => (
-                              <li key={`${v.name}-${vIdx}`}>
-                                <button
-                                  onMouseEnter={() => { setHoveredVariant(v); setSelectedVariant(v); const imgIdx = mediaItems.findIndex(m => m.type === 'image' && m.url === v.image); if (imgIdx >= 0) setSelectedMedia(imgIdx); }}
-                                  onMouseLeave={() => setHoveredVariant(null)}
-                                  onClick={() => { setSelectedVariant(v); committedVariantRef.current = v; const imgIdx = mediaItems.findIndex(m => m.type === 'image' && m.url === v.image); if (imgIdx >= 0) setSelectedMedia(imgIdx); setComboboxOpen1(false); }}
-                                  className="inline-flex items-center justify-between w-full px-4 py-3 text-sm font-semibold text-gray-600 hover:bg-gray-900 hover:text-white transition-colors"
-                                >
-                                  <div className="flex items-center gap-3">
-                                    <div className="w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-bold uppercase shrink-0 bg-gray-100 text-gray-400">{v.name?.charAt(0)}</div>
-                                    <div className="text-left">
-                                      <div className="text-sm font-bold">{v.name}</div>
-                                      {v.reference && <div className="text-[10px] text-gray-400 font-mono">{v.reference}</div>}
-                                    </div>
-                                  </div>
-                                  {v.price > 0 && <div className="text-xs font-bold text-gray-600">{formatPrice(v.price)}</div>}
-                                </button>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="flex flex-col lg:flex-row lg:flex-wrap gap-2">
-                      {displayVariants.map((v, vIdx) => (
-                        <button key={`${v.name}-${vIdx}`}
-                          onMouseEnter={() => setHoveredVariant(v)}
-                          onMouseLeave={() => setHoveredVariant(null)}
-                          onClick={() => { setSelectedVariant(v); committedVariantRef.current = v; const imgIdx = mediaItems.findIndex(m => m.type === 'image' && m.url === v.image); if (imgIdx >= 0) setSelectedMedia(imgIdx); }}
-                          className={`w-full lg:w-auto lg:shrink-0 px-4 py-3 lg:py-2.5 text-sm font-bold rounded-2xl border-2 transition-all ${selectedVariant?.image === v.image ? 'border-gray-900 bg-gray-900 text-white shadow-md' : 'border-gray-200/70 text-gray-600 hover:border-gray-400 hover:shadow-sm'}`}>
-                          {v.name}
-                        </button>
-                      ))}
-                    </div>
+                      />
+                    </MobileBottomSheet>
                   )}
                 </div>
               )}
@@ -1734,78 +1720,57 @@ export default function ProductDetailPage() {
             {/* Variants */}
             {displayVariants.length > 0 && (
               <div className="space-y-3 mb-4">
-                {useVariantDropdown ? (
-                  <div ref={comboboxRef2}>
-                    <button
-                      ref={comboboxBtn2Ref}
-                      onClick={() => {
-                        const rect = comboboxBtn2Ref.current?.getBoundingClientRect() ?? null;
-                        setDropdownRect2(rect);
-                        setComboboxOpen2(o => !o);
+                <div ref={comboboxRef2}>
+                  <button
+                    ref={comboboxBtn2Ref}
+                    onClick={() => {
+                      const rect = comboboxBtn2Ref.current?.getBoundingClientRect() ?? null;
+                      setDropdownRect2(rect);
+                      setComboboxOpen2(o => !o);
+                    }}
+                    className="inline-flex items-center justify-between w-full text-sm font-bold text-gray-600 bg-white border-2 border-gray-200 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-900 rounded-2xl px-4 py-3.5 transition-all"
+                  >
+                    <span>{selectedVariant?.name || t('product.chooseVariant')}</span>
+                    <ChevronDown size={16} className={`transition-transform duration-200 ${comboboxOpen2 ? 'rotate-180' : ''}`} />
+                  </button>
+                  {comboboxOpen2 && dropdownRect2 && (
+                    <div
+                      className="bg-white border border-gray-200 rounded-2xl shadow-2xl overflow-y-auto"
+                      style={{
+                        position: 'fixed',
+                        zIndex: 9999,
+                        top: dropdownRect2.bottom + 6,
+                        left: dropdownRect2.left,
+                        width: dropdownRect2.width,
+                        maxHeight: 320,
+                        scrollbarWidth: 'thin',
+                        scrollbarColor: '#e5e7eb transparent',
                       }}
-                      className="inline-flex items-center justify-between w-full text-sm font-bold text-gray-600 bg-white border-2 border-gray-200 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-900 rounded-2xl px-4 py-3.5 transition-all"
                     >
-                      <span>{selectedVariant?.name || t('product.chooseVariant')}</span>
-                      <ChevronDown size={16} className={`transition-transform duration-200 ${comboboxOpen2 ? 'rotate-180' : ''}`} />
-                    </button>
-                    {comboboxOpen2 && dropdownRect2 && (
-                      <div
-                        className="bg-white border border-gray-200 rounded-2xl shadow-2xl overflow-y-auto"
-                        style={{
-                          position: 'fixed',
-                          zIndex: 9999,
-                          top: dropdownRect2.bottom + 6,
-                          left: dropdownRect2.left,
-                          width: dropdownRect2.width,
-                          maxHeight: 320,
-                          scrollbarWidth: 'thin',
-                          scrollbarColor: '#e5e7eb transparent',
-                        }}
-                      >
-                        <ul className="py-1">
-                          {displayVariants.map((v, vIdx) => (
-                            <li key={`${v.name}-${vIdx}`}>
-                              <button
-                                onMouseEnter={() => { setHoveredVariant(v); setSelectedVariant(v); const imgIdx = mediaItems.findIndex(m => m.type === 'image' && m.url === v.image); if (imgIdx >= 0) setSelectedMedia(imgIdx); }}
-                                onMouseLeave={() => setHoveredVariant(null)}
-                                onClick={() => { setSelectedVariant(v); committedVariantRef.current = v; const imgIdx = mediaItems.findIndex(m => m.type === 'image' && m.url === v.image); if (imgIdx >= 0) setSelectedMedia(imgIdx); setComboboxOpen2(false); }}
-                                className="inline-flex items-center justify-between w-full px-4 py-3 text-sm font-semibold text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
-                              >
-                                <div className="flex items-center gap-3">
-                                  <div className="w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-bold uppercase shrink-0 bg-gray-100 text-gray-400">{v.name?.charAt(0)}</div>
-                                  <div className="text-left">
-                                    <div className="text-sm font-bold">{v.name}</div>
-                                    {v.reference && <div className="text-[10px] text-gray-400 font-mono">{v.reference}</div>}
-                                  </div>
+                      <ul className="py-1">
+                        {displayVariants.map((v, vIdx) => (
+                          <li key={`${v.name}-${vIdx}`}>
+                            <button
+                              onMouseEnter={() => { setHoveredVariant(v); setSelectedVariant(v); const imgIdx = mediaItems.findIndex(m => m.type === 'image' && m.url === v.image); if (imgIdx >= 0) setSelectedMedia(imgIdx); }}
+                              onMouseLeave={() => setHoveredVariant(null)}
+                              onClick={() => { selectVariant(v); setComboboxOpen2(false); }}
+                              className="inline-flex items-center justify-between w-full px-4 py-3 text-sm font-semibold text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-bold uppercase shrink-0 bg-gray-100 text-gray-400">{v.name?.charAt(0)}</div>
+                                <div className="text-left">
+                                  <div className="text-sm font-bold">{v.name}</div>
+                                  {v.reference && <div className="text-[10px] text-gray-400 font-mono">{v.reference}</div>}
                                 </div>
-                                {v.price > 0 && <div className="text-xs font-bold text-gray-600">{formatPrice(v.price)}</div>}
-                              </button>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="flex flex-wrap gap-2">
-                    {displayVariants.map((v, vIdx) => (
-                      <button
-                        key={`${v.name}-${vIdx}`}
-                        onMouseEnter={() => setHoveredVariant(v)}
-                        onMouseLeave={() => setHoveredVariant(null)}
-                        onClick={() => {
-                          setSelectedVariant(v);
-                          committedVariantRef.current = v;
-                          const imgIdx = mediaItems.findIndex(m => m.type === 'image' && m.url === v.image);
-                          if (imgIdx >= 0) setSelectedMedia(imgIdx);
-                        }}
-                        className={`shrink-0 px-4 py-2.5 text-sm font-bold rounded-2xl border-2 transition-all ${selectedVariant?.image === v.image ? 'border-gray-900 bg-gray-900 text-white shadow-md' : 'border-gray-200/70 text-gray-600 hover:border-gray-400 hover:shadow-sm'}`}
-                      >
-                        {v.name}
-                      </button>
-                    ))}
-                  </div>
-                )}
+                              </div>
+                              {v.price > 0 && <div className="text-xs font-bold text-gray-600">{formatPrice(v.price)}</div>}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
                 {selectedVariant?.description && (
                   <div className="flex items-center gap-2 pt-1">
                     <span className="bg-gray-900 text-white px-2.5 py-1 rounded-lg text-xs font-bold tracking-tight shadow-sm">{selectedVariant.description}</span>

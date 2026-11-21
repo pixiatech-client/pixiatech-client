@@ -657,7 +657,7 @@ export default function BoutiquePage() {
                 <span className="absolute -top-1 -right-1 size-4 bg-gray-900 text-white text-[9px] font-bold flex items-center justify-center rounded-full">!</span>
               )}
             </button>
-            <LayoutSelector value={layout} onChange={setLayout} />
+            <LayoutSelector value={layout} onChange={setLayout} isMobile={isMobile} />
             <button
               onClick={() => setFilterOpen(true)}
               aria-label={t('boutique.filters')}
