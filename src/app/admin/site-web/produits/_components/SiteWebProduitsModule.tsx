@@ -1374,8 +1374,8 @@ return (
                     />
                   </th>
                   <th className="p-4 w-20 shrink-0">Photo</th>
-                  <th className="p-4 w-56 max-w-[240px]">Nom</th>
-                  <th className="p-4 w-36 shrink-0 text-left pl-3">Statut</th>
+                  <th className="p-4 w-[380px]">Nom</th>
+                  <th className="p-4 w-44 shrink-0 text-center">Statut</th>
                   <th className="p-4 text-right">Actions</th>
                 </tr>
               </thead>
@@ -1449,7 +1449,7 @@ return (
                             </div>
                           )}
                         </td>
-                        <td className="p-4 w-56 max-w-[240px]">
+                        <td className="p-4 w-[380px]">
                           <div className="flex items-center gap-2 flex-wrap">
                             <div className="font-extrabold text-neutral-900 dark:text-white text-xs">{p.name}</div>
                             {isTemplate && (
@@ -1464,7 +1464,7 @@ return (
                           </div>
                           <div className="text-[11px] text-neutral-400 font-mono mt-0.5 truncate">/web/product/{p.slug}</div>
                         </td>
-                        <td className="p-4 w-36 shrink-0 text-left pl-3">
+                        <td className="p-4 w-44 shrink-0 text-center">
                           {/* Le statut EST l'action : un brouillon affiche un
                               bouton « Publier » plein et contrasté ; un produit
                               en ligne affiche « Publié » avec la coche, et un
@@ -1480,8 +1480,8 @@ return (
                               // reste en ligne tant que l'admin n'a pas confirmé.
                               if (unpublishAsk === p.slug) {
                                 return (
-                                  <div className="flex flex-col gap-1.5 items-start">
-                                    <div className="flex items-center gap-1.5">
+                                  <div className="flex flex-col gap-1.5 items-center">
+                                    <div className="flex items-center justify-center gap-1.5">
                                       <button
                                         type="button"
                                         onClick={() => void writeStatus(p, 'draft')}
