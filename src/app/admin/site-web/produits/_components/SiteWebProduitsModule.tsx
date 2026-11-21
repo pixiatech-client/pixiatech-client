@@ -765,7 +765,7 @@ function CyberProgressBar({
   percent,
   step,
   status,
-  barsCount = 40,
+  barsCount = 58,
   className = '',
 }: {
   percent: number;
@@ -784,11 +784,11 @@ function CyberProgressBar({
     <div
       role="status"
       aria-live="polite"
-      className={`flex flex-col select-none bg-[#0e0e11]/95 dark:bg-[#0c0c0e]/95 border border-white/10 px-3.5 py-2 rounded-xl shadow-2xl backdrop-blur-md transition-all ${className}`}
+      className={`flex flex-col select-none bg-[#0e0e11]/95 dark:bg-[#0c0c0e]/95 border border-white/10 px-4 py-2.5 rounded-xl shadow-2xl backdrop-blur-md transition-all ${className}`}
     >
       {/* Ligne haute : libellé d'action à gauche, pourcentage à droite */}
       <div className="flex items-center justify-between gap-4 text-[12px] leading-tight mb-2 font-medium">
-        <span className="text-neutral-300 truncate max-w-[190px] flex items-center gap-1.5">
+        <span className="text-neutral-300 truncate max-w-[320px] flex items-center gap-2">
           {isCompleted ? (
             <span className="text-emerald-400 font-bold flex items-center gap-1.5">
               <Check className="w-3.5 h-3.5 stroke-[2.5]" />
@@ -796,34 +796,48 @@ function CyberProgressBar({
             </span>
           ) : (
             <>
-              <span className="w-1.5 h-1.5 rounded-full bg-[#ff552e] animate-pulse shrink-0" />
+              <span
+                className="w-1.5 h-1.5 rounded-full animate-pulse shrink-0"
+                style={{
+                  backgroundColor: 'var(--ui-accent, #00A3FF)',
+                  boxShadow: '0 0 8px var(--ui-accent-glow, rgba(0, 163, 255, 0.75))',
+                }}
+              />
               <span className="truncate">{step}</span>
             </>
           )}
         </span>
         <span
-          className={`font-mono text-[12px] font-semibold shrink-0 ${
-            isCompleted ? 'text-emerald-400 font-bold' : 'text-neutral-400'
+          className={`font-mono text-[12px] font-bold shrink-0 ${
+            isCompleted ? 'text-emerald-400' : 'text-neutral-200'
           }`}
         >
           {isCompleted ? '100%' : `${clampedPercent}%`}
         </span>
       </div>
 
-      {/* Ligne basse : barres verticales arrondies comme dans le modèle de référence */}
-      <div className="flex items-center gap-[2.5px] overflow-hidden">
+      {/* Ligne basse : barres verticales arrondies suivant la couleur du thème actif */}
+      <div className="flex items-center gap-[2.5px] w-full overflow-hidden">
         {Array.from({ length: barsCount }).map((_, i) => {
           const isActive = i < activeBars;
           return (
             <div
               key={i}
-              className={`w-[3px] h-[12px] rounded-full transition-all duration-150 ${
+              className={`flex-1 min-w-[2px] max-w-[4px] h-[13px] rounded-full transition-all duration-150 ${
                 isCompleted
-                  ? 'bg-emerald-400 shadow-[0_0_5px_rgba(52,211,153,0.85)]'
+                  ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.85)]'
                   : isActive
-                    ? 'bg-[#ff552e] shadow-[0_0_5px_rgba(255,85,46,0.75)]'
+                    ? ''
                     : 'bg-neutral-800/80 dark:bg-[#232326]'
               }`}
+              style={
+                isActive && !isCompleted
+                  ? {
+                      backgroundColor: 'var(--ui-accent, #00A3FF)',
+                      boxShadow: '0 0 6px var(--ui-accent-glow, rgba(0, 163, 255, 0.65))',
+                    }
+                  : undefined
+              }
             />
           );
         })}
@@ -1344,7 +1358,7 @@ return (
       ) : (
         <div className="bg-white dark:bg-zinc-900 border border-neutral-200/80 dark:border-white/10 rounded-3xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs table-fixed min-w-[950px]">
+            <table className="w-full text-left border-collapse text-xs table-fixed min-w-[1050px]">
               <thead>
                 <tr className="bg-neutral-50 dark:bg-white/[0.02] border-b border-neutral-200 dark:border-white/10 font-mono text-neutral-500 uppercase tracking-wider text-[11px]">
                   <th className="p-4 w-12 shrink-0">
@@ -1360,9 +1374,9 @@ return (
                     />
                   </th>
                   <th className="p-4 w-20 shrink-0">Photo</th>
-                  <th className="p-4 min-w-[200px]">Nom</th>
-                  <th className="p-4 w-44 shrink-0 text-center">Statut</th>
-                  <th className="p-4 w-[380px] shrink-0 text-right">Actions</th>
+                  <th className="p-4 w-56 max-w-[240px]">Nom</th>
+                  <th className="p-4 w-36 shrink-0 text-left pl-3">Statut</th>
+                  <th className="p-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-100 dark:divide-white/5">
@@ -1435,7 +1449,7 @@ return (
                             </div>
                           )}
                         </td>
-                        <td className="p-4 min-w-[200px]">
+                        <td className="p-4 w-56 max-w-[240px]">
                           <div className="flex items-center gap-2 flex-wrap">
                             <div className="font-extrabold text-neutral-900 dark:text-white text-xs">{p.name}</div>
                             {isTemplate && (
@@ -1448,9 +1462,9 @@ return (
                               </span>
                             )}
                           </div>
-                          <div className="text-[11px] text-neutral-400 font-mono mt-0.5">/web/product/{p.slug}</div>
+                          <div className="text-[11px] text-neutral-400 font-mono mt-0.5 truncate">/web/product/{p.slug}</div>
                         </td>
-                        <td className="p-4 w-44 shrink-0 text-center">
+                        <td className="p-4 w-36 shrink-0 text-left pl-3">
                           {/* Le statut EST l'action : un brouillon affiche un
                               bouton « Publier » plein et contrasté ; un produit
                               en ligne affiche « Publié » avec la coche, et un
@@ -1466,7 +1480,7 @@ return (
                               // reste en ligne tant que l'admin n'a pas confirmé.
                               if (unpublishAsk === p.slug) {
                                 return (
-                                  <div className="flex flex-col gap-1.5 items-center">
+                                  <div className="flex flex-col gap-1.5 items-start">
                                     <div className="flex items-center gap-1.5">
                                       <button
                                         type="button"
@@ -1523,15 +1537,16 @@ return (
                             );
                           })()}
                         </td>
-                        <td className="p-4 w-[380px] shrink-0 text-right">
-                          <div className="inline-flex items-center justify-end gap-2.5">
+                        <td className="p-4 text-right">
+                          <div className="flex items-center justify-end gap-3 w-full">
                             {/* Barre de progression segmentée individuelle pour ce produit */}
                             {pdfProgressMap[p.slug] && (
                               <CyberProgressBar
                                 percent={pdfProgressMap[p.slug].percent}
                                 step={pdfProgressMap[p.slug].step}
                                 status={pdfProgressMap[p.slug].status}
-                                barsCount={30}
+                                barsCount={58}
+                                className="flex-1 max-w-[560px]"
                               />
                             )}
 
@@ -1544,7 +1559,10 @@ return (
                               aria-label={`Télécharger la fiche technique PDF de « ${p.name} »`}
                             >
                               {pdfProgressMap[p.slug] ? (
-                                <Loader2 className="w-4 h-4 animate-spin text-[#ff552e]" />
+                                <Loader2
+                                  className="w-4 h-4 animate-spin shrink-0"
+                                  style={{ color: 'var(--ui-accent, #00A3FF)' }}
+                                />
                               ) : (
                                 <FileDown className="w-4 h-4" />
                               )}
@@ -2928,7 +2946,8 @@ function ProductForm({
                   percent={formPdfProgress.percent}
                   step={formPdfProgress.step}
                   status={formPdfProgress.status}
-                  barsCount={36}
+                  barsCount={48}
+                  className="w-[380px]"
                 />
               )}
               {existing && !formPdfProgress && (
