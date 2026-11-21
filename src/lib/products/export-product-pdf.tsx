@@ -50,10 +50,18 @@ function sanitizeFileName(name: string): string {
     .replace(/^-|-$/g, ''); // Trim les tirets aux extrémités
 }
 
+export interface PdfExportProgress {
+  percent: number;
+  step: string;
+  page?: number;
+  totalPages?: number;
+  status: 'starting' | 'rendering' | 'compiling' | 'completed' | 'error';
+}
+
 export interface ExportProductPdfOptions {
   lang?: 'FR' | 'EN';
   companyName?: string;
-  onProgress?: (step: string) => void;
+  onProgress?: (progress: PdfExportProgress) => void;
 }
 
 /**
@@ -73,12 +81,23 @@ export async function exportProductToPdf(
   const cleanName = sanitizeFileName(product.name || product.slug || 'Produit');
   const fileName = `Fiche-Technique-${cleanName}.pdf`;
 
-  toast.loading(
-    lang === 'FR'
-      ? `Génération de la fiche technique ${product.name || ''} en cours…`
-      : `Generating datasheet for ${product.name || ''}…`,
-    { id: toastId }
-  );
+  const report = (progress: PdfExportProgress) => {
+    try {
+      options.onProgress?.(progress);
+      toast.loading(
+        lang === 'FR'
+          ? `Génération PDF (${progress.percent}%) · ${progress.step}`
+          : `Generating PDF (${progress.percent}%) · ${progress.step}`,
+        { id: toastId }
+      );
+    } catch {}
+  };
+
+  report({
+    percent: 5,
+    step: lang === 'FR' ? 'Initialisation du gabarit…' : 'Initializing template…',
+    status: 'starting',
+  });
 
   // Création du conteneur temporaire hors écran
   const container = document.createElement('div');
@@ -95,6 +114,12 @@ export async function exportProductToPdf(
   const root = createRoot(container);
 
   try {
+    report({
+      percent: 12,
+      step: lang === 'FR' ? 'Rendu des composants…' : 'Rendering components…',
+      status: 'starting',
+    });
+
     // Rendu React du composant de datasheet
     await new Promise<void>((resolve) => {
       root.render(
@@ -106,6 +131,12 @@ export async function exportProductToPdf(
       );
       // Laisser React peindre le composant
       setTimeout(resolve, 350);
+    });
+
+    report({
+      percent: 20,
+      step: lang === 'FR' ? 'Chargement des visuels HD…' : 'Loading HD images…',
+      status: 'starting',
     });
 
     // Attente des images
@@ -128,12 +159,20 @@ export async function exportProductToPdf(
 
     const pdfWidth = pdf.internal.pageSize.getWidth(); // 210 mm
     const pdfHeight = pdf.internal.pageSize.getHeight(); // 297 mm
+    const totalPages = pages.length;
 
-    for (let i = 0; i < pages.length; i++) {
+    for (let i = 0; i < totalPages; i++) {
       const pageEl = pages[i];
-      if (options.onProgress) {
-        options.onProgress(`Page ${i + 1}/${pages.length}`);
-      }
+      const pageNum = i + 1;
+      const currentPercent = Math.round(25 + (i / totalPages) * 65);
+
+      report({
+        percent: currentPercent,
+        step: lang === 'FR' ? `Rendu HD page ${pageNum}/${totalPages}…` : `Rendering HD page ${pageNum}/${totalPages}…`,
+        page: pageNum,
+        totalPages,
+        status: 'rendering',
+      });
 
       const canvas = await html2canvas(pageEl, {
         scale: 2, // 2x pour une netteté d'impression optimale (~300 DPI)
@@ -151,10 +190,34 @@ export async function exportProductToPdf(
       }
 
       pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
+
+      const donePercent = Math.round(25 + ((i + 1) / totalPages) * 65);
+      report({
+        percent: donePercent,
+        step: lang === 'FR' ? `Page ${pageNum}/${totalPages} capturée` : `Page ${pageNum}/${totalPages} captured`,
+        page: pageNum,
+        totalPages,
+        status: 'rendering',
+      });
     }
+
+    report({
+      percent: 95,
+      step: lang === 'FR' ? 'Assemblage & compression PDF…' : 'Compiling & compressing PDF…',
+      status: 'compiling',
+    });
+
+    // Petite pause pour peindre l'étape 95%
+    await new Promise((resolve) => setTimeout(resolve, 150));
 
     // Téléchargement automatique
     pdf.save(fileName);
+
+    report({
+      percent: 100,
+      step: lang === 'FR' ? 'Fiche complète ! Téléchargement…' : 'Complete! Downloading…',
+      status: 'completed',
+    });
 
     toast.success(
       lang === 'FR'
@@ -165,6 +228,11 @@ export async function exportProductToPdf(
 
     return true;
   } catch (error) {
+    report({
+      percent: 0,
+      step: (error as Error).message,
+      status: 'error',
+    });
     console.error('Erreur lors de l’export PDF de la fiche technique :', error);
     toast.error(
       lang === 'FR'

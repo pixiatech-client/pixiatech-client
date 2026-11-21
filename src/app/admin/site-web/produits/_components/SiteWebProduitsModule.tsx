@@ -758,6 +758,81 @@ export function SiteWebProduitsModule({ initial, editSlug }: SiteWebProduitsModu
 }
 
 /* ---------------------------------------------------------------------------
+ * PROGRESSION PDF MODÈLE SEGMENTÉ (STYLE COCKPIT CLI MODERNE)
+ * ------------------------------------------------------------------------- */
+
+function CyberProgressBar({
+  percent,
+  step,
+  status,
+  barsCount = 40,
+  className = '',
+}: {
+  percent: number;
+  step: string;
+  status: 'starting' | 'rendering' | 'compiling' | 'completed' | 'error';
+  barsCount?: number;
+  className?: string;
+}) {
+  const isCompleted = status === 'completed' || percent >= 100;
+  const clampedPercent = Math.max(0, Math.min(100, percent));
+  const activeBars = isCompleted
+    ? barsCount
+    : Math.round((clampedPercent / 100) * barsCount);
+
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className={`flex flex-col select-none bg-[#0e0e11]/95 dark:bg-[#0c0c0e]/95 border border-white/10 px-3.5 py-2 rounded-xl shadow-2xl backdrop-blur-md transition-all ${className}`}
+    >
+      {/* Ligne haute : libellé d'action à gauche, pourcentage à droite */}
+      <div className="flex items-center justify-between gap-4 text-[12px] leading-tight mb-2 font-medium">
+        <span className="text-neutral-300 truncate max-w-[190px] flex items-center gap-1.5">
+          {isCompleted ? (
+            <span className="text-emerald-400 font-bold flex items-center gap-1.5">
+              <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+              Fiche complète
+            </span>
+          ) : (
+            <>
+              <span className="w-1.5 h-1.5 rounded-full bg-[#ff552e] animate-pulse shrink-0" />
+              <span className="truncate">{step}</span>
+            </>
+          )}
+        </span>
+        <span
+          className={`font-mono text-[12px] font-semibold shrink-0 ${
+            isCompleted ? 'text-emerald-400 font-bold' : 'text-neutral-400'
+          }`}
+        >
+          {isCompleted ? '100%' : `${clampedPercent}%`}
+        </span>
+      </div>
+
+      {/* Ligne basse : barres verticales arrondies comme dans le modèle de référence */}
+      <div className="flex items-center gap-[2.5px] overflow-hidden">
+        {Array.from({ length: barsCount }).map((_, i) => {
+          const isActive = i < activeBars;
+          return (
+            <div
+              key={i}
+              className={`w-[3px] h-[12px] rounded-full transition-all duration-150 ${
+                isCompleted
+                  ? 'bg-emerald-400 shadow-[0_0_5px_rgba(52,211,153,0.85)]'
+                  : isActive
+                    ? 'bg-[#ff552e] shadow-[0_0_5px_rgba(255,85,46,0.75)]'
+                    : 'bg-neutral-800/80 dark:bg-[#232326]'
+              }`}
+            />
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------------------
  * LISTE
  * ------------------------------------------------------------------------- */
 
@@ -833,18 +908,46 @@ function ProductList({
    */
   const [statusPending, setStatusPending] = useState<Record<string, boolean>>({});
   const [unpublishAsk, setUnpublishAsk] = useState<string | null>(null);
-  const [exportingSlug, setExportingSlug] = useState<string | null>(null);
+  const [pdfProgress, setPdfProgress] = useState<{
+    slug: string;
+    percent: number;
+    step: string;
+    status: 'starting' | 'rendering' | 'compiling' | 'completed' | 'error';
+  } | null>(null);
 
   const handleDownloadPdf = async (product: Product) => {
     try {
-      setExportingSlug(product.slug);
+      setPdfProgress({
+        slug: product.slug,
+        percent: 5,
+        step: 'Initialisation…',
+        status: 'starting',
+      });
       const { exportProductToPdf } = await import('@/lib/products/export-product-pdf');
-      await exportProductToPdf(product, { lang: 'FR' });
+      await exportProductToPdf(product, {
+        lang: 'FR',
+        onProgress: (p) => {
+          setPdfProgress({
+            slug: product.slug,
+            percent: p.percent,
+            step: p.step,
+            status: p.status,
+          });
+        },
+      });
+      // Maintien du statut 100% "Fiche complète !" pour une confirmation visuelle claire
+      setPdfProgress({
+        slug: product.slug,
+        percent: 100,
+        step: 'Fiche complète !',
+        status: 'completed',
+      });
+      await new Promise((resolve) => setTimeout(resolve, 2000));
     } catch (err) {
       console.error('Erreur export PDF:', err);
       toast.error('Erreur lors du téléchargement de la fiche technique PDF');
     } finally {
-      setExportingSlug(null);
+      setPdfProgress(null);
     }
   };
 
@@ -1405,17 +1508,27 @@ return (
                           })()}
                         </td>
                         <td className="p-4 text-right">
-                          <div className="inline-flex items-center gap-2">
+                          <div className="inline-flex items-center justify-end gap-2.5">
+                            {/* Barre de progression segmentée haute technologie (conforme modèle) */}
+                            {pdfProgress && pdfProgress.slug === p.slug && (
+                              <CyberProgressBar
+                                percent={pdfProgress.percent}
+                                step={pdfProgress.step}
+                                status={pdfProgress.status}
+                                barsCount={38}
+                              />
+                            )}
+
                             <button
                               type="button"
                               onClick={() => void handleDownloadPdf(p)}
-                              disabled={exportingSlug === p.slug}
+                              disabled={Boolean(pdfProgress && pdfProgress.slug === p.slug)}
                               className="p-2 rounded-xl text-neutral-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-500/10 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-wait"
                               title="Télécharger la fiche technique PDF"
                               aria-label={`Télécharger la fiche technique PDF de « ${p.name} »`}
                             >
-                              {exportingSlug === p.slug ? (
-                                <Loader2 className="w-4 h-4 animate-spin text-amber-500" />
+                              {pdfProgress && pdfProgress.slug === p.slug ? (
+                                <Loader2 className="w-4 h-4 animate-spin text-[#ff552e]" />
                               ) : (
                                 <FileDown className="w-4 h-4" />
                               )}
@@ -2671,12 +2784,20 @@ function ProductForm({
     }
   };
 
-  const [exportingPdf, setExportingPdf] = useState(false);
+  const [formPdfProgress, setFormPdfProgress] = useState<{
+    percent: number;
+    step: string;
+    status: 'starting' | 'rendering' | 'compiling' | 'completed' | 'error';
+  } | null>(null);
 
   const handleDownloadPdf = async () => {
     if (!existing) return;
     try {
-      setExportingPdf(true);
+      setFormPdfProgress({
+        percent: 5,
+        step: 'Initialisation…',
+        status: 'starting',
+      });
       const currentProduct: Product = {
         ...existing,
         name: name.trim() || existing.name,
@@ -2703,12 +2824,27 @@ function ProductForm({
         },
       };
       const { exportProductToPdf } = await import('@/lib/products/export-product-pdf');
-      await exportProductToPdf(currentProduct, { lang: 'FR' });
+      await exportProductToPdf(currentProduct, {
+        lang: 'FR',
+        onProgress: (p) => {
+          setFormPdfProgress({
+            percent: p.percent,
+            step: p.step,
+            status: p.status,
+          });
+        },
+      });
+      setFormPdfProgress({
+        percent: 100,
+        step: 'Fiche complète !',
+        status: 'completed',
+      });
+      await new Promise((resolve) => setTimeout(resolve, 2000));
     } catch (err) {
       console.error('Erreur export PDF:', err);
       toast.error('Erreur lors du téléchargement de la fiche technique');
     } finally {
-      setExportingPdf(false);
+      setFormPdfProgress(null);
     }
   };
 
@@ -2771,20 +2907,24 @@ function ProductForm({
             </button>
           ) : (
             <>
-              {existing && (
+              {existing && formPdfProgress && (
+                <CyberProgressBar
+                  percent={formPdfProgress.percent}
+                  step={formPdfProgress.step}
+                  status={formPdfProgress.status}
+                  barsCount={36}
+                />
+              )}
+              {existing && !formPdfProgress && (
                 <button
                   type="button"
                   onClick={() => void handleDownloadPdf()}
-                  disabled={exportingPdf || saving || uploading}
+                  disabled={saving || uploading}
                   className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-600 dark:text-amber-400 text-xs font-bold border border-amber-500/30 transition-all cursor-pointer shadow-sm active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
                   title="Télécharger la fiche technique au format PDF"
                 >
-                  {exportingPdf ? (
-                    <Loader2 className="w-4 h-4 animate-spin text-amber-500" />
-                  ) : (
-                    <FileDown className="w-4 h-4" />
-                  )}
-                  <span>{exportingPdf ? 'Génération…' : 'Télécharger en PDF'}</span>
+                  <FileDown className="w-4 h-4" />
+                  <span>Télécharger en PDF</span>
                 </button>
               )}
               <button
