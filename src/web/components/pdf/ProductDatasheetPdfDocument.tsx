@@ -404,6 +404,57 @@ export const ProductDatasheetPdfDocument: React.FC<ProductDatasheetPdfDocumentPr
                 </div>
               ))}
             </div>
+
+            {/* Visuels techniques & Configurations d'installation (intégrés sur Page 1 pour structurer et combler l'espace) */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '12px' }}>
+              <div style={{ border: '1px solid #e5e5e5', borderRadius: '3px', overflow: 'hidden', backgroundColor: '#fcfcfc' }}>
+                <div style={{ height: '110px', backgroundColor: '#0c0c0c', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {photoDesign ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={photoDesign}
+                      alt="Usinage châssis"
+                      crossOrigin="anonymous"
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                  ) : (
+                    <span style={{ fontSize: '8.5px', color: '#666666' }}>VISUEL CHÂSSIS & USINAGE CNC</span>
+                  )}
+                </div>
+                <div style={{ padding: '5px 8px' }}>
+                  <div style={{ fontSize: '7.8px', fontWeight: 700, color: '#111111' }}>Profil Ultra-Fin & Assemblage Robuste</div>
+                  <div style={{ fontSize: '6.8px', color: '#666666' }}>Tolérance mécanique de ±0.05 mm</div>
+                </div>
+              </div>
+
+              {/* Configurations d'installation */}
+              <div>
+                <div style={{ fontSize: '7.8px', fontWeight: 800, letterSpacing: '0.12em', color: '#555555', textTransform: 'uppercase', marginBottom: '6px' }}>
+                  CONFIGURATIONS D’INSTALLATION
+                </div>
+                {configs.map((c, idx) => (
+                  <div key={idx} style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', marginBottom: '7px' }}>
+                    <span
+                      style={{
+                        fontSize: '8px',
+                        fontWeight: 900,
+                        backgroundColor: '#111111',
+                        color: '#ffffff',
+                        padding: '2px 5px',
+                        borderRadius: '2px',
+                        lineHeight: 1,
+                      }}
+                    >
+                      {c.num}
+                    </span>
+                    <div>
+                      <div style={{ fontSize: '8.2px', fontWeight: 800, color: '#000000' }}>{c.title}</div>
+                      <div style={{ fontSize: '7.2px', color: '#555555', lineHeight: '1.25' }}>{c.description}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -426,7 +477,7 @@ export const ProductDatasheetPdfDocument: React.FC<ProductDatasheetPdfDocumentPr
       </div>
 
       {/* ==================================================================== */}
-      {/* PAGE 2 : Suite 02 Conception, Section 03 Points Forts                */}
+      {/* PAGE 2 : Section 03 Points Forts Techniques (Plein Format Aéré)      */}
       {/* ==================================================================== */}
       <div
         className="page-break-after"
@@ -466,84 +517,31 @@ export const ProductDatasheetPdfDocument: React.FC<ProductDatasheetPdfDocumentPr
               </span>
             </div>
             <div style={{ fontSize: '8.5px', letterSpacing: '0.16em', fontWeight: 700, color: '#444444' }}>
-              CONCEPTION & POINTS FORTS TECHNIQUES
+              POINTS FORTS TECHNIQUES & INNOVATIONS
             </div>
           </div>
 
-          {/* Section 02 (Suite) : Visuels techniques & Configurations */}
-          <div style={{ marginTop: '16px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <div style={{ border: '1px solid #e5e5e5', borderRadius: '3px', overflow: 'hidden', backgroundColor: '#fcfcfc' }}>
-                <div style={{ height: '110px', backgroundColor: '#0c0c0c', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {photoDesign ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={photoDesign}
-                      alt="Usinage châssis"
-                      crossOrigin="anonymous"
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                    />
-                  ) : (
-                    <span style={{ fontSize: '8.5px', color: '#666666' }}>VISUEL CHÂSSIS & USINAGE CNC</span>
-                  )}
-                </div>
-                <div style={{ padding: '5px 8px' }}>
-                  <div style={{ fontSize: '7.8px', fontWeight: 700, color: '#111111' }}>Profil Ultra-Fin & Assemblage Robuste</div>
-                  <div style={{ fontSize: '6.8px', color: '#666666' }}>Tolérance mécanique de ±0.05 mm</div>
-                </div>
-              </div>
-
-              {/* Configurations d'installation */}
-              <div>
-                <div style={{ fontSize: '7.8px', fontWeight: 800, letterSpacing: '0.12em', color: '#555555', textTransform: 'uppercase', marginBottom: '6px' }}>
-                  CONFIGURATIONS D’INSTALLATION
-                </div>
-                {configs.map((c, idx) => (
-                  <div key={idx} style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', marginBottom: '8px' }}>
-                    <span
-                      style={{
-                        fontSize: '8px',
-                        fontWeight: 900,
-                        backgroundColor: '#111111',
-                        color: '#ffffff',
-                        padding: '2px 5px',
-                        borderRadius: '2px',
-                        lineHeight: 1,
-                      }}
-                    >
-                      {c.num}
-                    </span>
-                    <div>
-                      <div style={{ fontSize: '8.2px', fontWeight: 800, color: '#000000' }}>{c.title}</div>
-                      <div style={{ fontSize: '7.2px', color: '#555555', lineHeight: '1.25' }}>{c.description}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Section 03 : POINTS FORTS TECHNIQUES */}
-          <div style={{ marginTop: '22px', paddingTop: '16px', borderTop: '1px dashed #dcdcd8' }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-              <div style={{ fontSize: '24px', fontWeight: 900, lineHeight: 1, color: '#111111' }}>
+          {/* Section 03 : POINTS FORTS TECHNIQUES (Plein format majestueux) */}
+          <div style={{ marginTop: '24px' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
+              <div style={{ fontSize: '30px', fontWeight: 900, lineHeight: 1, color: '#111111' }}>
                 03
               </div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: '8px', letterSpacing: '0.18em', fontWeight: 800, color: '#777777', textTransform: 'uppercase' }}>
+                <div style={{ fontSize: '8.5px', letterSpacing: '0.2em', fontWeight: 800, color: '#777777', textTransform: 'uppercase' }}>
                   POINTS FORTS TECHNIQUES
                 </div>
-                <div style={{ fontSize: '12px', fontWeight: 800, color: '#000000', marginTop: '2px' }}>
+                <div style={{ fontSize: '14px', fontWeight: 800, color: '#000000', marginTop: '3px' }}>
                   {featuresHook}
                 </div>
               </div>
             </div>
 
             {/* Visuel central & Liste des 7 caractéristiques clés */}
-            <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: '16px', marginTop: '14px' }}>
-              {/* Photo centrale du produit */}
-              <div style={{ border: '1px solid #e5e5e5', borderRadius: '3px', overflow: 'hidden', backgroundColor: '#fcfcfc', display: 'flex', flexDirection: 'column' }}>
-                <div style={{ flex: 1, minHeight: '380px', backgroundColor: '#090909', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: '20px', marginTop: '20px' }}>
+              {/* Photo centrale du produit - Grand format immersif */}
+              <div style={{ border: '1px solid #e5e5e5', borderRadius: '4px', overflow: 'hidden', backgroundColor: '#fcfcfc', display: 'flex', flexDirection: 'column' }}>
+                <div style={{ height: '450px', backgroundColor: '#090909', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {photoFeatures ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -556,43 +554,43 @@ export const ProductDatasheetPdfDocument: React.FC<ProductDatasheetPdfDocumentPr
                     <span style={{ fontSize: '9px', color: '#666666', textAlign: 'center', padding: '16px' }}>VUE DÉTAILLÉE ÉCRAN ET DALLES LED</span>
                   )}
                 </div>
-                <div style={{ padding: '8px 10px', borderTop: '1px solid #f0f0f0' }}>
-                  <div style={{ fontSize: '8px', fontWeight: 800, color: '#111111' }}>Intégration Architectural Grade A</div>
-                  <div style={{ fontSize: '7px', color: '#666666' }}>Finitions soignées pour espaces d&apos;exception</div>
+                <div style={{ padding: '12px 14px', borderTop: '1px solid #f0f0f0' }}>
+                  <div style={{ fontSize: '9px', fontWeight: 800, color: '#111111' }}>Intégration Architectural Grade A</div>
+                  <div style={{ fontSize: '7.8px', color: '#666666', marginTop: '2px' }}>Finitions soignées pour espaces d&apos;exception</div>
                 </div>
               </div>
 
-              {/* Les 7 Caractéristiques numérotées */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '9px' }}>
+              {/* Les 7 Caractéristiques numérotées bien aérées */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {featuresList.map((f, idx) => (
                   <div
                     key={idx}
                     style={{
                       display: 'flex',
-                      gap: '10px',
+                      gap: '12px',
                       alignItems: 'flex-start',
                       backgroundColor: '#fafaf9',
                       border: '1px solid #e9e9e7',
-                      padding: '7px 9px',
-                      borderRadius: '3px',
+                      padding: '10px 12px',
+                      borderRadius: '4px',
                     }}
                   >
                     <span
                       style={{
-                        fontSize: '9.5px',
+                        fontSize: '10px',
                         fontWeight: 900,
                         color: '#000000',
                         backgroundColor: '#eaeae8',
-                        padding: '2px 5px',
-                        borderRadius: '2px',
+                        padding: '3px 6px',
+                        borderRadius: '3px',
                         lineHeight: 1,
                       }}
                     >
                       {f.num || `0${idx + 1}`}
                     </span>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: '8.2px', fontWeight: 800, color: '#000000' }}>{f.title}</div>
-                      <div style={{ fontSize: '7.2px', color: '#555555', lineHeight: '1.3', marginTop: '1px' }}>
+                      <div style={{ fontSize: '9px', fontWeight: 800, color: '#000000' }}>{f.title}</div>
+                      <div style={{ fontSize: '7.8px', color: '#555555', lineHeight: '1.4', marginTop: '2px' }}>
                         {f.description}
                       </div>
                     </div>
