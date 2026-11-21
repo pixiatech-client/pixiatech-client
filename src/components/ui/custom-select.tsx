@@ -39,12 +39,24 @@ export function CustomSelect({
   className,
   isDark = false,
 }: CustomSelectProps) {
-  const mapped: BottomSheetOption[] = options.map((option) => ({
-    value: option.value,
-    label: <span className={option.color}>{option.label}</span>,
-    searchText: option.label,
-    icon: option.icon ? <span className="flex h-6 w-6 items-center justify-center">{option.icon}</span> : undefined,
-  }));
+  const mapped: BottomSheetOption[] = options.map((option) => {
+    let renderedIcon: React.ReactNode = undefined;
+    if (option.icon) {
+      if (React.isValidElement(option.icon)) {
+        renderedIcon = option.icon;
+      } else if (typeof option.icon === 'function' || (typeof option.icon === 'object' && option.icon !== null)) {
+        const IconComponent = option.icon as React.ComponentType<{ className?: string }>;
+        renderedIcon = <IconComponent className="h-4 w-4 shrink-0" />;
+      }
+    }
+
+    return {
+      value: option.value,
+      label: option.color ? <span className={option.color}>{option.label}</span> : option.label,
+      searchText: option.label,
+      icon: renderedIcon ? <span className="flex h-5 w-5 items-center justify-center shrink-0">{renderedIcon}</span> : undefined,
+    };
+  });
 
   return (
     <div className={cn('flex flex-col gap-1.5', className)}>

@@ -27,6 +27,7 @@ export interface Product {
   longDescription: string;
   descriptionDetaillee?: string;
   image: string | null;
+  showMainImageInDetail?: boolean;
   gallery?: (string | GalleryItem)[];
   videoUrl?: string;
   pdfUrl?: string;
@@ -253,6 +254,7 @@ function mapFirestoreDoc(docSnap: any, charNameMap: Record<string, string> = {})
     priceDisplay: data.priceDisplay || undefined,
     qrCodeUrl: data.qrCodeUrl || '',
     showQrCodeOnProduct: !!data.showQrCodeOnProduct,
+    showMainImageInDetail: data.showMainImageInDetail !== false,
   };
 }
 

@@ -903,53 +903,6 @@ export function MenuEditor() {
       {/* ONGLET 2 : MÉGA MENU PRODUITS */}
       {activeTab === 'mega' && (
         <div className="space-y-6">
-          {/* Activation du Méga Menu vs Menu classique */}
-          <div className="bg-white dark:bg-zinc-900 border border-neutral-200/80 dark:border-white/10 rounded-3xl p-5 sm:p-6 shadow-sm">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <h2 className="text-sm font-bold text-neutral-800 dark:text-white flex items-center gap-2">
-                  <LayoutGrid className="w-4 h-4 text-[#38E044]" />
-                  <span>Activation du Méga Menu</span>
-                </h2>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
-                  Définissez si le bouton « PRODUITS » de la barre de navigation ouvre ce méga-menu complet ou s’il redirige directement vers la page catalogue.
-                </p>
-              </div>
-              <div className="flex items-center gap-2 bg-neutral-100 dark:bg-zinc-800 p-1.5 rounded-2xl border border-neutral-200 dark:border-white/10 self-start sm:self-auto shrink-0">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setHeaderMenuType('mega');
-                    markDirty();
-                  }}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                    headerMenuType === 'mega'
-                      ? 'bg-[#38E044] text-black shadow-sm'
-                      : 'text-neutral-500 hover:text-white'
-                  }`}
-                >
-                  <LayoutGrid className="w-3.5 h-3.5" />
-                  <span>Méga-menu activé</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setHeaderMenuType('classic');
-                    markDirty();
-                  }}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                    headerMenuType === 'classic'
-                      ? 'bg-[#38E044] text-black shadow-sm'
-                      : 'text-neutral-500 hover:text-white'
-                  }`}
-                >
-                  <MenuIcon className="w-3.5 h-3.5" />
-                  <span>Menu classique (lien direct)</span>
-                </button>
-              </div>
-            </div>
-          </div>
-
           {/* Section 14 : Gestion des Descriptions */}
           <div className="bg-white dark:bg-zinc-900 border border-neutral-200/80 dark:border-white/10 rounded-3xl p-5 sm:p-6 shadow-sm">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">

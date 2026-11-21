@@ -21,7 +21,9 @@ import { useMediaQuery } from 'usehooks-ts';
 
 const LAYOUT_GRID_CLASS: Record<LayoutMode, string> = {
   1: 'grid-cols-1',
-  2: 'grid-cols-1 sm:grid-cols-2',
+  // Deux colonnes dès le plus petit écran : sur mobile, le mode 2 doit
+  // réellement afficher deux produits côte à côte (le PC reste à 2 colonnes).
+  2: 'grid-cols-2',
   3: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3',
   4: 'grid-cols-1',
 };

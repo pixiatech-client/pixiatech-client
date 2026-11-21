@@ -98,3 +98,4 @@ dump-*.js
 /scripts/probe-*.jpg
 /scripts/probe-assets/
 /scripts/ref-*.png
+/backups/

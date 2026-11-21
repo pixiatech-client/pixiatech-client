@@ -20,6 +20,8 @@ import { useI18n } from '@/lib/i18n';
 import { BottomSheetOptionRows, MobileBottomSheet, type BottomSheetOption } from '@/components/ui/bottom-sheet';
 import { useIsMobile } from '@/hooks/use-mobile';
 import QRCode from 'qrcode';
+import QrRevealCard from '@/components/ui/qr-reveal-card';
+import AnimatedPrice from '@/components/ui/animated-price';
 
 const ICON_MAP: Record<string, any> = {
   screen: Monitor, distance: Eye, puissance: Zap, brightness: SunMedium,
@@ -252,13 +254,20 @@ export default function ProductDetailPage() {
 
   useEffect(() => {
     if (product?.showQrCodeOnProduct && product?.qrCodeUrl) {
-      QRCode.toDataURL(product.qrCodeUrl, { width: 320, margin: 1 })
+      QRCode.toDataURL(product.qrCodeUrl, {
+        width: 360,
+        margin: 4,
+        errorCorrectionLevel: 'M',
+        color: { dark: '#000000', light: '#FFFFFF' },
+      })
         .then(setProductQrDataUrl)
         .catch(() => setProductQrDataUrl(''));
     } else {
       setProductQrDataUrl('');
     }
   }, [product?.showQrCodeOnProduct, product?.qrCodeUrl]);
+
+  const closeQrModal = useCallback(() => setShowQrModal(false), []);
 
   const [quoteFormData, setQuoteFormData] = useState({
     name: '',
@@ -408,12 +417,15 @@ export default function ProductDetailPage() {
     fetchUpsellProducts([product.id]).then(setUpsellProducts);
   }, [product]);
 
-  const galleryImages: MediaItem[] = product?.gallery && product.gallery.length > 0
-    ? [product.image, ...product.gallery].filter((x): x is string | GalleryItem => x != null).map(x => {
-        if (typeof x === 'string') return { type: 'image' as const, url: x };
-        return { type: x.type, url: x.url };
-      })
-    : product?.image ? [{ type: 'image' as const, url: product.image }] : [];
+  const showMain = product?.showMainImageInDetail !== false;
+  const rawGallery = product?.gallery && product.gallery.length > 0 ? product.gallery : [];
+  const galleryImages: MediaItem[] = [
+    ...(showMain && product?.image ? [product.image] : []),
+    ...rawGallery,
+  ].filter((x): x is string | GalleryItem => x != null).map(x => {
+    if (typeof x === 'string') return { type: 'image' as const, url: x };
+    return { type: x.type, url: x.url };
+  });
 
   const mediaItems: MediaItem[] = [
     ...galleryImages,
@@ -434,6 +446,7 @@ export default function ProductDetailPage() {
   const effectiveOldPrice = product?.oldPrice && (!selectedVariant || selectedVariant.price < product.oldPrice) ? product.oldPrice : undefined;
   const displayVariants = (product?.variants || []).filter(v => v.active && v.name);
   const hasVariants = displayVariants.length > 0;
+  const VARIANT_PILL_MAX = 6; // ≤ 6 variantes → boutons pills, > 6 → liste déroulante
 
   const selectVariant = (variant: ProductVariant) => {
     setSelectedVariant(variant);
@@ -1231,64 +1244,116 @@ export default function ProductDetailPage() {
                 </>
               )}
 
-              <div className="mt-4 flex flex-col lg:flex-row lg:flex-wrap items-stretch lg:items-center gap-2">
+              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
+                {/* 1. QR Code */}
                 {product.showQrCodeOnProduct && product.qrCodeUrl && (
+                  <QrRevealCard
+                    open={showQrModal}
+                    onOpen={() => setShowQrModal(true)}
+                    onClose={closeQrModal}
+                    qrDataUrl={productQrDataUrl}
+                    url={product.qrCodeUrl}
+                    label={t('product.showQrCode')}
+                    title={t('product.qrCodeTitle')}
+                    hint={t('product.qrCodeScanInfo')}
+                    closeLabel={t('header.close')}
+                  />
+                )}
+
+                {/* 2. Fiche technique */}
+                <button
+                  type="button"
+                  onClick={() => window.open(product.pdfUrl || '', '_blank')}
+                  disabled={!product.pdfUrl}
+                  className="w-full min-h-[48px] px-4 py-2.5 bg-[#0f172a] text-white font-semibold rounded-xl hover:bg-blue-600 transition-all disabled:opacity-30 disabled:cursor-not-allowed inline-flex items-center justify-center gap-3 text-[13px] text-center cursor-pointer"
+                >
+                  <FileText size={18} className="shrink-0" />
+                  <span className="text-[13px] font-semibold">{t('product.datasheet')}</span>
+                </button>
+
+                {/* 3. Google Play */}
+                <a
+                  className="store-btn group w-full min-h-[48px] px-4 py-2.5 bg-[#0f172a] text-white font-semibold rounded-xl hover:bg-blue-600 transition-all inline-flex items-center justify-center gap-3 text-center no-underline cursor-pointer"
+                  href={product.playStoreUrl || "https://play.google.com/store/apps/details?id=VOTRE_APP_ANDROID"}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Télécharger l'application sur Google Play"
+                >
+                  <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" className="shrink-0">
+                    <path fill="#34A853" d="M3.6 2.3c-.2.2-.4.6-.4 1v17.4c0 .4.1.8.4 1l9.7-9.7z"/>
+                    <path fill="#FBBC04" d="M16.6 15.3l-3.3-3.3 3.3-3.3 3.9 2.2c1.1.6 1.1 1.7 0 2.3z"/>
+                    <path fill="#EA4335" d="M16.6 15.3L13.3 12 3.6 21.7c.4.4 1 .4 1.7.1z"/>
+                    <path fill="#4285F4" d="M16.6 8.7L5.3 2.2c-.7-.4-1.3-.3-1.7.1L13.3 12z"/>
+                  </svg>
+                  <span className="flex flex-col text-left leading-tight">
+                    <small className="text-[10px] font-normal opacity-80 leading-none">Disponible sur</small>
+                    <span className="text-[13px] font-semibold">Google Play</span>
+                  </span>
+                </a>
+
+                {/* 4. App Store */}
+                <a
+                  className="store-btn group w-full min-h-[48px] px-4 py-2.5 bg-[#0f172a] text-white font-semibold rounded-xl hover:bg-blue-600 transition-all inline-flex items-center justify-center gap-3 text-center no-underline cursor-pointer"
+                  href={product.appStoreUrl || "https://apps.apple.com/app/VOTRE_APP_IOS"}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Télécharger l'application sur l'App Store"
+                >
+                  <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" className="shrink-0">
+                    <path fill="#fff" d="M16.4 12.6c0-2.4 2-3.5 2.1-3.6-1.1-1.7-2.9-1.9-3.5-1.9-1.5-.2-2.9.9-3.7.9-.8 0-1.9-.9-3.2-.8-1.6 0-3.1.9-4 2.4-1.7 3-.4 7.3 1.2 9.7.8 1.2 1.8 2.5 3 2.4 1.2 0 1.7-.8 3.1-.8s1.9.8 3.2.8c1.3 0 2.1-1.2 2.9-2.4.9-1.3 1.3-2.6 1.3-2.7 0 0-2.4-1-2.4-4zM14.1 5.5c.7-.8 1.1-1.9 1-3-1 0-2.1.7-2.8 1.5-.6.7-1.1 1.8-1 2.9 1.1.1 2.1-.6 2.8-1.4z"/>
+                  </svg>
+                  <span className="flex flex-col text-left leading-tight">
+                    <small className="text-[10px] font-normal opacity-80 leading-none">Télécharger dans</small>
+                    <span className="text-[13px] font-semibold">l'App Store</span>
+                  </span>
+                </a>
+
+                {/* 5. Plus d'infos */}
+                {(product.downloadUrl2 || product.playStoreUrl || product.appStoreUrl) && (
                   <button
                     type="button"
-                    onClick={() => setShowQrModal(true)}
-                    className="inline-flex items-center justify-center gap-3 w-full lg:w-auto px-4 py-3 lg:py-2.5 bg-gray-900 text-white font-semibold rounded-xl hover:bg-cyan-600 transition-all cursor-pointer shadow-sm"
-                    title={t('product.showQrCode')}
+                    onClick={() => {
+                      if (product.downloadUrl2) window.open(product.downloadUrl2, '_blank');
+                    }}
+                    className="w-full min-h-[48px] px-4 py-2.5 bg-[#0f172a] text-white font-semibold rounded-xl hover:bg-blue-600 transition-all inline-flex items-center justify-center gap-3 text-[13px] text-center cursor-pointer"
                   >
-                    <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect width="5" height="5" x="3" y="3" rx="1" />
-                      <rect width="5" height="5" x="16" y="3" rx="1" />
-                      <rect width="5" height="5" x="3" y="16" rx="1" />
-                      <path d="M21 16h-3a2 2 0 0 0-2 2v3" />
-                      <path d="M21 21v.01" />
-                      <path d="M12 7v3a2 2 0 0 1-2 2H7" />
-                      <path d="M3 12h.01" />
-                      <path d="M12 3h.01" />
-                      <path d="M12 16v.01" />
-                      <path d="M16 12h1" />
-                      <path d="M21 12v.01" />
-                      <path d="M12 21v-1" />
-                    </svg>
-                    <span className="text-xs uppercase tracking-wider">QR Code</span>
-                  </button>
-                )}
-                <button onClick={() => window.open(product.pdfUrl || '', '_blank')} disabled={!product.pdfUrl} className="inline-flex items-center justify-center gap-3 w-full lg:w-auto px-4 py-3 lg:py-2.5 bg-gray-900 text-white font-semibold rounded-xl hover:bg-blue-600 transition-all disabled:opacity-30 disabled:cursor-not-allowed">
-                  <FileText size={14} />
-                  <span className="text-xs uppercase tracking-wider">{t('product.datasheet')}</span>
-                </button>
-                {product.playStoreUrl && (
-                  <button onClick={() => window.open(product.playStoreUrl, '_blank')} className="h-[44px] w-[118px] sm:h-[52px] sm:w-[174px] hover:opacity-90 active:scale-95 transition-all shrink-0">
-                    <img src="/google.svg" alt="Google Play" className="h-full w-full object-contain rounded-lg" />
-                  </button>
-                )}
-                {product.appStoreUrl && (
-                  <button onClick={() => window.open(product.appStoreUrl, '_blank')} className="h-[38px] w-[100px] sm:h-[44px] sm:w-[118px] hover:opacity-90 active:scale-95 transition-all shrink-0">
-                    <img src="/appele.svg" alt="App Store" className="h-full w-full object-contain rounded-[6px]" />
-                  </button>
-                )}
-                {product.downloadUrl2 && (
-                  <button onClick={() => window.open(product.downloadUrl2, '_blank')} className="inline-flex items-center justify-center gap-3 w-full lg:w-auto px-4 py-3 lg:py-2.5 bg-gray-900 text-white font-semibold rounded-xl hover:bg-blue-600 transition-all">
                     {(() => {
-                      const Icon = product.downloadCustomIcon2 ? null : (product.downloadIcon2 ? ICON_MAP[product.downloadIcon2] : null) || Download;
-                      return product.downloadCustomIcon2 ? <img src={product.downloadCustomIcon2} className="w-3.5 h-3.5 object-contain" /> : <Icon size={14} />;
+                      const Icon = product.downloadCustomIcon2 ? null : (product.downloadIcon2 ? ICON_MAP[product.downloadIcon2] : null) || Info;
+                      return product.downloadCustomIcon2 ? (
+                        <img src={product.downloadCustomIcon2} className="w-[18px] h-[18px] object-contain shrink-0" alt="" />
+                      ) : (
+                        <Icon size={18} className="shrink-0" />
+                      );
                     })()}
-                    <span className="text-xs uppercase tracking-wider">
-                      {product.downloadLabel2 || t('product.downloadFallback')}
+                    <span className="text-[13px] font-semibold">
+                      {product.downloadLabel2 || "Plus d'infos"}
                     </span>
                   </button>
                 )}
-                {product.downloadUrl3 && (
-                  <button onClick={() => window.open(product.downloadUrl3, '_blank')} className="inline-flex items-center justify-center gap-3 w-full lg:w-auto px-4 py-3 lg:py-2.5 bg-gray-900 text-white font-semibold rounded-xl hover:bg-blue-600 transition-all">
+
+                {/* 6. Nous contacter */}
+                {(product.downloadUrl3 || product.downloadUrl2 || product.playStoreUrl || product.appStoreUrl) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (product.downloadUrl3) {
+                        window.open(product.downloadUrl3, '_blank');
+                      } else {
+                        router.push('/contact');
+                      }
+                    }}
+                    className="w-full min-h-[48px] px-4 py-2.5 bg-[#0f172a] text-white font-semibold rounded-xl hover:bg-blue-600 transition-all inline-flex items-center justify-center gap-3 text-[13px] text-center cursor-pointer"
+                  >
                     {(() => {
-                      const Icon = product.downloadCustomIcon3 ? null : (product.downloadIcon3 ? ICON_MAP[product.downloadIcon3] : null) || Download;
-                      return product.downloadCustomIcon3 ? <img src={product.downloadCustomIcon3} className="w-3.5 h-3.5 object-contain" /> : <Icon size={14} />;
+                      const Icon = product.downloadCustomIcon3 ? null : (product.downloadIcon3 ? ICON_MAP[product.downloadIcon3] : null) || MessageSquare;
+                      return product.downloadCustomIcon3 ? (
+                        <img src={product.downloadCustomIcon3} className="w-[18px] h-[18px] object-contain shrink-0" alt="" />
+                      ) : (
+                        <Icon size={18} className="shrink-0" />
+                      );
                     })()}
-                    <span className="text-xs uppercase tracking-wider">
-                      {product.downloadLabel3 || t('product.downloadFallback')}
+                    <span className="text-[13px] font-semibold">
+                      {product.downloadLabel3 || "Nous contacter"}
                     </span>
                   </button>
                 )}
@@ -1321,7 +1386,7 @@ export default function ProductDetailPage() {
                       return <div className="text-2xl font-bold text-emerald-600">{t('product.free')}</div>;
                     }
                     if (currentVar && currentVar.price > 0) {
-                      return <div className="text-2xl font-bold text-gray-900">{formatPrice(currentVar.price)} HT</div>;
+                      return <div className="text-2xl font-bold text-gray-900"><AnimatedPrice value={currentVar.price} currency="€" suffix="HT" /></div>;
                     }
                     if (product?.priceDisplay === 'multiprice' && !selectedVariant) {
                       return <div className="text-2xl font-bold text-gray-900">{t('product.multipleTariffs')}</div>;
@@ -1329,7 +1394,7 @@ export default function ProductDetailPage() {
                     if (product?.priceDisplay === 'quote') {
                       return <div className="text-2xl font-bold text-gray-900">{t('product.onQuote')}</div>;
                     }
-                    return <div className="text-2xl font-bold text-gray-900">{formatPrice(effectivePrice)} HT{canRent ? <span className="text-sm font-semibold text-gray-400">{t('product.perDay')}</span> : null}</div>;
+                    return <div className="text-2xl font-bold text-gray-900"><AnimatedPrice value={effectivePrice} currency="€" suffix="HT" />{canRent ? <span className="text-sm font-semibold text-gray-400">{t('product.perDay')}</span> : null}</div>;
                   })()}
                   {!canRent && (
                     <span className="text-[10px] font-bold text-gray-400 bg-gray-100 border border-gray-200 px-1.5 py-0.5 rounded-md tracking-wider">HT</span>
@@ -1382,42 +1447,65 @@ export default function ProductDetailPage() {
               </div>
               {displayVariants.length > 0 && (
                 <div className="mb-4">
-                  <button
-                    type="button"
-                    onClick={() => setVariantSheetOpen(true)}
-                    aria-haspopup="listbox"
-                    aria-expanded={variantSheetOpen}
-                    className="inline-flex items-center justify-between w-full text-sm font-bold text-gray-600 bg-white border-2 border-gray-200 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-900 rounded-2xl px-4 py-3.5 transition-all"
-                  >
-                    <span>{selectedVariant?.name || t('product.chooseVariant')}</span>
-                    <ChevronDown size={16} className={`transition-transform duration-200 ${variantSheetOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
-                  </button>
-                  {isMobile && (
-                    <MobileBottomSheet
-                      open={variantSheetOpen}
-                      onClose={() => setVariantSheetOpen(false)}
-                      title={t('product.chooseVariant')}
-                      maxHeight="calc(100svh - env(safe-area-inset-bottom, 0px) - 1rem)"
-                      bottomOffset="env(safe-area-inset-bottom, 0px)"
-                      minHeight="min(360px, calc(100svh - env(safe-area-inset-bottom, 0px) - 1rem))"
-                      className="pb-3"
-                      contentClassName="pb-3"
-                    >
-                      <BottomSheetOptionRows
-                        options={variantOptions}
-                        selected={selectedVariantValue ? [selectedVariantValue] : []}
-                        multiple={false}
-                        tone="light"
-                        compact
-                        onToggle={(value) => {
-                          const idx = Number(value.split('-').pop());
-                          const variant = displayVariants[idx];
-                          if (!variant) return;
-                          selectVariant(variant);
-                          setVariantSheetOpen(false);
-                        }}
-                      />
-                    </MobileBottomSheet>
+                  {displayVariants.length <= VARIANT_PILL_MAX ? (
+                    /* ≤ 6 variantes : boutons pills */
+                    <div className="flex flex-wrap gap-2">
+                      {displayVariants.map((v, vIdx) => (
+                        <button
+                          key={`${v.name}-${vIdx}`}
+                          type="button"
+                          onClick={() => selectVariant(v)}
+                          className={`shrink-0 px-3 py-2 text-xs font-bold rounded-xl border-2 transition-all ${
+                            selectedVariant?.name === v.name
+                              ? 'border-gray-900 bg-gray-900 text-white'
+                              : 'border-gray-200/70 text-gray-600 hover:border-gray-400 bg-white'
+                          }`}
+                        >
+                          {v.name}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    /* > 6 variantes : liste déroulante + bottom sheet mobile */
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setVariantSheetOpen(true)}
+                        aria-haspopup="listbox"
+                        aria-expanded={variantSheetOpen}
+                        className="inline-flex items-center justify-between w-full text-sm font-bold text-gray-600 bg-white border-2 border-gray-200 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-900 rounded-2xl px-4 py-3.5 transition-all"
+                      >
+                        <span>{selectedVariant?.name || t('product.chooseVariant')}</span>
+                        <ChevronDown size={16} className={`transition-transform duration-200 ${variantSheetOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
+                      </button>
+                      {isMobile && (
+                        <MobileBottomSheet
+                          open={variantSheetOpen}
+                          onClose={() => setVariantSheetOpen(false)}
+                          title={t('product.chooseVariant')}
+                          maxHeight="calc(100svh - env(safe-area-inset-bottom, 0px) - 1rem)"
+                          bottomOffset="env(safe-area-inset-bottom, 0px)"
+                          minHeight="min(360px, calc(100svh - env(safe-area-inset-bottom, 0px) - 1rem))"
+                          className="pb-3"
+                          contentClassName="pb-3"
+                        >
+                          <BottomSheetOptionRows
+                            options={variantOptions}
+                            selected={selectedVariantValue ? [selectedVariantValue] : []}
+                            multiple={false}
+                            tone="light"
+                            compact
+                            onToggle={(value) => {
+                              const idx = Number(value.split('-').pop());
+                              const variant = displayVariants[idx];
+                              if (!variant) return;
+                              selectVariant(variant);
+                              setVariantSheetOpen(false);
+                            }}
+                          />
+                        </MobileBottomSheet>
+                      )}
+                    </>
                   )}
                 </div>
               )}
@@ -1583,7 +1671,7 @@ export default function ProductDetailPage() {
               </section>
             </div>
 
-            <div className="mt-28 border-t border-gray-200/40 pt-16 space-y-24">
+            <div className="mt-8 sm:mt-10 lg:mt-12 border-t border-gray-200/40 pt-8 sm:pt-10 lg:pt-12 space-y-16">
               {product?.description && product.description.length > 60 && (
                 <div className="bg-white rounded-2xl border border-gray-200/70 p-5">
                   <p className="text-sm text-gray-600 leading-relaxed">{product.description}</p>
@@ -1680,7 +1768,7 @@ export default function ProductDetailPage() {
                     return <div className="text-3xl font-bold text-emerald-600">{t('product.free')}</div>;
                   }
                   if (currentVar && currentVar.price > 0) {
-                    return <div className="text-3xl font-bold text-gray-900">{formatPrice(currentVar.price)} HT</div>;
+                    return <div className="text-3xl font-bold text-gray-900"><AnimatedPrice value={currentVar.price} currency="€" suffix="HT" /></div>;
                   }
                   if (product?.priceDisplay === 'multiprice' && !selectedVariant) {
                     return <div className="text-3xl font-bold text-gray-900">{t('product.multipleTariffs')}</div>;
@@ -1688,7 +1776,7 @@ export default function ProductDetailPage() {
                   if (product?.priceDisplay === 'quote') {
                     return <div className="text-3xl font-bold text-gray-900">{t('product.onQuote')}</div>;
                   }
-                  return <div className="text-3xl font-bold text-gray-900">{formatPrice(effectivePrice)} HT{canRent ? <span className="text-sm font-semibold text-gray-400">{t('product.perDay')}</span> : null}</div>;
+                  return <div className="text-3xl font-bold text-gray-900"><AnimatedPrice value={effectivePrice} currency="€" suffix="HT" />{canRent ? <span className="text-sm font-semibold text-gray-400">{t('product.perDay')}</span> : null}</div>;
                 })()}
                 {effectiveOldPrice && effectiveOldPrice > effectivePrice && (
                   <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
@@ -1741,57 +1829,80 @@ export default function ProductDetailPage() {
             {/* Variants */}
             {displayVariants.length > 0 && (
               <div className="space-y-3 mb-4">
-                <div ref={comboboxRef2}>
-                  <button
-                    ref={comboboxBtn2Ref}
-                    onClick={() => {
-                      const rect = comboboxBtn2Ref.current?.getBoundingClientRect() ?? null;
-                      setDropdownRect2(rect);
-                      setComboboxOpen2(o => !o);
-                    }}
-                    className="inline-flex items-center justify-between w-full text-sm font-bold text-gray-600 bg-white border-2 border-gray-200 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-900 rounded-2xl px-4 py-3.5 transition-all"
-                  >
-                    <span>{selectedVariant?.name || t('product.chooseVariant')}</span>
-                    <ChevronDown size={16} className={`transition-transform duration-200 ${comboboxOpen2 ? 'rotate-180' : ''}`} />
-                  </button>
-                  {comboboxOpen2 && dropdownRect2 && (
-                    <div
-                      className="bg-white border border-gray-200 rounded-2xl shadow-2xl overflow-y-auto"
-                      style={{
-                        position: 'fixed',
-                        zIndex: 9999,
-                        top: dropdownRect2.bottom + 6,
-                        left: dropdownRect2.left,
-                        width: dropdownRect2.width,
-                        maxHeight: 320,
-                        scrollbarWidth: 'thin',
-                        scrollbarColor: '#e5e7eb transparent',
+                {displayVariants.length <= VARIANT_PILL_MAX ? (
+                  /* ≤ 6 variantes : boutons pills */
+                  <div className="flex flex-wrap gap-2">
+                    {displayVariants.map((v, vIdx) => (
+                      <button
+                        key={`${v.name}-${vIdx}`}
+                        type="button"
+                        onMouseEnter={() => { setHoveredVariant(v); setSelectedVariant(v); const imgIdx = mediaItems.findIndex(m => m.type === 'image' && m.url === v.image); if (imgIdx >= 0) setSelectedMedia(imgIdx); }}
+                        onMouseLeave={() => setHoveredVariant(null)}
+                        onClick={() => selectVariant(v)}
+                        className={`shrink-0 px-3 py-2 text-xs font-bold rounded-xl border-2 transition-all ${
+                          selectedVariant?.name === v.name
+                            ? 'border-gray-900 bg-gray-900 text-white'
+                            : 'border-gray-200/70 text-gray-600 hover:border-gray-400 bg-white'
+                        }`}
+                      >
+                        {v.name}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  /* > 6 variantes : liste déroulante desktop */
+                  <div ref={comboboxRef2}>
+                    <button
+                      ref={comboboxBtn2Ref}
+                      onClick={() => {
+                        const rect = comboboxBtn2Ref.current?.getBoundingClientRect() ?? null;
+                        setDropdownRect2(rect);
+                        setComboboxOpen2(o => !o);
                       }}
+                      className="inline-flex items-center justify-between w-full text-sm font-bold text-gray-600 bg-white border-2 border-gray-200 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-900 rounded-2xl px-4 py-3.5 transition-all"
                     >
-                      <ul className="py-1">
-                        {displayVariants.map((v, vIdx) => (
-                          <li key={`${v.name}-${vIdx}`}>
-                            <button
-                              onMouseEnter={() => { setHoveredVariant(v); setSelectedVariant(v); const imgIdx = mediaItems.findIndex(m => m.type === 'image' && m.url === v.image); if (imgIdx >= 0) setSelectedMedia(imgIdx); }}
-                              onMouseLeave={() => setHoveredVariant(null)}
-                              onClick={() => { selectVariant(v); setComboboxOpen2(false); }}
-                              className="inline-flex items-center justify-between w-full px-4 py-3 text-sm font-semibold text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
-                            >
-                              <div className="flex items-center gap-3">
-                                <div className="w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-bold uppercase shrink-0 bg-gray-100 text-gray-400">{v.name?.charAt(0)}</div>
-                                <div className="text-left">
-                                  <div className="text-sm font-bold">{v.name}</div>
-                                  {v.reference && <div className="text-[10px] text-gray-400 font-mono">{v.reference}</div>}
+                      <span>{selectedVariant?.name || t('product.chooseVariant')}</span>
+                      <ChevronDown size={16} className={`transition-transform duration-200 ${comboboxOpen2 ? 'rotate-180' : ''}`} />
+                    </button>
+                    {comboboxOpen2 && dropdownRect2 && (
+                      <div
+                        className="bg-white border border-gray-200 rounded-2xl shadow-2xl overflow-y-auto"
+                        style={{
+                          position: 'fixed',
+                          zIndex: 9999,
+                          top: dropdownRect2.bottom + 6,
+                          left: dropdownRect2.left,
+                          width: dropdownRect2.width,
+                          maxHeight: 320,
+                          scrollbarWidth: 'thin',
+                          scrollbarColor: '#e5e7eb transparent',
+                        }}
+                      >
+                        <ul className="py-1">
+                          {displayVariants.map((v, vIdx) => (
+                            <li key={`${v.name}-${vIdx}`}>
+                              <button
+                                onMouseEnter={() => { setHoveredVariant(v); setSelectedVariant(v); const imgIdx = mediaItems.findIndex(m => m.type === 'image' && m.url === v.image); if (imgIdx >= 0) setSelectedMedia(imgIdx); }}
+                                onMouseLeave={() => setHoveredVariant(null)}
+                                onClick={() => { selectVariant(v); setComboboxOpen2(false); }}
+                                className="inline-flex items-center justify-between w-full px-4 py-3 text-sm font-semibold text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                              >
+                                <div className="flex items-center gap-3">
+                                  <div className="w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-bold uppercase shrink-0 bg-gray-100 text-gray-400">{v.name?.charAt(0)}</div>
+                                  <div className="text-left">
+                                    <div className="text-sm font-bold">{v.name}</div>
+                                    {v.reference && <div className="text-[10px] text-gray-400 font-mono">{v.reference}</div>}
+                                  </div>
                                 </div>
-                              </div>
-                              {v.price > 0 && <div className="text-xs font-bold text-gray-600">{formatPrice(v.price)}</div>}
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
+                                {v.price > 0 && <div className="text-xs font-bold text-gray-600">{formatPrice(v.price)}</div>}
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
                 {selectedVariant?.description && (
                   <div className="flex items-center gap-2 pt-1">
                     <span className="bg-gray-900 text-white px-2.5 py-1 rounded-lg text-xs font-bold tracking-tight shadow-sm">{selectedVariant.description}</span>
@@ -1958,49 +2069,6 @@ export default function ProductDetailPage() {
           </div>
           </aside>
       </main>
-      {showQrModal && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-          onClick={() => setShowQrModal(false)}
-        >
-          <div
-            className="relative w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl border border-gray-100 flex flex-col items-center text-center"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              type="button"
-              onClick={() => setShowQrModal(false)}
-              className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors"
-              aria-label={t('header.close')}
-            >
-              <X size={18} />
-            </button>
-            <h3 className="text-base font-black text-gray-900 uppercase tracking-tight mb-4">
-              {t('product.qrCodeTitle')}
-            </h3>
-            <div className="w-56 h-56 bg-white p-3 rounded-2xl border-2 border-cyan-400/50 shadow-sm flex items-center justify-center mb-4">
-              {productQrDataUrl ? (
-                <img src={productQrDataUrl} alt={t('product.qrCodeTitle')} className="w-full h-full object-contain" />
-              ) : (
-                <LiquidLoader size={24} />
-              )}
-            </div>
-            <p className="text-xs font-semibold text-gray-600 mb-4 leading-relaxed">
-              {t('product.qrCodeScanInfo')}
-            </p>
-            {product?.qrCodeUrl && (
-              <a
-                href={product.qrCodeUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-700 font-medium underline truncate max-w-full px-2"
-              >
-                {product.qrCodeUrl}
-              </a>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

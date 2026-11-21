@@ -14,7 +14,7 @@ export function ConfiguratorModeSelection({ onSelectGuide, showGuide = true, sho
       initial={{ opacity: 0, x: -40 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.22, ease: [0.25, 0.46, 0.45, 0.94] }}
-      className="w-full max-w-xl ml-[15px] flex flex-col items-center justify-end p-0 pb-2 h-full"
+      className="w-full max-w-xl flex flex-col items-center justify-end p-0 pb-2 h-full"
     >
       <div className='text-center mb-6 w-full'>
         <SparklesText

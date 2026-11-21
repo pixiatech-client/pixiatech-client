@@ -463,19 +463,19 @@ export function BottomSheetSelect({
     [value],
   );
 
-  const selectedLabels = useMemo(
-    () => options.filter((option) => current.includes(option.value)).map((option) => option.label),
+  const selectedOptions = useMemo(
+    () => options.filter((option) => current.includes(option.value)),
     [options, current],
   );
 
   const filteredOptions = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return options;
-    return options.filter((option) =>
-      (option.searchText ?? String(option.label))
-        .toLowerCase()
-        .includes(q),
-    );
+    return options.filter((option) => {
+      const text = (option.searchText ?? (typeof option.label === 'string' ? option.label : ''))
+        .toLowerCase();
+      return text.includes(q);
+    });
   }, [options, query]);
 
   const open = useCallback(() => {
@@ -534,9 +534,16 @@ export function BottomSheetSelect({
     setSheetOpen(false);
   };
 
-  const triggerLabel = selectedLabels.length
-    ? selectedLabels.map((item) => String(item)).join(', ')
-    : placeholder;
+  const triggerLabelNode = useMemo(() => {
+    if (selectedOptions.length === 0) return placeholder;
+    if (selectedOptions.length === 1) {
+      const opt = selectedOptions[0];
+      return opt.label ?? opt.searchText ?? placeholder;
+    }
+    return selectedOptions
+      .map((opt) => opt.searchText ?? (typeof opt.label === 'string' ? opt.label : opt.value))
+      .join(', ');
+  }, [selectedOptions, placeholder]);
 
   return (
     <div ref={rootRef} className={cn('relative', className)}>
@@ -556,8 +563,12 @@ export function BottomSheetSelect({
         )}
       >
         <span className="flex min-w-0 items-center gap-2">
-          {leadingIcon && <span className="shrink-0 opacity-60">{leadingIcon}</span>}
-          <span className="truncate">{triggerLabel}</span>
+          {(!multiple && selectedOptions[0]?.icon) ? (
+            <span className="shrink-0">{selectedOptions[0].icon}</span>
+          ) : leadingIcon ? (
+            <span className="shrink-0 opacity-60">{leadingIcon}</span>
+          ) : null}
+          <span className="truncate">{triggerLabelNode}</span>
         </span>
         <ChevronDown
           className={cn('h-4 w-4 shrink-0 transition-transform', desktopOpen && 'rotate-180')}

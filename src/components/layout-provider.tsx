@@ -140,6 +140,25 @@ export function LayoutProvider({
     router.push(routes[index]);
   };
 
+  // Synchronisation de l'onglet actif avec la route actuelle
+  const currentNavIndex = (() => {
+    if (isMonCompteProtected) {
+      if (pathname.startsWith('/mon-compte/tableau-de-bord')) return 0;
+      if (pathname.startsWith('/mon-compte/commandes') || pathname.startsWith('/mon-compte/litiges')) return 1;
+      if (pathname.startsWith('/mon-compte/parametres')) return 2;
+      return 0;
+    }
+    if (initialBoutiqueEnabled) {
+      if (pathname === '/') return 0;
+      if (pathname.startsWith('/boutique/panier') || pathname.startsWith('/boutique/paiement')) return 2;
+      if (pathname.startsWith('/boutique')) return 1;
+      if (pathname.startsWith('/mon-compte')) return 3;
+      return 0;
+    }
+    if (pathname.startsWith('/mon-compte')) return 1;
+    return 0;
+  })();
+
   useProtectMedia();
 
   return (
@@ -153,7 +172,10 @@ export function LayoutProvider({
           <div className={cn("flex flex-col min-h-dvh", isFrontendPage ? "bg-[#F5F5F5]" : "bg-background")}>
             {isFrontendPage && !isMonComptePage && !isBoutiqueIndexPage && <BoutiqueHeader boutiqueEnabled={initialBoutiqueEnabled} />}
             {isFrontendPage ? (
-              <div className={`flex flex-col flex-1 ${isMonComptePage || isBoutiqueIndexPage ? '' : 'pt-[68px]'} ${showBottomNav ? 'pb-20' : ''} bg-[#F5F5F5]`}>
+              <div
+                className={`flex flex-col flex-1 ${isMonComptePage || isBoutiqueIndexPage ? '' : 'pt-[68px]'} bg-[#F5F5F5]`}
+                style={showBottomNav ? { paddingBottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))' } : undefined}
+              >
                 <SiteBanners />
                 <main
                   className={cn(
@@ -172,10 +194,14 @@ export function LayoutProvider({
               </main>
             )}
             {showBottomNav && (
-              <div className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-center px-4 pb-3 md:hidden">
-                <div data-pixia-bottom-nav className="inline-flex">
+              <div
+                className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-center px-4 md:hidden"
+                style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0px))' }}
+              >
+                <div data-pixia-bottom-nav className="flex w-full justify-center">
                   <ExpandableTabs
                     tabs={bottomNavTabs}
+                    activeIndex={currentNavIndex}
                     onChange={handleBottomNavChange}
                     className="shadow-xl"
                   />
@@ -189,7 +215,7 @@ export function LayoutProvider({
             <PixiaGlobalAnimation
               active={isWebPage || isFrontendPage}
               heroSelector={isFrontendPage ? 'main' : undefined}
-              dockBottomInset={isFrontendPage && showBottomNav ? 64 : 0}
+              dockBottomInset={isFrontendPage && showBottomNav ? 72 : 0}
               dockBarSelector={
                 isFrontendPage && showBottomNav ? '[data-pixia-bottom-nav]' : undefined
               }

@@ -2581,6 +2581,8 @@ const ProduitPage = ({
   setUploadedPhoto,
   photoUrl,
   setPhotoUrl,
+  showMainImageInDetail,
+  setShowMainImageInDetail,
   uploadedVideo,
   setUploadedVideo,
   videoUrl,
@@ -2713,7 +2715,12 @@ const ProduitPage = ({
 
   useEffect(() => {
     if (qrCodeUrl && qrCodeUrl.trim()) {
-      QRCode.toDataURL(qrCodeUrl.trim(), { width: 280, margin: 1 })
+      QRCode.toDataURL(qrCodeUrl.trim(), {
+        width: 360,
+        margin: 4,
+        errorCorrectionLevel: 'M',
+        color: { dark: '#000000', light: '#FFFFFF' },
+      })
         .then(setQrCodeDataUrl)
         .catch(() => setQrCodeDataUrl(''));
     } else {
@@ -2731,7 +2738,12 @@ const ProduitPage = ({
       return;
     }
     try {
-      const url = await QRCode.toDataURL(qrCodeUrl.trim(), { width: 280, margin: 1 });
+      const url = await QRCode.toDataURL(qrCodeUrl.trim(), {
+        width: 360,
+        margin: 4,
+        errorCorrectionLevel: 'M',
+        color: { dark: '#000000', light: '#FFFFFF' },
+      });
       setQrCodeDataUrl(url);
       toast({
         title: "QR Code généré",
@@ -3898,6 +3910,21 @@ const ProduitPage = ({
                     <button onClick={() => { if (mediaType === 'photo') { setPhotoUrl(''); setUploadedPhoto(null); } else { setVideoUrl(''); setUploadedVideo(null); } }} className="p-3 bg-red-50 text-red-600 rounded-xl border border-red-100 shadow-sm active:scale-95 transition-all"><Trash2 className="w-4 h-4" /></button>
                   </div>
                 </div>
+
+                {/* Switch visibilité photo principale dans la fiche détaillée */}
+                {mediaType === 'photo' && (
+                  <div className="flex items-center justify-between p-3.5 bg-slate-50 rounded-2xl border border-slate-100 transition-all">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-xs font-black text-slate-800 tracking-tight">Afficher dans la fiche produit</span>
+                      <span className="text-[10px] text-slate-400 font-medium">Visible en vitrine & dans la fiche détaillée</span>
+                    </div>
+                    <Switch
+                      checked={showMainImageInDetail}
+                      onCheckedChange={setShowMainImageInDetail}
+                      className="data-[state=checked]:bg-[#18181B]"
+                    />
+                  </div>
+                )}
               </div>
             </div>
 
@@ -5367,6 +5394,7 @@ export default function ProductManagementClient() {
     setDistancePitches({});
     setPrimaryDistance('');
     setPhotoUrl('');
+    setShowMainImageInDetail(true);
     setVideoUrl('');
     setPdfUrl('');
     setUploadedPhoto(null);
@@ -5825,6 +5853,7 @@ export default function ProductManagementClient() {
 
   // Media State
   const [photoUrl, setPhotoUrl] = useState('');
+  const [showMainImageInDetail, setShowMainImageInDetail] = useState<boolean>(true);
   const [uploadedPhoto, setUploadedPhoto] = useState<File | null>(null);
   const [videoUrl, setVideoUrl] = useState('');
   const [uploadedVideo, setUploadedVideo] = useState<File | null>(null);
@@ -6153,6 +6182,7 @@ export default function ProductManagementClient() {
         price: String(normalizePrice(prixVente)),
         oldPrice: oldPrice ? parseFloat(oldPrice) : null,
         image: finalPhotoUrl || '',
+        showMainImageInDetail: showMainImageInDetail !== false,
         videoUrl: finalVideoUrl || '',
         pdfUrl: finalPdfUrl || '',
         pitch: pitchVal,
@@ -6970,6 +7000,7 @@ export default function ProductManagementClient() {
       }
 
       setPhotoUrl(getSafeImageUrl(editingProduct) || '');
+      setShowMainImageInDetail(editingProduct.showMainImageInDetail !== false);
       setVideoUrl(editingProduct.videoUrl || '');
 
       // Auto-switch media type if video exists
@@ -7584,6 +7615,8 @@ export default function ProductManagementClient() {
                   setUploadedPhoto={setUploadedPhoto}
                   photoUrl={photoUrl}
                   setPhotoUrl={setPhotoUrl}
+                  showMainImageInDetail={showMainImageInDetail}
+                  setShowMainImageInDetail={setShowMainImageInDetail}
                   uploadedVideo={uploadedVideo}
                   setUploadedVideo={setUploadedVideo}
                   videoUrl={videoUrl}
