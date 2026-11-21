@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { PixiaHeader } from './pixiatech/PixiaHeader';
 import { HeroSection } from './components/HeroSection';
 import { OverviewSection } from './components/OverviewSection';
@@ -69,6 +69,7 @@ function ProductView({ slug, fallbackProduct, isPreview = false }: ProductPageTe
   const [brandName] = useState<string>(DEFAULT_COMPANY_NAME);
   const [isConsultationOpen, setIsConsultationOpen] = useState<boolean>(false);
   const [activeDatasheetModel, setActiveDatasheetModel] = useState<SpecModel | null>(null);
+  const [pdfExporting, setPdfExporting] = useState<boolean>(false);
   const { setCurrentPageId, isEditing, setCurrentLang, currentPageData } = useCms();
   // Meme source de langue que le header (contexte i18n global, persiste).
   const { locale } = useI18n();
@@ -198,6 +199,26 @@ function ProductView({ slug, fallbackProduct, isPreview = false }: ProductPageTe
     return DEFAULT_PRODUCT_SECTION_ORDER;
   }, [configuredOrder]);
 
+  /**
+   * Export PDF de la fiche technique — chargement lazy pour ne pas alourdir le
+   * bundle initial des pages produit où l'utilisateur ne clique pas forcément.
+   */
+  const handleDownloadPdf = async () => {
+    if (pdfExporting) return;
+    setPdfExporting(true);
+    try {
+      const { exportProductToPdf } = await import('@/lib/products/export-product-pdf');
+      await exportProductToPdf(product, {
+        lang: effectiveLang,
+        companyName: companyName,
+      });
+    } catch (err) {
+      console.error('Erreur export PDF fiche technique:', err);
+    } finally {
+      setPdfExporting(false);
+    }
+  };
+
   const productSections: Record<string, { label: string; render: () => React.ReactNode } | null> = {
     hero: {
       label: effectiveLang === 'FR' ? 'Hero Produit' : 'Product Hero',
@@ -209,6 +230,8 @@ function ProductView({ slug, fallbackProduct, isPreview = false }: ProductPageTe
           onOpenQuote={() => setIsConsultationOpen(true)}
           lang={effectiveLang}
           series={text(product.series)}
+          onDownloadPdf={handleDownloadPdf}
+          pdfExporting={pdfExporting}
         />
       ),
     },

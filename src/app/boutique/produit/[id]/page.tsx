@@ -1230,12 +1230,12 @@ export default function ProductDetailPage() {
                 </>
               )}
 
-              <div className="mt-4 flex flex-wrap items-center gap-2">
+              <div className="mt-4 flex flex-col lg:flex-row lg:flex-wrap items-stretch lg:items-center gap-2">
                 {product.showQrCodeOnProduct && product.qrCodeUrl && (
                   <button
                     type="button"
                     onClick={() => setShowQrModal(true)}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-900 text-white font-semibold rounded-xl hover:bg-cyan-600 transition-all cursor-pointer shadow-sm"
+                    className="inline-flex items-center justify-center gap-3 w-full lg:w-auto px-4 py-3 lg:py-2.5 bg-gray-900 text-white font-semibold rounded-xl hover:bg-cyan-600 transition-all cursor-pointer shadow-sm"
                     title={t('product.showQrCode')}
                   >
                     <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1255,7 +1255,7 @@ export default function ProductDetailPage() {
                     <span className="text-xs uppercase tracking-wider">QR Code</span>
                   </button>
                 )}
-                <button onClick={() => window.open(product.pdfUrl || '', '_blank')} disabled={!product.pdfUrl} className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-900 text-white font-semibold rounded-xl hover:bg-blue-600 transition-all disabled:opacity-30 disabled:cursor-not-allowed">
+                <button onClick={() => window.open(product.pdfUrl || '', '_blank')} disabled={!product.pdfUrl} className="inline-flex items-center justify-center gap-3 w-full lg:w-auto px-4 py-3 lg:py-2.5 bg-gray-900 text-white font-semibold rounded-xl hover:bg-blue-600 transition-all disabled:opacity-30 disabled:cursor-not-allowed">
                   <FileText size={14} />
                   <span className="text-xs uppercase tracking-wider">{t('product.datasheet')}</span>
                 </button>
@@ -1270,7 +1270,7 @@ export default function ProductDetailPage() {
                   </button>
                 )}
                 {product.downloadUrl2 && (
-                  <button onClick={() => window.open(product.downloadUrl2, '_blank')} className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-900 text-white font-semibold rounded-xl hover:bg-blue-600 transition-all">
+                  <button onClick={() => window.open(product.downloadUrl2, '_blank')} className="inline-flex items-center justify-center gap-3 w-full lg:w-auto px-4 py-3 lg:py-2.5 bg-gray-900 text-white font-semibold rounded-xl hover:bg-blue-600 transition-all">
                     {(() => {
                       const Icon = product.downloadCustomIcon2 ? null : (product.downloadIcon2 ? ICON_MAP[product.downloadIcon2] : null) || Download;
                       return product.downloadCustomIcon2 ? <img src={product.downloadCustomIcon2} className="w-3.5 h-3.5 object-contain" /> : <Icon size={14} />;
@@ -1281,7 +1281,7 @@ export default function ProductDetailPage() {
                   </button>
                 )}
                 {product.downloadUrl3 && (
-                  <button onClick={() => window.open(product.downloadUrl3, '_blank')} className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-900 text-white font-semibold rounded-xl hover:bg-blue-600 transition-all">
+                  <button onClick={() => window.open(product.downloadUrl3, '_blank')} className="inline-flex items-center justify-center gap-3 w-full lg:w-auto px-4 py-3 lg:py-2.5 bg-gray-900 text-white font-semibold rounded-xl hover:bg-blue-600 transition-all">
                     {(() => {
                       const Icon = product.downloadCustomIcon3 ? null : (product.downloadIcon3 ? ICON_MAP[product.downloadIcon3] : null) || Download;
                       return product.downloadCustomIcon3 ? <img src={product.downloadCustomIcon3} className="w-3.5 h-3.5 object-contain" /> : <Icon size={14} />;
@@ -1434,13 +1434,13 @@ export default function ProductDetailPage() {
                       )}
                     </div>
                   ) : (
-                    <div ref={variantWrapRef1} className="flex flex-wrap gap-2">
+                    <div ref={variantWrapRef1} className="flex flex-col lg:flex-row lg:flex-wrap gap-2">
                       {displayVariants.map((v, vIdx) => (
                         <button key={`${v.name}-${vIdx}`}
                           onMouseEnter={() => setHoveredVariant(v)}
                           onMouseLeave={() => setHoveredVariant(null)}
                           onClick={() => { setSelectedVariant(v); committedVariantRef.current = v; const imgIdx = mediaItems.findIndex(m => m.type === 'image' && m.url === v.image); if (imgIdx >= 0) setSelectedMedia(imgIdx); }}
-                          className={`shrink-0 px-4 py-2.5 text-sm font-bold rounded-2xl border-2 transition-all ${selectedVariant?.image === v.image ? 'border-gray-900 bg-gray-900 text-white shadow-md' : 'border-gray-200/70 text-gray-600 hover:border-gray-400 hover:shadow-sm'}`}>
+                          className={`w-full lg:w-auto lg:shrink-0 px-4 py-3 lg:py-2.5 text-sm font-bold rounded-2xl border-2 transition-all ${selectedVariant?.image === v.image ? 'border-gray-900 bg-gray-900 text-white shadow-md' : 'border-gray-200/70 text-gray-600 hover:border-gray-400 hover:shadow-sm'}`}>
                           {v.name}
                         </button>
                       ))}
@@ -1480,8 +1480,9 @@ export default function ProductDetailPage() {
                 </div>
               </section>
 
-              <div className="flex flex-col sm:flex-row items-stretch gap-3 min-w-0">
-              <div className={`bg-violet-500/10 p-4 rounded-2xl border border-violet-500/40 ring-1 ring-violet-500/20 relative group overflow-hidden shadow-[0_0_20px_rgba(139,92,246,0.08)] w-full sm:w-auto sm:flex-1`}>
+              <div className="flex flex-col gap-3 min-w-0">
+              {!canQuote && !canRent && (
+              <div className="bg-violet-500/10 p-4 rounded-2xl border border-violet-500/40 ring-1 ring-violet-500/20 relative group overflow-hidden shadow-[0_0_20px_rgba(139,92,246,0.08)] w-full">
                 <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-violet-500/50 to-transparent"></div>
                 <div className="flex items-center justify-between mb-1">
                   <label className="text-[10px] font-black text-violet-400 uppercase tracking-widest flex items-center gap-2">
@@ -1541,7 +1542,8 @@ export default function ProductDetailPage() {
                   </p>
                 )}
               </div>
-              <div className="flex flex-col gap-3 flex-1 min-w-0 overflow-hidden">
+              )}
+              <div className="flex flex-col gap-3 w-full min-w-0">
               {canQuote ? (
                 quoteDone ? (
                   <div className="flex flex-col gap-3">

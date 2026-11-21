@@ -235,6 +235,58 @@ function readBackToTop(bottomInset = 0): { cx: number; top: number } {
   };
 }
 
+/**
+ * Ancrage « dans le menu » (application mobile uniquement).
+ *
+ * La barre d'onglets est centrée dans une enveloppe pleine largeur : il reste
+ * de chaque côté un espace libre. Quand cet espace peut accueillir la tête,
+ * on y descend l'icône au lieu de la laisser flotter au-dessus du bouton
+ * « retour en haut ». Le côté droit est privilégié (c'est là que l'icône
+ * était ancrée avant la descente), le gauche sert de repli si le droit est
+ * trop serré, et l'ancre historique reprise si aucun des deux ne convient.
+ */
+function readMenuAnchor(
+  bottomInset: number,
+  selector: string | undefined,
+  headH: number
+): { cx: number; top: number } {
+  const fallback = () => readBackToTop(bottomInset);
+  if (!selector || document.documentElement.clientWidth >= 640) return fallback();
+
+  const bar = document.querySelector<HTMLElement>(selector);
+  if (!bar) return fallback();
+  const barRect = bar.getBoundingClientRect();
+  if (barRect.width <= 0 || barRect.height <= 0) return fallback();
+
+  const buttons = Array.from(bar.querySelectorAll('button'))
+    .map((b) => b.getBoundingClientRect())
+    .filter((r) => r.width > 0 && r.height > 0);
+  if (buttons.length === 0) return fallback();
+
+  const vw = document.documentElement.clientWidth;
+  const margin = 8;
+  const minRoom = Math.max(44, headH + 4);
+  const firstLeft = Math.min(...buttons.map((r) => r.left));
+  const lastRight = Math.max(...buttons.map((r) => r.right));
+  const barCenterY = barRect.top + barRect.height / 2;
+  // `anchor.top` est la hauteur du bouton « retour en haut » : la frame en
+  // déduit le centre de la tête avec `top - DOCK_GAP - headH / 2`.
+  const top = barCenterY + DOCK_GAP + headH / 2;
+
+  // La barre est CENTRÉE dans son enveloppe pleine largeur : le placement
+  // disponible est entre son bord et le bord de l'écran, pas dans la barre.
+  const zones = [
+    { from: Math.max(lastRight, barRect.right) + margin, to: vw - margin },
+    { from: margin, to: Math.max(0, Math.min(firstLeft, barRect.left)) - margin },
+  ];
+  for (const zone of zones) {
+    if (zone.to - zone.from >= minRoom) {
+      return { cx: (zone.from + zone.to) / 2, top };
+    }
+  }
+  return fallback();
+}
+
 /* -------------------------------------------------------------------------- */
 /* Composant                                                                   */
 /* -------------------------------------------------------------------------- */
@@ -249,6 +301,10 @@ interface PixiaGlobalAnimationProps {
    *  une barre d'onglets fixe (application mobile). Sans effet sur `/web`, où
    *  l'icône reste ancrée sur `#back-to-top-btn`. */
   dockBottomInset?: number;
+  /** Sélecteur de la barre d'onglets mobile : quand il est fourni et qu'il
+   *  reste de la place à côté des onglets, la tête dockée descend DANS le menu
+   *  au lieu de flotter au-dessus. Jamais transmis sur `/web` ni sur desktop. */
+  dockBarSelector?: string;
   /** Masque temporairement la mascotte (Configuration Guidée) sans démonter
    *  le composant : le relais reste actif, donc aucun ancien robot ne réapparaît
    *  et le pont conversationnel reste intact. */
@@ -259,6 +315,7 @@ export function PixiaGlobalAnimation({
   active = false,
   heroSelector = DEFAULT_HERO_SELECTOR,
   dockBottomInset = 0,
+  dockBarSelector,
   hidden = false,
 }: PixiaGlobalAnimationProps) {
   const pathname = usePathname();
@@ -406,9 +463,11 @@ export function PixiaGlobalAnimation({
     const curX = dragRect.left + dragRect.width / 2;
     const curY = dragRect.top + dragRect.height / 2;
 
-    /* --- Cible RÉELLE : centre du contenu de l'icône, au-dessus du bouton --- */
-    const anchor = readBackToTop(dockBottomInset);
+    /* --- Cible RÉELLE : centre du contenu de l'icône. Sur l'application
+       mobile, elle descend dans l'espace libre du menu bas ; sinon elle reste
+       au-dessus du bouton « retour en haut ». --- */
     const headH = ICON_HEAD_H * D;
+    const anchor = readMenuAnchor(dockBottomInset, dockBarSelector, headH);
     // Jamais coupée par un bord (zoom, petite fenêtre, barre de défilement) :
     // on borne le centre de la tête à l'intérieur de la zone visible.
     const headX = clamp(anchor.cx, D / 2 + 4, Math.max(D / 2 + 4, vw - D / 2 - 4));
@@ -550,7 +609,7 @@ export function PixiaGlobalAnimation({
       root.dataset.pixiaChatOpen = chat ? 'true' : 'false';
       root.dataset.pixiaDocked = isDocked ? 'true' : 'false';
     }
-  }, [greeting, reduceMotion, heroSelector, dockBottomInset]);
+  }, [greeting, reduceMotion, heroSelector, dockBottomInset, dockBarSelector]);
 
   /**
    * Toujours la DERNIÈRE version d'`apply`.
@@ -624,7 +683,12 @@ export function PixiaGlobalAnimation({
       if (document.visibilityState === 'visible') ensureVideoPlaying();
       schedule();
     };
-    const onReady = () => ensureVideoPlaying();
+    const onReady = () => {
+      ensureVideoPlaying();
+      // Un onglet sélectionné peut élargir la barre : on recalcule l'ancrage
+      // (espace libre réduit) sans attendre le prochain scroll.
+      schedule();
+    };
     const onPause = () => {
       // Seul l'onglet visible doit relancer la lecture : évite toute boucle
       // play/pause quand la page est en arrière-plan.

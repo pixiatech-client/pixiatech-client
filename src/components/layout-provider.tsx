@@ -173,11 +173,13 @@ export function LayoutProvider({
             )}
             {showBottomNav && (
               <div className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-center px-4 pb-3 md:hidden">
-                <ExpandableTabs
-                  tabs={bottomNavTabs}
-                  onChange={handleBottomNavChange}
-                  className="shadow-xl"
-                />
+                <div data-pixia-bottom-nav className="inline-flex">
+                  <ExpandableTabs
+                    tabs={bottomNavTabs}
+                    onChange={handleBottomNavChange}
+                    className="shadow-xl"
+                  />
+                </div>
               </div>
             )}
             {(isFrontendPage || isWebPage) && <FloatingChatWrapper />}
@@ -188,6 +190,9 @@ export function LayoutProvider({
               active={isWebPage || isFrontendPage}
               heroSelector={isFrontendPage ? 'main' : undefined}
               dockBottomInset={isFrontendPage && showBottomNav ? 64 : 0}
+              dockBarSelector={
+                isFrontendPage && showBottomNav ? '[data-pixia-bottom-nav]' : undefined
+              }
               hidden={guidedConfigActive}
             />
           </div>

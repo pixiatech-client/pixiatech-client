@@ -27,6 +27,14 @@ interface HeroSectionProps {
   productPhotosInOverview?: boolean;
   /** Série du produit (masthead PDF) : dernier fil d'Ariane. */
   series?: string;
+  /**
+   * Callback pour déclencher le téléchargement de la fiche technique en PDF.
+   * Fourni uniquement depuis la page produit `/web/product/[slug]`.
+   * Si absent, le bouton PDF n'est pas rendu.
+   */
+  onDownloadPdf?: () => void;
+  /** Indique si l'export PDF est en cours (affichage du spinner). */
+  pdfExporting?: boolean;
 }
 
 export const HeroSection: React.FC<HeroSectionProps> = ({
@@ -37,6 +45,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   data,
   series,
   productPhotosInOverview = false,
+  onDownloadPdf,
+  pdfExporting = false,
 }) => {
   const { pages, currentPageId } = useCms();
   const cmsHero = (pages[currentPageId]?.sections?.hero as Record<string, unknown>) || {};
@@ -192,6 +202,68 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               <a className="btn btn-ghost" href="#specs" style={{ alignSelf: 'center' }}>
                 {secondaryCta}
               </a>
+            )}
+            {onDownloadPdf && (
+              <button
+                type="button"
+                onClick={onDownloadPdf}
+                disabled={pdfExporting}
+                className="btn btn-ghost"
+                data-cms-ui="true"
+                style={{
+                  alignSelf: 'center',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  opacity: pdfExporting ? 0.65 : 1,
+                  cursor: pdfExporting ? 'wait' : 'pointer',
+                  fontSize: '12px',
+                  letterSpacing: '.1em',
+                  textTransform: 'uppercase',
+                }}
+                title={
+                  lang === 'FR'
+                    ? 'Télécharger la fiche technique au format PDF'
+                    : 'Download technical datasheet as PDF'
+                }
+              >
+                {pdfExporting ? (
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    style={{ animation: 'spin 1s linear infinite' }}
+                  >
+                    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                  </svg>
+                ) : (
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="7 10 12 15 17 10" />
+                    <line x1="12" y1="15" x2="12" y2="3" />
+                  </svg>
+                )}
+                <span>
+                  {pdfExporting
+                    ? (lang === 'FR' ? 'Génération…' : 'Generating…')
+                    : (lang === 'FR' ? 'Fiche Technique PDF' : 'Download PDF')
+                  }
+                </span>
+              </button>
             )}
           </div>
         </div>

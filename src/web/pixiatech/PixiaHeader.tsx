@@ -7,7 +7,6 @@ import { CATALOG_PRODUCTS, type CatalogProduct } from './pixiatech-catalog';
 import { Language } from '../pixiatech-translations';
 import { useI18n } from '@/lib/i18n';
 import { SearchModal } from './SearchModal';
-import { MobileBottomSheet } from '@/components/ui/bottom-sheet';
 import { Shield, Globe } from 'lucide-react';
 import { ProductsProvider, useProducts } from '@/lib/products/products-context';
 import type { ProductRecord, MegaMenu, MegaMenuItem } from '@/lib/products/types';
@@ -239,7 +238,7 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
   const [mobileSubMenu, setMobileSubMenu] = useState<'main' | 'products'>('main');
   const [searchOpen, setSearchOpen] = useState(false);
   // Couleur d'accent courante — se met à jour quand ThemePanel dispatch l'événement
-  const [accentColor, setAccentColor] = useState<string>('var(--accent, var(--ui-accent))');
+  const [accentColor, setAccentColor] = useState<string>('var(--accent, #C3F910)');
 
   // Écouter les changements de thème pour forcer un re-render des couleurs inline
   useEffect(() => {
@@ -1116,73 +1115,73 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                   alignContent: 'start',
                 }}
               >
-              {model.columns.map((col) => (
-                <div key={col.id} style={{ minWidth: 0 }}>
-                  <div
-                    style={{
-                      fontSize: 10.5,
-                      letterSpacing: '.22em',
-                      color: '#7A7A76',
-                      marginBottom: 20,
-                      fontFamily: 'var(--font-mono)',
-                      textTransform: 'uppercase',
-                    }}
-                  >
-                    {activeLang === 'FR' ? col.titleFr : col.titleEn}
-                  </div>
+                {model.columns.map((col) => (
+                  <div key={col.id} style={{ minWidth: 0 }}>
+                    <div
+                      style={{
+                        fontSize: 10.5,
+                        letterSpacing: '.22em',
+                        color: '#7A7A76',
+                        marginBottom: 20,
+                        fontFamily: 'var(--font-mono)',
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      {activeLang === 'FR' ? col.titleFr : col.titleEn}
+                    </div>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 14, minWidth: 0 }}>
-                    {col.items.map((m) => {
-                      const isHovered = hoveredItem?.id === m.id;
-                      return (
-                        <div
-                          key={m.id}
-                          className="mega-card-item"
-                          onMouseEnter={() => setHoveredItemId(m.id)}
-                          onClick={() => navigateTo(m)}
-                          style={{
-                            cursor: m.clickable ? 'pointer' : 'default',
-                            opacity: m.clickable ? 1 : 0.45,
-                            display: 'flex',
-                            alignItems: 'baseline',
-                            justifyContent: 'space-between',
-                            gap: 12,
-                          }}
-                        >
-                          <span
-                            className="mega-title"
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 14, minWidth: 0 }}>
+                      {col.items.map((m) => {
+                        const isHovered = hoveredItem?.id === m.id;
+                        return (
+                          <div
+                            key={m.id}
+                            className="mega-card-item"
+                            onMouseEnter={() => setHoveredItemId(m.id)}
+                            onClick={() => navigateTo(m)}
                             style={{
-                              fontSize: 15,
-                              fontWeight: 600,
-                              color: isHovered ? accentColor : '#EDEBE6',
-                              transition: 'color .2s ease',
+                              cursor: m.clickable ? 'pointer' : 'default',
+                              opacity: m.clickable ? 1 : 0.45,
+                              display: 'flex',
+                              alignItems: 'baseline',
+                              justifyContent: 'space-between',
+                              gap: 12,
                             }}
                           >
-                            {m.label}
-                          </span>
-                          <span
-                            style={{
-                              fontSize: 10,
-                              fontFamily: 'var(--font-mono)',
-                              color: isHovered ? '#fff' : '#7A7A76',
-                              letterSpacing: '.1em',
-                              textTransform: 'uppercase',
-                            }}
-                          >
-                            {m.environment === 'indoor'
-                              ? activeLang === 'FR' ? 'INTÉRIEUR' : 'INDOOR'
-                              : m.environment === 'outdoor'
-                              ? activeLang === 'FR' ? 'EXTÉRIEUR' : 'OUTDOOR'
-                              : m.environment === 'both'
-                              ? activeLang === 'FR' ? 'INT. & EXT.' : 'IN & OUT'
-                              : m.tag || (m.clickable ? '' : activeLang === 'FR' ? 'INDISPONIBLE' : 'UNAVAILABLE')}
-                          </span>
-                        </div>
-                      );
-                    })}
+                            <span
+                              className="mega-title"
+                              style={{
+                                fontSize: 15,
+                                fontWeight: 600,
+                                color: isHovered ? accentColor : '#EDEBE6',
+                                transition: 'color .2s ease',
+                              }}
+                            >
+                              {m.label}
+                            </span>
+                            <span
+                              style={{
+                                fontSize: 10,
+                                fontFamily: 'var(--font-mono)',
+                                color: isHovered ? '#fff' : '#7A7A76',
+                                letterSpacing: '.1em',
+                                textTransform: 'uppercase',
+                              }}
+                            >
+                              {m.environment === 'indoor'
+                                ? activeLang === 'FR' ? 'INTÉRIEUR' : 'INDOOR'
+                                : m.environment === 'outdoor'
+                                  ? activeLang === 'FR' ? 'EXTÉRIEUR' : 'OUTDOOR'
+                                  : m.environment === 'both'
+                                    ? activeLang === 'FR' ? 'INT. & EXT.' : 'IN & OUT'
+                                    : m.tag || (m.clickable ? '' : activeLang === 'FR' ? 'INDISPONIBLE' : 'UNAVAILABLE')}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
               </div>
 
               {/* ZONE DROITE : carte fixe. Elle ne depend que de son propre
@@ -1291,8 +1290,8 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                         {preview.environment === 'indoor'
                           ? activeLang === 'FR' ? 'INTÉRIEUR' : 'INDOOR'
                           : preview.environment === 'outdoor'
-                          ? activeLang === 'FR' ? 'EXTÉRIEUR' : 'OUTDOOR'
-                          : activeLang === 'FR' ? 'INT. & EXT.' : 'IN & OUT'}
+                            ? activeLang === 'FR' ? 'EXTÉRIEUR' : 'OUTDOOR'
+                            : activeLang === 'FR' ? 'INT. & EXT.' : 'IN & OUT'}
                       </span>
                     )}
                   </div>
@@ -1376,15 +1375,20 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
           </div>
         )}
 
-        {/* Menu mobile unifié : Bottom Sheet pleine largeur, contenu inchangé */}
-        <MobileBottomSheet
-          open={mobileMenuOpen}
-          onClose={() => setMobileMenuOpen(false)}
-          title={activeLang === 'FR' ? 'Navigation' : 'Navigation'}
-          tone="dark"
-          contentClassName="px-0 pb-0"
-        >
-          <div className="nav-mobile" style={{ animation: 'none' }}>
+        {/* Mobile Menu with Drill-down & Back behavior */}
+        {mobileMenuOpen && (
+          <div
+            className="nav-mobile"
+            style={{
+              background: 'rgba(8,8,8,.98)',
+              backdropFilter: 'blur(20px)',
+              borderBottom: '1px solid #1F1F1F',
+              padding: '20px clamp(16px, 2.8vw, 60px) 32px',
+              maxHeight: 'calc(100vh - 88px)',
+              overflowY: 'auto',
+              color: '#f5f4f0',
+            }}
+          >
             {/* Langue & Espace Admin (en tête de menu mobile) */}
             <div
               style={{
@@ -1470,8 +1474,8 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                 justifyContent: 'space-between',
                 padding: '13px 16px',
                 borderRadius: 10,
-                background: 'linear-gradient(135deg, rgba(var(--ui-accent-rgb), 0.12) 0%, rgba(255, 255, 255, 0.03) 100%)',
-                border: '1px solid rgba(var(--ui-accent-rgb), 0.32)',
+                background: 'linear-gradient(135deg, rgba(195, 249, 16, 0.12) 0%, rgba(255, 255, 255, 0.03) 100%)',
+                border: '1px solid rgba(195, 249, 16, 0.32)',
                 color: '#FFFFFF',
                 textDecoration: 'none',
                 marginBottom: 12,
@@ -1484,7 +1488,7 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                     width: 34,
                     height: 34,
                     borderRadius: 8,
-                    background: 'rgba(var(--ui-accent-rgb), 0.18)',
+                    background: 'rgba(195, 249, 16, 0.18)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -1798,7 +1802,7 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: 10,
-                    boxShadow: '0 4px 18px rgba(var(--ui-accent-rgb), 0.28)',
+                    boxShadow: '0 4px 18px rgba(195, 249, 16, 0.28)',
                   }}
                 >
                   <span>{activeLang === 'FR' ? 'Démarrer un projet' : 'Start a Project'}</span>
@@ -2037,8 +2041,7 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
               </div>
             )}
           </div>
-        </MobileBottomSheet>
-
+        )}
       </div>
 
       {/* Global Search Modal */}
