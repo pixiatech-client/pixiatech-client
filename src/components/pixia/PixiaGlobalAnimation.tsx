@@ -109,6 +109,8 @@ const ICON_HEAD_H = 0.603;
 
 /** Espace visuel entre le bas de la tête dockée et le bouton « retour en haut ». */
 const DOCK_GAP = 16;
+/** Espace entre la tête réduite et le bouton cookies de la colonne flottante. */
+const COOKIE_HEAD_GAP = 12;
 /** Bascule visuelle robot → tête (fin de la progression seulement). */
 const HANDOFF_FROM = 0.84;
 const HANDOFF_SPAN = 0.16;
@@ -239,18 +241,17 @@ function readBackToTop(bottomInset = 0): { cx: number; top: number } {
 /** Dernier relevé de la sonde « bouton cookies absent » (évite un
  *  aller-retour DOM à chaque frame d'animation). */
 let cookieProbeCache:
-  | { vw: number; vh: number; cx: number; cy: number; half: number }
+  | { vw: number; vh: number; left: number; top: number; width: number; height: number }
   | null = null;
 
 /**
- * Ancrage « miroir du bouton cookies » (application mobile uniquement).
+ * Ancrage de la colonne flottante droite (application mobile uniquement).
  *
- * Le bouton flottant de gestion des cookies est fixé en bas à gauche avec
- * `bottom-[max(1rem,env(safe-area-inset-bottom))] left-4 h-11 w-11`. Quand il
- * est monté, on lit son rectangle réel ; sinon on le reconstitue une seule fois
- * avec une sonde CSS identique (safe-area incluse), mise en cache jusqu'au
- * prochain redimensionnement. La tête dockée de Pixia prend exactement la même
- * hauteur et la même distance au bord, mais à DROITE.
+ * Le bouton cookies est fixé à droite dans la même gouttière que le header,
+ * juste au-dessus de la navigation basse. La tête réduite de Pixia se cale
+ * AU-DESSUS de ce bouton, avec un espacement constant, pour former une colonne
+ * visuelle unique. Quand le bouton n'est pas encore monté, une sonde CSS lit
+ * les mêmes variables (`--pixia-page-gutter`, `--pixia-floating-bottom`).
  *
  * L'ancre historique (`readBackToTop`) reste utilisée sur `/web` et sur desktop.
  */
@@ -263,48 +264,44 @@ function readCookieMirrorAnchor(
   const vh = document.documentElement.clientHeight;
   if (vw >= 640) return fallback();
 
-  let cx: number;
-  let cy: number;
-  let half: number;
-
   const cookie = document.querySelector<HTMLElement>(
     'button[aria-label="Gérer les cookies & vie privée"]'
   );
-  const rect = cookie?.getBoundingClientRect();
-  if (rect && rect.width > 0 && rect.height > 0) {
-    cx = vw - (rect.left + rect.width / 2);
-    cy = rect.top + rect.height / 2;
-    half = rect.width / 2;
-  } else {
+  let rect = cookie?.getBoundingClientRect();
+
+  if (!rect || rect.width === 0 || rect.height === 0) {
     if (!cookieProbeCache || cookieProbeCache.vw !== vw || cookieProbeCache.vh !== vh) {
       const probe = document.createElement('div');
       probe.style.cssText =
-        'position:fixed;bottom:max(1rem,env(safe-area-inset-bottom));right:1rem;' +
+        'position:fixed;bottom:var(--pixia-floating-bottom);right:var(--pixia-page-gutter);' +
         'width:2.75rem;height:2.75rem;visibility:hidden;pointer-events:none;';
       document.body.appendChild(probe);
       const r = probe.getBoundingClientRect();
       probe.remove();
       cookieProbeCache =
         r.width > 0 && r.height > 0
-          ? {
-              vw,
-              vh,
-              cx: vw - (r.left + r.width / 2),
-              cy: r.top + r.height / 2,
-              half: r.width / 2,
-            }
+          ? { vw, vh, left: r.left, top: r.top, width: r.width, height: r.height }
           : null;
     }
     if (!cookieProbeCache) return fallback();
-    ({ cx, cy, half } = cookieProbeCache);
+    rect = new DOMRect(
+      cookieProbeCache.left,
+      cookieProbeCache.top,
+      cookieProbeCache.width,
+      cookieProbeCache.height
+    );
   }
 
-  // `anchor.top` est la hauteur du bouton « retour en haut » : la frame en
-  // déduit le centre de la tête avec `top - DOCK_GAP - headH / 2`. On compense
-  // ce décalage pour que le centre de la tête tombe exactement sur `cy`.
+  const half = rect.width / 2;
+  // Centre X réel du bouton (plus un miroir) : la tête reste dans la colonne.
+  const cx = rect.left + half;
+  // Centre Y voulu de la tête : son bord bas arrive juste au-dessus du cookie.
+  const cy = rect.top - COOKIE_HEAD_GAP - headH / 2;
+
+  // `anchor.top` est relu par la frame comme `headY + DOCK_GAP + headH / 2`.
   const top = cy + DOCK_GAP + headH / 2;
   return {
-    cx: clamp(cx, half + 4, vw - half - 4),
+    cx: clamp(cx, half + 4, Math.max(half + 4, vw - half - 4)),
     top,
   };
 }
@@ -327,6 +324,9 @@ interface PixiaGlobalAnimationProps {
    *  sélecteur), la tête dockée prend la position du bouton cookies flottant
    *  en miroir, à droite. Jamais transmis sur `/web` ni sur desktop. */
   dockBarSelector?: string;
+  /** Seuil de scroll (px) après lequel la mascotte se réduit à la tête.
+   *  Non fourni sur `/web` : l'animation y suit toujours la hauteur du Hero. */
+  collapseScrollThreshold?: number;
   /** Masque temporairement la mascotte (Configuration Guidée) sans démonter
    *  le composant : le relais reste actif, donc aucun ancien robot ne réapparaît
    *  et le pont conversationnel reste intact. */
@@ -338,6 +338,7 @@ export function PixiaGlobalAnimation({
   heroSelector = DEFAULT_HERO_SELECTOR,
   dockBottomInset = 0,
   dockBarSelector,
+  collapseScrollThreshold,
   hidden = false,
 }: PixiaGlobalAnimationProps) {
   const pathname = usePathname();
@@ -467,7 +468,12 @@ export function PixiaGlobalAnimation({
 
     /* --- Progression : 0 = robot entier, 1 = tête dockée --- */
     let p: number;
-    if (!hero || editing) {
+    if (collapseScrollThreshold !== undefined) {
+      // Application/boutique : le robot reste entier au premier écran puis se
+      // replie dès que l'utilisateur commence à défiler (seuil volontairement
+      // court). On ne touche pas à la courbe Historique des pages `/web`.
+      p = clamp(window.scrollY / Math.max(1, collapseScrollThreshold), 0, 1);
+    } else if (!hero || editing) {
       // Pages sans Hero (ou mode édition) : tête flottante directement.
       p = 1;
     } else {
@@ -633,7 +639,7 @@ export function PixiaGlobalAnimation({
       root.dataset.pixiaChatOpen = chat ? 'true' : 'false';
       root.dataset.pixiaDocked = isDocked ? 'true' : 'false';
     }
-  }, [greeting, reduceMotion, heroSelector, dockBottomInset, dockBarSelector]);
+  }, [greeting, reduceMotion, heroSelector, dockBottomInset, dockBarSelector, collapseScrollThreshold]);
 
   /**
    * Toujours la DERNIÈRE version d'`apply`.

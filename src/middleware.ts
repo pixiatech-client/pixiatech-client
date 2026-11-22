@@ -244,8 +244,7 @@ export const config = {
     '/api/:path*',
     // Toute autre route publique (notamment l'univers Web après réécriture par
     // domaine : /produits/..., /services/..., etc.). Les ressources internes
-    // Next et les API restent exclues du terme générique (elles sont couvertes
-    // par les entrées explicites ci-dessus).
-    '/((?!api|_next/static|_next/image).*)',
+    // Next, API, uploads et fichiers statiques restent exclus.
+    '/((?!api|_next/static|_next/image|uploads|favicon\\.ico|.*\\.(?:jpe?g|png|webp|gif|svg|ico|mp4|webm|woff2?|ttf|eot)).*)',
   ],
 };

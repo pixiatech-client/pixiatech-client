@@ -162,7 +162,7 @@ export const TechShowcaseSection: React.FC<TechShowcaseSectionProps> = ({ lang =
                 fontWeight: 800,
                 letterSpacing: '-.025em',
                 lineHeight: 1.04,
-                color: '#F5F4F0',
+                color: 'var(--accent, var(--ui-accent))',
                 maxWidth: 820,
                 margin: 0,
                 ...cms.title,

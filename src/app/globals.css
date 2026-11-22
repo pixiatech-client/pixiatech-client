@@ -29,6 +29,25 @@
   --ui-accent-muted: rgba(var(--ui-accent-rgb), 0.15);
   --ui-accent-border: rgba(var(--ui-accent-rgb), 0.4);
   --ui-accent-glow: rgba(var(--ui-accent-rgb), 0.35);
+
+  /* Gouttière et colonne flottante partagées par le header noir, la barre
+     d'onglets Boutique, le <main> et la navigation basse. Le débordement
+     cente les éléments exactement comme `max-w-7xl mx-4 lg:mx-auto`. */
+  --pixia-page-gutter: max(1rem, (100vw - 80rem) / 2);
+  --pixia-page-max: 80rem;
+  --pixia-nav-h: 5rem;
+  --pixia-floating-gap: 0.75rem;
+  --pixia-floating-bottom: calc(
+    var(--pixia-nav-h) + var(--pixia-floating-gap) + env(safe-area-inset-bottom, 0px)
+  );
+}
+
+@layer utilities {
+  .pixia-page-gutter {
+    width: auto;
+    max-width: var(--pixia-page-max);
+    margin-inline: var(--pixia-page-gutter);
+  }
 }
 
 @keyframes pulse {

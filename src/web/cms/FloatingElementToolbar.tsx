@@ -31,6 +31,12 @@ import {
   Zap,
   Ban,
   GripVertical,
+  Undo2,
+  Redo2,
+  ArrowLeft,
+  ArrowRight,
+  AlertTriangle,
+  EyeOff,
   type LucideIcon,
 } from 'lucide-react';
 import {
@@ -59,6 +65,22 @@ import { isMediaVideo } from './media-utils';
 const NUDGE = 4;
 const FONT_STEP = 2;
 const SAVE_DEBOUNCE_MS = 600;
+
+/** Icône d'épingle pour figer la barre d'outils (style Photoshop) */
+const PinIcon: React.FC<{ className?: string; filled?: boolean }> = ({ className = 'w-3.5 h-3.5', filled = false }) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill={filled ? 'currentColor' : 'none'}
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <line x1="12" y1="17" x2="12" y2="22" />
+    <path d="M5 17h14v-2l-2-2V5a2 2 0 0 0-2-2h-6a2 2 0 0 0-2 2v8l-2 2v2z" />
+  </svg>
+);
 
 export const BUTTON_EFFECTS_CATALOG: {
   id: ButtonEffectType;
@@ -191,36 +213,113 @@ const INTERNAL_PAGES = [
 export const FloatingElementToolbar: React.FC<{
   onOpenImageModal?: (element: HTMLElement) => void;
 }> = ({ onOpenImageModal }) => {
-  const { isEditing, isAdmin, currentPageData, currentLang, updateSectionField, updateElementStyle, saveCurrentPage } = useCms();
+  const { isEditing, isAdmin, currentPageData, currentLang, updateSectionField, updateElementStyle, toggleSectionVisibility, saveCurrentPage } = useCms();
 
   const [selected, setSelected] = useState<SelectedElement | null>(getSelectedElement());
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
-  const [showPalettePanel, setShowPalettePanel] = useState(false);
+  const [activeAccordion, setActiveAccordion] = useState<'typo' | 'colors' | 'position' | null>('typo');
   const [paletteStateTab, setPaletteStateTab] = useState<'normal' | 'hover' | 'active'>('normal');
-  const [showLinkEditor, setShowLinkEditor] = useState(false);
-  const [showEffectsPanel, setShowEffectsPanel] = useState(false);
   const [effectsPreviewState, setEffectsPreviewState] = useState<'normal' | 'hover' | 'active'>('normal');
   const [coords, setCoords] = useState<{ top: number; left: number; placeBelow: boolean } | null>(null);
-  const [dragPosition, setDragPosition] = useState<{ top: number; left: number } | null>(null);
+  
+  // Épinglage (Pinned mode) & mémorisation permanente style Photoshop
+  const [isPinned, setIsPinned] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      return localStorage.getItem('pixia_cms_toolbar_pinned') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const [dragPosition, setDragPosition] = useState<{ top: number; left: number } | null>(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const p = localStorage.getItem('pixia_cms_toolbar_pos');
+      const pinned = localStorage.getItem('pixia_cms_toolbar_pinned') === 'true';
+      return pinned && p ? JSON.parse(p) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  const [isDockedToHeader, setIsDockedToHeader] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      const p = localStorage.getItem('pixia_cms_toolbar_pos');
+      if (!p) return false;
+      const parsed = JSON.parse(p);
+      return Boolean(parsed.isDocked);
+    } catch {
+      return false;
+    }
+  });
+
   const [isDragging, setIsDragging] = useState(false);
   const dragStartRef = useRef<{ startX: number; startY: number; startTop: number; startLeft: number } | null>(null);
+
+  // Nouvelles fonctionnalités demandées : Historique Undo/Redo, Switch Sauvegarde auto, Déplacement libre et Dialogue Corbeille
+  const [undoStack, setUndoStack] = useState<ElementStyle[]>([]);
+  const [redoStack, setRedoStack] = useState<ElementStyle[]>([]);
+  const [autoSave, setAutoSave] = useState<boolean>(true);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<boolean>(false);
 
   const toolbarRef = useRef<HTMLDivElement>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Réinitialise la position personnalisée lorsqu'un nouvel élément est sélectionné
+  const toggleAccordion = useCallback((acc: 'typo' | 'colors' | 'position') => {
+    setActiveAccordion((curr) => (curr === acc ? null : acc));
+  }, []);
+
+  // Bascule du mode épinglé + sauvegarde permanente
+  const togglePinned = useCallback(() => {
+    setIsPinned((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('pixia_cms_toolbar_pinned', String(next));
+        if (next) {
+          const currentPos = dragPosition || coords || { top: 14, left: 100 };
+          const payload = { ...currentPos, isDocked: isDockedToHeader };
+          localStorage.setItem('pixia_cms_toolbar_pos', JSON.stringify(payload));
+          setDragPosition(currentPos);
+        } else {
+          localStorage.removeItem('pixia_cms_toolbar_pos');
+          setDragPosition(null);
+          setIsDockedToHeader(false);
+        }
+      } catch {}
+      return next;
+    });
+  }, [dragPosition, coords, isDockedToHeader]);
+
+  // Sauvegarde manuelle explicite de la position ("Enregistrer la position")
+  const saveCurrentToolbarPosition = useCallback(() => {
+    const currentPos = dragPosition || coords || { top: 14, left: 100 };
+    const payload = { ...currentPos, isDocked: isDockedToHeader };
+    try {
+      localStorage.setItem('pixia_cms_toolbar_pinned', 'true');
+      localStorage.setItem('pixia_cms_toolbar_pos', JSON.stringify(payload));
+      setIsPinned(true);
+    } catch {}
+  }, [dragPosition, coords, isDockedToHeader]);
+
+  // Réinitialise la position uniquement si la barre n'est PAS épinglée
   useEffect(() => {
-    setDragPosition(null);
+    if (!isPinned) {
+      setDragPosition(null);
+      setIsDockedToHeader(false);
+    }
+    setActiveAccordion('typo');
     setPaletteStateTab('normal');
     setEffectsPreviewState('normal');
-    setShowEffectsPanel(false);
-    setShowPalettePanel(false);
-    setShowLinkEditor(false);
+    setShowDeleteConfirm(false);
+    setUndoStack([]);
+    setRedoStack([]);
     return () => {
       if (selected?.el) selected.el.removeAttribute('data-cms-preview-state');
       if (selected?.clickableEl) selected.clickableEl.removeAttribute('data-cms-preview-state');
     };
-  }, [selected?.elementKey, selected?.sectionKey, selected?.linkKey]);
+  }, [selected?.elementKey, selected?.sectionKey, selected?.linkKey, isPinned]);
 
   const handleDragStart = useCallback(
     (e: React.MouseEvent) => {
@@ -247,16 +346,40 @@ export const FloatingElementToolbar: React.FC<{
         const tbWidth = tb ? tb.offsetWidth : 480;
         const tbHeight = tb ? tb.offsetHeight : 48;
 
-        const newTop = Math.max(
+        let rawTop = dragStartRef.current.startTop + dy;
+        let newLeft = dragStartRef.current.startLeft + dx;
+
+        // Ancrage magnétique style Photoshop (colle au Header si < 75px)
+        let docked = false;
+        let newTop = rawTop;
+        if (rawTop <= 75) {
+          newTop = 14;
+          docked = true;
+        } else {
+          newTop = Math.max(
+            10,
+            Math.min(window.innerHeight - tbHeight - 10, rawTop)
+          );
+        }
+
+        newLeft = Math.max(
           10,
-          Math.min(window.innerHeight - tbHeight - 10, dragStartRef.current.startTop + dy)
-        );
-        const newLeft = Math.max(
-          10,
-          Math.min(window.innerWidth - tbWidth - 10, dragStartRef.current.startLeft + dx)
+          Math.min(window.innerWidth - tbWidth - 10, newLeft)
         );
 
-        setDragPosition({ top: newTop, left: newLeft });
+        setIsDockedToHeader(docked);
+        const pos = { top: newTop, left: newLeft };
+        setDragPosition(pos);
+
+        // Si la barre est épinglée, on mémorise sa nouvelle position en continu
+        if (isPinned) {
+          try {
+            localStorage.setItem(
+              'pixia_cms_toolbar_pos',
+              JSON.stringify({ ...pos, isDocked: docked })
+            );
+          } catch {}
+        }
       };
 
       const handleMouseUp = () => {
@@ -269,7 +392,7 @@ export const FloatingElementToolbar: React.FC<{
       window.addEventListener('mousemove', handleMouseMove);
       window.addEventListener('mouseup', handleMouseUp);
     },
-    [coords, dragPosition]
+    [coords, dragPosition, isPinned]
   );
 
   useEffect(() => subscribeSelectedElement(() => setSelected(getSelectedElement())), []);
@@ -300,17 +423,17 @@ export const FloatingElementToolbar: React.FC<{
     const tbWidth = tb ? tb.offsetWidth : 480;
     const tbHeight = tb ? tb.offsetHeight : 44;
 
-    const spaceAbove = rect.top - 80;
-    const placeBelow = spaceAbove < tbHeight + 12;
-
-    let top = placeBelow ? rect.bottom + 10 : rect.top - tbHeight - 10;
-    top = Math.max(84, Math.min(window.innerHeight - tbHeight - 12, top));
-
     const centerX = rect.left + rect.width / 2;
     let left = centerX - tbWidth / 2;
     left = Math.max(12, Math.min(window.innerWidth - tbWidth - 12, left));
 
-    setCoords({ top, left, placeBelow });
+    // Toujours au-dessus de l'élément sélectionné, centré horizontalement
+    let top = rect.top - tbHeight - 12;
+    if (top < 10) {
+      top = 10;
+    }
+
+    setCoords({ top, left, placeBelow: false });
   }, [selected]);
 
   useEffect(() => {
@@ -364,6 +487,10 @@ export const FloatingElementToolbar: React.FC<{
     (patch: Partial<ElementStyle>) => {
       if (!selected) return;
 
+      // Historique Undo : on pousse l'état courant avant d'appliquer la modification
+      setUndoStack((prev) => [...prev.slice(-30), { ...style }]);
+      setRedoStack([]);
+
       const sectionKey = selected.sectionKey;
       const elementKey = selected.elementKey;
       const clickableElementKey = selected.clickableElementKey;
@@ -408,6 +535,11 @@ export const FloatingElementToolbar: React.FC<{
 
       updateCoords();
 
+      // Sauvegarde automatique uniquement si le switch est activé
+      if (!autoSave) {
+        setSaveState('idle');
+        return;
+      }
       if (saveTimer.current) clearTimeout(saveTimer.current);
       setSaveState('saving');
       saveTimer.current = setTimeout(() => {
@@ -417,8 +549,110 @@ export const FloatingElementToolbar: React.FC<{
         });
       }, SAVE_DEBOUNCE_MS);
     },
-    [selected, selectedLinkKey, currentLang, updateElementStyle, saveCurrentPage, updateCoords]
+    [selected, selectedLinkKey, style, currentLang, updateElementStyle, saveCurrentPage, updateCoords, autoSave]
   );
+
+  /** Annuler la dernière modification (Undo - Ctrl+Z) */
+  const handleUndo = useCallback(() => {
+    if (undoStack.length === 0 || !selected) return;
+    const previous = undoStack[undoStack.length - 1];
+    setUndoStack((prev) => prev.slice(0, -1));
+    setRedoStack((prev) => [...prev, { ...style }]);
+
+    const sectionKey = selected.sectionKey;
+    const elementKey = selected.elementKey;
+    const clickableElementKey = selected.clickableElementKey;
+
+    updateElementStyle(sectionKey, elementKey, previous as Record<string, unknown>);
+    if (clickableElementKey && clickableElementKey !== elementKey) {
+      updateElementStyle(sectionKey, clickableElementKey, previous as Record<string, unknown>);
+    }
+
+    const styledId = makeElementStyledId(sectionKey, elementKey);
+    applyElementStyle(selected.el, previous, normalizeLang(currentLang), styledId);
+    if (selected.clickableEl) {
+      applyElementStyle(selected.clickableEl, previous, normalizeLang(currentLang), styledId);
+    }
+    updateCoords();
+
+    if (autoSave) {
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+      setSaveState('saving');
+      saveTimer.current = setTimeout(() => {
+        void saveCurrentPage().then((ok) => {
+          setSaveState(ok ? 'saved' : 'error');
+          setTimeout(() => setSaveState('idle'), 2500);
+        });
+      }, SAVE_DEBOUNCE_MS);
+    } else {
+      setSaveState('idle');
+    }
+  }, [undoStack, selected, style, updateElementStyle, currentLang, updateCoords, saveCurrentPage, autoSave]);
+
+  /** Rétablir la modification annulée (Redo - Ctrl+Y) */
+  const handleRedo = useCallback(() => {
+    if (redoStack.length === 0 || !selected) return;
+    const next = redoStack[redoStack.length - 1];
+    setRedoStack((prev) => prev.slice(0, -1));
+    setUndoStack((prev) => [...prev, { ...style }]);
+
+    const sectionKey = selected.sectionKey;
+    const elementKey = selected.elementKey;
+    const clickableElementKey = selected.clickableElementKey;
+
+    updateElementStyle(sectionKey, elementKey, next as Record<string, unknown>);
+    if (clickableElementKey && clickableElementKey !== elementKey) {
+      updateElementStyle(sectionKey, clickableElementKey, next as Record<string, unknown>);
+    }
+
+    const styledId = makeElementStyledId(sectionKey, elementKey);
+    applyElementStyle(selected.el, next, normalizeLang(currentLang), styledId);
+    if (selected.clickableEl) {
+      applyElementStyle(selected.clickableEl, next, normalizeLang(currentLang), styledId);
+    }
+    updateCoords();
+
+    if (autoSave) {
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+      setSaveState('saving');
+      saveTimer.current = setTimeout(() => {
+        void saveCurrentPage().then((ok) => {
+          setSaveState(ok ? 'saved' : 'error');
+          setTimeout(() => setSaveState('idle'), 2500);
+        });
+      }, SAVE_DEBOUNCE_MS);
+    } else {
+      setSaveState('idle');
+    }
+  }, [redoStack, selected, style, updateElementStyle, currentLang, updateCoords, saveCurrentPage, autoSave]);
+
+  // Écouteur global pour les raccourcis clavier Ctrl+Z / Ctrl+Y
+  useEffect(() => {
+    if (!selected) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const activeEl = document.activeElement as HTMLElement | null;
+      if (
+        activeEl?.tagName === 'INPUT' ||
+        activeEl?.tagName === 'TEXTAREA' ||
+        activeEl?.isContentEditable
+      ) {
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        if (e.shiftKey) {
+          handleRedo();
+        } else {
+          handleUndo();
+        }
+      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+        e.preventDefault();
+        handleRedo();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selected, handleUndo, handleRedo]);
 
   const switchPaletteStateTab = useCallback(
     (nextTab: 'normal' | 'hover' | 'active') => {
@@ -488,6 +722,10 @@ export const FloatingElementToolbar: React.FC<{
 
   const toggleUnderline = useCallback(() => {
     commit({ textDecoration: style.textDecoration === 'underline' ? 'none' : 'underline' });
+  }, [commit, style.textDecoration]);
+
+  const toggleStrikethrough = useCallback(() => {
+    commit({ textDecoration: style.textDecoration === 'line-through' ? 'none' : 'line-through' });
   }, [commit, style.textDecoration]);
 
   const bumpFontSize = useCallback(
@@ -645,6 +883,170 @@ export const FloatingElementToolbar: React.FC<{
     window.addEventListener('mouseup', handleUp);
   }, [selected, style.offsetX, style.offsetY, commit, updateCoords]);
 
+  /** Redimensionnement vertical (haut / bas) — étirer le texte en hauteur */
+  const handleHeightResizeStart = useCallback((e: React.MouseEvent, side: 'top' | 'bottom') => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!selected) return;
+
+    const startY = e.clientY;
+    const el = selected.el;
+
+    if (window.getComputedStyle(el).display === 'inline') {
+      el.style.setProperty('display', 'inline-block', 'important');
+    }
+
+    const startHeight = el.offsetHeight;
+    const startOffsetY = style.offsetY ?? 0;
+    const startOffsetX = style.offsetX ?? 0;
+
+    const handleMove = (moveEvent: MouseEvent) => {
+      const dy = moveEvent.clientY - startY;
+      if (side === 'bottom') {
+        const newHeight = Math.max(20, startHeight + dy);
+        el.style.setProperty('height', `${newHeight}px`, 'important');
+        el.style.setProperty('min-height', `${newHeight}px`, 'important');
+        el.style.boxSizing = 'border-box';
+      } else {
+        const newHeight = Math.max(20, startHeight - dy);
+        const deltaH = startHeight - newHeight;
+        const newOffsetY = startOffsetY + deltaH;
+        el.style.setProperty('height', `${newHeight}px`, 'important');
+        el.style.setProperty('min-height', `${newHeight}px`, 'important');
+        el.style.boxSizing = 'border-box';
+        el.style.setProperty('transform', `translate(${startOffsetX}px, ${newOffsetY}px)`, 'important');
+        el.setAttribute('data-cms-offset', '1');
+      }
+      updateCoords();
+    };
+
+    const handleUp = (upEvent: MouseEvent) => {
+      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('mouseup', handleUp);
+      const dy = upEvent.clientY - startY;
+      if (side === 'bottom') {
+        const finalHeight = Math.max(20, startHeight + dy);
+        commit({ height: `${finalHeight}px` });
+      } else {
+        const finalHeight = Math.max(20, startHeight - dy);
+        const deltaH = startHeight - finalHeight;
+        const finalOffsetY = startOffsetY + deltaH;
+        commit({ height: `${finalHeight}px`, offsetY: finalOffsetY });
+      }
+      updateCoords();
+    };
+
+    window.addEventListener('mousemove', handleMove);
+    window.addEventListener('mouseup', handleUp);
+  }, [selected, style.offsetY, style.offsetX, commit, updateCoords]);
+
+  /** Glisser-déposer libre de l'élément sélectionné (4 flèches) */
+  const elementDragStartRef = useRef<{
+    startX: number;
+    startY: number;
+    initialOffsetX: number;
+    initialOffsetY: number;
+  } | null>(null);
+
+  const handleElementDragStart = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!selected) return;
+
+      const initialOffsetX = style.offsetX ?? 0;
+      const initialOffsetY = style.offsetY ?? 0;
+
+      elementDragStartRef.current = {
+        startX: e.clientX,
+        startY: e.clientY,
+        initialOffsetX,
+        initialOffsetY,
+      };
+
+      const el = selected.el;
+      const clickable = selected.clickableEl;
+
+      const handleMove = (moveEvent: MouseEvent) => {
+        if (!elementDragStartRef.current) return;
+        const dx = moveEvent.clientX - elementDragStartRef.current.startX;
+        const dy = moveEvent.clientY - elementDragStartRef.current.startY;
+        const nextX = Math.round(elementDragStartRef.current.initialOffsetX + dx);
+        const nextY = Math.round(elementDragStartRef.current.initialOffsetY + dy);
+
+        el.style.setProperty('transform', `translate3d(${nextX}px, ${nextY}px, 0)`, 'important');
+        el.setAttribute('data-cms-offset', '1');
+        if (clickable) {
+          clickable.style.setProperty('transform', `translate3d(${nextX}px, ${nextY}px, 0)`, 'important');
+          clickable.setAttribute('data-cms-offset', '1');
+        }
+        updateCoords();
+      };
+
+      const handleUp = (upEvent: MouseEvent) => {
+        if (!elementDragStartRef.current) return;
+        const dx = upEvent.clientX - elementDragStartRef.current.startX;
+        const dy = upEvent.clientY - elementDragStartRef.current.startY;
+        const finalX = Math.round(elementDragStartRef.current.initialOffsetX + dx);
+        const finalY = Math.round(elementDragStartRef.current.initialOffsetY + dy);
+
+        elementDragStartRef.current = null;
+        window.removeEventListener('mousemove', handleMove);
+        window.removeEventListener('mouseup', handleUp);
+
+        commit({ offsetX: finalX, offsetY: finalY });
+        updateCoords();
+      };
+
+      window.addEventListener('mousemove', handleMove);
+      window.addEventListener('mouseup', handleUp);
+    },
+    [selected, style.offsetX, style.offsetY, commit, updateCoords]
+  );
+
+  /** Cycle de casse du texte : Normal -> Majuscules -> Minuscules -> Normal */
+  const cycleTextTransform = useCallback(() => {
+    const cur = style.textTransform;
+    let next: string | undefined = 'uppercase';
+    if (cur === 'uppercase') next = 'lowercase';
+    else if (cur === 'lowercase') next = undefined;
+    else next = 'uppercase';
+    commit({ textTransform: next });
+  }, [style.textTransform, commit]);
+
+  /** Suppression / masquage de l'élément sélectionné avec sauvegarde dans l'historique */
+  const handleDeleteElement = useCallback(() => {
+    if (!selected) return;
+    setShowDeleteConfirm(false);
+
+    // Sauvegarde l'état courant dans la pile undo pour récupération immédiate par Ctrl+Z
+    setUndoStack((prev) => [...prev.slice(-30), { ...style }]);
+    setRedoStack([]);
+
+    // Masquage visuel de l'élément dans le DOM
+    if (selected.el) {
+      selected.el.style.display = 'none';
+      selected.el.setAttribute('data-cms-hidden', 'true');
+    }
+    if (selected.clickableEl) {
+      selected.clickableEl.style.display = 'none';
+      selected.clickableEl.setAttribute('data-cms-hidden', 'true');
+    }
+
+    // Mise à jour CMS avec style masqué
+    commit({ padding: undefined, width: undefined, height: undefined });
+    setSelected(null);
+  }, [selected, style, commit]);
+
+  /** Masquage de la section entière */
+  const handleHideSection = useCallback(() => {
+    if (!selected) return;
+    setShowDeleteConfirm(false);
+    toggleSectionVisibility(selected.sectionKey);
+    void saveCurrentPage();
+    setSelected(null);
+  }, [selected, toggleSectionVisibility, saveCurrentPage]);
+
   const resetPosition = useCallback(() => {
     commit({ offsetX: 0, offsetY: 0 });
     if (selected?.el) {
@@ -669,9 +1071,9 @@ export const FloatingElementToolbar: React.FC<{
     // On ne peut pas "supprimer" via patch seul, on passe par updateSectionField après avoir vidé le bag
     // Pour chaque clé de style connue, on met undefined
     const styleKeys: (keyof ElementStyle)[] = [
-      'fontSize', 'fontWeight', 'fontStyle', 'textDecoration', 'textAlign', 'color',
+      'fontSize', 'fontWeight', 'fontStyle', 'textDecoration', 'textTransform', 'textAlign', 'color',
       'backgroundColor', 'borderRadius', 'borderColor', 'borderWidth', 'borderStyle',
-      'padding', 'width', 'offsetX', 'offsetY', 'hover', 'active', 'buttonEffect',
+      'padding', 'width', 'height', 'minHeight', 'offsetX', 'offsetY', 'hover', 'active', 'buttonEffect',
     ];
     for (const k of styleKeys) {
       (keysToDelete as Record<string, unknown>)[k] = undefined;
@@ -689,6 +1091,7 @@ export const FloatingElementToolbar: React.FC<{
       target.style.fontWeight = '';
       target.style.fontStyle = '';
       target.style.textDecoration = '';
+      target.style.textTransform = '';
       target.style.textAlign = '';
       target.style.borderRadius = '';
       target.style.borderColor = '';
@@ -699,9 +1102,12 @@ export const FloatingElementToolbar: React.FC<{
       target.style.removeProperty('transform');
       target.style.removeProperty('width');
       target.style.removeProperty('max-width');
+      target.style.removeProperty('height');
+      target.style.removeProperty('min-height');
       target.style.removeProperty('box-sizing');
       target.removeAttribute('data-cms-offset');
       target.removeAttribute('data-cms-preview-state');
+      target.removeAttribute('data-cms-hidden');
       const sId = target.getAttribute('data-cms-styled-id');
       if (sId) {
         removeElementDynamicStyles(sId);
@@ -842,25 +1248,68 @@ export const FloatingElementToolbar: React.FC<{
       data-cms-ui
       style={{
         position: 'fixed',
-        top: dragPosition ? dragPosition.top : coords.top,
-        left: dragPosition ? dragPosition.left : coords.left,
+        top: dragPosition?.top ?? coords.top,
+        left: dragPosition?.left ?? coords.left,
         zIndex: 350,
-        cursor: isDragging ? 'grabbing' : undefined,
       }}
-      className="flex flex-col gap-1.5 bg-[#0e0e0d]/98 border border-[#2b2b28] text-[#f5f4f0] p-2 rounded-xl shadow-[0_16px_48px_rgba(0,0,0,0.92)] backdrop-blur-md select-none animate-in fade-in duration-100 max-w-[95vw]"
+      className={`flex flex-col gap-2 bg-[#0e0e0d]/98 border text-[#f5f4f0] p-2.5 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.95)] backdrop-blur-md select-none animate-in fade-in duration-100 max-w-[95vw] transition-all ${
+        isDockedToHeader
+          ? 'border-[color:var(--ui-accent)] shadow-[0_10px_40px_rgba(var(--ui-accent-rgb),0.35)] ring-2 ring-[color:var(--ui-accent)]/40'
+          : isPinned
+          ? 'border-[color:var(--ui-accent)]/60 shadow-[0_12px_36px_rgba(0,0,0,0.85)]'
+          : 'border-[#2b2b28]'
+      }`}
       onClick={(e) => e.stopPropagation()}
     >
-      {/* ── Ligne 1 : Contrôles principaux ── */}
-      <div className="flex items-center gap-1.5 overflow-x-auto">
-        {/* Poignée de déplacement (Click & Drag) */}
+      {/* ── Ligne 1 : En-tête permanent ── */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-0.5">
+        {/* Poignée pour déplacer librement toute la barre d'outils */}
         <div
           onMouseDown={handleDragStart}
-          onDoubleClick={() => setDragPosition(null)}
-          className="flex items-center justify-center p-1 rounded-md text-[#7A7A75] hover:text-[color:var(--ui-accent)] hover:bg-[#1C1C19] active:cursor-grabbing cursor-grab transition-colors select-none shrink-0"
-          title="Cliquer et glisser pour déplacer la barre (Double-clic pour réaligner)"
+          className="flex items-center justify-center p-1.5 rounded-lg hover:bg-[#222220] text-[#7a7a76] hover:text-white cursor-grab active:cursor-grabbing transition-colors shrink-0"
+          title="Glisser pour déplacer librement toute la barre d'outils (s'aimante au Header style Photoshop si glissée vers le haut)"
         >
-          <GripVertical className="w-3.5 h-3.5" />
+          <GripVertical className="w-4 h-4" />
         </div>
+
+        {/* Bouton Épingler (Pin) façon Photoshop */}
+        <button
+          type="button"
+          onClick={togglePinned}
+          className={`p-1.5 rounded-lg transition-all cursor-pointer flex items-center justify-center shrink-0 ${
+            isPinned
+              ? 'bg-[color:var(--ui-accent)] text-[#080808] font-bold shadow-sm'
+              : 'text-[#7a7a76] hover:text-white hover:bg-[#222220]'
+          }`}
+          title={
+            isPinned
+              ? 'Barre d’outils ÉPINGLÉE : reste fixe à cet endroit même si vous sélectionnez un autre élément. Cliquer pour libérer.'
+              : 'Épingler la barre d’outils à sa position actuelle (style Photoshop)'
+          }
+        >
+          <PinIcon className="w-3.5 h-3.5" filled={isPinned} />
+        </button>
+
+        {/* Bouton Enregistrer la position (affiché quand déplacée et pas encore épinglée) */}
+        {!isPinned && dragPosition && (
+          <button
+            type="button"
+            onClick={saveCurrentToolbarPosition}
+            className="flex items-center gap-1 px-2 py-1 rounded-md bg-[#1f1f1d] hover:bg-[#2a2a26] text-[10px] font-mono font-bold text-[color:var(--ui-accent)] border border-[color:var(--ui-accent)]/40 transition-colors shrink-0 cursor-pointer"
+            title="Mémoriser cette position pour qu'elle s'affiche toujours ici"
+          >
+            <PinIcon className="w-3 h-3" />
+            <span>MÉMORISER POSITION</span>
+          </button>
+        )}
+
+        {/* Badge Ancré au Header (effet Photoshop) */}
+        {isDockedToHeader && (
+          <span className="px-1.5 py-0.5 rounded bg-[color:var(--ui-accent)] text-[#080808] font-mono text-[9px] font-extrabold tracking-wider shrink-0 uppercase animate-pulse">
+            HEADER ANCRÉ
+          </span>
+        )}
+
         {/* Badge indicateur de type & section */}
         <span
           style={{
@@ -868,7 +1317,7 @@ export const FloatingElementToolbar: React.FC<{
             color: 'var(--accent, var(--ui-accent))',
             borderColor: 'var(--accent-border, rgba(var(--ui-accent-rgb), 0.35))',
           }}
-          className="px-2 py-1 rounded-md border font-mono text-[10px] font-bold tracking-wider uppercase whitespace-nowrap"
+          className="px-2 py-1 rounded-md border font-mono text-[10px] font-bold tracking-wider uppercase whitespace-nowrap shrink-0"
           title={`${selected.sectionKey} → ${selected.elementKey}`}
         >
           {isMedia
@@ -883,9 +1332,31 @@ export const FloatingElementToolbar: React.FC<{
           · {selected.sectionKey}
         </span>
 
-        {/* ── Cas 1 : IMAGE / MÉDIA ── */}
+        {/* Annuler / Rétablir (Flèche gauche / Flèche droite) */}
+        <div className="flex items-center gap-0.5 px-1 border-l border-[#2b2b28] shrink-0">
+          <button
+            type="button"
+            onClick={handleUndo}
+            disabled={undoStack.length === 0}
+            className={`${iconBtn} ${undoStack.length > 0 ? off : 'text-[#444] cursor-not-allowed opacity-40'}`}
+            title="Revenir en arrière (Ctrl + Z)"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={handleRedo}
+            disabled={redoStack.length === 0}
+            className={`${iconBtn} ${redoStack.length > 0 ? off : 'text-[#444] cursor-not-allowed opacity-40'}`}
+            title="Avancer / Rétablir (Ctrl + Y)"
+          >
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        {/* Cas Image / Média : Bouton Remplacer */}
         {isMedia && (
-          <div className="flex items-center gap-1 pl-1 border-l border-[#2b2b28]">
+          <div className="flex items-center gap-1 pl-1 border-l border-[#2b2b28] shrink-0">
             <button
               type="button"
               onClick={() => onOpenImageModal?.(selected.el)}
@@ -898,259 +1369,156 @@ export const FloatingElementToolbar: React.FC<{
           </div>
         )}
 
-        {/* ── Cas 2 : TEXTE (Taille, Graisse, Alignement) ── */}
+        {/* ── 3 Compartiments Accordéon (Un seul ouvert à la fois) ── */}
         {!isMedia && (
-          <>
-            {/* Taille police */}
-            <div className="flex items-center gap-0.5 px-1 border-l border-[#2b2b28]">
-              <button
-                type="button"
-                onMouseDown={(e) => { e.preventDefault(); saveSelection(); }}
-                onClick={() => bumpFontSizeOnSelection(-FONT_STEP)}
-                className={`${iconBtn} ${off}`}
-                title="Réduire la taille (A−)"
-              >
-                <span className="font-mono text-[11px] font-bold">A−</span>
-              </button>
-              <span className="font-mono text-[10px] text-[#B9B7B1] min-w-[32px] text-center font-bold">
-                {style.fontSize || (selected?.el ? `${Math.round(parseFloat(window.getComputedStyle(selected.el).fontSize) || 16)}px` : '16px')}
-              </span>
-              <button
-                type="button"
-                onMouseDown={(e) => { e.preventDefault(); saveSelection(); }}
-                onClick={() => bumpFontSizeOnSelection(FONT_STEP)}
-                className={`${iconBtn} ${off}`}
-                title="Agrandir la taille (A+)"
-              >
-                <span className="font-mono text-[11px] font-bold">A+</span>
-              </button>
-            </div>
+          <div className="flex items-center gap-1 bg-[#141412] p-0.5 rounded-xl border border-[#2b2b28] shrink-0">
+            {/* 01 Typographie */}
+            <button
+              type="button"
+              onClick={() => toggleAccordion('typo')}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-mono text-xs font-bold transition-all cursor-pointer ${
+                activeAccordion === 'typo'
+                  ? 'bg-[color:var(--ui-accent)] text-[#080808] shadow-sm'
+                  : 'text-[#aaa] hover:text-white hover:bg-[#1f1f1d]'
+              }`}
+              title="Compartiment 01 : Typographie (taille, graisse, souligné, barré, casse, alignement)"
+            >
+              <Type className="w-3.5 h-3.5" />
+              <span>01 Typographie</span>
+            </button>
 
-            {/* Style texte : B, I, U */}
-            <div className="flex items-center gap-0.5 px-1 border-l border-[#2b2b28]">
-              <button
-                type="button"
-                onClick={toggleBold}
-                className={`${iconBtn} ${style.fontWeight === '700' ? on : off}`}
-                title="Gras (B)"
-              >
-                <Bold className="w-3.5 h-3.5" />
-              </button>
-              <button
-                type="button"
-                onClick={toggleItalic}
-                className={`${iconBtn} ${style.fontStyle === 'italic' ? on : off}`}
-                title="Italique (I)"
-              >
-                <Italic className="w-3.5 h-3.5" />
-              </button>
-              <button
-                type="button"
-                onClick={toggleUnderline}
-                className={`${iconBtn} ${style.textDecoration === 'underline' ? on : off}`}
-                title="Souligné (U)"
-              >
-                <Underline className="w-3.5 h-3.5" />
-              </button>
-            </div>
+            {/* 02 Couleurs et apparence */}
+            <button
+              type="button"
+              onClick={() => toggleAccordion('colors')}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-mono text-xs font-bold transition-all cursor-pointer ${
+                activeAccordion === 'colors'
+                  ? 'bg-[color:var(--ui-accent)] text-[#080808] shadow-sm'
+                  : 'text-[#aaa] hover:text-white hover:bg-[#1f1f1d]'
+              }`}
+              title="Compartiment 02 : Couleurs et apparence (texte, fond, bordures, arrondis — Normal, Survol, Clic)"
+            >
+              <Palette className="w-3.5 h-3.5" />
+              <span>02 Couleurs</span>
+              {(hasHoverStyles || hasActiveStyles || Boolean(style.backgroundColor || style.borderColor || style.borderRadius)) && (
+                <span className={`w-1.5 h-1.5 rounded-full ${activeAccordion === 'colors' ? 'bg-[#080808]' : 'bg-[color:var(--ui-accent)]'}`} />
+              )}
+            </button>
 
-            {/* Alignement texte */}
-            <div className="flex items-center gap-0.5 px-1 border-l border-[#2b2b28]">
-              {ALIGNS.map(({ value, icon: Icon, label }) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => commit({ textAlign: value })}
-                  className={`${iconBtn} ${style.textAlign === value ? on : off}`}
-                  title={`Alignement : ${label}`}
-                >
-                  <Icon className="w-3.5 h-3.5" />
-                </button>
-              ))}
-            </div>
-
-            {/* Palette complète : Normal, Survol, Clic (Couleur, Fond, Bordures, Arrondis) */}
-            <div className="flex items-center gap-1 px-1 border-l border-[#2b2b28]">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowPalettePanel((v) => !v);
-                  if (!showPalettePanel) {
-                    setShowEffectsPanel(false);
-                    setShowLinkEditor(false);
-                  }
-                }}
-                className={`${iconBtn} ${showPalettePanel ? on : off}`}
-                title="Palette & Styles visuels (Couleurs, Fond, Bordures, Arrondis — Normal, Survol, Clic)"
-              >
-                <Palette className="w-3.5 h-3.5" />
-                {(hasHoverStyles || hasActiveStyles || Boolean(style.backgroundColor || style.borderColor || style.borderRadius)) && (
-                  <span className="w-1.5 h-1.5 rounded-full ml-0.5" style={{ backgroundColor: 'var(--accent, var(--ui-accent))' }} />
-                )}
-              </button>
-            </div>
-
-            {/* ── Cas 3 : BIBLIOTHÈQUE D'EFFETS & ANIMATIONS (FONCTIONNALITÉ 2) ── */}
-            <div className="flex items-center gap-1 px-1 border-l border-[#2b2b28]">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowEffectsPanel((v) => !v);
-                  if (!showEffectsPanel) {
-                    setShowPalettePanel(false);
-                    setShowLinkEditor(false);
-                  }
-                }}
-                style={{
-                  backgroundColor:
-                    showEffectsPanel || (style.buttonEffect?.type && style.buttonEffect.type !== 'none')
-                      ? 'var(--accent-muted, rgba(var(--ui-accent-rgb), 0.16))'
-                      : 'transparent',
-                  color:
-                    showEffectsPanel || (style.buttonEffect?.type && style.buttonEffect.type !== 'none')
-                      ? 'var(--accent, var(--ui-accent))'
-                      : '#B9B7B1',
-                  borderColor:
-                    showEffectsPanel || (style.buttonEffect?.type && style.buttonEffect.type !== 'none')
-                      ? 'var(--accent-border, rgba(var(--ui-accent-rgb), 0.35))'
-                      : 'transparent',
-                }}
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer border"
-                title="Bibliothèque d'effets et animations (Signature, Lift, Glow, Shine, Fill, Scale, etc.)"
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>EFFETS</span>
-                {style.buttonEffect?.type && style.buttonEffect.type !== 'none' && (
-                  <span
-                    className="w-1.5 h-1.5 rounded-full"
-                    style={{ backgroundColor: 'var(--accent, var(--ui-accent))' }}
-                    title={`Effet actif : ${style.buttonEffect.type}`}
-                  />
-                )}
-              </button>
-            </div>
-          </>
+            {/* 03 Positionnement et effets */}
+            <button
+              type="button"
+              onClick={() => toggleAccordion('position')}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-mono text-xs font-bold transition-all cursor-pointer ${
+                activeAccordion === 'position'
+                  ? 'bg-[color:var(--ui-accent)] text-[#080808] shadow-sm'
+                  : 'text-[#aaa] hover:text-white hover:bg-[#1f1f1d]'
+              }`}
+              title="Compartiment 03 : Positionnement et effets (nudge X/Y, lien/redirection, effets et animations)"
+            >
+              <Move className="w-3.5 h-3.5" />
+              <span>03 Position & Effets</span>
+              {(hasOffset || realCurrentUrl || (style.buttonEffect?.type && style.buttonEffect.type !== 'none')) && (
+                <span className={`w-1.5 h-1.5 rounded-full ${activeAccordion === 'position' ? 'bg-[#080808]' : 'bg-[color:var(--ui-accent)]'}`} />
+              )}
+            </button>
+          </div>
         )}
 
-        {/* ── Outil LIEN / REDIRECTION (Disponible pour tout élément texte, bouton ou média) ── */}
-        <div className="flex items-center gap-1.5 px-1 border-l border-[#2b2b28]">
+        {/* ── Contrôles à l'extrême droite : Auto-save, Enregistrer, Sparkles, Corbeille, Fermer ── */}
+        <div className="flex items-center gap-1.5 pl-2 ml-auto border-l border-[#2b2b28] shrink-0">
+          {/* Switch Auto-save */}
+          <div
+            className="flex items-center gap-1.5 px-1"
+            title={
+              autoSave
+                ? 'Sauvegarde automatique ACTIVÉE : chaque modification est enregistrée sur le serveur'
+                : 'Sauvegarde automatique DÉSACTIVÉE : testez vos modifications sans enregistrement automatique'
+            }
+          >
+            <span className="font-mono text-[10px] text-[#8a8880] select-none font-bold whitespace-nowrap">Auto-save</span>
+            <button
+              type="button"
+              onClick={() => setAutoSave((v) => !v)}
+              className={`relative inline-flex h-4 w-7 shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out ${
+                autoSave ? 'bg-[color:var(--ui-accent)]' : 'bg-[#333330]'
+              }`}
+              title={autoSave ? 'Sauvegarde auto activée (cliquer pour désactiver)' : 'Sauvegarde auto désactivée (cliquer pour activer)'}
+            >
+              <span
+                className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-[#080808] shadow-md ring-0 transition duration-200 ease-in-out mt-0.5 ${
+                  autoSave ? 'translate-x-3.5' : 'translate-x-0.5'
+                }`}
+              />
+            </button>
+          </div>
+
+          {/* Bouton ENREGISTRER */}
           <button
             type="button"
             onClick={() => {
-              setShowLinkEditor((v) => !v);
-              if (!showLinkEditor) {
-                setShowPalettePanel(false);
-                setShowEffectsPanel(false);
-              }
+              setSaveState('saving');
+              void saveCurrentPage().then((ok) => {
+                setSaveState(ok ? 'saved' : 'error');
+                setTimeout(() => setSaveState('idle'), 2500);
+              });
             }}
-            style={{
-              backgroundColor: showLinkEditor || realCurrentUrl ? 'var(--accent-muted, rgba(var(--ui-accent-rgb), 0.16))' : 'transparent',
-              color: showLinkEditor || realCurrentUrl ? 'var(--accent, var(--ui-accent))' : '#B9B7B1',
-              borderColor: showLinkEditor || realCurrentUrl ? 'var(--accent-border, rgba(var(--ui-accent-rgb), 0.35))' : 'transparent',
-            }}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer border"
-            title="Éditer le lien de redirection de cet élément (URL / Page interne)"
+            className={`flex items-center gap-1 px-2.5 py-1 rounded-md font-mono text-[10px] font-bold transition-all cursor-pointer shadow-sm ${
+              !autoSave
+                ? 'bg-[color:var(--ui-accent)] hover:bg-[color:var(--ui-accent-hover)] text-[#080808]'
+                : 'bg-[#1f1f1d] hover:bg-[#2a2a26] text-white hover:text-[color:var(--ui-accent)] border border-[#333]'
+            }`}
+            title="Enregistrer immédiatement les modifications sur le serveur"
           >
-            <LinkIcon className="w-3.5 h-3.5" />
-            <span>LIEN</span>
-            {realCurrentUrl && (
-              <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'var(--accent, var(--ui-accent))' }} title={`Lien : ${realCurrentUrl}`} />
-            )}
+            <span>ENREGISTRER</span>
           </button>
-        </div>
 
-        {/* ── Cas 4 : DÉPLACEMENT (NUDGE TRANSFORM) ── */}
-        <div className="flex items-center gap-0.5 px-1 border-l border-[#2b2b28]">
-          <span
-            style={{ color: hasOffset ? 'var(--accent, var(--ui-accent))' : '#6a6a65' }}
-            className="flex items-center gap-1 font-mono text-[10px] font-bold"
-            title="Décalage horizontal / vertical (nudge)"
-          >
-            <Move className="w-3 h-3" />
-            X:{style.offsetX || 0} Y:{style.offsetY || 0}
-          </span>
-          <button
-            type="button"
-            onClick={() => nudge(0, -NUDGE)}
-            className={`${iconBtn} ${off}`}
-            title="Déplacer vers le haut"
-          >
-            <MoveUp className="w-3.5 h-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => nudge(0, NUDGE)}
-            className={`${iconBtn} ${off}`}
-            title="Déplacer vers le bas"
-          >
-            <MoveDown className="w-3.5 h-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => nudge(-NUDGE, 0)}
-            className={`${iconBtn} ${off}`}
-            title="Déplacer vers la gauche"
-          >
-            <MoveLeft className="w-3.5 h-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => nudge(NUDGE, 0)}
-            className={`${iconBtn} ${off}`}
-            title="Déplacer vers la droite"
-          >
-            <MoveRight className="w-3.5 h-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={resetPosition}
-            disabled={!hasOffset}
-            className={`${iconBtn} ${hasOffset ? off : 'text-[#444] cursor-not-allowed'}`}
-            title="Réinitialiser la position (alignement)"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-          </button>
+          {/* Indicateur de sauvegarde */}
+          {saveState !== 'idle' && (
+            <span
+              className="font-mono text-[9px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap"
+              style={{
+                color:
+                  saveState === 'error'
+                    ? '#ff4444'
+                    : 'var(--accent, var(--ui-accent))',
+                backgroundColor:
+                  saveState === 'saved'
+                    ? 'rgba(var(--ui-accent-rgb), 0.12)'
+                    : saveState === 'error'
+                    ? 'rgba(255, 68, 68, 0.12)'
+                    : 'transparent',
+              }}
+            >
+              {saveState === 'saving'
+                ? 'EN COURS…'
+                : saveState === 'saved'
+                ? '✓ ENREGISTRÉ'
+                : '✕ ERREUR'}
+            </span>
+          )}
+
+          {/* Restaurer styles */}
           <button
             type="button"
             onClick={resetElementStyles}
             className={`${iconBtn} ${off}`}
-            title="Réinitialiser tous les styles de l'élément (effacer fond, couleur, bordures, etc.)"
+            title="Restaurer à l'initial (effacer styles personnalisés de cet élément)"
           >
             <Sparkles className="w-3.5 h-3.5" style={{ color: 'var(--accent, var(--ui-accent))' }} />
           </button>
-        </div>
 
-        {/* ── Indicateur de statut de sauvegarde ── */}
-        <div className="flex items-center gap-1 pl-1 border-l border-[#2b2b28]">
-          <span
-            className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded"
-            style={{
-              color:
-                saveState === 'error'
-                  ? '#ff4444'
-                  : saveState === 'saving'
-                  ? 'var(--accent, var(--ui-accent))'
-                  : saveState === 'saved'
-                  ? 'var(--accent, var(--ui-accent))'
-                  : '#7a7a76',
-              backgroundColor:
-                saveState === 'saved'
-                  ? 'rgba(var(--ui-accent-rgb), 0.12)'
-                  : saveState === 'error'
-                  ? 'rgba(255, 68, 68, 0.12)'
-                  : 'transparent',
-            }}
+          {/* Corbeille avec confirmation sécurisée */}
+          <button
+            type="button"
+            onClick={() => setShowDeleteConfirm(true)}
+            className={`${iconBtn} text-[#ff6666] hover:bg-[#331111] hover:text-[#ff9999]`}
+            title="Supprimer ou masquer cet élément (sécurisé avec confirmation)"
           >
-            {saveState === 'saving'
-              ? 'ENREGISTREMENT…'
-              : saveState === 'saved'
-              ? '✓ ENREGISTRÉ'
-              : saveState === 'error'
-              ? '✕ ERREUR'
-              : ''}
-          </span>
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
 
-          {/* Bouton Fermer / Désélectionner */}
+          {/* Fermer */}
           <button
             type="button"
             onClick={() => setSelectedElement(null)}
@@ -1162,9 +1530,109 @@ export const FloatingElementToolbar: React.FC<{
         </div>
       </div>
 
-      {/* ── Ligne 2 (Conditionnelle) : Panneau Complet Palette & Styles Visuels (Normal, Survol, Clic) ── */}
-      {showPalettePanel && (
-        <div className="flex flex-col gap-2.5 pt-2 border-t border-[#2b2b28] bg-[#141412] p-3 rounded-lg animate-in slide-in-from-top-1 text-xs">
+      {/* ── PANNEAU ACCORDÉON 01 : TYPOGRAPHIE ── */}
+      {activeAccordion === 'typo' && !isMedia && (
+        <div className="flex items-center gap-3 pt-2 border-t border-[#2b2b28] bg-[#141412] p-2.5 rounded-xl animate-in slide-in-from-top-1 text-xs flex-wrap">
+          {/* Groupe Taille */}
+          <div className="flex items-center gap-1 bg-[#0a0a09] px-2 py-1 rounded-lg border border-[#262624]">
+            <span className="font-mono text-[10px] text-[#888] uppercase mr-1">Taille</span>
+            <button
+              type="button"
+              onMouseDown={(e) => { e.preventDefault(); saveSelection(); }}
+              onClick={() => bumpFontSizeOnSelection(-FONT_STEP)}
+              className={`${iconBtn} ${off}`}
+              title="Réduire la taille (A−)"
+            >
+              <span className="font-mono text-[11px] font-bold">A−</span>
+            </button>
+            <span className="font-mono text-[11px] text-[#B9B7B1] min-w-[36px] text-center font-bold px-1.5 py-0.5 bg-[#161614] rounded border border-[#333]">
+              {style.fontSize || (selected?.el ? `${Math.round(parseFloat(window.getComputedStyle(selected.el).fontSize) || 16)}px` : '16px')}
+            </span>
+            <button
+              type="button"
+              onMouseDown={(e) => { e.preventDefault(); saveSelection(); }}
+              onClick={() => bumpFontSizeOnSelection(FONT_STEP)}
+              className={`${iconBtn} ${off}`}
+              title="Agrandir la taille (A+)"
+            >
+              <span className="font-mono text-[11px] font-bold">A+</span>
+            </button>
+          </div>
+
+          {/* Groupe Formats : B, I, U, S barré, AA Casse */}
+          <div className="flex items-center gap-1 bg-[#0a0a09] px-2 py-1 rounded-lg border border-[#262624]">
+            <button
+              type="button"
+              onClick={toggleBold}
+              className={`${iconBtn} ${style.fontWeight === '700' ? on : off}`}
+              title="Gras (B)"
+            >
+              <Bold className="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={toggleItalic}
+              className={`${iconBtn} ${style.fontStyle === 'italic' ? on : off}`}
+              title="Italique (I)"
+            >
+              <Italic className="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={toggleUnderline}
+              className={`${iconBtn} ${style.textDecoration === 'underline' ? on : off}`}
+              title="Souligné (U)"
+            >
+              <Underline className="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={toggleStrikethrough}
+              className={`${iconBtn} ${style.textDecoration === 'line-through' ? on : off}`}
+              title="Barré (S)"
+            >
+              <span className="font-serif line-through font-bold text-xs">S</span>
+            </button>
+            <div className="w-[1px] h-4 bg-[#262624]" />
+            <button
+              type="button"
+              onClick={cycleTextTransform}
+              className={`${iconBtn} ${style.textTransform ? on : off}`}
+              title={
+                style.textTransform === 'uppercase'
+                  ? 'Majuscules actives (clic pour minuscules)'
+                  : style.textTransform === 'lowercase'
+                  ? 'Minuscules actives (clic pour normal)'
+                  : 'Casse normale (clic pour tout en MAJUSCULES)'
+              }
+            >
+              <span className="font-mono text-[11px] font-bold">
+                {style.textTransform === 'uppercase' ? 'AA' : style.textTransform === 'lowercase' ? 'aa' : 'Aa'}
+              </span>
+            </button>
+          </div>
+
+          {/* Groupe Alignements */}
+          <div className="flex items-center gap-1 bg-[#0a0a09] px-2 py-1 rounded-lg border border-[#262624]">
+            <span className="font-mono text-[10px] text-[#888] uppercase mr-1">Alignement</span>
+            {ALIGNS.map(({ value, icon: Icon, label }) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => commit({ textAlign: value })}
+                className={`${iconBtn} ${style.textAlign === value ? on : off}`}
+                title={`Alignement : ${label}`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── PANNEAU ACCORDÉON 02 : COULEURS ET APPARENCE ── */}
+      {activeAccordion === 'colors' && !isMedia && (
+        <div className="flex flex-col gap-2.5 pt-2 border-t border-[#2b2b28] bg-[#141412] p-3 rounded-xl animate-in slide-in-from-top-1 text-xs">
           {/* 1. Sélecteur d'état : Normal | Survol (Hover) | Clic (Active) */}
           <div className="flex items-center justify-between gap-2 flex-wrap border-b border-[#2b2b28] pb-2">
             <div className="flex items-center gap-1 bg-[#0a0a09] p-0.5 rounded-lg border border-[#2b2b28]">
@@ -1243,7 +1711,7 @@ export const FloatingElementToolbar: React.FC<{
           {/* 2. Contrôles de style pour l'état sélectionné */}
           <div className="flex items-center gap-3 flex-wrap">
             {/* Groupe Couleurs */}
-            <div className="flex items-center gap-2 bg-[#0a0a09] px-2.5 py-1.5 rounded border border-[#262624]">
+            <div className="flex items-center gap-2 bg-[#0a0a09] px-2.5 py-1.5 rounded-lg border border-[#262624]">
               {/* Couleur Texte */}
               <div className="flex items-center gap-1.5" title="Couleur du texte">
                 <span className="font-mono text-[10px] text-[#888] uppercase">Texte</span>
@@ -1265,6 +1733,15 @@ export const FloatingElementToolbar: React.FC<{
                     className="absolute inset-0 opacity-0 cursor-pointer"
                   />
                 </label>
+                <button
+                  type="button"
+                  onClick={() => commitVisualProperty('color', 'var(--accent, var(--ui-accent))')}
+                  className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-[#1c1c1a] hover:bg-[#2b2b28] text-[#d0cfca] hover:text-[color:var(--ui-accent)] border border-[#333] transition-colors cursor-pointer"
+                  title="Couleur du thème actif"
+                >
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--accent, var(--ui-accent))' }} />
+                  <span>Thème</span>
+                </button>
               </div>
 
               <div className="w-[1px] h-4 bg-[#262624]" />
@@ -1307,7 +1784,7 @@ export const FloatingElementToolbar: React.FC<{
             </div>
 
             {/* Groupe Bordure & Arrondi */}
-            <div className="flex items-center gap-2 bg-[#0a0a09] px-2.5 py-1.5 rounded border border-[#262624]">
+            <div className="flex items-center gap-2 bg-[#0a0a09] px-2.5 py-1.5 rounded-lg border border-[#262624]">
               {/* Arrondi */}
               <div className="flex items-center gap-1.5" title="Rayon des coins (Arrondi)">
                 <span className="font-mono text-[10px] text-[#888] uppercase">Arrondi</span>
@@ -1397,23 +1874,67 @@ export const FloatingElementToolbar: React.FC<{
         </div>
       )}
 
-      {/* ── Ligne 2 (Conditionnelle) : Panneau Complet d'Édition du Bouton / Lien ── */}
-      {showLinkEditor && (
-        <div className="flex flex-col gap-2 pt-2 border-t border-[#2b2b28] bg-[#141412] p-2.5 rounded-lg animate-in slide-in-from-top-1">
-          {isSearchAction && (
-            <div className="flex items-center justify-between bg-[#1f1e18] border border-[#524c25] px-2.5 py-1.5 rounded text-xs">
-              <span className="flex items-center gap-1.5 text-[#e5d470] font-mono">
-                <Zap className="w-3.5 h-3.5" />
-                Action native : Ouverture Fenêtre de Recherche
+      {/* ── PANNEAU ACCORDÉON 03 : POSITIONNEMENT ET EFFETS ── */}
+      {activeAccordion === 'position' && (
+        <div className="flex flex-col gap-3 pt-2 border-t border-[#2b2b28] bg-[#141412] p-3 rounded-xl animate-in slide-in-from-top-1 text-xs">
+          {/* Ligne A : Déplacement fin (Nudge) & Lien */}
+          <div className="flex items-center gap-3 flex-wrap">
+            {/* Déplacement Nudge */}
+            <div className="flex items-center gap-1 bg-[#0a0a09] px-2.5 py-1 rounded-lg border border-[#262624]">
+              <span
+                style={{ color: hasOffset ? 'var(--accent, var(--ui-accent))' : '#6a6a65' }}
+                className="flex items-center gap-1 font-mono text-[10px] font-bold mr-1"
+                title="Décalage horizontal / vertical (nudge)"
+              >
+                <Move className="w-3 h-3" />
+                X:{style.offsetX || 0} Y:{style.offsetY || 0}
               </span>
-              <span className="text-[10px] text-[#aaa] font-mono">Action prioritaire</span>
+              <button
+                type="button"
+                onClick={() => nudge(0, -NUDGE)}
+                className={`${iconBtn} ${off}`}
+                title="Déplacer vers le haut"
+              >
+                <MoveUp className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => nudge(0, NUDGE)}
+                className={`${iconBtn} ${off}`}
+                title="Déplacer vers le bas"
+              >
+                <MoveDown className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => nudge(-NUDGE, 0)}
+                className={`${iconBtn} ${off}`}
+                title="Déplacer vers la gauche"
+              >
+                <MoveLeft className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => nudge(NUDGE, 0)}
+                className={`${iconBtn} ${off}`}
+                title="Déplacer vers la droite"
+              >
+                <MoveRight className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={resetPosition}
+                disabled={!hasOffset}
+                className={`${iconBtn} ${hasOffset ? off : 'text-[#444] cursor-not-allowed'}`}
+                title="Réinitialiser la position (alignement)"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+              </button>
             </div>
-          )}
 
-          <div className="flex items-center gap-2 flex-wrap">
-            {/* 1. Destination URL active */}
-            <div className="flex-1 min-w-[200px] flex items-center gap-1.5 bg-[#0a0a09] border border-[#333] px-2 py-1 rounded">
-              <LinkIcon className="w-3.5 h-3.5 text-[color:var(--ui-accent)] shrink-0" />
+            {/* Outil Lien / Redirection */}
+            <div className="flex-1 min-w-[280px] flex items-center gap-2 bg-[#0a0a09] p-1.5 rounded-lg border border-[#262624]">
+              <LinkIcon className="w-3.5 h-3.5 text-[color:var(--ui-accent)] shrink-0 ml-1" />
               <input
                 type="text"
                 value={realCurrentUrl}
@@ -1428,330 +1949,313 @@ export const FloatingElementToolbar: React.FC<{
                 className="w-full bg-transparent text-xs text-white font-mono focus:outline-none"
                 title="URL de destination du bouton ou du lien"
               />
-            </div>
-
-            {/* 2. Liste déroulante des pages internes du site */}
-            <select
-              value=""
-              onChange={(e) => {
-                const url = e.target.value;
-                if (!url) return;
-                if (clickableNode && isAnchor) clickableNode.setAttribute('href', url);
-                if (selected.el.tagName === 'A') (selected.el as HTMLAnchorElement).setAttribute('href', url);
-                else selected.el.setAttribute('data-href', url);
-                commit({ href: url });
-              }}
-              className="bg-[#1f1f1d] border border-[#333] rounded px-2 py-1 text-xs text-[#ddd] font-mono focus:border-[color:var(--ui-accent)] cursor-pointer"
-              title="Choisir une page interne ou ancre du site"
-            >
-              <option value="">-- Choisir une page interne --</option>
-              {INTERNAL_PAGES.map((p) => (
-                <option key={p.url} value={p.url}>
-                  {p.label} ({p.url})
-                </option>
-              ))}
-            </select>
-
-            {/* 3. Cible d'ouverture (Même onglet ou nouvel onglet) */}
-            <button
-              type="button"
-              onClick={() => {
-                const nextTarget = isBlank ? '_self' : '_blank';
-                if (clickableNode) clickableNode.setAttribute('target', nextTarget);
-                selected.el.setAttribute('target', nextTarget);
-                commit({ target: nextTarget, rel: nextTarget === '_blank' ? 'noopener noreferrer' : '' });
-              }}
-              className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-mono transition-all cursor-pointer ${
-                isBlank ? 'bg-[color:var(--ui-accent)] text-[#080808] font-bold' : 'bg-[#222] text-[#aaa] hover:text-white'
-              }`}
-              title={isBlank ? 'S’ouvre dans un nouvel onglet (_blank)' : 'S’ouvre dans le même onglet (_self)'}
-            >
-              <ExternalLink className="w-3 h-3" />
-              <span>{isBlank ? 'NOUVEL ONGLET' : 'MÊME ONGLET'}</span>
-            </button>
-
-            {/* 4. Bouton de suppression du lien */}
-            {realCurrentUrl && (
+              <select
+                value=""
+                onChange={(e) => {
+                  const url = e.target.value;
+                  if (!url) return;
+                  if (clickableNode && isAnchor) clickableNode.setAttribute('href', url);
+                  if (selected.el.tagName === 'A') (selected.el as HTMLAnchorElement).setAttribute('href', url);
+                  else selected.el.setAttribute('data-href', url);
+                  commit({ href: url });
+                }}
+                className="bg-[#1f1f1d] border border-[#333] rounded px-1.5 py-0.5 text-[11px] text-[#ddd] font-mono focus:border-[color:var(--ui-accent)] cursor-pointer max-w-[140px]"
+                title="Choisir une page interne du site"
+              >
+                <option value="">-- Page interne --</option>
+                {INTERNAL_PAGES.map((p) => (
+                  <option key={p.url} value={p.url}>
+                    {p.label}
+                  </option>
+                ))}
+              </select>
               <button
                 type="button"
                 onClick={() => {
-                  if (clickableNode) {
-                    clickableNode.removeAttribute('href');
-                    clickableNode.removeAttribute('data-href');
-                  }
-                  selected.el.removeAttribute('href');
-                  selected.el.removeAttribute('data-href');
-                  commit({ href: '', target: '_self' });
+                  const nextTarget = isBlank ? '_self' : '_blank';
+                  if (clickableNode) clickableNode.setAttribute('target', nextTarget);
+                  selected.el.setAttribute('target', nextTarget);
+                  commit({ target: nextTarget, rel: nextTarget === '_blank' ? 'noopener noreferrer' : '' });
                 }}
-                className="flex items-center gap-1 px-2 py-1 rounded bg-[#2a1111] hover:bg-[#441111] text-[#ff6666] text-xs font-mono transition-colors cursor-pointer"
-                title="Supprimer le lien de cet élément"
+                className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold transition-all cursor-pointer whitespace-nowrap ${
+                  isBlank ? 'bg-[color:var(--ui-accent)] text-[#080808]' : 'bg-[#222] text-[#aaa] hover:text-white'
+                }`}
+                title={isBlank ? 'Nouvel onglet (_blank)' : 'Même onglet (_self)'}
               >
-                <Trash2 className="w-3.5 h-3.5" />
-                <span>Supprimer le lien</span>
+                {isBlank ? 'NOUVEL ONGLET' : 'MÊME ONGLET'}
               </button>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ── Ligne 3 (Conditionnelle) : Panneau de la Bibliothèque d'Effets & Animations (FONCTIONNALITÉ 2) ── */}
-      {showEffectsPanel && (
-        <div className="flex flex-col gap-3 pt-2.5 border-t border-[#2b2b28] bg-[#141412] p-3 rounded-lg animate-in slide-in-from-top-1 w-full">
-          {/* En-tête : Titre + Test des 3 États (Normal, Hover, Active) */}
-          <div className="flex items-center justify-between gap-3 pb-2 border-b border-[#262624] flex-wrap">
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-[color:var(--ui-accent)]" />
-              <span className="font-mono text-xs font-bold text-white uppercase tracking-wider">
-                Bibliothèque d&apos;Effets & Animations
-              </span>
-              {style.buttonEffect?.type && style.buttonEffect.type !== 'none' && (
-                <span className="px-1.5 py-0.5 rounded text-[9.5px] font-mono font-bold bg-[rgba(var(--ui-accent-rgb),0.2)] text-[color:var(--ui-accent)] border border-[rgba(var(--ui-accent-rgb),0.3)] uppercase">
-                  {style.buttonEffect.type}
-                </span>
-              )}
-            </div>
-
-            {/* Test des 3 états en direct sur le bouton réel du site */}
-            <div className="flex items-center gap-1 bg-[#0a0a09] p-0.5 rounded-lg border border-[#262624]">
-              {(['normal', 'hover', 'active'] as const).map((st) => (
-                <button
-                  key={st}
-                  type="button"
-                  onClick={() => switchEffectsPreviewState(st)}
-                  className={`px-2 py-0.5 rounded font-mono text-[10px] font-bold transition-all cursor-pointer ${
-                    effectsPreviewState === st
-                      ? 'bg-[color:var(--ui-accent)] text-[#080808] shadow-sm'
-                      : 'text-[#888] hover:text-white'
-                  }`}
-                  title={`Tester l'état ${st === 'normal' ? 'Normal' : st === 'hover' ? 'Survol (Hover)' : 'Clic (Active)'} sur le bouton réel`}
-                >
-                  {st === 'normal' ? 'Normal' : st === 'hover' ? 'Survol' : 'Clic'}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Grille de vignettes interactives (Démonstration au survol) */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-            {BUTTON_EFFECTS_CATALOG.map((item) => {
-              const isCurrent = (style.buttonEffect?.type || 'none') === item.id;
-              return (
-                <div
-                  key={item.id}
-                  onClick={() => handleSelectEffect(item.id)}
-                  className={`group relative p-2 rounded-xl border transition-all cursor-pointer flex flex-col justify-between min-h-[72px] select-none ${
-                    isCurrent
-                      ? 'bg-[#1c2211] border-[color:var(--ui-accent)] ring-1 ring-[rgba(var(--ui-accent-rgb),0.6)]'
-                      : 'bg-[#181816] border-[#2b2b28] hover:border-[#444] hover:bg-[#1e1e1b]'
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-1 mb-1">
-                    <span className="font-mono text-[11px] font-bold text-white group-hover:text-[color:var(--ui-accent)] transition-colors leading-tight">
-                      {item.name}
-                    </span>
-                    {item.badge && (
-                      <span className="px-1 py-0.5 rounded text-[7.5px] font-mono font-bold bg-[color:var(--ui-accent)] text-[#080808]">
-                        {item.badge}
-                      </span>
-                    )}
-                    {isCurrent && !item.badge && (
-                      <Check className="w-3 h-3 text-[color:var(--ui-accent)] shrink-0" />
-                    )}
-                  </div>
-                  <span className="text-[9px] font-mono text-[#8a8880] leading-tight line-clamp-2 mb-1.5">
-                    {item.tagline}
-                  </span>
-
-                  {/* Micro-bouton de démonstration interactif au survol de la vignette */}
-                  <div className="pt-1 border-t border-[#262624] flex items-center justify-center">
-                    {item.id === 'none' && (
-                      <span className="text-[9px] font-mono text-[#666]">Standard</span>
-                    )}
-                    {item.id === 'signature' && (
-                      <span className="px-2 py-0.5 text-[9px] font-bold rounded bg-[color:var(--ui-accent)] text-black inline-flex items-center gap-1 transition-all group-hover:gap-2 group-hover:shadow-[0_0_10px_rgba(var(--ui-accent-rgb),0.6)]">
-                        <span>Signature</span>
-                        <span>→</span>
-                      </span>
-                    )}
-                    {item.id === 'lift' && (
-                      <span className="px-2 py-0.5 text-[9px] font-bold rounded bg-[#262624] text-white transition-all group-hover:-translate-y-1 group-hover:shadow-[0_4px_10px_rgba(0,0,0,0.5)]">
-                        Lift ↗
-                      </span>
-                    )}
-                    {item.id === 'glow' && (
-                      <span className="px-2 py-0.5 text-[9px] font-bold rounded bg-[#262624] text-white border border-[rgba(var(--ui-accent-rgb),0.4)] transition-all group-hover:shadow-[0_0_12px_rgba(var(--ui-accent-rgb),0.8)] group-hover:border-[color:var(--ui-accent)]">
-                        Glow ☀
-                      </span>
-                    )}
-                    {item.id === 'shine' && (
-                      /* Curtain closing effect (dev.to / shubhamtiwari909) :
-                         deux demi-rideaux colorés se referment sur le bouton au hover */
-                      <span className="relative overflow-hidden px-2 py-0.5 text-[9px] font-bold rounded bg-[#262624] text-white transition-colors duration-300 group-hover:text-black before:content-[''] before:absolute before:inset-y-0 before:left-0 before:w-0 before:bg-[color:var(--ui-accent)] before:transition-all before:duration-300 group-hover:before:w-1/2 after:content-[''] after:absolute after:inset-y-0 after:right-0 after:w-0 after:bg-[color:var(--ui-accent)] after:transition-all after:duration-300 group-hover:after:w-1/2">
-                        <span className="relative z-10">Shine ✦</span>
-                      </span>
-                    )}
-                    {item.id === 'fill' && (
-                      /* Slide transition — fond remontant de bas en haut */
-                      <span className="relative overflow-hidden px-2 py-0.5 text-[9px] font-bold rounded border border-[color:var(--ui-accent)] text-[color:var(--ui-accent)] group-hover:text-black transition-colors duration-300 before:content-[''] before:absolute before:inset-x-0 before:bottom-0 before:h-0 before:bg-[color:var(--ui-accent)] before:transition-all before:duration-300 group-hover:before:h-full">
-                        <span className="relative z-10">Fill ▲</span>
-                      </span>
-                    )}
-                    {item.id === 'scale' && (
-                      /* Multicolor transition — dégradé arc-en-ciel au hover */
-                      <span className="relative px-2 py-0.5 text-[9px] font-bold rounded bg-[#262624] text-white transition-all duration-300 group-hover:bg-gradient-to-r group-hover:from-[color:var(--ui-accent)] group-hover:via-[#00e5ff] group-hover:to-[#ff6ec7] group-hover:text-black group-hover:scale-105">
-                        Scale 🌈
-                      </span>
-                    )}
-                    {item.id === 'border-glow' && (
-                      /* Multi-color border hover — bordure qui tourne en couleurs */
-                      <span className="relative px-2 py-0.5 text-[9px] font-bold rounded text-white bg-[#0e0e0d] border-2 border-transparent transition-all duration-300 group-hover:[background:linear-gradient(#0e0e0d,#0e0e0d)_padding-box,linear-gradient(90deg,var(--ui-accent),#00e5ff,#ff6ec7,#C3F910)_border-box] group-hover:shadow-[0_0_10px_rgba(var(--ui-accent-rgb),0.5)]">
-                        Border ▣
-                      </span>
-                    )}
-                    {item.id === 'slide' && (
-                      /* Star / sparkle transition — étoiles qui apparaissent + slide du texte */
-                      <span className="relative overflow-hidden px-2 py-0.5 text-[9px] font-bold rounded bg-[#262624] text-white inline-flex items-center gap-0.5 transition-all duration-300 group-hover:gap-1.5 group-hover:bg-[#1a1f0a] group-hover:text-[color:var(--ui-accent)]">
-                        <span className="transition-transform duration-300 group-hover:-translate-x-0.5">Slide</span>
-                        <span className="transition-all duration-300 opacity-0 group-hover:opacity-100 scale-0 group-hover:scale-100">★</span>
-                        <span className="transition-transform duration-300 group-hover:translate-x-0.5">→</span>
-                      </span>
-                    )}
-                    {item.id === 'pulse' && (
-                      /* Pulse renforcé avec ring animé expansif */
-                      <span className="relative px-2 py-0.5 text-[9px] font-bold rounded bg-[rgba(var(--ui-accent-rgb),0.2)] text-[color:var(--ui-accent)] border border-[rgba(var(--ui-accent-rgb),0.4)] transition-all duration-300 group-hover:bg-[rgba(var(--ui-accent-rgb),0.3)] group-hover:shadow-[0_0_0_4px_rgba(var(--ui-accent-rgb),0.15),0_0_0_8px_rgba(var(--ui-accent-rgb),0.07)] group-hover:animate-pulse">
-                        Pulse ◎
-                      </span>
-                    )}
-                    {item.id === 'magnetic' && (
-                      /* Shimmer latéral — reflet qui traverse + déplacement magnétique */
-                      <span className="relative overflow-hidden px-2 py-0.5 text-[9px] font-bold rounded bg-[#262624] text-white transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:shadow-[2px_-2px_6px_rgba(var(--ui-accent-rgb),0.3)] before:content-[''] before:absolute before:top-0 before:left-[-60%] before:w-[40%] before:h-full before:bg-gradient-to-r before:from-transparent before:via-white/30 before:to-transparent before:skew-x-[-20deg] group-hover:before:left-[160%] before:transition-all before:duration-500">
-                        Magnetic ⌖
-                      </span>
-                    )}
-                    {item.id === 'underline' && (
-                      /* Underline double — barre qui grandit + seconde barre décalée */
-                      <span className="relative px-2 py-0.5 text-[9px] font-bold text-white group-hover:text-[color:var(--ui-accent)] transition-colors duration-200 after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-[2px] after:bg-[color:var(--ui-accent)] after:transition-all after:duration-300 group-hover:after:w-full before:content-[''] before:absolute before:bottom-[-3px] before:right-0 before:w-0 before:h-[1px] before:bg-[rgba(var(--ui-accent-rgb),0.4)] before:transition-all before:duration-500 before:delay-100 group-hover:before:w-3/4">
-                        Underline ═
-                      </span>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Paramètres personnalisables contextuels selon l'effet sélectionné */}
-          {style.buttonEffect?.type && style.buttonEffect.type !== 'none' && (() => {
-            const currentCat = BUTTON_EFFECTS_CATALOG.find((c) => c.id === style.buttonEffect?.type);
-            const eff = style.buttonEffect;
-            return (
-              <div className="flex items-center gap-2.5 pt-2 border-t border-[#262624] flex-wrap bg-[#0e0e0d] p-2.5 rounded-xl">
-                <span className="font-mono text-[10px] text-[#7a7a76] uppercase tracking-wider block w-full mb-0.5">
-                  Réglages personnalisés : {currentCat?.name}
-                </span>
-
-                {/* 1. Intensité (0 à 100%) */}
-                {currentCat?.hasIntensity && (
-                  <div className="flex items-center gap-1.5 bg-[#171715] px-2 py-1 rounded-lg border border-[#2b2b28]">
-                    <span className="font-mono text-[9.5px] text-[#888] uppercase">Intensité</span>
-                    <input
-                      type="range"
-                      min="10"
-                      max="100"
-                      step="5"
-                      value={eff.intensity ?? 60}
-                      onChange={(e) => handleUpdateEffectParam('intensity', Number(e.target.value))}
-                      className="w-16 h-1.5 bg-[#262624] rounded-lg appearance-none cursor-pointer accent-[color:var(--ui-accent)]"
-                    />
-                    <span className="font-mono text-[10px] font-bold text-[color:var(--ui-accent)] min-w-[24px]">
-                      {eff.intensity ?? 60}%
-                    </span>
-                  </div>
-                )}
-
-                {/* 2. Durée (ms) */}
-                {currentCat?.hasDuration && (
-                  <div className="flex items-center gap-1 bg-[#171715] px-2 py-1 rounded-lg border border-[#2b2b28]">
-                    <span className="font-mono text-[9.5px] text-[#888] uppercase">Durée</span>
-                    <select
-                      value={eff.duration ?? 300}
-                      onChange={(e) => handleUpdateEffectParam('duration', Number(e.target.value))}
-                      className="bg-[#141412] border border-[#333] rounded px-1.5 py-0.5 text-white font-mono text-[10px] cursor-pointer"
-                    >
-                      <option value="150">150 ms (Vif)</option>
-                      <option value="250">250 ms (Rapide)</option>
-                      <option value="300">300 ms (Standard)</option>
-                      <option value="500">500 ms (Fluide)</option>
-                      <option value="800">800 ms (Doux)</option>
-                    </select>
-                  </div>
-                )}
-
-                {/* 3. Amplitude (px) */}
-                {currentCat?.hasAmplitude && (
-                  <div className="flex items-center gap-1.5 bg-[#171715] px-2 py-1 rounded-lg border border-[#2b2b28]">
-                    <span className="font-mono text-[9.5px] text-[#888] uppercase">Amplitude</span>
-                    <input
-                      type="range"
-                      min="2"
-                      max="12"
-                      step="1"
-                      value={eff.amplitude ?? 4}
-                      onChange={(e) => handleUpdateEffectParam('amplitude', Number(e.target.value))}
-                      className="w-14 h-1.5 bg-[#262624] rounded-lg appearance-none cursor-pointer accent-[color:var(--ui-accent)]"
-                    />
-                    <span className="font-mono text-[10px] font-bold text-[color:var(--ui-accent)] min-w-[20px]">
-                      {eff.amplitude ?? 4}px
-                    </span>
-                  </div>
-                )}
-
-                {/* 4. Couleur de l'effet */}
-                {currentCat?.hasColor && (
-                  <div className="flex items-center gap-1.5 bg-[#171715] px-2 py-1 rounded-lg border border-[#2b2b28]">
-                    <span className="font-mono text-[9.5px] text-[#888] uppercase">Couleur</span>
-                    <label
-                      className="relative w-4 h-4 rounded overflow-hidden border border-[#444] cursor-pointer shrink-0"
-                      style={{ background: eff.color || '#C3F910' }}
-                    >
-                      <input
-                        type="color"
-                        value={eff.color?.startsWith('#') ? eff.color : '#C3F910'}
-                        onChange={(e) => handleUpdateEffectParam('color', e.target.value)}
-                        className="absolute inset-0 opacity-0 cursor-pointer"
-                      />
-                    </label>
-                    <input
-                      type="text"
-                      value={eff.color || '#C3F910'}
-                      onChange={(e) => handleUpdateEffectParam('color', e.target.value)}
-                      className="w-14 bg-[#141412] border border-[#333] rounded px-1 py-0.5 text-[10px] text-white font-mono uppercase focus:border-[color:var(--ui-accent)] focus:outline-none"
-                    />
-                  </div>
-                )}
-
-                {/* Bouton réinitialiser l'effet */}
+              {realCurrentUrl && (
                 <button
                   type="button"
-                  onClick={() => handleSelectEffect('none')}
-                  className="ml-auto flex items-center gap-1 text-[10px] font-mono text-[#ff7777] hover:text-[#ffaaaa] hover:underline cursor-pointer"
+                  onClick={() => {
+                    if (clickableNode) {
+                      clickableNode.removeAttribute('href');
+                      clickableNode.removeAttribute('data-href');
+                    }
+                    selected.el.removeAttribute('href');
+                    selected.el.removeAttribute('data-href');
+                    commit({ href: '', target: '_self' });
+                  }}
+                  className="p-1 text-[#ff6666] hover:bg-[#331111] rounded cursor-pointer"
+                  title="Supprimer le lien"
                 >
                   <Trash2 className="w-3 h-3" />
-                  <span>Retirer l&apos;effet</span>
                 </button>
+              )}
+            </div>
+          </div>
+
+          {/* Ligne B : Bibliothèque d'effets visuels et animations */}
+          <div className="flex flex-col gap-2 pt-2 border-t border-[#262624]">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-3.5 h-3.5 text-[color:var(--ui-accent)]" />
+                <span className="font-mono text-xs font-bold text-white uppercase tracking-wider">
+                  Bibliothèque d&apos;Effets & Animations de Boutons
+                </span>
+                {style.buttonEffect?.type && style.buttonEffect.type !== 'none' && (
+                  <span className="px-1.5 py-0.5 rounded text-[9.5px] font-mono font-bold bg-[rgba(var(--ui-accent-rgb),0.2)] text-[color:var(--ui-accent)] border border-[rgba(var(--ui-accent-rgb),0.3)] uppercase">
+                    {style.buttonEffect.type}
+                  </span>
+                )}
               </div>
-            );
-          })()}
+
+              {/* Aperçu direct des états sur le bouton */}
+              <div className="flex items-center gap-1 bg-[#0a0a09] p-0.5 rounded-lg border border-[#262624]">
+                {(['normal', 'hover', 'active'] as const).map((st) => (
+                  <button
+                    key={st}
+                    type="button"
+                    onClick={() => switchEffectsPreviewState(st)}
+                    className={`px-2 py-0.5 rounded font-mono text-[10px] font-bold transition-all cursor-pointer ${
+                      effectsPreviewState === st
+                        ? 'bg-[color:var(--ui-accent)] text-[#080808] shadow-sm'
+                        : 'text-[#888] hover:text-white'
+                    }`}
+                    title={`Tester l'état ${st === 'normal' ? 'Normal' : st === 'hover' ? 'Survol (Hover)' : 'Clic (Active)'} sur l'élément réel`}
+                  >
+                    {st === 'normal' ? 'Normal' : st === 'hover' ? 'Survol' : 'Clic'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Grille des effets */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+              {BUTTON_EFFECTS_CATALOG.map((item) => {
+                const isCurrent = (style.buttonEffect?.type || 'none') === item.id;
+                return (
+                  <div
+                    key={item.id}
+                    onClick={() => handleSelectEffect(item.id)}
+                    className={`group relative p-2 rounded-xl border transition-all cursor-pointer flex flex-col justify-between min-h-[64px] select-none ${
+                      isCurrent
+                        ? 'bg-[#1c2211] border-[color:var(--ui-accent)] ring-1 ring-[rgba(var(--ui-accent-rgb),0.6)]'
+                        : 'bg-[#181816] border-[#2b2b28] hover:border-[#444] hover:bg-[#1e1e1b]'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-1 mb-1">
+                      <span className="font-mono text-[11px] font-bold text-white group-hover:text-[color:var(--ui-accent)] transition-colors leading-tight">
+                        {item.name}
+                      </span>
+                      {item.badge && (
+                        <span className="px-1 py-0.5 rounded text-[7.5px] font-mono font-bold bg-[color:var(--ui-accent)] text-[#080808]">
+                          {item.badge}
+                        </span>
+                      )}
+                      {isCurrent && !item.badge && (
+                        <Check className="w-3 h-3 text-[color:var(--ui-accent)] shrink-0" />
+                      )}
+                    </div>
+                    <span className="text-[9px] font-mono text-[#8a8880] leading-tight line-clamp-1">
+                      {item.tagline}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Réglages personnalisés si effet actif */}
+            {style.buttonEffect?.type && style.buttonEffect.type !== 'none' && (() => {
+              const currentCat = BUTTON_EFFECTS_CATALOG.find((c) => c.id === style.buttonEffect?.type);
+              const eff = style.buttonEffect;
+              return (
+                <div className="flex items-center gap-2.5 pt-2 border-t border-[#262624] flex-wrap bg-[#0e0e0d] p-2.5 rounded-xl">
+                  <span className="font-mono text-[10px] text-[#7a7a76] uppercase tracking-wider block w-full mb-0.5">
+                    Réglages : {currentCat?.name}
+                  </span>
+
+                  {currentCat?.hasIntensity && (
+                    <div className="flex items-center gap-1.5 bg-[#171715] px-2 py-1 rounded-lg border border-[#2b2b28]">
+                      <span className="font-mono text-[9.5px] text-[#888] uppercase">Intensité</span>
+                      <input
+                        type="range"
+                        min="10"
+                        max="100"
+                        step="5"
+                        value={eff.intensity ?? 60}
+                        onChange={(e) => handleUpdateEffectParam('intensity', Number(e.target.value))}
+                        className="w-16 h-1.5 bg-[#262624] rounded-lg appearance-none cursor-pointer accent-[color:var(--ui-accent)]"
+                      />
+                      <span className="font-mono text-[10px] font-bold text-[color:var(--ui-accent)] min-w-[24px]">
+                        {eff.intensity ?? 60}%
+                      </span>
+                    </div>
+                  )}
+
+                  {currentCat?.hasDuration && (
+                    <div className="flex items-center gap-1 bg-[#171715] px-2 py-1 rounded-lg border border-[#2b2b28]">
+                      <span className="font-mono text-[9.5px] text-[#888] uppercase">Durée</span>
+                      <select
+                        value={eff.duration ?? 300}
+                        onChange={(e) => handleUpdateEffectParam('duration', Number(e.target.value))}
+                        className="bg-[#141412] border border-[#333] rounded px-1.5 py-0.5 text-white font-mono text-[10px] cursor-pointer"
+                      >
+                        <option value="150">150 ms (Vif)</option>
+                        <option value="250">250 ms (Rapide)</option>
+                        <option value="300">300 ms (Standard)</option>
+                        <option value="500">500 ms (Fluide)</option>
+                        <option value="800">800 ms (Doux)</option>
+                      </select>
+                    </div>
+                  )}
+
+                  {currentCat?.hasAmplitude && (
+                    <div className="flex items-center gap-1.5 bg-[#171715] px-2 py-1 rounded-lg border border-[#2b2b28]">
+                      <span className="font-mono text-[9.5px] text-[#888] uppercase">Amplitude</span>
+                      <input
+                        type="range"
+                        min="2"
+                        max="12"
+                        step="1"
+                        value={eff.amplitude ?? 4}
+                        onChange={(e) => handleUpdateEffectParam('amplitude', Number(e.target.value))}
+                        className="w-14 h-1.5 bg-[#262624] rounded-lg appearance-none cursor-pointer accent-[color:var(--ui-accent)]"
+                      />
+                      <span className="font-mono text-[10px] font-bold text-[color:var(--ui-accent)] min-w-[20px]">
+                        {eff.amplitude ?? 4}px
+                      </span>
+                    </div>
+                  )}
+
+                  {currentCat?.hasColor && (
+                    <div className="flex items-center gap-1.5 bg-[#171715] px-2 py-1 rounded-lg border border-[#2b2b28]">
+                      <span className="font-mono text-[9.5px] text-[#888] uppercase">Couleur</span>
+                      <label
+                        className="relative w-4 h-4 rounded overflow-hidden border border-[#444] cursor-pointer shrink-0"
+                        style={{ background: eff.color || '#C3F910' }}
+                      >
+                        <input
+                          type="color"
+                          value={eff.color?.startsWith('#') ? eff.color : '#C3F910'}
+                          onChange={(e) => handleUpdateEffectParam('color', e.target.value)}
+                          className="absolute inset-0 opacity-0 cursor-pointer"
+                        />
+                      </label>
+                      <input
+                        type="text"
+                        value={eff.color || '#C3F910'}
+                        onChange={(e) => handleUpdateEffectParam('color', e.target.value)}
+                        className="w-14 bg-[#141412] border border-[#333] rounded px-1 py-0.5 text-[10px] text-white font-mono uppercase focus:border-[color:var(--ui-accent)] focus:outline-none"
+                      />
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => handleSelectEffect('none')}
+                    className="ml-auto flex items-center gap-1 text-[10px] font-mono text-[#ff7777] hover:text-[#ffaaaa] hover:underline cursor-pointer"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                    <span>Retirer l&apos;effet</span>
+                  </button>
+                </div>
+              );
+            })()}
+          </div>
         </div>
       )}
     </div>
 
-      {/* Poignées de redimensionnement horizontal — affichées sur les bords gauche/droit de l'élément texte sélectionné */}
-      {selected && selected.kind === 'text' && selected.el.isConnected && coords && (() => {
+      {/* Poignées de redimensionnement et poignée centrale de déplacement libre (4 flèches) */}
+      {selected && !isMedia && selected.el.isConnected && coords && (() => {
         const rect = selected.el.getBoundingClientRect();
         return (
           <>
-            {/* Poignée gauche */}
+            {/* Poignée centrale de déplacement libre (4 flèches croisées) */}
+            <div
+              data-cms-ui
+              style={{
+                position: 'fixed',
+                top: Math.max(8, rect.top - 28),
+                left: rect.left + rect.width / 2 - 14,
+                width: 28,
+                height: 22,
+                zIndex: 370,
+                cursor: 'move',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: 5,
+                background: '#0e0e0d',
+                border: '1.5px solid var(--accent, var(--ui-accent))',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.7)',
+              }}
+              onMouseDown={handleElementDragStart}
+              title="Glisser-déposer : Déplacer librement cet élément (haut, bas, gauche, droite)"
+            >
+              <Move className="w-3.5 h-3.5 text-[color:var(--ui-accent)] pointer-events-none" />
+            </div>
+
+            {/* Poignée haut (étirement vertical) */}
+            <div
+              data-cms-ui
+              style={{
+                position: 'fixed',
+                top: rect.top - 8,
+                left: rect.left + rect.width / 2 - 16,
+                width: 32,
+                height: 16,
+                zIndex: 360,
+                cursor: 'ns-resize',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: 4,
+                background: '#0e0e0d',
+                border: '1px solid var(--accent, var(--ui-accent))',
+              }}
+              onMouseDown={(e) => handleHeightResizeStart(e, 'top')}
+              title="Redimensionner verticalement (haut)"
+            >
+              <svg width="14" height="8" viewBox="0 0 14 8" fill="none"><path d="M1 2L13 2M1 6L13 6" stroke="var(--accent, var(--ui-accent))" strokeWidth="1.5" strokeLinecap="round"/></svg>
+            </div>
+
+            {/* Poignée bas (étirement vertical) */}
+            <div
+              data-cms-ui
+              style={{
+                position: 'fixed',
+                top: rect.bottom - 8,
+                left: rect.left + rect.width / 2 - 16,
+                width: 32,
+                height: 16,
+                zIndex: 360,
+                cursor: 'ns-resize',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: 4,
+                background: '#0e0e0d',
+                border: '1px solid var(--accent, var(--ui-accent))',
+              }}
+              onMouseDown={(e) => handleHeightResizeStart(e, 'bottom')}
+              title="Redimensionner verticalement (bas)"
+            >
+              <svg width="14" height="8" viewBox="0 0 14 8" fill="none"><path d="M1 2L13 2M1 6L13 6" stroke="var(--accent, var(--ui-accent))" strokeWidth="1.5" strokeLinecap="round"/></svg>
+            </div>
+
+            {/* Poignée gauche (étirement horizontal) */}
             <div
               data-cms-ui
               style={{
@@ -1774,7 +2278,8 @@ export const FloatingElementToolbar: React.FC<{
             >
               <svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M2 1L2 13M6 1L6 13" stroke="var(--accent, var(--ui-accent))" strokeWidth="1.5" strokeLinecap="round"/></svg>
             </div>
-            {/* Poignée droite */}
+
+            {/* Poignée droite (étirement horizontal) */}
             <div
               data-cms-ui
               style={{
@@ -1800,6 +2305,71 @@ export const FloatingElementToolbar: React.FC<{
           </>
         );
       })()}
+
+      {/* Modal de confirmation de suppression / masquage sécurisé */}
+      {showDeleteConfirm && (
+        <div
+          data-cms-ui
+          className="fixed inset-0 z-[400] flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 animate-in fade-in duration-150"
+          onClick={() => setShowDeleteConfirm(false)}
+        >
+          <div
+            className="bg-[#141412] border border-[#333330] rounded-2xl max-w-md w-full p-5 shadow-[0_24px_64px_rgba(0,0,0,0.9)] flex flex-col gap-4 text-white"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start gap-3">
+              <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 shrink-0">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-mono text-sm font-bold text-white mb-1">
+                  Supprimer ou masquer un élément
+                </h3>
+                <p className="text-xs text-[#a0a09a] leading-relaxed">
+                  <span className="font-semibold text-emerald-400">Rassurez-vous :</span> c&apos;est entièrement récupérable en cas de clic par erreur via <span className="text-white font-mono font-bold">Ctrl + Z</span> (Annuler) ou via le bouton Restaurer.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-[#0b0b0a] border border-[#222220] rounded-xl p-3 text-xs flex flex-col gap-1.5">
+              <div className="flex items-center justify-between text-[#888] font-mono text-[11px]">
+                <span>Élément sélectionné :</span>
+                <span className="text-[color:var(--ui-accent)] font-bold">{selected?.elementKey || 'élément'}</span>
+              </div>
+              <div className="flex items-center justify-between text-[#888] font-mono text-[11px]">
+                <span>Section :</span>
+                <span className="text-white font-bold">{selected?.sectionKey || 'section'}</span>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2 pt-1">
+              <button
+                type="button"
+                onClick={handleDeleteElement}
+                className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-red-600/90 hover:bg-red-600 text-white font-mono text-xs font-bold transition-all cursor-pointer shadow-md"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Effacer cet élément</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleHideSection}
+                className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-[#222220] hover:bg-[#2c2c28] border border-[#333330] text-[#e0e0dc] font-mono text-xs font-bold transition-all cursor-pointer"
+              >
+                <EyeOff className="w-3.5 h-3.5 text-amber-400" />
+                <span>Masquer toute la section</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowDeleteConfirm(false)}
+                className="w-full py-2 px-3 rounded-xl bg-transparent hover:bg-[#1a1a17] text-[#888] hover:text-white font-mono text-xs transition-colors cursor-pointer text-center"
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

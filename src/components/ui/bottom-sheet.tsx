@@ -40,6 +40,8 @@ export interface BottomSheetProps {
   minHeight?: string;
   tone?: 'light' | 'dark';
   ariaLabel?: string;
+  /** Durée d'une transition curseur en secondes (défaut : ressort partagé). */
+  transitionDuration?: number;
 }
 
 const FOCUSABLE =
@@ -66,6 +68,7 @@ export function MobileBottomSheet({
   minHeight,
   tone = 'light',
   ariaLabel,
+  transitionDuration,
 }: BottomSheetProps) {
   const [mounted, setMounted] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -182,7 +185,9 @@ export function MobileBottomSheet({
             transition={
               reduceMotion
                 ? { duration: 0.15 }
-                : { type: 'spring', damping: 28, stiffness: 280, mass: 0.9 }
+                : transitionDuration !== undefined
+                  ? { duration: transitionDuration, ease: [0.16, 1, 0.3, 1] }
+                  : { type: 'spring', damping: 28, stiffness: 280, mass: 0.9 }
             }
             style={{ maxHeight, minHeight, bottom: bottomOffset, overscrollBehavior: 'contain' }}
             className={cn(

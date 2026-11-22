@@ -17,6 +17,7 @@ import { CONTACT_REFRESH_EVENT } from '../../cms/contact-edit';
 import { EditableWrapper } from '../../cms/EditableWrapper';
 import { SectionDragDropProvider } from '../../cms/SectionDragDropManager';
 import { useCms } from '@/lib/site-web/cms-context';
+import ContactStarfield from './ContactStarfield';
 
 export const DEFAULT_CONTACT_SECTION_ORDER = ['contact-hero', 'info', 'faq'];
 
@@ -366,6 +367,342 @@ const CONTACT_CSS = `
   opacity: .14;
   animation: ct-mesh-drift 34s ease-in-out infinite alternate;
   will-change: transform;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   HERO CONTACT — composition « Starfield » (démo Animorio)
+   Le fond spatial est conservé. La mise en page est alignée sur la référence :
+   colonne centrée, pastille, titre en dégradé, lede lisible, CTA pilule et
+   ligne de métadonnées. Aucun texte n'est ajouté ni réécrit.
+
+   Toutes les couleurs vives passent par --ct-hero-accent / --ct-hero-rgb,
+   alias locaux des tokens du thème CMS : changer le thème recolore le Hero
+   entier (pastille, titre, halo, traits, bouton, étoiles du canvas compris).
+   Tout est scopé à .ct-zoom-hero : aucune autre section n'est affectée.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Fond : la structure reste la même, seul le bleu devient la couleur du thème. */
+.ct-zoom-hero {
+  background:
+    radial-gradient(92% 76% at 72% 42%, rgba(var(--ct-hero-rgb), .16), transparent 70%),
+    radial-gradient(68% 62% at 6% 92%, rgba(var(--ct-hero-rgb), .07), transparent 74%),
+    linear-gradient(158deg, #050b14 0%, #03070e 46%, #020407 100%) !important;
+}
+.ct-zoom-hero .ct-zoom-bg {
+  opacity: .055;
+  filter: blur(80px);
+  --mesh-1: var(--ct-hero-accent);
+  --mesh-2: var(--ct-hero-hover);
+  --mesh-3: var(--ct-hero-active);
+}
+
+/* Calques décoratifs ajoutés APRÈS .wrap : peints en dessous (z-index 0
+   contre 1), aria-hidden et non cliquables. Aucun nœud CMS ne bouge. */
+.ct-starfield,
+.ct-starfield-hush,
+.ct-hero-grid,
+.ct-hero-glow,
+.ct-hero-crosshair,
+.ct-hero-fade {
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+}
+.ct-starfield { inset: 0; width: 100%; height: 100%; display: block; }
+/* Mare sombre centrée derrière les mots, comme dans la démo. */
+.ct-starfield-hush {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background:
+    radial-gradient(min(52vw, 72vh) min(30vh, 38vw) at 50% 52%, rgba(3, 7, 14, .86), transparent 100%),
+    linear-gradient(180deg, rgba(3, 7, 14, .3), transparent 26%, transparent 72%, rgba(3, 7, 14, .34));
+}
+.ct-hero-grid {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background-image:
+    linear-gradient(to right, rgba(var(--ct-hero-rgb), .055) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(var(--ct-hero-rgb), .045) 1px, transparent 1px);
+  background-size: clamp(76px, 8vw, 128px) clamp(76px, 8vw, 128px);
+  -webkit-mask-image: radial-gradient(96% 80% at 50% 50%, #000 0%, transparent 78%);
+  mask-image: radial-gradient(96% 80% at 50% 50%, #000 0%, transparent 78%);
+}
+.ct-hero-glow {
+  inset: auto;
+  left: calc(var(--ct-vpx, 64%) - 30vw);
+  top: calc(var(--ct-vpy, 50%) - 28vh);
+  width: 60vw;
+  height: 56vh;
+  background: radial-gradient(circle, rgba(var(--ct-hero-rgb), .18), rgba(var(--ct-hero-rgb), .07) 38%, transparent 70%);
+  filter: blur(10px);
+  opacity: calc(.5 + var(--ct-warp, 0) * .5);
+}
+.ct-hero-crosshair {
+  inset: auto;
+  left: var(--ct-vpx, 64%);
+  top: var(--ct-vpy, 50%);
+  width: 44px;
+  height: 44px;
+  transform: translate(-50%, -50%);
+  opacity: calc(.16 + var(--ct-warp, 0) * .34);
+}
+.ct-hero-crosshair::before,
+.ct-hero-crosshair::after {
+  content: '';
+  position: absolute;
+  background: rgba(var(--ct-hero-rgb), .9);
+  box-shadow: 0 0 10px rgba(var(--ct-hero-rgb), .8);
+}
+.ct-hero-crosshair::before { left: 50%; top: 0; bottom: 0; width: 1px; }
+.ct-hero-crosshair::after { top: 50%; left: 0; right: 0; height: 1px; }
+.ct-hero-fade {
+  inset: auto;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 20vh;
+  background: linear-gradient(to bottom, transparent, rgba(2, 5, 10, .9));
+  border-bottom: 1px solid rgba(var(--ct-hero-rgb), .1);
+}
+
+/* Colonne centrée : même esprit que .hero dans la démo Animorio. Les nœuds
+   du CMS restent identiques, seule la composition change. */
+#pixia-web .ct-zoom-hero .wrap {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 960px;
+  min-height: 100svh;
+  margin: 0 auto;
+  padding: calc(var(--nav-h) + clamp(28px, 6vh, 72px)) clamp(24px, 5vw, 48px) clamp(72px, 12vh, 130px) !important;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: clamp(12px, 2.4vh, 24px);
+}
+
+/* Pastille, calquée sur .pill : pastille pleine + petite flèche en CSS,
+   sans ajouter le moindre texte (le contenu reste "PIXIATECH / CONTACT"). */
+.ct-hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 5px 13px 5px 6px;
+  border: 1px solid rgba(var(--ct-hero-rgb), .24);
+  border-radius: 999px;
+  background: rgba(10, 12, 18, .66);
+  box-shadow: 0 8px 24px -12px rgba(0, 0, 0, .7);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  color: #9aa1ae !important;
+  font-size: clamp(10px, 1.5vh, 12px) !important;
+  letter-spacing: .16em !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+}
+.ct-hero-eyebrow::before {
+  content: '';
+  width: 18px;
+  height: 18px;
+  flex: none;
+  border-radius: 999px;
+  background: var(--ct-hero-accent);
+  box-shadow: 0 0 12px rgba(var(--ct-hero-rgb), .6);
+}
+.ct-hero-eyebrow::after {
+  content: '';
+  width: 9px;
+  height: 9px;
+  flex: none;
+  margin-left: -4px;
+  border-right: 1.5px solid rgba(var(--ct-hero-rgb), .9);
+  border-bottom: 1.5px solid rgba(var(--ct-hero-rgb), .9);
+  transform: rotate(-45deg) translate(-2px, -2px);
+}
+
+/* Titre : le <h1> ne porte AUCUN dégradé. Le dégradé est posé une seule fois,
+   directement sur chaque span éditable : sinon le h1 peignait un « fantôme »
+   du texte qui restait à sa place quand le CMS déplaçait/redimensionnait
+   le span (deux textes superposés et décalés). */
+#pixia-web .ct-zoom-hero .ct-hero-title {
+  margin: 0;
+  max-width: 20em;
+  font-size: clamp(32px, min(7.2vw, 9.6vh), 84px) !important;
+  font-weight: 600;
+  line-height: 1.02;
+  letter-spacing: -.04em;
+  text-wrap: balance;
+  filter: drop-shadow(0 8px 28px rgba(0, 0, 0, .55));
+}
+.ct-hero-title-main {
+  display: inline;
+  background: linear-gradient(180deg, #ffffff 30%, rgba(var(--ct-hero-rgb), .72) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.ct-hero-title-main[contenteditable="true"],
+.ct-hero-title-main.pixia-el-selected {
+  -webkit-text-fill-color: #ffffff !important;
+  color: #ffffff !important;
+  background: none !important;
+}
+.ct-hero-title-accent {
+  display: inline;
+  background: linear-gradient(180deg, var(--ct-hero-accent), rgba(var(--ct-hero-rgb), .6));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.ct-hero-title-accent[contenteditable="true"],
+.ct-hero-title-accent.pixia-el-selected {
+  -webkit-text-fill-color: var(--ct-hero-accent) !important;
+  color: var(--ct-hero-accent) !important;
+  background: none !important;
+}
+
+/* Lede : neutre lisible et ombrée pour rester au-dessus des traînées. */
+#pixia-web .ct-zoom-hero .ct-hero-lede {
+  margin: 0;
+  max-width: 30em;
+  font-size: clamp(13px, min(3.4vw, 2.2vh), 17px);
+  line-height: 1.5;
+  color: #9aa1ae;
+  text-wrap: pretty;
+  text-shadow: 0 1px 14px rgba(3, 7, 14, .95), 0 0 2px rgba(3, 7, 14, .7);
+}
+
+/* Métadonnées : une ligne discrète sous le CTA, séparée par des filets fins.
+   order:2 conserve l'ordre DOM d'origine (clés CMS stables). */
+#pixia-web .ct-zoom-hero .ct-hero-stats {
+  order: 2;
+  display: flex;
+  /* Les trois métadonnées forment UNE seule ligne sur desktop/tablette. */
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px 0;
+  margin: clamp(14px, 2.6vh, 30px) 0 0;
+  padding: 0;
+  border: 0;
+}
+.ct-hero-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 clamp(6px, 1vw, 12px);
+  white-space: nowrap;
+  font-family: var(--font);
+  font-size: clamp(8px, 1.1vw, 11px);
+  letter-spacing: .1em;
+  line-height: 1.5;
+  font-weight: 600;
+  color: #8d96a4;
+}
+.ct-hero-stat + .ct-hero-stat { border-left: 1px solid rgba(var(--ct-hero-rgb), .3); }
+.ct-hero-stat-mark {
+  width: 12px;
+  height: 2px;
+  flex: none;
+  background: var(--ct-hero-accent);
+  box-shadow: 0 0 8px rgba(var(--ct-hero-rgb), .7);
+}
+
+/* CTA pilule plein : la couleur suit le thème ; balayage lumineux au survol,
+   comportement et destination inchangés. */
+#pixia-web .ct-zoom-hero .ct-hero-actions {
+  order: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin: clamp(2px, 1vh, 10px) 0 0;
+}
+.ct-hero-actions .ct-btn {
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 0;
+  padding: clamp(10px, 1.6vh, 14px) clamp(16px, 2.4vh, 22px);
+  border: 0;
+  border-radius: 999px;
+  background: var(--ct-hero-accent);
+  color: #0b0d12;
+  font-size: clamp(13px, 1.7vh, 15px);
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, .35) inset, 0 0 0 1px rgba(255, 255, 255, .12),
+    0 12px 32px -10px rgba(var(--ct-hero-rgb), .65);
+  transition: background .3s ease, box-shadow .3s ease, transform .18s ease;
+}
+.ct-hero-actions .ct-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 40%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, .35), rgba(255, 255, 255, .7), transparent);
+  transform: translateX(-140%);
+  pointer-events: none;
+  transition: transform .75s var(--ease-out-expo);
+}
+.ct-hero-actions .ct-btn:hover,
+.ct-hero-actions .ct-btn:focus-visible {
+  background: var(--ct-hero-hover);
+  color: #0b0d12;
+  box-shadow: 0 0 0 3px rgba(var(--ct-hero-rgb), .25), 0 16px 40px -10px rgba(var(--ct-hero-rgb), .75);
+  outline-color: var(--ct-hero-accent);
+}
+.ct-hero-actions .ct-btn:hover::before,
+.ct-hero-actions .ct-btn:focus-visible::before { transform: translateX(240%); }
+.ct-hero-actions .ct-btn:active { transform: scale(.98); }
+
+/* Mobile : même composition, souffles et taille réduits. */
+@media (max-width: 700px) {
+  #pixia-web .ct-zoom-hero .wrap {
+    min-height: 100svh;
+    padding: calc(var(--nav-h) + 28px) 24px 72px !important;
+    gap: 18px;
+  }
+  #pixia-web .ct-zoom-hero .ct-hero-title {
+    font-size: clamp(31px, 9.4vw, 52px) !important;
+    letter-spacing: -.045em !important;
+  }
+  #pixia-web .ct-zoom-hero .ct-hero-lede { font-size: 14px; line-height: 1.55; }
+  #pixia-web .ct-zoom-hero .ct-hero-stats {
+    /* Sur mobile les trois textes restent lisibles empilés (choix validé). */
+    flex-direction: column;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 22px;
+  }
+  .ct-hero-stat,
+  .ct-hero-stat + .ct-hero-stat {
+    padding: 0;
+    border-left: 0;
+    font-size: clamp(9px, 2.8vw, 11px);
+  }
+  .ct-hero-actions .ct-btn { width: 100%; justify-content: center; }
+  .ct-hero-crosshair { display: none; }
+  .ct-hero-glow { width: 100vw; height: 52vh; }
+  .ct-hero-grid { background-size: 64px 64px; }
+  .ct-starfield-hush {
+    background: radial-gradient(125% 62vh at 50% 50%, rgba(3, 7, 14, .82), transparent 84%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ct-hero-glow { opacity: .5; }
+  .ct-starfield-hush {
+    background: radial-gradient(120% 70vh at 50% 50%, rgba(3, 7, 14, .84), rgba(3, 7, 14, 0) 80%);
+  }
 }
 
 /* ── Tablette « Our fastest-ever POS » (Shopify Editions Spring 2026) ───────
@@ -827,13 +1164,21 @@ const CONTACT_CSS = `
 }
 
 /* Carte tablette : fond Aurora animé (nouveau) en couche de fond, contenu par
-   dessus. Les étoiles scintillent, les halos violets/indigo pulsent. */
+   dessus. Structure, flou, pulsation et étoiles inchangés : seule la teinte
+   mauve/violette est remplacée par la couleur choisie dans le thème CMS. */
 .ct-retail-aurora {
   position: absolute;
   inset: 0;
   z-index: 0;
   overflow: hidden;
   pointer-events: none;
+  --aurora-color1: rgba(var(--ct-aurora-rgb, var(--accent-rgb, 195, 249, 16)), .2);
+  --aurora-color2: rgba(var(--ct-aurora-rgb, var(--accent-rgb, 195, 249, 16)), .12);
+}
+.ct-retail-aurora .bg-purple-600,
+.ct-retail-aurora .bg-fuchsia-600,
+.ct-retail-aurora .bg-indigo-700 {
+  background-color: var(--ct-aurora-accent, var(--accent, var(--ui-accent, #C3F910))) !important;
 }
 .ct-retail-section > .wrap {
   position: relative;
@@ -1516,11 +1861,15 @@ function RetailContact({
         background: 'var(--black, #080808)',
         overflow: 'hidden',
         padding: 'clamp(64px, 8vh, 110px) 0 clamp(80px, 10vh, 130px)',
-      }}
+        // Alias locaux : comme le Hero, les halos Aurora suivent la couleur
+        // du panneau THÈME du CMS, sans toucher au reste du fond.
+        '--ct-aurora-accent': 'var(--accent, var(--ui-accent, #C3F910))',
+        '--ct-aurora-rgb': 'var(--accent-rgb, var(--ui-accent-rgb, 195, 249, 16))',
+      } as React.CSSProperties}
       onPointerMove={onPointerMove}
       onPointerLeave={onPointerLeave}
     >
-      {/* Nouveau fond : Aurora (halos violets/indigo pulsants + étoiles) */}
+      {/* Fond Aurora conservé : seuls les halos mauves suivent désormais le thème. */}
       <div className="ct-retail-aurora" aria-hidden="true">
         <AuroraBackground className="!w-full !h-full" />
       </div>
@@ -1817,8 +2166,18 @@ function FaqList({ faq }: { faq: PageContentConfig['faq'] }) {
 
 /* ──────────────────────────────  Sections  ────────────────────────────── */
 
-export function ContactSections({ lang }: { lang: Language }) {
-  const [content, setContent] = useState<PageContentConfig>(DEFAULT_PAGE_CONTENT);
+export function ContactSections({
+  lang,
+  initialContent,
+}: {
+  lang: Language;
+  initialContent?: PageContentConfig;
+}) {
+  // Le contenu Firestore est fourni par le rendu serveur : aucun texte par
+  // défaut n'est affiché avant lui (plus de bascule « visuel » → valeur CMS).
+  const [content, setContent] = useState<PageContentConfig>(
+    () => initialContent ?? DEFAULT_PAGE_CONTENT
+  );
   // Coordonnées canoniques. Le contenu de page ne porte QUE la mise en forme
   // (libellés, titres) : les valeurs affichées viennent d'ici, et d'ici
   // seulement. C'est ce qui empêche l'adresse ou le téléphone de diverger
@@ -1827,8 +2186,11 @@ export function ContactSections({ lang }: { lang: Language }) {
 
   useEffect(() => {
     let alive = true;
+
+    // Contenu de page : plus de lecture au montage. Il vient du serveur ; on
+    // ne le relit que lorsqu'une sauvegarde CMS le modifie réellement.
     const loadContent = () => {
-      fetch('/api/site-web/contact/page-content')
+      fetch('/api/site-web/contact/page-content', { cache: 'no-store' })
         .then((res) => (res.ok ? res.json() : null))
         .then((body) => {
           const incoming = body?.data as PageContentConfig | undefined;
@@ -1844,9 +2206,12 @@ export function ContactSections({ lang }: { lang: Language }) {
           }));
         })
         .catch(() => {
-          /* Le contenu par défaut reste affiché : la page ne dépend pas du réseau. */
+          /* Le contenu déjà rendu par le serveur reste affiché. */
         });
+    };
 
+    // Coordonnées canoniques : comportement de chargement inchangé.
+    const loadInfo = () => {
       fetch('/api/site-web/contact/info')
         .then((res) => (res.ok ? res.json() : null))
         .then((body) => {
@@ -1855,13 +2220,19 @@ export function ContactSections({ lang }: { lang: Language }) {
           setContactInfo(info);
         })
         .catch(() => {
-          /* Le contenu de page reste le repli : aucune coordonnée ne disparaît. */
+          /* Aucune coordonnée ne disparaît : le repli reste affiché. */
         });
     };
+
+    // Lire le contenu dès le montage pour s'assurer d'avoir la version fraîche Firestore
     loadContent();
+    loadInfo();
     // Après une sauvegarde de l'éditeur visuel (Contact), on relit Firestore
     // pour afficher la nouvelle valeur : FR et EN partagent la même source.
-    const onContentSaved = () => loadContent();
+    const onContentSaved = () => {
+      loadContent();
+      loadInfo();
+    };
     window.addEventListener(CONTACT_REFRESH_EVENT, onContentSaved);
     return () => {
       alive = false;
@@ -1901,7 +2272,13 @@ export function ContactSections({ lang }: { lang: Language }) {
   const scrollToForm = () =>
     document.getElementById('contact-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-  const stats = [hero.stat1Text, hero.stat2Text, hero.stat3Text].filter(Boolean);
+  // Clés CMS explicites : sans elles, les trois derniers textes du Hero
+  // n'étaient pas éditables en mode édition (contrairement au reste).
+  const stats = [
+    { key: 'stat1Text', text: hero.stat1Text },
+    { key: 'stat2Text', text: hero.stat2Text },
+    { key: 'stat3Text', text: hero.stat3Text },
+  ].filter((stat) => Boolean(stat.text));
 
   const { currentPageData } = useCms();
   const configuredOrder = currentPageData?.sectionOrder;
@@ -1922,34 +2299,34 @@ export function ContactSections({ lang }: { lang: Language }) {
           <section
             id="contact"
             className="theme-dark ct-mesh ct-mesh-1 ct-zoom-hero"
-            style={{ ...TONE_DARK, ...meshVars(0), background: 'var(--black, #080808)' }}
+            style={{
+              ...TONE_DARK,
+              ...meshVars(0),
+              // Alias locaux : tout le Hero (y compris le canvas) suit la
+              // couleur choisie dans le panneau THÈME du CMS.
+              '--ct-hero-accent': 'var(--accent, var(--ui-accent, #C3F910))',
+              '--ct-hero-hover': 'var(--accent-hover, var(--ui-accent-hover, #b0e20e))',
+              '--ct-hero-active': 'var(--accent-active, var(--ui-accent-active, #9acc0c))',
+              '--ct-hero-rgb': 'var(--accent-rgb, var(--ui-accent-rgb, 195, 249, 16))',
+            } as React.CSSProperties}
           >
             <div className="ct-zoom-scale">
               <div className="ct-zoom-bg" aria-hidden="true" />
-              <div
-                className="wrap"
-                style={{
-                  position: 'relative',
-                  zIndex: 1,
-                  minHeight: '100svh',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'center',
-                  padding: 'calc(var(--nav-h) + clamp(16px, 3vh, 40px)) 24px clamp(48px, 7vh, 92px)',
-                }}
-              >
+              <div className="wrap" style={{ position: 'relative', zIndex: 1 }}>
                 {visibility.heroBadge && (
-                  <div data-reveal="true" style={eyebrowDark}>
+                  <div className="ct-hero-eyebrow" data-reveal="true">
                     {lang === 'FR' ? 'PIXIATECH / CONTACT' : 'PIXIATECH / CONTACT'}
                   </div>
                 )}
                 {visibility.heroTitle && (
-                  <h1 className="display" data-reveal="true" style={{ margin: 0, color: DARK_TEXT, maxWidth: 1020 }}>
-                    <span data-contact-key="contact.hero.titleLine1">{hero.titleLine1}</span>
+                  <h1 className="display ct-hero-title" data-reveal="true">
+                    <span className="ct-hero-title-main" data-contact-key="contact.hero.titleLine1">
+                      {hero.titleLine1}
+                    </span>
                     {hero.titleHighlight && (
                       <>
                         <br />
-                        <span style={{ color: ACCENT }} data-contact-key="contact.hero.titleHighlight">
+                        <span className="ct-hero-title-accent" data-contact-key="contact.hero.titleHighlight">
                           {hero.titleHighlight}
                         </span>
                       </>
@@ -1957,54 +2334,24 @@ export function ContactSections({ lang }: { lang: Language }) {
                   </h1>
                 )}
                 {visibility.heroSubtitle && (
-                  <p
-                    className="lede"
-                    data-reveal="true"
-                    style={{ margin: '22px 0 0', maxWidth: 660, color: DARK_BODY, fontSize: 17, lineHeight: 1.62 }}
-                  >
+                  <p className="lede ct-hero-lede" data-reveal="true">
                     <span data-contact-key="contact.hero.subtitle">{hero.subtitle}</span>
                   </p>
                 )}
 
                 {visibility.heroStatsPills && stats.length > 0 && (
-                  <div
-                    data-reveal="true"
-                    style={{
-                      display: 'flex',
-                      flexWrap: 'wrap',
-                      gap: '14px 44px',
-                      marginTop: 26,
-                      paddingTop: 18,
-                      borderTop: `1px solid ${DARK_LINE}`,
-                    }}
-                  >
+                  <div className="ct-hero-stats" data-reveal="true">
                     {stats.map((stat) => (
-                      <span
-                        key={stat}
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 10,
-                          fontFamily: 'var(--font)',
-                          fontSize: 11,
-                          letterSpacing: '.14em',
-                          textTransform: 'uppercase',
-                          fontWeight: 600,
-                          color: DARK_TEXT_2,
-                        }}
-                      >
-                        <span
-                          aria-hidden="true"
-                          style={{ width: 14, height: 2, background: ACCENT, flex: 'none' }}
-                        />
-                        {stat}
+                      <span className="ct-hero-stat" key={stat.key}>
+                        <span className="ct-hero-stat-mark" aria-hidden="true" />
+                        <span data-contact-key={`contact.hero.${stat.key}`}>{stat.text}</span>
                       </span>
                     ))}
                   </div>
                 )}
 
                 {visibility.heroCtaButton && (
-                  <div data-reveal="true" style={{ marginTop: 26 }}>
+                  <div className="ct-hero-actions" data-reveal="true">
                     <ActionButton onClick={scrollToForm}>
                       <span data-contact-key="contact.hero.ctaButtonText">{hero.ctaButtonText}</span>
                       <span aria-hidden="true">↓</span>
@@ -2012,6 +2359,14 @@ export function ContactSections({ lang }: { lang: Language }) {
                   </div>
                 )}
               </div>
+              {/* Décor uniquement, ajouté APRÈS .wrap : le contenu et ses clés CMS
+                  restent inchangés ; tout est aria-hidden et pointer-events:none. */}
+              <ContactStarfield />
+              <div className="ct-hero-glow" aria-hidden="true" />
+              <div className="ct-hero-grid" aria-hidden="true" />
+              <div className="ct-starfield-hush" aria-hidden="true" />
+              <div className="ct-hero-crosshair" aria-hidden="true" />
+              <div className="ct-hero-fade" aria-hidden="true" />
             </div>
           </section>
         </div>

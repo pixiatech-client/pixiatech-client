@@ -360,6 +360,12 @@ export const VisualInPlaceEditor: React.FC = () => {
       .pixia-el-selected {
         outline: 2px solid var(--ui-accent, #C3F910) !important;
         outline-offset: 3px !important;
+        /* Forcer la visibilité du texte : désactive tout gradient "clip" qui rendrait le texte transparent */
+        -webkit-text-fill-color: currentColor !important;
+        background-clip: unset !important;
+        -webkit-background-clip: unset !important;
+        background-image: none !important;
+        color: inherit !important;
       }
       .pixia-el-selected:not([data-cms-preview-state="hover"]):not([data-cms-preview-state="active"]) {
         box-shadow: 0 0 0 4px rgba(var(--ui-accent-rgb), 0.15) !important;
@@ -378,11 +384,22 @@ export const VisualInPlaceEditor: React.FC = () => {
         filter: brightness(1.08) !important;
         position: relative !important;
       }
+      [contenteditable="true"] {
+        -webkit-text-fill-color: currentColor !important;
+        background-clip: unset !important;
+        -webkit-background-clip: unset !important;
+        background-image: none !important;
+        color: inherit !important;
+      }
       [contenteditable="true"]:focus {
         outline: 2px solid var(--ui-accent, #C3F910) !important;
         outline-offset: 3px !important;
-        background: rgba(var(--ui-accent-rgb), 0.08) !important;
+        background-color: rgba(var(--ui-accent-rgb), 0.08) !important;
         box-shadow: 0 0 15px rgba(var(--ui-accent-rgb), 0.3) !important;
+        -webkit-text-fill-color: currentColor !important;
+        background-clip: unset !important;
+        -webkit-background-clip: unset !important;
+        background-image: none !important;
       }
       /* En mode édition CMS : tous les éléments de contenu data-reveal doivent être visibles et éditables immédiatement */
       #pixia-web [data-reveal="true"]:not([data-cms-offset]) {
@@ -452,6 +469,12 @@ export const VisualInPlaceEditor: React.FC = () => {
         if (sectionKey && isSimpleTextElement(raw)) {
           return { el: raw, sectionKey, media: false };
         }
+
+        const clickable = (raw.closest('button, a, [role="button"]') as HTMLElement | null) ||
+          (raw.tagName === 'BUTTON' || raw.tagName === 'A' ? raw : null);
+        if (sectionKey && clickable) {
+          return { el: raw.innerText ? raw : clickable, sectionKey, media: false };
+        }
       }
       return null;
     };
@@ -518,7 +541,26 @@ export const VisualInPlaceEditor: React.FC = () => {
         }
         e.preventDefault();
         e.stopPropagation();
+
+        // Les champs Contact doivent afficher la barre flottante comme tout
+        // autre texte : l'édition inline seule ne donnait aucun feedback
+        // visible et l'administrateur croyait le mode édition inactif.
+        for (const prev of Array.from(document.querySelectorAll('.pixia-el-selected'))) {
+          prev.classList.remove('pixia-el-selected', 'pixia-el-anchor', 'pixia-el-media');
+        }
         target.classList.add('pixia-el-selected');
+        const contactRoot = sectionKey ? getSectionNode(sectionKey) : null;
+        if (sectionKey) setSelectedBlockId(sectionKey);
+        setSelectedElement({
+          el: target,
+          clickableEl: null,
+          sectionKey: sectionKey || '',
+          elementKey: resolveElementKey(target, contactRoot),
+          linkKey: null,
+          clickableLinkKey: null,
+          kind: 'text',
+        });
+
         target.contentEditable = 'true';
         target.focus({ preventScroll: true });
 
@@ -613,12 +655,14 @@ export const VisualInPlaceEditor: React.FC = () => {
         return;
       }
 
-      // Cas 2: Clic sur un texte — feuille de texte ou élément à clé explicite.
+      // Cas 2: Clic sur un texte — feuille de texte ou élément à clé explicite, bouton ou lien.
+      const isButtonOrLink = Boolean(clickableParent) || target.tagName === 'BUTTON' || target.tagName === 'A';
       if (
         !target.hasAttribute('data-text-key') &&
         !target.hasAttribute('data-element-key') &&
         !target.hasAttribute('data-editable') &&
-        !isSimpleTextElement(target)
+        !isSimpleTextElement(target) &&
+        !isButtonOrLink
       ) {
         // Sélection seule (barre d'outils), pas d'édition.
         return;
@@ -627,15 +671,26 @@ export const VisualInPlaceEditor: React.FC = () => {
       e.preventDefault();
       e.stopPropagation();
 
+      // Si c'est un bouton/lien contenant des sous-éléments (ex. icône SVG), cibler le span/noeud de texte
+      let editableTarget = target;
+      if (isButtonOrLink && target.childElementCount > 0) {
+        const textChild = Array.from(target.childNodes).find(
+          (n) => (n instanceof HTMLElement && (n.tagName === 'SPAN' || isSimpleTextElement(n))) || (n instanceof Text && Boolean(n.textContent?.trim()))
+        );
+        if (textChild instanceof HTMLElement) {
+          editableTarget = textChild;
+        }
+      }
+
       // Rendre le pointeur actif même si un overlay `pointer-events:none`
       // rendait ce texte non sélectionnable (sélection souris pendant l'édition).
-      const originalPointerEvents = target.style.pointerEvents;
-      target.style.pointerEvents = 'auto';
-      target.contentEditable = 'true';
-      target.focus({ preventScroll: true });
-      target.classList.remove('pixia-editable-text-hover');
+      const originalPointerEvents = editableTarget.style.pointerEvents;
+      editableTarget.style.pointerEvents = 'auto';
+      editableTarget.contentEditable = 'true';
+      editableTarget.focus({ preventScroll: true });
+      editableTarget.classList.remove('pixia-editable-text-hover');
 
-      const originalText = target.innerText;
+      const originalText = editableTarget.innerText;
       const editLang = normalizeLang(currentLang);
 
       const handleEditKey = (ev: KeyboardEvent) => {
@@ -644,16 +699,16 @@ export const VisualInPlaceEditor: React.FC = () => {
           ev.stopPropagation();
         }
         if (ev.key === 'Enter') {
-          const computedWs = typeof window !== 'undefined' ? window.getComputedStyle(target).whiteSpace : '';
+          const computedWs = typeof window !== 'undefined' ? window.getComputedStyle(editableTarget).whiteSpace : '';
           const isMultiLine =
-            target.tagName === 'P' ||
-            target.tagName === 'TEXTAREA' ||
+            editableTarget.tagName === 'P' ||
+            editableTarget.tagName === 'TEXTAREA' ||
             computedWs === 'pre-line' ||
             computedWs === 'pre-wrap' ||
-            target.hasAttribute('data-multiline');
+            editableTarget.hasAttribute('data-multiline');
           if (!isMultiLine && !ev.shiftKey) {
             ev.preventDefault();
-            target.blur();
+            editableTarget.blur();
           }
         }
       };
@@ -666,21 +721,21 @@ export const VisualInPlaceEditor: React.FC = () => {
       };
 
       const onBlur = () => {
-        target.contentEditable = 'false';
-        target.style.pointerEvents = originalPointerEvents;
-        target.removeEventListener('blur', onBlur);
-        target.removeEventListener('keydown', handleEditKey, true);
-        target.removeEventListener('keyup', handleEditKeyUp, true);
-        if (!target.isConnected) return;
+        editableTarget.contentEditable = 'false';
+        editableTarget.style.pointerEvents = originalPointerEvents;
+        editableTarget.removeEventListener('blur', onBlur);
+        editableTarget.removeEventListener('keydown', handleEditKey, true);
+        editableTarget.removeEventListener('keyup', handleEditKeyUp, true);
+        if (!editableTarget.isConnected) return;
 
-        const newText = target.innerText.replace(/[\n\r]+$/, '');
+        const newText = editableTarget.innerText.replace(/[\n\r]+$/, '');
         if (newText.trim() === originalText.trim()) return;
 
         // Cible d'écriture : `data-slide-field` (textes par slide, ex.
         // `slider2.title`) prime sur la clé de style `data-text-key`. Sans
         // `data-slide-field`, on garde le comportement historique.
-        const slideField = target.getAttribute('data-slide-field');
-        const structuredKey = slideField || target.getAttribute('data-text-key');
+        const slideField = editableTarget.getAttribute('data-slide-field') || target.getAttribute('data-slide-field');
+        const structuredKey = slideField || editableTarget.getAttribute('data-text-key') || target.getAttribute('data-text-key');
         if (structuredKey) {
           // Clé réelle : le champ existe dans la section, on l'édite
           // directement (donc traduit par le flux FR/EN existant).
@@ -700,13 +755,16 @@ export const VisualInPlaceEditor: React.FC = () => {
         const next = updateElementStyle(sectionKey, elementKey, {
           [elementTextKey(editLang)]: newText,
         });
-        applyElementStyle(target, next as ElementStyle, editLang);
+        applyElementStyle(editableTarget, next as ElementStyle, editLang);
+        if (editableTarget !== target) {
+          applyElementStyle(target, next as ElementStyle, editLang);
+        }
         void persist(`${sectionKey}._elements.${elementKey}.${elementTextKey(editLang)}`);
       };
 
-      target.addEventListener('keydown', handleEditKey, true);
-      target.addEventListener('keyup', handleEditKeyUp, true);
-      target.addEventListener('blur', onBlur);
+      editableTarget.addEventListener('keydown', handleEditKey, true);
+      editableTarget.addEventListener('keyup', handleEditKeyUp, true);
+      editableTarget.addEventListener('blur', onBlur);
     };
 
     // 3. Désélection : Échap ou clic sur une zone neutre.

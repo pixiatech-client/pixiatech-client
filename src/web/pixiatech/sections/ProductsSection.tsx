@@ -127,7 +127,7 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
               ...cms.title,
             }}
           >
-            <span data-text-key="title">{t.title}</span>
+            <span data-text-key="title" style={{ color: 'var(--accent, var(--ui-accent))' }}>{t.title}</span>
             <br />
             <span data-text-key="titleLine2">{t.titleLine2}</span>
           </h2>

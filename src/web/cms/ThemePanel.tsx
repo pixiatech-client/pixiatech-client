@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { X, RotateCcw, Check, Palette } from 'lucide-react';
+import { useCms } from '@/lib/site-web/cms-context';
 
 export const DEFAULT_ACCENT = '#C3F910';
 export const STORAGE_KEY = 'pixiatech_theme_accent';
@@ -249,13 +250,33 @@ interface ThemePanelProps {
 }
 
 export const ThemePanel: React.FC<ThemePanelProps> = ({ onClose }) => {
+  // Le CMS est la source de vérité : le context est mis à jour par saveSettings,
+  // ce qui évite que WebCmsBridge réapplique une ancienne couleur au prochain focus.
+  const { settings: cmsSettings, saveSettings } = useCms();
+  const serverColor = cmsSettings?.accentColor && /^#[0-9a-fA-F]{6}$/.test(cmsSettings.accentColor)
+    ? cmsSettings.accentColor
+    : null;
+
   const [persistedColor, setPersistedColor] = useState<string>(() => {
+    if (serverColor) return serverColor;
     if (typeof window === 'undefined') return DEFAULT_ACCENT;
     return localStorage.getItem(STORAGE_KEY) || DEFAULT_ACCENT;
   });
   const [selectedColor, setSelectedColor] = useState<string>(persistedColor);
   const [hexInput, setHexInput] = useState<string>(persistedColor);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const dirtyRef = useRef(false);
+
+  // Quand les settings arrivent du serveur après le montage, on les reflète
+  // tant que l'utilisateur n'a pas commencé à prévisualiser une autre couleur.
+  useEffect(() => {
+    if (!dirtyRef.current && serverColor && serverColor !== persistedColor) {
+      setPersistedColor(serverColor);
+      setSelectedColor(serverColor);
+      setHexInput(serverColor);
+      setStatusMessage(null);
+    }
+  }, [serverColor, persistedColor]);
 
   // Prévisualisation en temps réel dès le montage et à chaque changement
   useEffect(() => {
@@ -265,6 +286,7 @@ export const ThemePanel: React.FC<ThemePanelProps> = ({ onClose }) => {
   }, [selectedColor]);
 
   const selectColor = useCallback((color: string) => {
+    dirtyRef.current = true;
     setSelectedColor(color);
     setHexInput(color);
     applyThemeTokens(color);
@@ -281,49 +303,41 @@ export const ThemePanel: React.FC<ThemePanelProps> = ({ onClose }) => {
 
   const handleApply = useCallback(async () => {
     if (!/^#[0-9a-fA-F]{6}$/.test(selectedColor)) return;
-    // Appliquer visuellement immédiatement (optimiste)
+    // Aperçu immédiat, puis une SEULE écriture qui met à jour le serveur ET le
+    // context React. Sans le context, WebCmsBridge réappliquait l'ancienne
+    // couleur dès que la fenêtre reprenait le focus.
     applyThemeTokens(selectedColor);
-    try {
-      // Persister dans Firestore via l'API settings — source de vérité globale
-      const res = await fetch('/api/site-web/settings', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ accentColor: selectedColor }),
-      });
-      if (!res.ok) throw new Error(`API ${res.status}`);
-      // Synchroniser localStorage comme cache local
+    const ok = await saveSettings({ accentColor: selectedColor });
+    if (ok) {
       try { localStorage.setItem(STORAGE_KEY, selectedColor); } catch {}
       setPersistedColor(selectedColor);
+      dirtyRef.current = false;
       setStatusMessage('✓ Thème appliqué pour tout le monde !');
-      setTimeout(() => setStatusMessage(null), 3000);
-    } catch {
-      // Fallback : localStorage uniquement si l'API est indisponible
-      try { localStorage.setItem(STORAGE_KEY, selectedColor); } catch {}
-      setPersistedColor(selectedColor);
-      setStatusMessage('⚠ Thème appliqué localement (erreur réseau)');
-      setTimeout(() => setStatusMessage(null), 3000);
+    } else {
+      setStatusMessage('⚠ Enregistrement impossible : la couleur sera perdue au rechargement');
     }
-  }, [selectedColor]);
+    setTimeout(() => setStatusMessage(null), 4000);
+  }, [selectedColor, saveSettings]);
 
   const handleReset = useCallback(async () => {
-    // Appliquer visuellement immédiatement
     applyThemeTokens(DEFAULT_ACCENT);
-    try {
-      await fetch('/api/site-web/settings', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ accentColor: DEFAULT_ACCENT }),
-      });
-    } catch {}
-    try { localStorage.removeItem(STORAGE_KEY); } catch {}
-    selectColor(DEFAULT_ACCENT);
-    setPersistedColor(DEFAULT_ACCENT);
-    setStatusMessage('✓ Réinitialisé au vert PIXIATECH');
-    setTimeout(() => setStatusMessage(null), 2500);
-  }, [selectColor]);
+    const ok = await saveSettings({ accentColor: DEFAULT_ACCENT });
+    if (ok) {
+      try { localStorage.removeItem(STORAGE_KEY); } catch {}
+      setPersistedColor(DEFAULT_ACCENT);
+      dirtyRef.current = false;
+      setStatusMessage('✓ Réinitialisé au vert PIXIATECH');
+    } else {
+      setStatusMessage('⚠ Enregistrement impossible : la couleur sera perdue au rechargement');
+    }
+    setSelectedColor(DEFAULT_ACCENT);
+    setHexInput(DEFAULT_ACCENT);
+    setTimeout(() => setStatusMessage(null), 4000);
+  }, [saveSettings]);
 
   const handleCancel = useCallback(() => {
     applyThemeTokens(persistedColor);
+    dirtyRef.current = false;
     onClose();
   }, [persistedColor, onClose]);
 

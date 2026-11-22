@@ -4,7 +4,7 @@
       "id": "home",
       "name": "home",
       "slug": "/home",
-      "updatedAt": "2026-11-21T10:46:13.414Z",
+      "updatedAt": "2026-11-22T11:30:06.872Z",
       "sections": {
         "pixia-web": {
           "text_1790257213042": "sdsdsdsdÉDITEUR DIRECT : CLIQUEZ SUR UN TEXTE OU UNE IMAGE",
@@ -456,7 +456,7 @@
                 "type": "signature",
                 "intensity": 60,
                 "duration": 300,
-                "color": "#cf5a1c",
+                "color": "var(--accent, var(--ui-accent))",
                 "amplitude": 12
               },
               "borderRadius": "8px",
@@ -473,7 +473,7 @@
               "backgroundColor": "#0a0a09",
               "borderWidth": "2px",
               "borderStyle": "solid",
-              "borderColor": "#cf5a1c",
+              "borderColor": "var(--accent, var(--ui-accent))",
               "buttonEffect": {
                 "type": "none"
               },
@@ -604,18 +604,13 @@
               "fontSize": "18px",
               "fontWeight": "400"
             },
-            "title": {
-              "width": "964px",
-              "fontSize": "56px",
-              "color": "#cf5a1c",
-              "offsetX": -64,
-              "offsetY": 44,
-              "textAlign": "left",
-              "fontWeight": "700"
-            },
             "badge": {
               "offsetX": -64,
               "offsetY": 32
+            },
+            "title": {
+              "fontSize": "50px",
+              "textAlign": "right"
             }
           },
           "paddingTop": 0,
@@ -710,7 +705,6 @@
               "fontSize": "48px"
             },
             "title": {
-              "color": "#cf5a1c",
               "fontSize": "60px"
             },
             "section:1/div:1/div:2/div:2/div:2/div:3/div:2/div:1": {
@@ -845,8 +839,7 @@
               "borderRadius": "12px"
             },
             "title": {
-              "width": "1014px",
-              "color": "#cf5a1c"
+              "width": "1014px"
             },
             "titleLine2": {
               "width": "497px"
@@ -1688,8 +1681,7 @@
               "width": "210px"
             },
             "title": {
-              "width": "959px",
-              "color": "#cf5a1c"
+              "width": "959px"
             },
             "tech_solidskin_image": {
               "src": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2Fe04d1b87-6c5c-46ae-b3ce-fa2978731c40__2__lvn1h.webp?alt=media",
@@ -2071,12 +2063,10 @@
         "contact": {
           "_elements": {
             "div:1/section:1/div:1/div:1/a:1/div:2": {
-              "text_fr": "Écran LED intérieur",
-              "color": "#cf5a1c"
+              "text_fr": "Écran LED intérieur"
             },
             "div:1/section:1/div:1/div:1/a:2/div:2": {
-              "text_fr": "Écran LED extérieur",
-              "color": "#cf5a1c"
+              "text_fr": "Écran LED extérieur"
             },
             "div:1/section:1/div:1/div:1/a:2/div:3": {
               "text_fr": "Écran LED fin pitch d'extérieur"
@@ -2089,12 +2079,6 @@
               "backgroundColor": "#e4e2e2",
               "borderRadius": "12px",
               "borderStyle": "solid"
-            },
-            "div:1/section:1/div:1/div:1/a:2": {
-              "color": "#cf5a1c"
-            },
-            "div:1/section:1/div:1/div:1/a:1": {
-              "color": "#cf5a1c"
             }
           },
           "visible": true,
@@ -2220,7 +2204,7 @@
       "id": "contact",
       "name": "Contact & Paramètres Généraux",
       "slug": "#contact",
-      "updatedAt": "2026-10-20T21:13:08.471Z",
+      "updatedAt": "2026-11-22T14:33:15.040Z",
       "settings": {
         "companyName": "PIXIATECH",
         "tagline": "Systèmes LED Architecturaux de Pointe",
@@ -2266,8 +2250,11 @@
               "fontStyle": "normal",
               "textDecoration": "none",
               "offsetX": 0,
-              "offsetY": -4,
+              "offsetY": 0,
               "color": "#ffffff"
+            },
+            "body:1/div:5/main:1/div:1/div:3/main:1/section:1/div:2/header:1/div:2/p:1": {
+              "text_fr": "Venez découvrir nos modules d'affichage en conditions réelles dans notre showroom ou échangez en direct avec nos ingénieurs LED."
             }
           }
         },
@@ -2287,6 +2274,86 @@
             },
             "body:1/div:5/main:1/div:1/div:5/main:1/section:1/div:2/div:2/div:6/span:2/span:1": {
               "text_fr": "Discussion instantanée avec un responsable technique"
+            },
+            "div:5/main:1/div:1/div:4/main:1/section:2/div:1/div:2/div:1/button:1/span:1/span:1": {
+              "text_fr": "01 — DEVIS & CHIFFRAGE"
+            },
+            "div:5/main:1/div:1/div:4/main:1/section:2/div:1/div:2/div:2/button:1/span:1/span:1": {
+              "text_fr": "02 — DEVIS PERSONNALISÉ & ACCOMPAGNEMENT"
+            },
+            "div:5/main:1/div:1/div:3/main:1/section:2/div:1/div:2/div:3/button:1/span:1/span:1": {
+              "text_fr": ""
+            },
+            "div:5/main:1/div:1/div:6/main:1/section:2/div:1/div:2/div:4/button:1/span:1/span:1": {
+              "text_fr": "04 — LOCATION & ZONE D'INTERVENTION"
+            },
+            "div:5/main:1/div:1/div:4/main:1/section:2/div:1/div:2/div:3/button:1/span:1/span:1": {
+              "text_fr": "03 — VENTE & SOLUTIONS LED"
+            }
+          }
+        },
+        "footer": {
+          "_elements": {
+            "div:1/div:1/div:1/div:2/a:1": {
+              "text_fr": ""
+            },
+            "footer_col4_address": {
+              "text_fr": "20–24 avenue Henri Barbusse, 93000 Bobigny, France ",
+              "width": "283px"
+            },
+            "footer_col1_link_1": {
+              "text_fr": "Écran LED intérieur"
+            },
+            "footer_col1_link_2": {
+              "text_fr": "Écran LED extérieur"
+            },
+            "footer_col1_link_3": {
+              "text_fr": "Écran LED transparent"
+            },
+            "footer_col1_link_4": {
+              "text_fr": "Écran LED Rental"
+            }
+          }
+        },
+        "faq": {
+          "_elements": {
+            "section:1/div:1/div:2/div:3/button:1/span:1/span:1": {
+              "fontSize": "10px"
+            },
+            "section:1/div:1/div:2/div:3/button:1": {
+              "fontSize": "10px"
+            }
+          }
+        },
+        "contact-hero": {
+          "minHeight": 792,
+          "paddingBottom": 0,
+          "_elements": {
+            "div:1/section:1/div:1/div:2/h1:1/span:1": {
+              "width": "1280px",
+              "textAlign": "center",
+              "fontSize": "82px",
+              "offsetX": 0,
+              "offsetY": -6,
+              "height": "96px",
+              "textTransform": "uppercase"
+            },
+            "div:1/section:1/div:1/div:2/h1:1/span:2": {
+              "width": "1138px",
+              "offsetX": 39,
+              "offsetY": 2
+            },
+            "div:1/section:1/div:1/div:2/p:1/span:1": {
+              "offsetX": 5,
+              "offsetY": -13
+            },
+            "div:1/section:1/div:1/div:2/div:3/button:1/span:1": {
+              "offsetX": 0,
+              "offsetY": 0
+            },
+            "div:1/section:1/div:1/div:2/div:3/button:1": {
+              "offsetX": 1,
+              "offsetY": -23
             }
           }
         }
@@ -2613,9 +2680,9 @@
     "phone": "+33 1 89 70 42 00",
     "address": "75008 Paris, France",
     "officeHours": "Lun - Ven, 09h00 - 19h00 CET",
-    "accentColor": "#00AAFF",
+    "accentColor": "#A855F7",
     "backendName": "Pixel Tech Web",
     "backendApiUrl": "/api/site-web"
   },
-  "updatedAt": "2026-11-21T12:58:46.765Z"
+  "updatedAt": "2026-11-22T14:33:15.123Z"
 }

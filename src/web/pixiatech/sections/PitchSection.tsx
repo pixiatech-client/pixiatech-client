@@ -263,7 +263,7 @@ export const PitchSection: React.FC<PitchSectionProps> = ({
                 ...cms.title,
               }}
             >
-              <span data-text-key="title">{t.titleLine1}</span>
+              <span data-text-key="title" style={{ color: 'var(--accent, var(--ui-accent))' }}>{t.titleLine1}</span>
               <br />
               <span data-text-key="titleLine2">{t.titleLine2}</span>
             </h2>

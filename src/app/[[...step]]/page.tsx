@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic';
 
-import { redirect } from 'next/navigation';
+import { redirect, notFound } from 'next/navigation';
 import { QuoteBuilder } from '@/components/quote-builder';
 import { EmergencyStopPage } from '@/components/emergency-stop-page';
 
@@ -14,6 +14,20 @@ export default async function StepPage(props: {
   const params = await props.params;
   const searchParams = props.searchParams ? await props.searchParams : undefined;
   const stepName = params.step?.[0];
+  const lastSegment = params.step?.[params.step.length - 1] || '';
+
+  // Sécurité anti-boucle : ne JAMAIS rediriger les assets statiques, images ou uploads manquants vers /
+  // Une ressource statique manquante (ex: /uploads/...) doit renvoyer 404 immédiatement (0ms) et non
+  // un 307 vers / qui relance le rendu complet du QuoteBuilder et les requêtes Firestore.
+  if (
+    stepName === 'uploads' ||
+    stepName === 'static' ||
+    stepName === 'images' ||
+    stepName === 'media' ||
+    /\.(jpe?g|png|webp|gif|svg|ico|css|js|map|mp4|webm|woff2?|ttf|eot)$/i.test(lastSegment)
+  ) {
+    notFound();
+  }
 
   // OTP verification: redirect to dedicated verify page
   if (stepName === 'verification-securite' && (searchParams?.otp || searchParams?.token)) {

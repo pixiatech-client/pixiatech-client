@@ -195,16 +195,19 @@ export function LayoutProvider({
             )}
             {showBottomNav && (
               <div
-                className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-center px-4 md:hidden"
+                className="fixed bottom-0 left-0 right-0 z-40 md:hidden"
                 style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0px))' }}
               >
-                <div data-pixia-bottom-nav className="flex w-full justify-center">
-                  <ExpandableTabs
-                    tabs={bottomNavTabs}
-                    activeIndex={currentNavIndex}
-                    onChange={handleBottomNavChange}
-                    className="shadow-xl"
-                  />
+                <div className="pixia-page-gutter">
+                  <div data-pixia-bottom-nav className="flex justify-center">
+                    <ExpandableTabs
+                      tabs={bottomNavTabs}
+                      activeIndex={currentNavIndex}
+                      onChange={handleBottomNavChange}
+                      className="shadow-xl"
+                      fluid
+                    />
+                  </div>
                 </div>
               </div>
             )}
@@ -219,6 +222,7 @@ export function LayoutProvider({
               dockBarSelector={
                 isFrontendPage && showBottomNav ? '[data-pixia-bottom-nav]' : undefined
               }
+              collapseScrollThreshold={isFrontendPage ? 64 : undefined}
               hidden={guidedConfigActive}
             />
           </div>

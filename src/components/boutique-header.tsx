@@ -179,7 +179,7 @@ export function BoutiqueHeader({
         className
       )}
     >
-      <nav className="max-w-7xl mx-4 lg:mx-auto bg-black rounded-full px-6 lg:px-8 py-2.5 flex items-center justify-between shadow-2xl">
+      <nav className="pixia-page-gutter bg-black rounded-full px-6 lg:px-8 py-2.5 flex items-center justify-between shadow-2xl">
         {/* Hamburger - mobile only */}
         <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
           <SheetTrigger asChild>

@@ -3,6 +3,7 @@ import { PixiaInsightsPage } from '@/web/pixiatech/InsightsPage';
 import { PixiaInsightDetailPage } from '@/web/pixiatech/InsightDetailPage';
 import { getInsightArticle } from '@/web/data/insights-articles-content';
 import { getArticle } from '@/lib/site-web/articles-store';
+import { getPageContent } from '@/lib/site-web/firestore';
 import { WebPage } from '@/web/WebPage';
 import { AllProductsPage } from '@/web/pixiatech/AllProductsPage';
 import { MentionsLegalesPage } from '@/web/legal/MentionsLegalesPage';
@@ -82,14 +83,19 @@ export default async function WebSlugPage({
   }
 
   // Page Contact du site web : header PixiaTech + module contact en mode public.
+  // Le contenu est lu côté serveur et fourni dès le premier rendu : sans cela,
+  // ContactSections affichait DEFAULT_PAGE_CONTENT puis remplaçait le texte par
+  // la valeur Firestore au montage (bascule « visuel » → valeur modifiée).
   if (first === 'contact') {
-    return <PixiaContactPage />;
+    await connection();
+    const contactContent = await getPageContent();
+    return <PixiaContactPage initialContent={contactContent} />;
   }
 
   if (first === 'pxt-fine') {
-    // Cette seule branche lit Firestore à chaque requête. `connection()`
-    // arrête le prerender ICI, et non pour tout le catch-all : les autres
-    // pages /web/* gardent leur comportement de rendu précédent.
+    // Cette branche, comme celle de /contact, lit Firestore à chaque requête.
+    // `connection()` arrête le prerender ICI, et non pour tout le catch-all :
+    // les autres pages /web/* gardent leur comportement de rendu précédent.
     // Sans produit, les sections restent masquées (aucune donnée inventée)
     // au lieu d'afficher une fiche vide qui laisserait croire à du contenu.
     await connection();

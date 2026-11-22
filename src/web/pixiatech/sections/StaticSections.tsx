@@ -136,8 +136,8 @@ export const ProjectsSection: React.FC<SectionCommonProps> = ({
             flexWrap: 'wrap',
           }}
         >
-          <h2 className="display" style={{ margin: 0, color: '#F5F4F0', ...cms.title }}>
-            <span data-text-key="title">{t.titleLine1}</span>
+          <h2 className="display" style={{ margin: 0, color: 'var(--accent, var(--ui-accent))', ...cms.title }}>
+            <span data-text-key="title" style={{ color: 'var(--accent, var(--ui-accent))' }}>{t.titleLine1}</span>
             <br />
             <span data-text-key="titleLine2">{t.titleLine2}</span>
           </h2>

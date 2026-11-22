@@ -85,6 +85,7 @@ export type ElementStyle = {
   fontWeight?: string;
   fontStyle?: string;
   textDecoration?: string;
+  textTransform?: string;
   textAlign?: string;
   backgroundColor?: string;
   borderRadius?: string;
@@ -101,6 +102,8 @@ export type ElementStyle = {
   rel?: string;
   actionType?: string;
   width?: string;
+  height?: string;
+  minHeight?: string;
   offsetX?: number;
   offsetY?: number;
   hover?: ElementVisualState;
@@ -286,6 +289,16 @@ function updateDynamicStylesheet(): void {
   styleTag.textContent = css;
 }
 
+const THEME_ACCENT_ALIAS_REGEX = /^#(?:C3F910|F46201|CF5A1C|FF9900|E60505)$/i;
+
+function resolveThemeColor(val: string | undefined): string | undefined {
+  if (!val) return val;
+  if (THEME_ACCENT_ALIAS_REGEX.test(val.trim())) {
+    return 'var(--accent, var(--ui-accent))';
+  }
+  return val;
+}
+
 export function registerElementDynamicStyles(styledId: string, style: ElementStyle): void {
   if (typeof document === 'undefined') return;
 
@@ -332,15 +345,15 @@ export function registerElementDynamicStyles(styledId: string, style: ElementSty
   if (hasNormalOverridable || hasHover || hasActive || hasButtonEffect) {
     rules += `${base} {\n`;
     if (hasNormalColor) {
-      const c = (style.color?.toUpperCase() === '#C3F910') ? 'var(--accent, var(--ui-accent))' : style.color;
+      const c = resolveThemeColor(style.color);
       rules += `  color: ${c} !important;\n`;
     }
     if (hasNormalBg) {
-      const bg = (style.backgroundColor?.toUpperCase() === '#C3F910') ? 'var(--accent, var(--ui-accent))' : style.backgroundColor;
+      const bg = resolveThemeColor(style.backgroundColor);
       rules += `  background-color: ${bg} !important;\n`;
     }
     if (hasNormalBorderColor) {
-      const bc = (style.borderColor?.toUpperCase() === '#C3F910') ? 'var(--accent, var(--ui-accent))' : style.borderColor;
+      const bc = resolveThemeColor(style.borderColor);
       rules += `  border-color: ${bc} !important;\n`;
     }
     if (hasNormalBorderWidth) {
@@ -756,8 +769,20 @@ export function applyElementStyle(el: HTMLElement, style: ElementStyle, lang?: s
   if (style.fontWeight !== undefined) el.style.fontWeight = style.fontWeight;
   if (style.fontStyle !== undefined) el.style.fontStyle = style.fontStyle;
   if (style.textDecoration !== undefined) el.style.textDecoration = style.textDecoration;
+  if (style.textTransform !== undefined) el.style.textTransform = style.textTransform;
   if (style.textAlign !== undefined) el.style.textAlign = style.textAlign;
   if (style.padding !== undefined) el.style.padding = style.padding;
+  if (style.height !== undefined && style.height !== '') {
+    if (typeof window !== 'undefined' && window.getComputedStyle(el).display === 'inline') {
+      el.style.setProperty('display', 'inline-block', 'important');
+    }
+    el.style.setProperty('height', style.height, 'important');
+    el.style.setProperty('min-height', style.height, 'important');
+    el.style.boxSizing = 'border-box';
+  } else if (style.height === '') {
+    el.style.removeProperty('height');
+    el.style.removeProperty('min-height');
+  }
   if (style.width !== undefined && style.width !== '') {
     const w = style.width.trim();
     if (typeof window !== 'undefined' && window.getComputedStyle(el).display === 'inline') {
@@ -789,14 +814,14 @@ export function applyElementStyle(el: HTMLElement, style: ElementStyle, lang?: s
   if (!useStylesheet) {
     // Pas de hover/active → inline direct (comportement historique préservé)
     if (style.color !== undefined) {
-      el.style.color = (style.color?.toUpperCase() === '#C3F910') ? 'var(--accent, var(--ui-accent))' : style.color;
+      el.style.color = resolveThemeColor(style.color) || style.color;
     }
     if (style.backgroundColor !== undefined) {
-      el.style.backgroundColor = (style.backgroundColor?.toUpperCase() === '#C3F910') ? 'var(--accent, var(--ui-accent))' : style.backgroundColor;
+      el.style.backgroundColor = resolveThemeColor(style.backgroundColor) || style.backgroundColor;
     }
     if (style.borderRadius !== undefined) el.style.borderRadius = style.borderRadius;
     if (style.borderColor !== undefined) {
-      el.style.borderColor = (style.borderColor?.toUpperCase() === '#C3F910') ? 'var(--accent, var(--ui-accent))' : style.borderColor;
+      el.style.borderColor = resolveThemeColor(style.borderColor) || style.borderColor;
     }
     if (style.borderWidth !== undefined) {
       el.style.borderWidth = style.borderWidth;

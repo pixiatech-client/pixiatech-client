@@ -30,7 +30,15 @@ import type { ContactInfo, PageContentConfig } from '@/lib/site-web/types';
 
 export const CONTACT_REFRESH_EVENT = 'pixia:contact-content-saved';
 
-const HERO_FIELDS = ['titleLine1', 'titleHighlight', 'subtitle', 'ctaButtonText'] as const;
+const HERO_FIELDS = [
+  'titleLine1',
+  'titleHighlight',
+  'subtitle',
+  'stat1Text',
+  'stat2Text',
+  'stat3Text',
+  'ctaButtonText',
+] as const;
 const INFO_FIELDS = ['addressValue', 'phone1', 'phone2', 'emailValue'] as const;
 const FAQ_PARTS = ['category', 'question', 'subtitle', 'answer'] as const;
 

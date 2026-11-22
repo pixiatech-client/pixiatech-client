@@ -35,6 +35,8 @@ export interface ExpandableTabsProps {
   activeColor?: string;
   onChange?: (index: number | null) => void;
   activeIndex?: number | null;
+  /** Occupe toute la largeur du conteneur (navigation basse alignée au header). */
+  fluid?: boolean;
 }
 
 /* Géométrie calquée sur « The Notched Tab Bar » (Animorio), réduite pour le mobile.
@@ -99,6 +101,7 @@ export function ExpandableTabs({
   activeColor,
   onChange,
   activeIndex: controlledIndex,
+  fluid = false,
 }: ExpandableTabsProps) {
   const validTabs = React.useMemo(
     () => tabs.filter((t): t is Tab => !("type" in t && t.type === "separator")),
@@ -203,7 +206,10 @@ export function ExpandableTabs({
       ref={navRef}
       aria-label="Navigation principale mobile"
       className={cn("relative select-none touch-manipulation", className)}
-      style={{ width: `min(${defaultWidth}px, 100%)`, height: BAR_HEIGHT }}
+      style={{
+        width: fluid ? '100%' : `min(${defaultWidth}px, 100%)`,
+        height: BAR_HEIGHT,
+      }}
     >
       {/* Coque sombre, tracée en un seul SVG comme dans la démo Animorio. */}
       <svg

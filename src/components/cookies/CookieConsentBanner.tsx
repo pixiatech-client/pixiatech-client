@@ -395,26 +395,33 @@ export function CookieConsentBanner() {
         </PreferencesShell>
       )}
 
-      {/* 3. Small Floating Trigger in bottom-left to reopen preferences anytime */}
+      {/* 3. Raccourci permanent : colonne flottante droite, au-dessus de la
+             navigation basse et sous le bottom sheet (RGPD : toujours visible). */}
       {!showBanner && !showModal && (
-        <button
-          type="button"
-          onClick={() => setShowModal(true)}
-          className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-4 z-40 h-11 w-11 rounded-full bg-[#11110f]/90 hover:bg-[#1a1a17] text-[#a3a3a3] border border-[#272725] backdrop-blur-md shadow-lg flex items-center justify-center transition-all cursor-pointer group"
-          style={{ '--hover-color': 'var(--accent)' } as React.CSSProperties}
-          onMouseEnter={e => {
-            e.currentTarget.style.color = 'var(--accent)';
-            e.currentTarget.style.borderColor = 'var(--accent-border)';
-          }}
-          onMouseLeave={e => {
-            e.currentTarget.style.color = '';
-            e.currentTarget.style.borderColor = '';
-          }}
-          title="Gérer les cookies & vie privée"
-          aria-label="Gérer les cookies & vie privée"
+        <div
+          className="pointer-events-none fixed inset-x-0 bottom-[var(--pixia-floating-bottom)] z-[110]"
         >
-          <Cookie className="w-4 h-4 group-hover:rotate-12 transition-transform" />
-        </button>
+          <div className="pixia-page-gutter flex justify-end">
+            <button
+              type="button"
+              onClick={() => setShowModal(true)}
+              className="pointer-events-auto h-11 w-11 rounded-full bg-[#11110f] hover:bg-[#1a1a17] text-[#a3a3a3] border border-[#272725] backdrop-blur-md shadow-lg flex items-center justify-center transition-colors cursor-pointer group"
+              style={{ '--hover-color': 'var(--accent)' } as React.CSSProperties}
+              onMouseEnter={e => {
+                e.currentTarget.style.color = 'var(--accent)';
+                e.currentTarget.style.borderColor = 'var(--accent-border)';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.color = '';
+                e.currentTarget.style.borderColor = '';
+              }}
+              title="Gérer les cookies & vie privée"
+              aria-label="Gérer les cookies & vie privée"
+            >
+              <Cookie className="w-4 h-4 group-hover:rotate-12 transition-transform" />
+            </button>
+          </div>
+        </div>
       )}
     </>
   );
