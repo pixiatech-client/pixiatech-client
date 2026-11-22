@@ -115,6 +115,31 @@ export type ElementStyle = {
 /** Marque les transform posés par l'éditeur, pour ne toucher qu'aux nôtres. */
 const OFFSET_MARK = 'data-cms-offset';
 
+/**
+ * Les deux spans du titre Hero Contact sont les seuls éléments du site où une
+ * valeur CMS de largeur/hauteur enregistrée sur desktop (1280px) déborde du
+ * conteneur et fait couper le texte par l'`overflow:hidden` du Hero.
+ *
+ * On ne touche PAS à la donnée enregistrée : en dessous de la largeur de
+ * référence, on ignore uniquement les propriétés de BOÎTE (width, max-width,
+ * height, min-height, display, box-sizing, transform). La couleur, la taille,
+ * le poids, l'alignement, la casse et le texte restent ceux du CMS.
+ */
+const CONTACT_HERO_TITLE_CLASSES = ['ct-hero-title-main', 'ct-hero-title-accent'];
+const CONTACT_HERO_LAYOUT_QUERY = '(max-width: 1279px)';
+
+function isContactHeroTitle(el: HTMLElement): boolean {
+  return CONTACT_HERO_TITLE_CLASSES.some((name) => el.classList.contains(name));
+}
+
+function shouldNeutralizeCmsLayout(el: HTMLElement): boolean {
+  return (
+    typeof window !== 'undefined' &&
+    isContactHeroTitle(el) &&
+    window.matchMedia(CONTACT_HERO_LAYOUT_QUERY).matches
+  );
+}
+
 export const EMPTY_ELEMENT_STYLE: ElementStyle = {};
 
 /**
@@ -747,6 +772,7 @@ export function removeElementDynamicStyles(styledId: string): void {
 
 /** Applique un style d'élément sur le nœud DOM correspondant. */
 export function applyElementStyle(el: HTMLElement, style: ElementStyle, lang?: string, elementStyledId?: string): void {
+  const neutralizeLayout = shouldNeutralizeCmsLayout(el);
   const resolvedText = resolveElementText(style, lang || CMS_SOURCE_LANG);
   if (resolvedText !== undefined && el.textContent !== resolvedText) {
     el.textContent = resolvedText;
@@ -772,35 +798,48 @@ export function applyElementStyle(el: HTMLElement, style: ElementStyle, lang?: s
   if (style.textTransform !== undefined) el.style.textTransform = style.textTransform;
   if (style.textAlign !== undefined) el.style.textAlign = style.textAlign;
   if (style.padding !== undefined) el.style.padding = style.padding;
-  if (style.height !== undefined && style.height !== '') {
+  if (neutralizeLayout) {
+    // Titre Hero Contact sur écran étroit : on rend la main au CSS du composant
+    // (`display:inline`, hauteur naturelle) pour que le texte se répartisse sur
+    // plusieurs lignes au lieu d'être coupé. Les autres propriétés CMS posées
+    // plus haut (police, couleur, alignement, casse…) restent inchangées.
+    el.style.removeProperty('height');
+    el.style.removeProperty('min-height');
+    el.style.removeProperty('width');
+    el.style.removeProperty('max-width');
+    el.style.removeProperty('box-sizing');
+    el.style.removeProperty('display');
+  } else if (style.height !== undefined && style.height !== '' && style.height !== 'auto') {
     if (typeof window !== 'undefined' && window.getComputedStyle(el).display === 'inline') {
       el.style.setProperty('display', 'inline-block', 'important');
     }
     el.style.setProperty('height', style.height, 'important');
     el.style.setProperty('min-height', style.height, 'important');
     el.style.boxSizing = 'border-box';
-  } else if (style.height === '') {
+  } else {
     el.style.removeProperty('height');
     el.style.removeProperty('min-height');
+    if (!style.width && !style.padding && el.style.display === 'inline-block') {
+      el.style.removeProperty('display');
+    }
   }
-  if (style.width !== undefined && style.width !== '') {
-    const w = style.width.trim();
+  if (!neutralizeLayout && style.width !== undefined && style.width !== '') {
     if (typeof window !== 'undefined' && window.getComputedStyle(el).display === 'inline') {
       el.style.setProperty('display', 'inline-block', 'important');
     }
     el.style.setProperty('width', style.width, 'important');
-    // Mobile-safe : la valeur enregistrée reste la référence desktop, mais la
-    // largeur ne peut jamais dépasser le conteneur (better-layout #10 :
-    // « no fixed widths on text containers »). Sur desktop le conteneur est
-    // plus large que la valeur → `min(valeur, 100%)` = valeur, rendu identique.
-    // Sur mobile, le texte wrapp dans la largeur disponible au lieu d'être coupé.
-    const maxW = /^(?:\d+(?:\.\d+)?)(?:px|%)$/.test(w) ? `min(${w}, 100%)` : style.width;
-    el.style.setProperty('max-width', maxW, 'important');
+    el.style.setProperty('max-width', style.width, 'important');
     el.style.boxSizing = 'border-box';
-  } else if (style.width === '') {
+    if (el.parentElement && (el.parentElement.tagName === 'P' || el.parentElement.classList.contains('ct-hero-lede'))) {
+      el.parentElement.style.setProperty('max-width', style.width, 'important');
+    }
+  } else if (!neutralizeLayout && (style.width === '' || style.width === undefined)) {
     el.style.removeProperty('width');
     el.style.removeProperty('max-width');
     el.style.removeProperty('box-sizing');
+    if (el.parentElement && (el.parentElement.tagName === 'P' || el.parentElement.classList.contains('ct-hero-lede'))) {
+      el.parentElement.style.removeProperty('max-width');
+    }
   }
 
   // Propriétés qui peuvent être surchargées par hover/active :
@@ -896,7 +935,11 @@ export function applyElementStyle(el: HTMLElement, style: ElementStyle, lang?: s
 
   const x = style.offsetX ?? 0;
   const y = style.offsetY ?? 0;
-  if (x !== 0 || y !== 0) {
+  if (neutralizeLayout) {
+    // Le décalage desktop ferait sortir le titre du viewport sur petit écran.
+    el.style.removeProperty('transform');
+    el.removeAttribute(OFFSET_MARK);
+  } else if (x !== 0 || y !== 0) {
     if (typeof window !== 'undefined' && window.getComputedStyle(el).display === 'inline') {
       el.style.setProperty('display', 'inline-block', 'important');
     }
@@ -1041,11 +1084,35 @@ export function useCmsElementStyles(): void {
       raf3 = requestAnimationFrame(apply);
     });
 
+    // Le titre Hero Contact neutralise certaines propriétés CMS sous un seuil
+    // de largeur (voir `shouldNeutralizeCmsLayout`). Il faut donc rejouer
+    // `apply()` quand on franchit le breakpoint, dans les deux sens, sinon un
+    // redimensionnement laisserait des styles inline incohérents.
+    let raf4 = 0;
+    const reapplyOnViewportChange = () => {
+      cancelAnimationFrame(raf4);
+      raf4 = requestAnimationFrame(apply);
+    };
+    const layoutQuery = window.matchMedia(CONTACT_HERO_LAYOUT_QUERY);
+    if (typeof layoutQuery.addEventListener === 'function') {
+      layoutQuery.addEventListener('change', reapplyOnViewportChange);
+    } else {
+      layoutQuery.addListener(reapplyOnViewportChange);
+    }
+    window.addEventListener('resize', reapplyOnViewportChange);
+
     return () => {
       cancelAnimationFrame(raf1);
       cancelAnimationFrame(raf2);
       cancelAnimationFrame(raf3);
+      cancelAnimationFrame(raf4);
       unsubscribe();
+      if (typeof layoutQuery.removeEventListener === 'function') {
+        layoutQuery.removeEventListener('change', reapplyOnViewportChange);
+      } else {
+        layoutQuery.removeListener(reapplyOnViewportChange);
+      }
+      window.removeEventListener('resize', reapplyOnViewportChange);
     };
   }, [isEditing, currentPageId, currentPageData, currentLang, pages]);
 }

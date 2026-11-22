@@ -82,6 +82,40 @@ const PinIcon: React.FC<{ className?: string; filled?: boolean }> = ({ className
   </svg>
 );
 
+/** Icône pour intégrer la barre sous le header (docking pleine largeur) */
+const DockHeaderIcon: React.FC<{ className?: string }> = ({ className = 'w-3.5 h-3.5' }) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <rect x="3" y="3" width="18" height="18" rx="2" />
+    <line x1="3" y1="8" x2="21" y2="8" strokeWidth="2.5" />
+    <polyline points="9 13 12 16 15 13" />
+  </svg>
+);
+
+/** Icône pour détacher la barre du header et revenir en mode flottant */
+const FloatIcon: React.FC<{ className?: string }> = ({ className = 'w-3.5 h-3.5' }) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <rect x="5" y="6" width="14" height="10" rx="2" />
+    <polyline points="8 19 12 22 16 19" />
+    <line x1="12" y1="16" x2="12" y2="22" />
+  </svg>
+);
+
 export const BUTTON_EFFECTS_CATALOG: {
   id: ButtonEffectType;
   name: string;
@@ -222,13 +256,15 @@ export const FloatingElementToolbar: React.FC<{
   const [effectsPreviewState, setEffectsPreviewState] = useState<'normal' | 'hover' | 'active'>('normal');
   const [coords, setCoords] = useState<{ top: number; left: number; placeBelow: boolean } | null>(null);
   
-  // Épinglage (Pinned mode) & mémorisation permanente style Photoshop
-  const [isPinned, setIsPinned] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false;
+  // 3 Modes d'affichage : 'floating' (flottant libre), 'pinned' (épinglé fixe), 'docked_header' (intégré au header pleine largeur)
+  const [toolbarMode, setToolbarMode] = useState<'floating' | 'pinned' | 'docked_header'>(() => {
+    if (typeof window === 'undefined') return 'floating';
     try {
-      return localStorage.getItem('pixia_cms_toolbar_pinned') === 'true';
+      const saved = localStorage.getItem('pixia_cms_toolbar_mode');
+      if (saved === 'pinned' || saved === 'docked_header') return saved;
+      return 'floating';
     } catch {
-      return false;
+      return 'floating';
     }
   });
 
@@ -236,27 +272,23 @@ export const FloatingElementToolbar: React.FC<{
     if (typeof window === 'undefined') return null;
     try {
       const p = localStorage.getItem('pixia_cms_toolbar_pos');
-      const pinned = localStorage.getItem('pixia_cms_toolbar_pinned') === 'true';
-      return pinned && p ? JSON.parse(p) : null;
+      const mode = localStorage.getItem('pixia_cms_toolbar_mode');
+      return mode === 'pinned' && p ? JSON.parse(p) : null;
     } catch {
       return null;
     }
   });
 
-  const [isDockedToHeader, setIsDockedToHeader] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false;
-    try {
-      const p = localStorage.getItem('pixia_cms_toolbar_pos');
-      if (!p) return false;
-      const parsed = JSON.parse(p);
-      return Boolean(parsed.isDocked);
-    } catch {
-      return false;
-    }
-  });
-
-  const [isDragging, setIsDragging] = useState(false);
-  const dragStartRef = useRef<{ startX: number; startY: number; startTop: number; startLeft: number } | null>(null);
+  // Déplacement ultra-fluide façon robot Pixia (Pointer events + GPU translate3d direct sans re-render React)
+  const isDraggingRef = useRef(false);
+  const pointerDragRef = useRef<{
+    startX: number;
+    startY: number;
+    startTop: number;
+    startLeft: number;
+    currentDx: number;
+    currentDy: number;
+  } | null>(null);
 
   // Nouvelles fonctionnalités demandées : Historique Undo/Redo, Switch Sauvegarde auto, Déplacement libre et Dialogue Corbeille
   const [undoStack, setUndoStack] = useState<ElementStyle[]>([]);
@@ -271,43 +303,37 @@ export const FloatingElementToolbar: React.FC<{
     setActiveAccordion((curr) => (curr === acc ? null : acc));
   }, []);
 
-  // Bascule du mode épinglé + sauvegarde permanente
-  const togglePinned = useCallback(() => {
-    setIsPinned((prev) => {
-      const next = !prev;
-      try {
-        localStorage.setItem('pixia_cms_toolbar_pinned', String(next));
-        if (next) {
-          const currentPos = dragPosition || coords || { top: 14, left: 100 };
-          const payload = { ...currentPos, isDocked: isDockedToHeader };
-          localStorage.setItem('pixia_cms_toolbar_pos', JSON.stringify(payload));
-          setDragPosition(currentPos);
-        } else {
-          localStorage.removeItem('pixia_cms_toolbar_pos');
-          setDragPosition(null);
-          setIsDockedToHeader(false);
-        }
-      } catch {}
-      return next;
-    });
-  }, [dragPosition, coords, isDockedToHeader]);
-
-  // Sauvegarde manuelle explicite de la position ("Enregistrer la position")
-  const saveCurrentToolbarPosition = useCallback(() => {
-    const currentPos = dragPosition || coords || { top: 14, left: 100 };
-    const payload = { ...currentPos, isDocked: isDockedToHeader };
+  // Bascule du mode d'affichage de la barre
+  const setMode = useCallback((mode: 'floating' | 'pinned' | 'docked_header') => {
+    setToolbarMode(mode);
     try {
-      localStorage.setItem('pixia_cms_toolbar_pinned', 'true');
-      localStorage.setItem('pixia_cms_toolbar_pos', JSON.stringify(payload));
-      setIsPinned(true);
+      localStorage.setItem('pixia_cms_toolbar_mode', mode);
+      if (mode === 'pinned') {
+        const currentPos = dragPosition || coords || { top: 75, left: 100 };
+        localStorage.setItem('pixia_cms_toolbar_pos', JSON.stringify(currentPos));
+        setDragPosition(currentPos);
+      } else if (mode === 'floating') {
+        localStorage.removeItem('pixia_cms_toolbar_pos');
+        setDragPosition(null);
+      }
     } catch {}
-  }, [dragPosition, coords, isDockedToHeader]);
+  }, [dragPosition, coords]);
 
-  // Réinitialise la position uniquement si la barre n'est PAS épinglée
+  // Sauvegarde explicite de la position ("Mémoriser la position")
+  const saveCurrentToolbarPosition = useCallback(() => {
+    const currentPos = dragPosition || coords || { top: 75, left: 100 };
+    try {
+      localStorage.setItem('pixia_cms_toolbar_mode', 'pinned');
+      localStorage.setItem('pixia_cms_toolbar_pos', JSON.stringify(currentPos));
+      setToolbarMode('pinned');
+      setDragPosition(currentPos);
+    } catch {}
+  }, [dragPosition, coords]);
+
+  // Réinitialise la position uniquement si la barre est en mode flottant
   useEffect(() => {
-    if (!isPinned) {
+    if (toolbarMode === 'floating') {
       setDragPosition(null);
-      setIsDockedToHeader(false);
     }
     setActiveAccordion('typo');
     setPaletteStateTab('normal');
@@ -319,81 +345,81 @@ export const FloatingElementToolbar: React.FC<{
       if (selected?.el) selected.el.removeAttribute('data-cms-preview-state');
       if (selected?.clickableEl) selected.clickableEl.removeAttribute('data-cms-preview-state');
     };
-  }, [selected?.elementKey, selected?.sectionKey, selected?.linkKey, isPinned]);
+  }, [selected?.elementKey, selected?.sectionKey, selected?.linkKey, toolbarMode]);
 
-  const handleDragStart = useCallback(
-    (e: React.MouseEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
+  // Déplacement haute performance façon robot Pixia : pointerdown, pointermove, pointerup avec setPointerCapture
+  const handlePointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (toolbarMode === 'docked_header') return; // En mode header docké, la barre est fixe
+    e.preventDefault();
+    e.stopPropagation();
 
-      const currentTop = dragPosition?.top ?? coords?.top ?? 100;
-      const currentLeft = dragPosition?.left ?? coords?.left ?? 100;
+    const currentTop = dragPosition?.top ?? coords?.top ?? 100;
+    const currentLeft = dragPosition?.left ?? coords?.left ?? 100;
 
-      dragStartRef.current = {
-        startX: e.clientX,
-        startY: e.clientY,
-        startTop: currentTop,
-        startLeft: currentLeft,
-      };
-      setIsDragging(true);
+    pointerDragRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      startTop: currentTop,
+      startLeft: currentLeft,
+      currentDx: 0,
+      currentDy: 0,
+    };
+    isDraggingRef.current = true;
 
-      const handleMouseMove = (moveEvent: MouseEvent) => {
-        if (!dragStartRef.current) return;
-        const dx = moveEvent.clientX - dragStartRef.current.startX;
-        const dy = moveEvent.clientY - dragStartRef.current.startY;
+    try {
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    } catch {}
+  }, [toolbarMode, dragPosition, coords]);
 
-        const tb = toolbarRef.current;
-        const tbWidth = tb ? tb.offsetWidth : 480;
-        const tbHeight = tb ? tb.offsetHeight : 48;
+  const handlePointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDraggingRef.current || !pointerDragRef.current) return;
+    const dx = e.clientX - pointerDragRef.current.startX;
+    const dy = e.clientY - pointerDragRef.current.startY;
+    pointerDragRef.current.currentDx = dx;
+    pointerDragRef.current.currentDy = dy;
 
-        let rawTop = dragStartRef.current.startTop + dy;
-        let newLeft = dragStartRef.current.startLeft + dx;
+    // Déplacement matériel direct sur le GPU : ZÉRO re-render React pendant le mouvement !
+    if (toolbarRef.current) {
+      toolbarRef.current.style.transform = `translate3d(${dx}px, ${dy}px, 0)`;
+    }
+  }, []);
 
-        // Ancrage magnétique style Photoshop (colle au Header si < 75px)
-        let docked = false;
-        let newTop = rawTop;
-        if (rawTop <= 75) {
-          newTop = 14;
-          docked = true;
-        } else {
-          newTop = Math.max(
-            10,
-            Math.min(window.innerHeight - tbHeight - 10, rawTop)
-          );
-        }
+  const handlePointerUp = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDraggingRef.current || !pointerDragRef.current) return;
+    try {
+      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {}
 
-        newLeft = Math.max(
-          10,
-          Math.min(window.innerWidth - tbWidth - 10, newLeft)
-        );
+    const { startTop, startLeft, currentDx, currentDy } = pointerDragRef.current;
+    isDraggingRef.current = false;
+    pointerDragRef.current = null;
 
-        setIsDockedToHeader(docked);
-        const pos = { top: newTop, left: newLeft };
-        setDragPosition(pos);
+    if (toolbarRef.current) {
+      toolbarRef.current.style.transform = '';
+    }
 
-        // Si la barre est épinglée, on mémorise sa nouvelle position en continu
-        if (isPinned) {
-          try {
-            localStorage.setItem(
-              'pixia_cms_toolbar_pos',
-              JSON.stringify({ ...pos, isDocked: docked })
-            );
-          } catch {}
-        }
-      };
+    const tb = toolbarRef.current;
+    const tbWidth = tb ? tb.offsetWidth : 480;
+    const tbHeight = tb ? tb.offsetHeight : 48;
 
-      const handleMouseUp = () => {
-        dragStartRef.current = null;
-        setIsDragging(false);
-        window.removeEventListener('mousemove', handleMouseMove);
-        window.removeEventListener('mouseup', handleMouseUp);
-      };
+    const rawTop = startTop + currentDy;
+    const newLeft = Math.max(10, Math.min(window.innerWidth - tbWidth - 10, startLeft + currentDx));
+    const newTop = Math.max(10, Math.min(window.innerHeight - tbHeight - 10, rawTop));
 
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleMouseUp);
-    },
-    [coords, dragPosition, isPinned]
-  );
+    // Détection d'ancrage magnétique au Header si l'utilisateur glisse vers le sommet (< 65px)
+    if (rawTop <= 65) {
+      setMode('docked_header');
+      return;
+    }
+
+    const finalPos = { top: newTop, left: newLeft };
+    setDragPosition(finalPos);
+    if (toolbarMode === 'pinned') {
+      try {
+        localStorage.setItem('pixia_cms_toolbar_pos', JSON.stringify(finalPos));
+      } catch {}
+    }
+  }, [toolbarMode, setMode]);
 
   useEffect(() => subscribeSelectedElement(() => setSelected(getSelectedElement())), []);
 
@@ -850,6 +876,9 @@ export const FloatingElementToolbar: React.FC<{
         el.style.setProperty('width', `${newWidth}px`, 'important');
         el.style.setProperty('max-width', `${newWidth}px`, 'important');
         el.style.boxSizing = 'border-box';
+        if (el.parentElement && (el.parentElement.tagName === 'P' || el.parentElement.classList.contains('ct-hero-lede'))) {
+          el.parentElement.style.setProperty('max-width', `${newWidth}px`, 'important');
+        }
       } else {
         const newWidth = Math.max(40, startWidth - dx);
         const deltaW = startWidth - newWidth;
@@ -859,6 +888,9 @@ export const FloatingElementToolbar: React.FC<{
         el.style.boxSizing = 'border-box';
         el.style.setProperty('transform', `translate(${newOffsetX}px, ${startOffsetY}px)`, 'important');
         el.setAttribute('data-cms-offset', '1');
+        if (el.parentElement && (el.parentElement.tagName === 'P' || el.parentElement.classList.contains('ct-hero-lede'))) {
+          el.parentElement.style.setProperty('max-width', `${newWidth}px`, 'important');
+        }
       }
       updateCoords();
     };
@@ -869,11 +901,17 @@ export const FloatingElementToolbar: React.FC<{
       const dx = upEvent.clientX - startX;
       if (side === 'right') {
         const finalWidth = Math.max(40, startWidth + dx);
+        if (el.parentElement && (el.parentElement.tagName === 'P' || el.parentElement.classList.contains('ct-hero-lede'))) {
+          el.parentElement.style.setProperty('max-width', `${finalWidth}px`, 'important');
+        }
         commit({ width: `${finalWidth}px` });
       } else {
         const finalWidth = Math.max(40, startWidth - dx);
         const deltaW = startWidth - finalWidth;
         const finalOffsetX = startOffsetX + deltaW;
+        if (el.parentElement && (el.parentElement.tagName === 'P' || el.parentElement.classList.contains('ct-hero-lede'))) {
+          el.parentElement.style.setProperty('max-width', `${finalWidth}px`, 'important');
+        }
         commit({ width: `${finalWidth}px`, offsetX: finalOffsetX });
       }
       updateCoords();
@@ -882,6 +920,33 @@ export const FloatingElementToolbar: React.FC<{
     window.addEventListener('mousemove', handleMove);
     window.addEventListener('mouseup', handleUp);
   }, [selected, style.offsetX, style.offsetY, commit, updateCoords]);
+
+  /** Supprime définitivement toute contrainte de largeur pour restaurer la taille naturelle */
+  const resetElementWidth = useCallback(() => {
+    if (!selected?.el) return;
+    commit({ width: undefined });
+    selected.el.style.removeProperty('width');
+    selected.el.style.removeProperty('max-width');
+    if (selected.el.parentElement && (selected.el.parentElement.tagName === 'P' || selected.el.parentElement.classList.contains('ct-hero-lede'))) {
+      selected.el.parentElement.style.removeProperty('max-width');
+    }
+    if (!style.height && !style.padding && selected.el.style.display === 'inline-block') {
+      selected.el.style.removeProperty('display');
+    }
+    updateCoords();
+  }, [commit, selected, style.height, style.padding, updateCoords]);
+
+  /** Supprime définitivement toute contrainte de hauteur pour restaurer la taille naturelle et effacer l'espace vide */
+  const resetElementHeight = useCallback(() => {
+    if (!selected?.el) return;
+    commit({ height: undefined });
+    selected.el.style.removeProperty('height');
+    selected.el.style.removeProperty('min-height');
+    if (!style.width && !style.padding && selected.el.style.display === 'inline-block') {
+      selected.el.style.removeProperty('display');
+    }
+    updateCoords();
+  }, [commit, selected, style.width, style.padding, updateCoords]);
 
   /** Redimensionnement vertical (haut / bas) — étirer le texte en hauteur */
   const handleHeightResizeStart = useCallback((e: React.MouseEvent, side: 'top' | 'bottom') => {
@@ -925,8 +990,14 @@ export const FloatingElementToolbar: React.FC<{
       window.removeEventListener('mouseup', handleUp);
       const dy = upEvent.clientY - startY;
       if (side === 'bottom') {
-        const finalHeight = Math.max(20, startHeight + dy);
-        commit({ height: `${finalHeight}px` });
+        // Si l'utilisateur réduit la hauteur (déplacement vers le haut dy < -10) et qu'on revient sous la taille de départ,
+        // on lève la contrainte pour que le texte retrouve sa hauteur naturelle sans espace fantôme
+        if (dy < -10 && (startHeight + dy) < 45) {
+          resetElementHeight();
+        } else {
+          const finalHeight = Math.max(20, startHeight + dy);
+          commit({ height: `${finalHeight}px` });
+        }
       } else {
         const finalHeight = Math.max(20, startHeight - dy);
         const deltaH = startHeight - finalHeight;
@@ -938,7 +1009,7 @@ export const FloatingElementToolbar: React.FC<{
 
     window.addEventListener('mousemove', handleMove);
     window.addEventListener('mouseup', handleUp);
-  }, [selected, style.offsetY, style.offsetX, commit, updateCoords]);
+  }, [selected, style.offsetY, style.offsetX, commit, updateCoords, resetElementHeight]);
 
   /** Glisser-déposer libre de l'élément sélectionné (4 flèches) */
   const elementDragStartRef = useRef<{
@@ -1246,68 +1317,101 @@ export const FloatingElementToolbar: React.FC<{
     <div
       ref={toolbarRef}
       data-cms-ui
-      style={{
-        position: 'fixed',
-        top: dragPosition?.top ?? coords.top,
-        left: dragPosition?.left ?? coords.left,
-        zIndex: 350,
-      }}
-      className={`flex flex-col gap-2 bg-[#0e0e0d]/98 border text-[#f5f4f0] p-2.5 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.95)] backdrop-blur-md select-none animate-in fade-in duration-100 max-w-[95vw] transition-all ${
-        isDockedToHeader
-          ? 'border-[color:var(--ui-accent)] shadow-[0_10px_40px_rgba(var(--ui-accent-rgb),0.35)] ring-2 ring-[color:var(--ui-accent)]/40'
-          : isPinned
-          ? 'border-[color:var(--ui-accent)]/60 shadow-[0_12px_36px_rgba(0,0,0,0.85)]'
-          : 'border-[#2b2b28]'
-      }`}
+      style={
+        toolbarMode === 'docked_header'
+          ? {
+              position: 'fixed',
+              top: 'var(--nav-h, 60px)',
+              left: 0,
+              right: 0,
+              width: '100%',
+              zIndex: 350,
+            }
+          : {
+              position: 'fixed',
+              top: dragPosition?.top ?? coords.top,
+              left: dragPosition?.left ?? coords.left,
+              zIndex: 350,
+            }
+      }
+      className={
+        toolbarMode === 'docked_header'
+          ? 'flex flex-col bg-[#0d0d0c]/98 border-b border-[#2b2b28] text-[#f5f4f0] p-2 px-4 shadow-[0_12px_36px_rgba(0,0,0,0.85)] backdrop-blur-md select-none animate-in slide-in-from-top-1 duration-150 w-full'
+          : `flex flex-col gap-2 bg-[#0e0e0d]/98 border text-[#f5f4f0] p-2.5 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.95)] backdrop-blur-md select-none animate-in fade-in duration-100 max-w-[95vw] transition-[border-color,box-shadow] ${
+              toolbarMode === 'pinned'
+                ? 'border-[color:var(--ui-accent)]/60 shadow-[0_12px_36px_rgba(0,0,0,0.85)]'
+                : 'border-[#2b2b28]'
+            }`
+      }
       onClick={(e) => e.stopPropagation()}
     >
       {/* ── Ligne 1 : En-tête permanent ── */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-0.5">
-        {/* Poignée pour déplacer librement toute la barre d'outils */}
-        <div
-          onMouseDown={handleDragStart}
-          className="flex items-center justify-center p-1.5 rounded-lg hover:bg-[#222220] text-[#7a7a76] hover:text-white cursor-grab active:cursor-grabbing transition-colors shrink-0"
-          title="Glisser pour déplacer librement toute la barre d'outils (s'aimante au Header style Photoshop si glissée vers le haut)"
-        >
-          <GripVertical className="w-4 h-4" />
-        </div>
-
-        {/* Bouton Épingler (Pin) façon Photoshop */}
-        <button
-          type="button"
-          onClick={togglePinned}
-          className={`p-1.5 rounded-lg transition-all cursor-pointer flex items-center justify-center shrink-0 ${
-            isPinned
-              ? 'bg-[color:var(--ui-accent)] text-[#080808] font-bold shadow-sm'
-              : 'text-[#7a7a76] hover:text-white hover:bg-[#222220]'
-          }`}
-          title={
-            isPinned
-              ? 'Barre d’outils ÉPINGLÉE : reste fixe à cet endroit même si vous sélectionnez un autre élément. Cliquer pour libérer.'
-              : 'Épingler la barre d’outils à sa position actuelle (style Photoshop)'
-          }
-        >
-          <PinIcon className="w-3.5 h-3.5" filled={isPinned} />
-        </button>
-
-        {/* Bouton Enregistrer la position (affiché quand déplacée et pas encore épinglée) */}
-        {!isPinned && dragPosition && (
+      <div className="flex items-center gap-2 overflow-x-auto pb-0.5 w-full">
+        {/* Mode Docké au Header : Bouton Détacher pour repasser en flottant */}
+        {toolbarMode === 'docked_header' ? (
           <button
             type="button"
-            onClick={saveCurrentToolbarPosition}
-            className="flex items-center gap-1 px-2 py-1 rounded-md bg-[#1f1f1d] hover:bg-[#2a2a26] text-[10px] font-mono font-bold text-[color:var(--ui-accent)] border border-[color:var(--ui-accent)]/40 transition-colors shrink-0 cursor-pointer"
-            title="Mémoriser cette position pour qu'elle s'affiche toujours ici"
+            onClick={() => setMode('floating')}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#1f1f1d] hover:bg-[#2a2a26] text-white border border-[#3a3a36] hover:border-[color:var(--ui-accent)] font-mono text-[11px] font-bold transition-all cursor-pointer shadow-sm shrink-0"
+            title="Détacher la barre du header et revenir au mode flottant libre"
           >
-            <PinIcon className="w-3 h-3" />
-            <span>MÉMORISER POSITION</span>
+            <FloatIcon className="w-3.5 h-3.5 text-[color:var(--ui-accent)]" />
+            <span>DÉTACHER (MODE FLOTTANT)</span>
           </button>
-        )}
+        ) : (
+          <>
+            {/* Poignée haute performance pour déplacer librement toute la barre d'outils (Pointer events direct GPU) */}
+            <div
+              onPointerDown={handlePointerDown}
+              onPointerMove={handlePointerMove}
+              onPointerUp={handlePointerUp}
+              className="flex items-center justify-center p-1.5 rounded-lg hover:bg-[#222220] text-[#7a7a76] hover:text-white cursor-grab active:cursor-grabbing transition-colors shrink-0 touch-none"
+              title="Glisser pour déplacer librement toute la barre d'outils avec fluidité 60 FPS (s'aimante au Header si glissée vers le haut)"
+            >
+              <GripVertical className="w-4 h-4 pointer-events-none" />
+            </div>
 
-        {/* Badge Ancré au Header (effet Photoshop) */}
-        {isDockedToHeader && (
-          <span className="px-1.5 py-0.5 rounded bg-[color:var(--ui-accent)] text-[#080808] font-mono text-[9px] font-extrabold tracking-wider shrink-0 uppercase animate-pulse">
-            HEADER ANCRÉ
-          </span>
+            {/* Bouton Épingler (Pin) façon Photoshop */}
+            <button
+              type="button"
+              onClick={() => setMode(toolbarMode === 'pinned' ? 'floating' : 'pinned')}
+              className={`p-1.5 rounded-lg transition-all cursor-pointer flex items-center justify-center shrink-0 ${
+                toolbarMode === 'pinned'
+                  ? 'bg-[color:var(--ui-accent)] text-[#080808] font-bold shadow-sm'
+                  : 'text-[#7a7a76] hover:text-white hover:bg-[#222220]'
+              }`}
+              title={
+                toolbarMode === 'pinned'
+                  ? 'Barre d’outils ÉPINGLÉE : elle ne bouge plus même si vous sélectionnez un autre élément. Cliquer pour libérer.'
+                  : 'Épingler la barre d’outils à sa position actuelle (style Photoshop)'
+              }
+            >
+              <PinIcon className="w-3.5 h-3.5" filled={toolbarMode === 'pinned'} />
+            </button>
+
+            {/* Bouton Intégrer au Header (Dock pleine largeur) */}
+            <button
+              type="button"
+              onClick={() => setMode('docked_header')}
+              className="p-1.5 rounded-lg transition-all cursor-pointer flex items-center justify-center shrink-0 text-[#7a7a76] hover:text-white hover:bg-[#222220]"
+              title="Intégrer la barre sous le header (mode pleine largeur docké)"
+            >
+              <DockHeaderIcon className="w-3.5 h-3.5" />
+            </button>
+
+            {/* Bouton Enregistrer la position (si déplacée et en mode flottant) */}
+            {toolbarMode === 'floating' && dragPosition && (
+              <button
+                type="button"
+                onClick={saveCurrentToolbarPosition}
+                className="flex items-center gap-1 px-2 py-1 rounded-md bg-[#1f1f1d] hover:bg-[#2a2a26] text-[10px] font-mono font-bold text-[color:var(--ui-accent)] border border-[color:var(--ui-accent)]/40 transition-colors shrink-0 cursor-pointer"
+                title="Mémoriser cette position pour qu'elle s'affiche toujours ici"
+              >
+                <PinIcon className="w-3 h-3" />
+                <span>MÉMORISER</span>
+              </button>
+            )}
+          </>
         )}
 
         {/* Badge indicateur de type & section */}
@@ -1627,6 +1731,19 @@ export const FloatingElementToolbar: React.FC<{
               </button>
             ))}
           </div>
+
+          {/* Bouton de suppression de contrainte de hauteur / espace vide fantôme */}
+          {Boolean(style.height || (selected?.el && selected.el.style.height)) && (
+            <button
+              type="button"
+              onClick={resetElementHeight}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#ff4444]/20 hover:bg-[#ff4444]/35 text-[#ff9999] border border-[#ff4444]/40 font-mono text-[11px] font-bold cursor-pointer transition-colors shadow-sm ml-auto"
+              title="Supprimer la hauteur forcée pour effacer définitivement l'espace vide sous le texte"
+            >
+              <RotateCcw className="w-3 h-3 text-[#ff8888]" />
+              <span>SUPPRIMER ESPACE VIDE (HAUTEUR AUTO)</span>
+            </button>
+          )}
         </div>
       )}
 
@@ -2226,7 +2343,8 @@ export const FloatingElementToolbar: React.FC<{
                 border: '1px solid var(--accent, var(--ui-accent))',
               }}
               onMouseDown={(e) => handleHeightResizeStart(e, 'top')}
-              title="Redimensionner verticalement (haut)"
+              onDoubleClick={resetElementHeight}
+              title="Redimensionner verticalement (haut) — Double-cliquer pour supprimer immédiatement l'espace vide"
             >
               <svg width="14" height="8" viewBox="0 0 14 8" fill="none"><path d="M1 2L13 2M1 6L13 6" stroke="var(--accent, var(--ui-accent))" strokeWidth="1.5" strokeLinecap="round"/></svg>
             </div>
@@ -2250,7 +2368,8 @@ export const FloatingElementToolbar: React.FC<{
                 border: '1px solid var(--accent, var(--ui-accent))',
               }}
               onMouseDown={(e) => handleHeightResizeStart(e, 'bottom')}
-              title="Redimensionner verticalement (bas)"
+              onDoubleClick={resetElementHeight}
+              title="Redimensionner verticalement (bas) — Double-cliquer pour supprimer immédiatement l'espace vide"
             >
               <svg width="14" height="8" viewBox="0 0 14 8" fill="none"><path d="M1 2L13 2M1 6L13 6" stroke="var(--accent, var(--ui-accent))" strokeWidth="1.5" strokeLinecap="round"/></svg>
             </div>
@@ -2274,7 +2393,8 @@ export const FloatingElementToolbar: React.FC<{
                 border: '1px solid var(--accent, var(--ui-accent))',
               }}
               onMouseDown={(e) => handleWidthResizeStart(e, 'left')}
-              title="Redimensionner horizontalement (gauche)"
+              onDoubleClick={resetElementWidth}
+              title="Redimensionner horizontalement (gauche) — double-clic pour largeur auto"
             >
               <svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M2 1L2 13M6 1L6 13" stroke="var(--accent, var(--ui-accent))" strokeWidth="1.5" strokeLinecap="round"/></svg>
             </div>
@@ -2298,7 +2418,8 @@ export const FloatingElementToolbar: React.FC<{
                 border: '1px solid var(--accent, var(--ui-accent))',
               }}
               onMouseDown={(e) => handleWidthResizeStart(e, 'right')}
-              title="Redimensionner horizontalement (droite)"
+              onDoubleClick={resetElementWidth}
+              title="Redimensionner horizontalement (droite) — double-clic pour largeur auto"
             >
               <svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M2 1L2 13M6 1L6 13" stroke="var(--accent, var(--ui-accent))" strokeWidth="1.5" strokeLinecap="round"/></svg>
             </div>

@@ -530,13 +530,23 @@ const CONTACT_CSS = `
    le span (deux textes superposés et décalés). */
 #pixia-web .ct-zoom-hero .ct-hero-title {
   margin: 0;
-  max-width: 20em;
+  /* Le h1 est un item flex centré : sans plafond il prend sa largeur
+     max-content et peut dépasser .wrap quand le CMS pose une largeur fixe
+     sur les spans. 100% le ramène toujours dans la gouttière. */
+  max-width: 100% !important;
   font-size: clamp(32px, min(7.2vw, 9.6vh), 84px) !important;
   font-weight: 600;
   line-height: 1.02;
   letter-spacing: -.04em;
   text-wrap: balance;
   filter: drop-shadow(0 8px 28px rgba(0, 0, 0, .55));
+}
+/* Filet de sécurité : même sans neutralisation CMS (édition en cours), le
+   texte ne peut pas créer de débordement horizontal. */
+#pixia-web .ct-zoom-hero .ct-hero-title-main,
+#pixia-web .ct-zoom-hero .ct-hero-title-accent {
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 .ct-hero-title-main {
   display: inline;
@@ -568,7 +578,7 @@ const CONTACT_CSS = `
 /* Lede : neutre lisible et ombrée pour rester au-dessus des traînées. */
 #pixia-web .ct-zoom-hero .ct-hero-lede {
   margin: 0;
-  max-width: 30em;
+  max-width: min(56em, 94vw);
   font-size: clamp(13px, min(3.4vw, 2.2vh), 17px);
   line-height: 1.5;
   color: #9aa1ae;

@@ -345,7 +345,7 @@ export const CmsProvider: React.FC<{
 
       const currentElStyle = { ...(bag[elementKey] || {}) };
       for (const [k, v] of Object.entries(patch)) {
-        if (v === undefined) {
+        if (v === undefined || v === null || v === '' || v === 'auto') {
           delete currentElStyle[k];
         } else {
           currentElStyle[k] = v;
