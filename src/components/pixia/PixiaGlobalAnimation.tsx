@@ -164,12 +164,18 @@ function iconSizeFor(vw: number): number {
   return vw < 640 ? 64 : 76;
 }
 
-/** Position de repos du robot : bord droit, centré ; sous la nav sur mobile. */
-function homeFor(vw: number, vh: number, size: number) {
+/** Position de repos du robot : bord droit, centré ; sous la nav sur mobile.
+ *  Sur l'accueil mobile (sans nav basse), on le descend dans le coin bas droit
+ *  pour libérer l'autre coin au bouton cookies. */
+function homeFor(vw: number, vh: number, size: number, bottomRightMobile = false) {
   const pad = vw < 640 ? 14 : 40;
   return {
     left: Math.max(12, vw - pad - size),
-    top: vw < 640 ? NAV_H + 14 : Math.max(12, (vh - size) / 2),
+    top: bottomRightMobile && vw < 768
+      ? Math.max(12, vh - pad - size)
+      : vw < 640
+        ? NAV_H + 14
+        : Math.max(12, (vh - size) / 2),
   };
 }
 
@@ -262,7 +268,10 @@ function readCookieMirrorAnchor(
   const fallback = () => readBackToTop(bottomInset);
   const vw = document.documentElement.clientWidth;
   const vh = document.documentElement.clientHeight;
-  if (vw >= 640) return fallback();
+  // Même coupure que la nav basse (`md:hidden`) et que le bouton cookies :
+  // en dessous de 768px on forme la colonne droite ; au-dessus, comportement
+  // PC historique (ancre « retour en haut ») strictement inchangé.
+  if (vw >= 768) return fallback();
 
   const cookie = document.querySelector<HTMLElement>(
     'button[aria-label="Gérer les cookies & vie privée"]'
@@ -325,8 +334,12 @@ interface PixiaGlobalAnimationProps {
    *  en miroir, à droite. Jamais transmis sur `/web` ni sur desktop. */
   dockBarSelector?: string;
   /** Seuil de scroll (px) après lequel la mascotte se réduit à la tête.
-   *  Non fourni sur `/web` : l'animation y suit toujours la hauteur du Hero. */
+   *  Non fourni sur `/web` ni sur l'accueil : l'animation y suit toujours la
+   *  hauteur du Hero. */
   collapseScrollThreshold?: number;
+  /** Accueil mobile uniquement : robot entier posé dans le coin bas droit,
+   *  en face du bouton cookies (aucune nav basse sur cette page). */
+  homeAtBottomRightOnMobile?: boolean;
   /** Masque temporairement la mascotte (Configuration Guidée) sans démonter
    *  le composant : le relais reste actif, donc aucun ancien robot ne réapparaît
    *  et le pont conversationnel reste intact. */
@@ -339,6 +352,7 @@ export function PixiaGlobalAnimation({
   dockBottomInset = 0,
   dockBarSelector,
   collapseScrollThreshold,
+  homeAtBottomRightOnMobile = false,
   hidden = false,
 }: PixiaGlobalAnimationProps) {
   const pathname = usePathname();
@@ -765,7 +779,7 @@ export function PixiaGlobalAnimation({
       const d = iconSizeFor(vw);
       iconSizeRef.current = d;
       setIconSize(d);
-      setHome(homeFor(vw, vh, s));
+      setHome(homeFor(vw, vh, s, homeAtBottomRightOnMobile));
     };
     sync();
     window.addEventListener('resize', sync);
@@ -774,7 +788,7 @@ export function PixiaGlobalAnimation({
       window.removeEventListener('resize', sync);
       window.removeEventListener('orientationchange', sync);
     };
-  }, []);
+  }, [homeAtBottomRightOnMobile]);
 
   /* --- La préférence « mouvement réduit » peut changer sans rechargement --- */
   useEffect(() => {

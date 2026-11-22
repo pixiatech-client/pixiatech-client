@@ -1,10 +1,10 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useState, useEffect, useLayoutEffect, useMemo, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { ArrowLeft, ShoppingBag, SlidersHorizontal, ChevronDown, Star, Sparkles, Tag, X, RotateCcw, Search, Check, Heart } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useSpring } from 'framer-motion';
 import { toast } from 'sonner';
 import { useCart } from '@/contexts/CartContext';
 import { fetchBoutiqueProducts, getModeBadge } from '@/lib/boutique-data';
@@ -309,6 +309,47 @@ export default function BoutiquePage() {
 
   const [filterOpen, setFilterOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'all' | 'sale' | 'rental' | 'sur-commande'>('all');
+
+  /* Pilule du segmented control : une seule boîte persistante, animée par un
+     ressort sur l'axe X uniquement. L'ancien `layoutId` mesurait la pilule en
+     coordonnées document : quand « Sur commande » vidait la liste, scrollY
+     était recalé et Framer Motion animait ce delta en vertical (saut haut/bas).
+     Ici la géométrie vient des boutons, jamais du scroll, et top/height sont
+     appliqués sans animation. */
+  const segmentNavRef = useRef<HTMLElement>(null);
+  const segmentRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const pillX = useSpring(0, { stiffness: 420, damping: 32 });
+  const pillWidth = useSpring(0, { stiffness: 420, damping: 32 });
+  const [pillBox, setPillBox] = useState({ top: 4, height: 32 });
+  const pillInitialized = useRef(false);
+  const activeSegmentIndex = ['all', 'sale', 'rental', 'sur-commande'].indexOf(activeTab);
+
+  useLayoutEffect(() => {
+    const btn = segmentRefs.current[activeSegmentIndex];
+    if (!btn) return;
+    const measure = () => {
+      const x = btn.offsetLeft;
+      const w = btn.offsetWidth;
+      // Premier rendu : placement sec (pas d'animation d'entrée).
+      if (!pillInitialized.current) {
+        pillX.jump(x);
+        pillWidth.jump(w);
+        pillInitialized.current = true;
+      } else {
+        pillX.set(x);
+        pillWidth.set(w);
+      }
+      const top = btn.offsetTop;
+      const height = btn.offsetHeight;
+      setPillBox((prev) => (prev.top === top && prev.height === height ? prev : { top, height }));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(btn);
+    if (segmentNavRef.current) ro.observe(segmentNavRef.current);
+    return () => ro.disconnect();
+  }, [activeSegmentIndex, pillWidth, pillX]);
+
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [minRating, setMinRating] = useState(0);
   const [selectedBadges, setSelectedBadges] = useState<string[]>([]);
@@ -586,27 +627,36 @@ export default function BoutiquePage() {
           }}
         >
           <div className="pixia-page-gutter flex flex-col md:flex-row md:items-center justify-between gap-3 py-3">
-          <nav className="relative flex min-w-0 flex-1 items-center gap-0.5 bg-gray-100 p-1 rounded-[16px] border border-gray-200/80 overflow-x-auto scrollbar-hide md:flex-none md:shrink-0">
+          <nav
+            ref={segmentNavRef}
+            className="relative flex min-w-0 flex-1 items-center gap-0.5 bg-gray-100 p-1 rounded-[16px] border border-gray-200/80 overflow-x-auto scrollbar-hide md:flex-none md:shrink-0"
+          >
+            {/* Pilule unique et persistante : seul X est animé (jamais Y). */}
+            <motion.div
+              aria-hidden="true"
+              className="absolute z-0 bg-gray-900 rounded-[12px] shadow-sm pointer-events-none will-change-transform"
+              style={{
+                left: 0,
+                top: pillBox.top,
+                height: pillBox.height,
+                x: pillX,
+                width: pillWidth,
+              }}
+            />
             {[
               { id: 'all', label: t('boutique.products') },
               { id: 'sale', label: t('boutique.sale') },
               { id: 'rental', label: t('boutique.rental') },
               { id: 'sur-commande', label: t('boutique.surCommande') },
-            ].map((tab) => {
+            ].map((tab, idx) => {
               const isActive = activeTab === tab.id;
               return (
                 <button
                   key={tab.id}
+                  ref={(el) => { segmentRefs.current[idx] = el; }}
                   onClick={() => setActiveTab(tab.id as typeof activeTab)}
                   className="relative h-8 min-w-0 flex-1 px-1 min-[360px]:px-1.5 sm:min-w-[110px] sm:flex-none sm:px-4 rounded-[12px] text-[10px] min-[360px]:text-[11px] sm:text-sm font-medium tracking-tight sm:tracking-normal transition-colors duration-200 whitespace-nowrap flex items-center justify-center cursor-pointer select-none"
                 >
-                  {isActive && (
-                    <motion.div
-                      layoutId="segmentedControlActive"
-                      className="absolute inset-0 bg-gray-900 rounded-[12px] shadow-sm"
-                      transition={{ type: 'spring', stiffness: 420, damping: 32 }}
-                    />
-                  )}
                   <span className={`relative z-10 transition-colors duration-200 whitespace-nowrap ${isActive ? 'text-white font-semibold' : 'text-gray-600 hover:text-gray-900 font-medium'}`}>
                     {tab.label}
                   </span>

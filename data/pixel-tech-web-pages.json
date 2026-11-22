@@ -2204,7 +2204,7 @@
       "id": "contact",
       "name": "Contact & Paramètres Généraux",
       "slug": "#contact",
-      "updatedAt": "2026-11-22T15:06:46.421Z",
+      "updatedAt": "2026-11-22T15:31:24.368Z",
       "settings": {
         "companyName": "PIXIATECH",
         "tagline": "Systèmes LED Architecturaux de Pointe",
@@ -2339,8 +2339,9 @@
             },
             "div:1/section:1/div:1/div:2/h1:1/span:2": {
               "width": "1138px",
-              "offsetX": 39,
-              "offsetY": 2
+              "offsetX": -144,
+              "offsetY": 3,
+              "fontSize": "66px"
             },
             "div:1/section:1/div:1/div:2/p:1/span:1": {
               "offsetX": 5,
@@ -2683,5 +2684,5 @@
     "backendName": "Pixel Tech Web",
     "backendApiUrl": "/api/site-web"
   },
-  "updatedAt": "2026-11-22T15:06:46.497Z"
+  "updatedAt": "2026-11-22T15:31:24.431Z"
 }

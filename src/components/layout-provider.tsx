@@ -18,6 +18,7 @@ import { AnalyticsTracker } from '@/components/analytics/AnalyticsTracker';
 import { DynamicFavicon } from '@/components/ui/DynamicFavicon';
 import { Home, Store, ShoppingBag, User, LayoutDashboard, Package, Settings, LogOut } from 'lucide-react';
 import { BottomSheetProvider } from '@/components/ui/bottom-sheet';
+import { useMediaQuery } from 'usehooks-ts';
 
 function useProtectMedia() {
   useEffect(() => {
@@ -58,6 +59,9 @@ export function LayoutProvider({
      sans démonter le moteur ni relâcher le relais de mascotte, ce qui ferait
      réapparaître l'ancien robot. */
   const [guidedConfigActive, setGuidedConfigActive] = useState(false);
+  /* Le repli rapide du robot et sa colonne avec les cookies sont MOBILE ONLY.
+     Sur PC, l'animation conserve intégralement sa courbe historique. */
+  const isMobileViewport = useMediaQuery('(max-width: 767px)');
   useEffect(() => {
     const syncFromUrl = () => {
       setGuidedConfigActive(
@@ -222,7 +226,12 @@ export function LayoutProvider({
               dockBarSelector={
                 isFrontendPage && showBottomNav ? '[data-pixia-bottom-nav]' : undefined
               }
-              collapseScrollThreshold={isFrontendPage ? 64 : undefined}
+              collapseScrollThreshold={
+                isFrontendPage && isMobileViewport && !isHomePage ? 64 : undefined
+              }
+              homeAtBottomRightOnMobile={
+                isFrontendPage && isMobileViewport && isHomePage
+              }
               hidden={guidedConfigActive}
             />
           </div>
