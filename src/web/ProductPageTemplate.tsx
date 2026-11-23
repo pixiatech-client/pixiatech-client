@@ -12,7 +12,6 @@ import { NextSection } from './components/NextSection';
 import { PixiaFooter } from './pixiatech/PixiaFooter';
 import { ConsultationModal } from './components/ConsultationModal';
 import { DatasheetModal } from './components/DatasheetModal';
-import { BackToTopButton } from './components/BackToTopButton';
 import { ProductPreviewBar } from './components/ProductPreviewBar';
 import { SpecModel } from './types';
 import { useCms } from '@/lib/site-web/cms-context';
@@ -359,8 +358,7 @@ function ProductView({ slug, fallbackProduct, isPreview = false }: ProductPageTe
         lang={effectiveLang}
       />
 
-      {/* Floating Back to Top Button */}
-      <BackToTopButton lang={effectiveLang} />
+      {/* Back-to-top button is now rendered globally in LayoutProvider */}
     </div>
   );
 }

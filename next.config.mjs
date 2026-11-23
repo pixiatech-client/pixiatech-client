@@ -2,10 +2,6 @@
 const nextConfig = {
   allowedDevOrigins: ['192.168.1.2'],
   transpilePackages: ['framer-motion', 'three'],
-  // watchOptions : Next.js 16 n'accepte plus `ignored` dans ce bloc
-  // (seul `pollIntervalMs` est reconnu). Le watcher Turbopack ignore déjà
-  // .git automatiquement ; pour data/ on a basculé sur outputFileTracingIgnores.
-  outputFileTracingIgnores: ['**/data/**'],
   turbopack: {
     resolveAlias: {
       react: './node_modules/react/index.js',

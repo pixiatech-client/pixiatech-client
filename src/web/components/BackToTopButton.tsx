@@ -4,9 +4,11 @@ import { Language } from "../data/translations";
 
 interface BackToTopButtonProps {
   lang?: Language;
+  /** Extra bottom offset in px (e.g. when a bottom nav is visible). */
+  bottomOffset?: number;
 }
 
-export const BackToTopButton: React.FC<BackToTopButtonProps> = ({ lang = "FR" }) => {
+export const BackToTopButton: React.FC<BackToTopButtonProps> = ({ lang = "FR", bottomOffset = 0 }) => {
   // Client-only (voir src/web/pixiatech/BackToTopButton.tsx) : évite le
   // mismatch d'hydratation quand la barre CMS / une extension injecte
   // un style "translate" avant que React ne monte.
@@ -48,11 +50,12 @@ export const BackToTopButton: React.FC<BackToTopButtonProps> = ({ lang = "FR" })
       onClick={scrollToTop}
       aria-label={ariaLabel}
       title={ariaLabel}
-      className={`fixed bottom-[max(1.5rem,env(safe-area-inset-bottom,0px))] right-[max(1.5rem,env(safe-area-inset-right,0px))] z-40 group w-12 h-12 sm:w-13 sm:h-13 rounded-full flex items-center justify-center bg-[#0d0d0c]/90 backdrop-blur-md border border-[#2b2b28] text-[#f5f4f0] hover:border-[color:var(--ui-accent)] hover:text-[color:var(--ui-accent)] hover:shadow-[0_0_24px_rgba(var(--ui-accent-rgb),0.35)] hover:scale-105 active:scale-95 transition-all duration-300 shadow-2xl cursor-pointer select-none no-underline ${
+      className={`fixed right-[max(1.5rem,env(safe-area-inset-right,0px))] z-50 group w-12 h-12 sm:w-13 sm:h-13 rounded-full flex items-center justify-center bg-[#0d0d0c]/90 backdrop-blur-md border border-[#2b2b28] text-[#f5f4f0] hover:border-[color:var(--ui-accent)] hover:text-[color:var(--ui-accent)] hover:shadow-[0_0_24px_rgba(var(--ui-accent-rgb),0.35)] hover:scale-105 active:scale-95 transition-all duration-300 shadow-2xl cursor-pointer select-none no-underline ${
         isVisible
           ? "opacity-100 translate-y-0 pointer-events-auto"
           : "opacity-0 translate-y-4 pointer-events-none"
       }`}
+      style={{ bottom: `max(${1.5 + bottomOffset / 16}rem, calc(env(safe-area-inset-bottom, 0px) + ${bottomOffset}px))` }}
     >
       <ChevronUp className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.5] transition-transform duration-300 group-hover:-translate-y-0.5" />
     </button>

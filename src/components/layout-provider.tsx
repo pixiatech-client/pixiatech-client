@@ -19,6 +19,7 @@ import { DynamicFavicon } from '@/components/ui/DynamicFavicon';
 import { Home, Store, ShoppingBag, User, LayoutDashboard, Package, Settings, LogOut } from 'lucide-react';
 import { BottomSheetProvider } from '@/components/ui/bottom-sheet';
 import { useMediaQuery } from 'usehooks-ts';
+import { BackToTopButton } from '@/web/components/BackToTopButton';
 
 function useProtectMedia() {
   useEffect(() => {
@@ -240,6 +241,11 @@ export function LayoutProvider({
         </ThemeProvider>
         {!isAdminPage && !isEmbedPage && <CookieConsentBanner />}
         {!isAdminPage && !isEmbedPage && <AnalyticsTracker />}
+        {/* Bouton retour en haut — visible sur toutes les pages sauf embed/chat-widget.
+            Sur mobile avec bottom nav, le bouton remonte de 80px pour ne pas chevaucher la nav. */}
+        {!isEmbedPage && (
+          <BackToTopButton bottomOffset={showBottomNav ? 80 : 0} />
+        )}
         <ShadcnToaster />
         <SonnerToaster 
           position="bottom-right" 
