@@ -61,7 +61,7 @@ function applySecurityHeaders(response: NextResponse, isHttps: boolean, isEmbedd
   return response;
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   // Server actions execute their own authorization checks; never intercept or corrupt their responses
   if (request.headers.has('next-action')) {
     return NextResponse.next();
@@ -172,12 +172,12 @@ export async function middleware(request: NextRequest) {
   const isApiRoute = pathname.startsWith('/api/');
 
   if (!sessionCookie && !isAuthPage && !isApiRoute && pathname.startsWith('/admin')) {
-    console.log('[Middleware] redirect to login (no session)');
+    console.log('[Proxy] redirect to login (no session)');
     return NextResponse.redirect(loginUrl);
   }
 
   if (sessionCookie && isAuthPage) {
-    console.log('[Middleware] redirect to admin (has session on auth page)');
+    console.log('[Proxy] redirect to admin (has session on auth page)');
     return NextResponse.redirect(adminUrl);
   }
 
@@ -212,7 +212,7 @@ export async function middleware(request: NextRequest) {
         // Also match Firebase error codes: auth/session-cookie-expired, auth/session-cookie-revoked
         const invalidReasons = ['session_mismatch', 'expired', 'user_not_found', 'auth/session-cookie-expired', 'auth/session-cookie-revoked'];
         if (invalidReasons.includes(data.reason)) {
-          console.log('[Middleware] session invalid (reason=' + data.reason + '), redirecting to login');
+          console.log('[Proxy] session invalid (reason=' + data.reason + '), redirecting to login');
           const response = NextResponse.redirect(loginUrl);
           response.cookies.delete('session');
           response.cookies.delete('sessionToken');
@@ -220,7 +220,7 @@ export async function middleware(request: NextRequest) {
         }
         break; // Other reasons: fail open, let AdminLayout do the authoritative check
       } catch (err) {
-        console.warn('[Middleware] verify-session attempt ' + (attempt + 1) + '/' + (MAX_RETRIES + 1) + ' failed (failing open):', err);
+        console.warn('[Proxy] verify-session attempt ' + (attempt + 1) + '/' + (MAX_RETRIES + 1) + ' failed (failing open):', err);
       }
     }
   }

@@ -2,13 +2,10 @@
 const nextConfig = {
   allowedDevOrigins: ['192.168.1.2'],
   transpilePackages: ['framer-motion', 'three'],
-  // Empêche le watcher HMR de surveiller le dossier data/.
-  // Sans cette exclusion, writeJsonDb() (pages-store.ts) déclenchait un
-  // rechargement complet de la page à chaque sauvegarde CMS en mode dev,
-  // faisant perdre l'état d'édition en cours.
-  watchOptions: {
-    ignored: ['**/data/**', '**/.git/**'],
-  },
+  // watchOptions : Next.js 16 n'accepte plus `ignored` dans ce bloc
+  // (seul `pollIntervalMs` est reconnu). Le watcher Turbopack ignore déjà
+  // .git automatiquement ; pour data/ on a basculé sur outputFileTracingIgnores.
+  outputFileTracingIgnores: ['**/data/**'],
   turbopack: {
     resolveAlias: {
       react: './node_modules/react/index.js',
