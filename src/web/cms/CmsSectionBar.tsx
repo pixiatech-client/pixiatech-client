@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
-import { Eye, EyeOff, Settings, GripVertical, Layers, Sliders } from 'lucide-react';
+import { Eye, EyeOff, GripVertical, Layers, Lock, Menu, Sliders } from 'lucide-react';
 import { useCms } from '@/lib/site-web/cms-context';
 import { getRegisteredSections, subscribeSections, getSectionLabel } from './section-registry';
 import { getSectionDragController } from './SectionDragDropManager';
-import { stylePanelStore, heroSlideStore, useStoreValue } from './editor-ui-store';
+import { heroSlideStore, megaMenuLockedStore, useStoreValue } from './editor-ui-store';
 import { computeValidHeroSlides } from '@/web/pixiatech/sections/hero-slides';
 import { SectionReorderDrawer } from './SectionReorderDrawer';
 
@@ -123,8 +123,14 @@ export const CmsSectionBar: React.FC = () => {
 
   const barRef = useRef<HTMLDivElement>(null);
   const visibleKey = useVisibleSection(barRef, isEditing);
-  const stylePanelKey = useStoreValue(stylePanelStore);
   const heroSlide = useStoreValue(heroSlideStore);
+  const megaMenuLocked = useStoreValue(megaMenuLockedStore);
+
+  useEffect(() => {
+    if (!isEditing) {
+      megaMenuLockedStore.set(false);
+    }
+  }, [isEditing]);
 
   // La version du registre force un rendu quand des sections montent/démontent.
   const registryVersion = useSyncExternalStore(
@@ -186,14 +192,7 @@ export const CmsSectionBar: React.FC = () => {
   );
 
   const activeHeroSlide = heroSlides.length ? heroSlide % heroSlides.length : 0;
-  const styleOpen = stylePanelKey === activeKey;
   const [reorderDrawerOpen, setReorderDrawerOpen] = useState(false);
-
-  useEffect(() => {
-    if (!isVisible && activeKey) {
-      stylePanelStore.set(null);
-    }
-  }, [isVisible, activeKey]);
 
   if (!isEditing) return null;
 
@@ -253,28 +252,29 @@ export const CmsSectionBar: React.FC = () => {
 
             <button
               type="button"
-              onClick={() => {
-                setSelectedBlockId(activeKey);
-                stylePanelStore.set(styleOpen ? null : activeKey);
-              }}
+              onClick={() => megaMenuLockedStore.set(!megaMenuLocked)}
               style={
-                styleOpen
+                megaMenuLocked
                   ? {
+                      backgroundColor: 'var(--accent-muted, rgba(var(--ui-accent-rgb), 0.12))',
                       color: 'var(--accent, var(--ui-accent))',
-                      borderColor: 'var(--accent, var(--ui-accent))',
-                      backgroundColor: 'var(--accent-muted, rgba(var(--ui-accent-rgb), 0.15))',
+                      borderColor: 'var(--accent-border, rgba(var(--ui-accent-rgb), 0.4))',
                     }
-                  : {}
+                  : undefined
               }
               className={`flex items-center gap-1.5 px-2 py-0.5 rounded border transition-colors cursor-pointer ${
-                styleOpen
-                  ? ''
-                  : 'text-[#9A9A94] border-[#2B2B28] hover:text-white'
+                megaMenuLocked
+                  ? 'font-semibold'
+                  : 'border-[#2B2B28] text-[#9A9A94] hover:text-white'
               }`}
-              title="Ouvrir les réglages de style et espacement"
+              title={
+                megaMenuLocked
+                  ? 'Déverrouiller et fermer le méga-menu'
+                  : 'Ouvrir et verrouiller le méga-menu pour éditer son contenu'
+              }
             >
-              <Settings className="w-3.5 h-3.5" />
-              Réglages
+              {megaMenuLocked ? <Lock className="w-3.5 h-3.5" /> : <Menu className="w-3.5 h-3.5" />}
+              <span>Méga menu</span>
             </button>
 
             {activeKey === 'showreel' && (

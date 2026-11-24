@@ -14,7 +14,7 @@ const FALLBACK_LABELS: Record<string, string> = {
   markets: 'Marchés & Solutions',
   kinetic: 'Cinétique',
   products: 'Catalogue des Écrans',
-  technology: 'Technologies Propriétaires',
+  technology: 'Architecture LED Cinétique 3D',
   pitch: 'Calculateur Pas de Pixel',
   projects: 'Réalisations & Projets',
   process: 'Méthodologie & Processus',

@@ -1,6 +1,11 @@
 {
   "langName": "EN",
   "recommended": "Recommended",
+  "notFound": {
+    "heading": "Look like you're lost",
+    "message": "the page you are looking for not available!",
+    "cta": "Go to Home"
+  },
   "common": {
     "loading": "Loading...",
     "errorLoading": "Loading Error",

@@ -31,8 +31,13 @@ export async function POST(request: NextRequest) {
   try {
     const body = (await request.json().catch(() => null)) as unknown;
     const events = Array.isArray(body) ? body : (body as { events?: unknown })?.events;
-    const result = await ingestAnalyticsEvents(events, pickCountry(request));
-    return NextResponse.json({ success: true, ...result });
+    const country = pickCountry(request);
+    // Ingestion asynchrone en arrière-plan : répond immédiatement en < 5ms au navigateur
+    void ingestAnalyticsEvents(events, country).catch((err) => {
+      console.error('[analytics track background error]:', err);
+    });
+    const count = Array.isArray(events) ? events.length : 1;
+    return NextResponse.json({ success: true, accepted: count, dropped: 0 });
   } catch (err: unknown) {
     console.error('POST /api/analytics/track', err);
     return NextResponse.json(

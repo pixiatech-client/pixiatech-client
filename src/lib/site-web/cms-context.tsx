@@ -2,7 +2,6 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { DEFAULT_CMS_SETTINGS, type CmsBackendSettings, type CmsFieldTranslation, type CmsPageData } from './cms-types';
-import defaultPagesJson from '../../../data/pixel-tech-web-pages.json';
 import {
   CMS_DEFAULT_LANG,
   CMS_LANGUAGES,
@@ -16,8 +15,10 @@ import {
 const STORAGE_KEY = 'pixiatech_site_web_pages_v3';
 const SETTINGS_STORAGE_KEY = 'pixiatech_site_web_settings_v3';
 
-const DEFAULT_PAGES = ((defaultPagesJson as unknown as { pages?: Record<string, CmsPageData> })?.pages ||
-  {}) as Record<string, CmsPageData>;
+// Évite d'importer statiquement data/pixel-tech-web-pages.json dans le bundle client :
+// en dev, chaque écriture dans ce fichier JSON déclencherait sinon un rechargement Fast Refresh.
+// Les données serveur sont chargées au montage via /api/site-web/pages (avec fallback localStorage).
+const DEFAULT_PAGES: Record<string, CmsPageData> = {};
 
 // Fallback localStorage de données UNIQUEMENT (jamais utilisé comme preuve d'authentification).
 function loadLocalPages(): Record<string, CmsPageData> | null {

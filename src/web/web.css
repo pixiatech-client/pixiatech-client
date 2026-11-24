@@ -224,6 +224,28 @@ header a, header button {
    rattachement est decide par le template maitre (`attachSectionMedia`). La
    grille de deux photos d'apercu cote a cote a ete supprimee avec ce montage. */
 
+/* ── Section 07 / TECHNOLOGIES — Expandable Image Accordion (Plein panneau) ── */
+.tech-accordion {
+  position: relative;
+  width: 100%;
+}
+.tech-panel {
+  position: relative;
+  overflow: hidden;
+  height: 100%;
+}
+.tech-panel img,
+.tech-panel video {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+  object-fit: cover !important;
+  object-position: center !important;
+}
+
 /* ─────────────────────────────────────────────────────────────────────────────
    MOBILE RESPONSIVE — corrections ciblées ≤ 768 px
    Touches uniquement les sections concernées ; ne modifie pas le comportement PC.
@@ -284,7 +306,7 @@ header a, header button {
   }
   /* Panneau actif : hauteur étendue pour montrer image + description */
   .tech-panel--active {
-    height: clamp(200px, 55vw, 280px) !important;
+    height: clamp(320px, 75vw, 420px) !important;
   }
 
   /* ── Section 06 / PRODUITS (entête titre + bouton CTA) ──────────────── */
@@ -462,5 +484,41 @@ header a, header button {
   .h-manifesto, .h-featured, .h-xc, .h-insights, .h-contact {
     font-size: clamp(22px, 7vw, 32px) !important;
   }
+}
+
+/* ── ANIMORIO ROLLING DIGITS SYSTEM (OFFICIAL EXACT CSS) ── */
+.roll {
+  display: inline-flex;
+  vertical-align: top;
+  align-items: baseline;
+}
+
+.roll__col {
+  position: relative;
+  display: inline-block;
+  height: 1.1em;
+  line-height: 1.1;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(180deg, transparent, #000 22%, #000 78%, transparent);
+  mask-image: linear-gradient(180deg, transparent, #000 22%, #000 78%, transparent);
+}
+
+.roll__strip {
+  display: flex;
+  flex-direction: column;
+}
+
+.roll__strip > span {
+  display: block;
+  height: 1.1em;
+  line-height: 1.1;
+  text-align: center;
+}
+
+.roll__fixed {
+  display: inline-block;
+  height: 1.1em;
+  line-height: 1.1;
+  white-space: pre;
 }
 

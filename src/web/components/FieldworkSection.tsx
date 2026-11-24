@@ -62,6 +62,7 @@ export const FieldworkSection: React.FC<FieldworkSectionProps> = ({
       <div className="wrap">
         {/* Eyebrow */}
         <div
+          data-element-key="fieldwork-eyebrow"
           style={{
             fontSize: '11px',
             letterSpacing: '.24em',
@@ -85,11 +86,11 @@ export const FieldworkSection: React.FC<FieldworkSectionProps> = ({
           }}
         >
           {heading && (
-            <h2 className="h2" style={{ margin: 0 }}>
+            <h2 data-element-key="fieldwork-heading" className="h2" style={{ margin: 0 }}>
               {heading}
             </h2>
           )}
-          <a href="/web/projects" className="link-ul">
+          <a data-element-key="fieldwork-link" href="/web/projects" className="link-ul">
             {allProjectsLink}
           </a>
         </div>
@@ -104,8 +105,8 @@ export const FieldworkSection: React.FC<FieldworkSectionProps> = ({
             gap: '24px',
           }}
         >
-          {projects.map((proj) => (
-            <div key={proj.key}>
+          {projects.map((proj, idx) => (
+            <div data-element-key={`fieldwork-card-${idx}`} key={proj.key}>
               <div
                 style={{
                   position: 'relative',
@@ -116,6 +117,7 @@ export const FieldworkSection: React.FC<FieldworkSectionProps> = ({
               >
                 {proj.img ? (
                   <img
+                    data-element-key={`fieldwork-img-${idx}`}
                     src={proj.img}
                     alt={proj.alt}
                     className="slot-img"
@@ -131,6 +133,7 @@ export const FieldworkSection: React.FC<FieldworkSectionProps> = ({
               </div>
               {proj.caption && (
                 <div
+                  data-element-key={`fieldwork-caption-${idx}`}
                   style={{
                     fontSize: '11px',
                     letterSpacing: '.2em',

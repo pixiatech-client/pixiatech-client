@@ -143,8 +143,19 @@ export const FeaturesSection: React.FC<FeaturesSectionProps> = ({ lang = 'FR', d
         <div className="fstage">
           {/* Sticky Visual Stage — masqué s'il n'y a aucun visuel à afficher */}
           {hasStageImages && (
-          <div className="fstage-stage">
-            <div className="fstage-frame">
+          <div
+            className="fstage-stage"
+            style={{
+              top: 'calc(var(--nav-h, 88px) + var(--admin-bar-h, 0px) + var(--preview-bar-h, 0px) + var(--cms-section-bar-h, 0px) + clamp(48px, 10vh, 110px))',
+            }}
+          >
+            <div
+              className="fstage-frame"
+              style={{
+                maxHeight:
+                  'calc(100vh - var(--nav-h, 88px) - var(--admin-bar-h, 0px) - var(--preview-bar-h, 0px) - var(--cms-section-bar-h, 0px) - 140px)',
+              }}
+            >
               {featureList.map((item, idx) => {
                 const imgSrc = item.img || visualUrl;
                 if (!imgSrc) return null;

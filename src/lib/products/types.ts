@@ -16,6 +16,11 @@ export const PRODUCTS_COLLECTION = 'site_web_products';
 export const PRODUCT_CATEGORIES_COLLECTION = 'product_categories';
 export const PRODUCT_CATEGORY_GROUPS_COLLECTION = 'product_category_groups';
 export const MEGA_MENU_SETTING_ID = 'mega_menu';
+
+// ---------------------------------------------------------------------------
+// Gammes produits (collection Firestore dédiée)
+// ---------------------------------------------------------------------------
+export const PRODUCT_RANGES_COLLECTION = 'product_ranges';
 /**
  * Garde-fou de saisie, PAS une contrainte de nom court.
  *
@@ -80,6 +85,36 @@ export function groupDisplayName(g: ProductCategoryGroup, lang: 'FR' | 'EN' | st
   if (lang === 'FR' && g.labelFr && g.labelFr.trim()) return g.labelFr.trim();
   if (lang === 'EN' && g.labelEn && g.labelEn.trim()) return g.labelEn.trim();
   return g.label ?? '';
+}
+
+/**
+ * Gamme de produits (ex. PXT FLEX, PXT WAVE, PXT ÉCLAIR…).
+ * Niveau intermédiaire entre la catégorie (Écran LED intérieur…)
+ * et le nom commercial du modèle.
+ */
+export interface ProductRange {
+  id: string;
+  /** Nom canonique de repli (ex. "PXT FLEX"). */
+  name: string;
+  nameFr?: string;
+  nameEn?: string;
+  /** Slug URL-safe (ex. "pxt-flex"). */
+  slug: string;
+  active: boolean;
+  /** Ordre d'affichage (plus petit = en premier). */
+  order: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+/**
+ * Libellé affiché d'une gamme selon la langue du site.
+ * FR → nameFr sinon name ; EN → nameEn sinon name.
+ */
+export function rangeDisplayName(r: ProductRange, lang: 'FR' | 'EN' | string): string {
+  if (lang === 'FR' && r.nameFr?.trim()) return r.nameFr.trim();
+  if (lang === 'EN' && r.nameEn?.trim()) return r.nameEn.trim();
+  return r.name ?? '';
 }
 
 /**
@@ -401,6 +436,10 @@ export interface Product {
   company?: string;
   /** Série du produit (masthead du PDF) : alimente le fil d'Ariane. */
   series?: string;
+  /** ID de la gamme (référence à product_ranges). Optionnel — rétrocompatible. */
+  rangeId?: string;
+  /** Nom court de la gamme (dénormalisé pour l'affichage rapide). Ex. "PXT FLEX". */
+  rangeName?: string;
   /**
    * Avertissements de l'import PDF (libellé inconnu, valeur hors colonne,
    * cellule ignorée…). Rien n'est jamais perdu en silence : l'admin les affiche.

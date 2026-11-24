@@ -48,6 +48,20 @@ function writeJsonDb(db: CmsDb): boolean {
 
 let firestoreDisabledInDev = false;
 
+// ─────────────────────────────────────────────────────────────────────────────
+// In-memory TTL caches pour lectures instantanées (serveur chaud)
+// ─────────────────────────────────────────────────────────────────────────────
+let _cmsPagesCache: { data: Record<string, CmsPageData>; timestamp: number } | null = null;
+let _cmsSettingsCache: { data: CmsBackendSettings; timestamp: number } | null = null;
+const _cmsPageCacheMap = new Map<string, { data: CmsPageData; timestamp: number }>();
+const CMS_CACHE_TTL_MS = 60_000; // 60 secondes
+
+export function clearCmsCache(): void {
+  _cmsPagesCache = null;
+  _cmsSettingsCache = null;
+  _cmsPageCacheMap.clear();
+}
+
 function handleFirestoreDevError(op: string, err: unknown): void {
   if (process.env.NODE_ENV === 'development') {
     if (!firestoreDisabledInDev) {
@@ -217,20 +231,30 @@ export function writeCmsDb(db: CmsDb): boolean {
 // ─── Pages ────────────────────────────────────────────────────────────────────
 
 export async function getCmsPages(): Promise<Record<string, CmsPageData>> {
+  if (_cmsPagesCache && Date.now() - _cmsPagesCache.timestamp < CMS_CACHE_TTL_MS) {
+    return _cmsPagesCache.data;
+  }
   const jsonPages = readJsonDb().pages || {};
   const [firestorePages] = await Promise.all([firestoreGetAllPages()]);
-  return {
+  const result = {
     ...jsonPages,
     ...firestorePages,
   };
+  _cmsPagesCache = { data: result, timestamp: Date.now() };
+  return result;
 }
 
 export async function getCmsPage(pageId: string): Promise<CmsPageData | null> {
+  const cached = _cmsPageCacheMap.get(pageId);
+  if (cached && Date.now() - cached.timestamp < CMS_CACHE_TTL_MS) {
+    return cached.data;
+  }
   const jsonPage = readJsonDb().pages?.[pageId] || null;
   const firestorePage = await firestoreGetPage(pageId);
   if (firestorePage) {
+    let result: CmsPageData;
     if (jsonPage) {
-      return {
+      result = {
         ...jsonPage,
         ...firestorePage,
         sections: {
@@ -238,8 +262,14 @@ export async function getCmsPage(pageId: string): Promise<CmsPageData | null> {
           ...((firestorePage.sections as Record<string, unknown> | undefined) || {}),
         },
       };
+    } else {
+      result = firestorePage;
     }
-    return firestorePage;
+    _cmsPageCacheMap.set(pageId, { data: result, timestamp: Date.now() });
+    return result;
+  }
+  if (jsonPage) {
+    _cmsPageCacheMap.set(pageId, { data: jsonPage, timestamp: Date.now() });
   }
   return jsonPage;
 }
@@ -291,6 +321,9 @@ export async function saveCmsPage(pageId: string, page: CmsPageData): Promise<Cm
     throw new Error(`Échec de la sauvegarde pour la page "${pageId}".`);
   }
 
+  // Invalidation immédiate du cache CMS pour servir la nouvelle version
+  clearCmsCache();
+
   return {
     pages: { [pageId]: merged },
     updatedAt: new Date().toISOString(),
@@ -325,14 +358,21 @@ export async function saveCmsPageIfUnchanged(
 // ─── Settings ────────────────────────────────────────────────────────────────
 
 export async function getCmsSettings(): Promise<CmsBackendSettings> {
-  const firestoreSettings = await firestoreGetSettings();
-  if (firestoreSettings) {
-    return { ...DEFAULT_CMS_SETTINGS, ...firestoreSettings };
+  if (_cmsSettingsCache && Date.now() - _cmsSettingsCache.timestamp < CMS_CACHE_TTL_MS) {
+    return _cmsSettingsCache.data;
   }
-  // Fallback JSON
-  const db = readJsonDb();
-  const legacy = db.pages?.contact && (db.pages.contact.sections as Record<string, unknown> | undefined)?.settings as CmsBackendSettings | undefined;
-  return { ...DEFAULT_CMS_SETTINGS, ...(db.settings || {}), ...(legacy || {}) };
+  const firestoreSettings = await firestoreGetSettings();
+  let result: CmsBackendSettings;
+  if (firestoreSettings) {
+    result = { ...DEFAULT_CMS_SETTINGS, ...firestoreSettings };
+  } else {
+    // Fallback JSON
+    const db = readJsonDb();
+    const legacy = db.pages?.contact && (db.pages.contact.sections as Record<string, unknown> | undefined)?.settings as CmsBackendSettings | undefined;
+    result = { ...DEFAULT_CMS_SETTINGS, ...(db.settings || {}), ...(legacy || {}) };
+  }
+  _cmsSettingsCache = { data: result, timestamp: Date.now() };
+  return result;
 }
 
 export async function saveCmsSettings(partial: Partial<CmsBackendSettings>): Promise<CmsBackendSettings> {
@@ -362,10 +402,12 @@ export async function saveCmsSettings(partial: Partial<CmsBackendSettings>): Pro
     const db = readJsonDb();
     writeJsonDb({ ...db, settings: merged, updatedAt: new Date().toISOString() });
   } catch { /* ignoré */ }
+  clearCmsCache();
   return merged;
 }
 
 export async function resetCmsPages(): Promise<CmsDb> {
+  clearCmsCache();
   // Supprime toutes les pages dans Firestore
   const pages = await firestoreGetAllPages();
   await Promise.all(Object.keys(pages).map((id) => firestoreDeletePage(id)));
@@ -375,6 +417,7 @@ export async function resetCmsPages(): Promise<CmsDb> {
 }
 
 export async function deleteCmsPage(pageId: string): Promise<CmsDb> {
+  clearCmsCache();
   await firestoreDeletePage(pageId);
   try {
     const db = readJsonDb();

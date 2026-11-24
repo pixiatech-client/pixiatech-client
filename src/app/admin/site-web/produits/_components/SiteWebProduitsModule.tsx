@@ -33,6 +33,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { AnimatePresence, motion } from 'framer-motion';
+import { ProductRangeSelector } from './ProductRangeSelector';
 import {
   DndContext,
   closestCenter,
@@ -85,7 +86,9 @@ import type {
   ProductSeo,
   ProductEnvironment,
   SellingMode,
+  ProductRange,
 } from '@/lib/products/types';
+import { PRODUCT_RANGES_COLLECTION } from '@/lib/products/types';
 
 interface SiteWebProduitsModuleProps {
   initial?: Product[];
@@ -228,6 +231,15 @@ async function fetchProductGroups(): Promise<ProductCategoryGroup[]> {
     throw new Error(data.message || data.error || 'Impossible de charger les groupes de filtres.');
   }
   return data.groups as ProductCategoryGroup[];
+}
+
+async function fetchProductRanges(): Promise<ProductRange[]> {
+  const res = await fetch('/api/site-web/ranges', { credentials: 'include' });
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data.message || data.error || 'Impossible de charger les gammes.');
+  }
+  return (data.ranges ?? []) as ProductRange[];
 }
 
 /** Champs extraits du PDF, résumés pour un affichage convivial (aucun JSON). */
@@ -1955,6 +1967,14 @@ function ProductForm({
 
   const [activeSummarySection, setActiveSummarySection] = useState<SummarySectionKey | null>(null);
 
+  // Gamme de produit (taxonomie centrale PXT FLEX, PXT ÉCLAIR, PXT WAVE…)
+  const [ranges, setRanges] = useState<ProductRange[]>([]);
+  const [rangeId, setRangeId] = useState<string>(existing?.rangeId ?? '');
+  const [rangeName, setRangeName] = useState<string>(existing?.rangeName ?? '');
+  const [isCreatingRange, setIsCreatingRange] = useState(false);
+  const [newRangeInput, setNewRangeInput] = useState('');
+  const [rangeSaving, setRangeSaving] = useState(false);
+
   // Données canoniques administrables directement depuis l'espace centralisé
   const [series, setSeries] = useState<string>(existing?.series ?? '');
   const [company, setCompany] = useState<string>(existing?.company ?? '');
@@ -1991,6 +2011,8 @@ function ProductForm({
       setMediaPhotos(existing.media?.photos ?? []);
       setShopLinks(existing.shopLinks ?? {});
       setShopLinkTypes(normalizeShopLinkTypes(existing.shopLinkTypes));
+      setRangeId(existing.rangeId ?? '');
+      setRangeName(existing.rangeName ?? '');
       setSeries(existing.series ?? '');
       setCompany(existing.company ?? '');
       setEnvironment(existing.environment ?? 'indoor');
@@ -2154,6 +2176,14 @@ function ProductForm({
 
   useEffect(() => {
     let mounted = true;
+    fetchProductRanges()
+      .then((rList) => {
+        if (!mounted) return;
+        setRanges(rList);
+      })
+      .catch((err) => {
+        console.warn('[ProductForm] Impossible de charger les gammes :', err);
+      });
     Promise.all([fetchProductCategories(), fetchProductGroups()])
       .then(([list, groupList]) => {
         if (!mounted) return;
@@ -2222,6 +2252,37 @@ function ProductForm({
       toast.error((err as Error).message || 'Échec de la création du filtre.');
     } finally {
       setCategorySaving(false);
+    }
+  };
+
+  const handleCreateRange = async () => {
+    const val = newRangeInput.trim();
+    if (!val) return;
+    setRangeSaving(true);
+    try {
+      const res = await fetch('/api/site-web/ranges', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: val }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Échec de la création de la gamme.');
+      }
+      const updated = await fetchProductRanges();
+      setRanges(updated);
+      if (data.range) {
+        setRangeId(data.range.id);
+        setRangeName(data.range.name);
+      }
+      setIsCreatingRange(false);
+      setNewRangeInput('');
+      toast.success(`Gamme « ${data.range?.name || val} » enregistrée.`);
+    } catch (err) {
+      toast.error((err as Error).message || 'Erreur lors de la création de la gamme.');
+    } finally {
+      setRangeSaving(false);
     }
   };
 
@@ -2637,6 +2698,8 @@ function ProductForm({
         ...(pdfAnalysis ?? {}),
         name: cleanName,
         slug: cleanSlug,
+        rangeId: rangeId.trim() || undefined,
+        rangeName: rangeName.trim() || undefined,
         status: 'draft',
         order: 0,
         environmentCategoryIds,
@@ -2734,6 +2797,8 @@ function ProductForm({
       const body: Record<string, unknown> = {
         name: cleanName,
         slug: cleanSlug,
+        rangeId: rangeId.trim() || undefined,
+        rangeName: rangeName.trim() || undefined,
         status: nextStatus || status,
         environmentCategoryIds,
         applicationCategoryIds,
@@ -3038,10 +3103,79 @@ function ProductForm({
                 <DerivedSlugHint name={customSlug || slugify(cleanName) || ''} />
               </section>
 
-              {/* 2 · PHOTO */}
+              {/* 2 · GAMME */}
               <section>
                 <div className="flex items-center gap-2 mb-1.5">
                   <div className="flex items-center justify-center w-6 h-6 rounded-lg bg-[color:var(--ui-accent)] text-black text-[11px] font-black font-mono shrink-0">2</div>
+                  <h2 className="text-sm font-bold text-neutral-900 dark:text-white">Gamme de produits</h2>
+                  <span className="text-[11px] text-neutral-400 font-medium">(PXT FLEX, PXT ÉCLAIR, PXT WAVE…)</span>
+                </div>
+                <div className="mt-3 max-w-md">
+                  {isCreatingRange ? (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={newRangeInput}
+                        onChange={(e) => setNewRangeInput(e.target.value)}
+                        placeholder="Nom de la gamme (ex. PXT LUX)"
+                        className="flex-1 px-4 py-2.5 bg-neutral-50 dark:bg-white/5 border border-neutral-200 dark:border-white/10 rounded-xl text-sm text-neutral-900 dark:text-white outline-none focus:ring-2 focus:ring-[color:rgba(var(--ui-accent-rgb),0.5)]"
+                      />
+                      <button
+                        type="button"
+                        disabled={rangeSaving || !newRangeInput.trim()}
+                        onClick={handleCreateRange}
+                        className="px-3.5 py-2.5 rounded-xl bg-[color:var(--ui-accent)] text-black text-xs font-bold hover:opacity-90 disabled:opacity-50 transition-all cursor-pointer"
+                      >
+                        {rangeSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Créer'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setIsCreatingRange(false); setNewRangeInput(''); }}
+                        className="px-3 py-2.5 rounded-xl bg-neutral-200 dark:bg-white/10 text-neutral-700 dark:text-neutral-300 text-xs font-semibold hover:bg-neutral-300 transition-all cursor-pointer"
+                      >
+                        Annuler
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <ProductRangeSelector
+                        ranges={ranges}
+                        rangeId={rangeId}
+                        rangeName={rangeName}
+                        onSelect={(id, nameVal) => {
+                          setRangeId(id);
+                          setRangeName(nameVal);
+                        }}
+                        onRangesChange={setRanges}
+                        onRequestCreate={() => setIsCreatingRange(true)}
+                        onNotify={toast}
+                        buttonClassName="flex-1 flex items-center justify-between gap-2 px-4 py-3 bg-neutral-50 dark:bg-white/5 border border-neutral-200 dark:border-white/10 rounded-xl text-sm text-neutral-900 dark:text-white outline-none focus:ring-2 focus:ring-[color:rgba(var(--ui-accent-rgb),0.5)] transition-all cursor-pointer text-left"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setIsCreatingRange(true)}
+                        className="px-3 py-3 rounded-xl border border-dashed border-neutral-300 dark:border-white/20 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:border-[color:var(--ui-accent)] text-xs font-semibold shrink-0 transition-colors cursor-pointer"
+                        title="Créer une nouvelle gamme"
+                      >
+                        + Nouvelle
+                      </button>
+                    </div>
+                  )}
+                  {rangeName && (
+                    <div className="mt-2 flex items-center gap-2 text-xs">
+                      <span className="text-neutral-400">Gamme liée :</span>
+                      <span className="px-2 py-0.5 rounded-md bg-[color:rgba(var(--ui-accent-rgb),0.15)] text-[color:var(--ui-accent)] font-mono font-bold">
+                        {rangeName}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </section>
+
+              {/* 3 · PHOTO */}
+              <section>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <div className="flex items-center justify-center w-6 h-6 rounded-lg bg-[color:var(--ui-accent)] text-black text-[11px] font-black font-mono shrink-0">3</div>
                   <h2 className="text-sm font-bold text-neutral-900 dark:text-white">La photo du produit</h2>
                   <span className="text-[11px] text-neutral-400 font-medium">(optionnelle — ajustée ensuite à la direction artistique)</span>
                 </div>
@@ -3078,10 +3212,10 @@ function ProductForm({
                 )}
               </section>
 
-              {/* 3 · IMAGE AU SURVOL */}
+              {/* 4 · IMAGE AU SURVOL */}
               <section>
                 <div className="flex items-center gap-2 mb-1.5">
-                  <div className="flex items-center justify-center w-6 h-6 rounded-lg bg-[color:var(--ui-accent)] text-black text-[11px] font-black font-mono shrink-0">3</div>
+                  <div className="flex items-center justify-center w-6 h-6 rounded-lg bg-[color:var(--ui-accent)] text-black text-[11px] font-black font-mono shrink-0">4</div>
                   <h2 className="text-sm font-bold text-neutral-900 dark:text-white">L&apos;image au survol</h2>
                   <span className="text-[11px] text-neutral-400 font-medium">
                     (optionnelle — affichée au survol dans « Tous les produits »)
@@ -3122,10 +3256,10 @@ function ProductForm({
                 )}
               </section>
 
-              {/* 4 · PDF technique */}
+              {/* 5 · PDF technique */}
               <section>
                 <div className="flex items-center gap-2 mb-1.5">
-                  <div className="flex items-center justify-center w-6 h-6 rounded-lg bg-[color:var(--ui-accent)] text-black text-[11px] font-black font-mono shrink-0">4</div>
+                  <div className="flex items-center justify-center w-6 h-6 rounded-lg bg-[color:var(--ui-accent)] text-black text-[11px] font-black font-mono shrink-0">5</div>
                   <h2 className="text-sm font-bold text-neutral-900 dark:text-white">La fiche technique (PDF)</h2>
                   <span className="text-[11px] text-neutral-400 font-medium">(optionnelle — remplit automatiquement la fiche)</span>
                 </div>
@@ -3159,9 +3293,9 @@ function ProductForm({
             </>
           ) : (
             <>
-              {/* ÉDITION : nom + lien de la page + statut + photo + données extraites */}
+              {/* ÉDITION : nom + gamme + lien de la page + statut + photo + données extraites */}
               <section>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl">
                   <div>
                     <h2 className="text-sm font-bold text-neutral-900 dark:text-white mb-1.5">Nom du produit</h2>
                     <input
@@ -3182,6 +3316,69 @@ function ProductForm({
                       </span>
                       {name.length > MAX_PRODUCT_NAME_LENGTH && (
                         <span className="text-[11px] font-bold text-rose-500">Trop long : réduisez le nom.</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h2 className="text-sm font-bold text-neutral-900 dark:text-white mb-1.5">Gamme de produits</h2>
+                    {isCreatingRange ? (
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="text"
+                          value={newRangeInput}
+                          onChange={(e) => setNewRangeInput(e.target.value)}
+                          placeholder="ex. PXT FLEX"
+                          className="w-full px-3 py-3 bg-neutral-50 dark:bg-white/5 border border-neutral-200 dark:border-white/10 rounded-xl text-sm text-neutral-900 dark:text-white outline-none focus:ring-2 focus:ring-[color:rgba(var(--ui-accent-rgb),0.5)]"
+                        />
+                        <button
+                          type="button"
+                          disabled={rangeSaving || !newRangeInput.trim()}
+                          onClick={handleCreateRange}
+                          className="px-3 py-3 rounded-xl bg-[color:var(--ui-accent)] text-black text-xs font-bold shrink-0 cursor-pointer"
+                        >
+                          {rangeSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'OK'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { setIsCreatingRange(false); setNewRangeInput(''); }}
+                          className="px-2.5 py-3 rounded-xl bg-neutral-200 dark:bg-white/10 text-xs shrink-0 cursor-pointer"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1.5">
+                        <ProductRangeSelector
+                          ranges={ranges}
+                          rangeId={rangeId}
+                          rangeName={rangeName}
+                          onSelect={(id, nameVal) => {
+                            setRangeId(id);
+                            setRangeName(nameVal);
+                          }}
+                          onRangesChange={setRanges}
+                          onRequestCreate={() => setIsCreatingRange(true)}
+                          onNotify={toast}
+                        />
+                      </div>
+                    )}
+                    <div className="mt-1.5 flex items-center justify-between">
+                      {rangeName ? (
+                        <span className="text-[11px] font-mono text-[color:var(--ui-accent)] font-semibold truncate">
+                          Gamme : {rangeName}
+                        </span>
+                      ) : (
+                        <span className="text-[11px] text-neutral-400">Aucune gamme liée</span>
+                      )}
+                      {!isCreatingRange && (
+                        <button
+                          type="button"
+                          onClick={() => setIsCreatingRange(true)}
+                          className="text-[11px] text-sky-600 hover:text-sky-700 dark:text-sky-400 font-semibold cursor-pointer shrink-0"
+                        >
+                          + Nouvelle
+                        </button>
                       )}
                     </div>
                   </div>

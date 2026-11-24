@@ -8,7 +8,6 @@ import { RevealRoot } from './RevealRoot';
 import { Language } from '../pixiatech-translations';
 import { useI18n } from '@/lib/i18n';
 import { ConsultationModal } from './ConsultationModal';
-import { BackToTopButton } from './BackToTopButton';
 
 // All Sections in Authentic PixiaTech Hierarchy
 import { HeroSection } from './sections/HeroSection';
@@ -17,7 +16,7 @@ import { ShowreelSection } from './sections/ShowreelSection';
 import { MarketsSection } from './sections/MarketsSection';
 import { KineticSection } from './sections/KineticSection';
 import { ProductsSection } from './sections/ProductsSection';
-import { TechShowcaseSection } from './sections/TechShowcaseSection';
+import { FeaturedKineticSection } from './sections/led3d/FeaturedKineticSection';
 import { PitchSection } from './sections/PitchSection';
 import {
   ProjectsSection,
@@ -28,14 +27,14 @@ import {
 import { NextSection } from './sections/NextSection';
 
 import { EditableWrapper } from '../cms/EditableWrapper';
-import type { StyleKey } from '../cms/SectionStylePanel';
+import type { StyleKey } from '../cms/useSectionStyle';
 import {
   BGMAP_STYLE_KEYS,
   BGMAP_TITLELESS_KEYS,
   FULL_STYLE_KEYS,
   SHOWREEL_STYLE_KEYS,
   SPACING_KEYS,
-} from '../cms/SectionStylePanel';
+} from '../cms/useSectionStyle';
 import { SectionDragDropProvider } from '../cms/SectionDragDropManager';
 import { useCms } from '@/lib/site-web/cms-context';
 
@@ -123,8 +122,12 @@ const HOME_SECTIONS: Record<
     render: (p) => <ProductsSection lang={p.lang} onOpenConsultation={p.openConsultation} />,
   },
   technology: {
-    label: 'Technologies Propriétaires (5 Techs)',
-    render: (p) => <TechShowcaseSection lang={p.lang} onOpenConsultation={p.openConsultation} />,
+    label: 'Architecture LED Cinétique 3D (MK-250)',
+    render: () => (
+      <div id="technology">
+        <FeaturedKineticSection />
+      </div>
+    ),
   },
   pitch: {
     label: 'Calculateur Pas de Pixel & Recul',
@@ -217,7 +220,6 @@ export function PixiaHomePage() {
         </SectionDragDropProvider>
       </main>
       <PixiaFooter companyName="PIXIATECH" lang={effectiveLang} onOpenConsultation={openConsultation} />
-      <BackToTopButton lang={effectiveLang} />
     </RevealRoot>
   );
 }

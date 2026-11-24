@@ -44,6 +44,19 @@ export const DEFAULT_PRODUCT_SECTION_ORDER = [
   'next',
 ];
 
+/**
+ * Réservation globale sous le header fixe, portée par le `<main>` commun à
+ * TOUTES les fiches produit (anciennes, nouvelles, clonées).
+ *
+ * Le header est `position: fixed` et le layout réserve déjà la hauteur des
+ * barres admin / preview / CMS. Il ne reste donc que `--nav-h` pour ne pas
+ * passer derrière lui, puis une vraie respiration verticale. Porter cet
+ * espace sur le conteneur principal — et non sur le titre ni sur le hero —
+ * le rend indépendant du `paddingTop` éventuellement enregistré par le CMS
+ * sur la section hero (une valeur 0 faisait coller tout le contenu au header).
+ */
+const PRODUCT_MAIN_TOP = 'calc(var(--nav-h, 88px) + clamp(50px, 7vh, 90px))';
+
 interface ProductPageTemplateProps {
   slug: string;
   fallbackProduct: Product;
@@ -68,7 +81,6 @@ function ProductView({ slug, fallbackProduct, isPreview = false }: ProductPageTe
   const [brandName] = useState<string>(DEFAULT_COMPANY_NAME);
   const [isConsultationOpen, setIsConsultationOpen] = useState<boolean>(false);
   const [activeDatasheetModel, setActiveDatasheetModel] = useState<SpecModel | null>(null);
-  const [pdfExporting, setPdfExporting] = useState<boolean>(false);
   const { setCurrentPageId, isEditing, setCurrentLang, currentPageData } = useCms();
   // Meme source de langue que le header (contexte i18n global, persiste).
   const { locale } = useI18n();
@@ -198,26 +210,6 @@ function ProductView({ slug, fallbackProduct, isPreview = false }: ProductPageTe
     return DEFAULT_PRODUCT_SECTION_ORDER;
   }, [configuredOrder]);
 
-  /**
-   * Export PDF de la fiche technique — chargement lazy pour ne pas alourdir le
-   * bundle initial des pages produit où l'utilisateur ne clique pas forcément.
-   */
-  const handleDownloadPdf = async () => {
-    if (pdfExporting) return;
-    setPdfExporting(true);
-    try {
-      const { exportProductToPdf } = await import('@/lib/products/export-product-pdf');
-      await exportProductToPdf(product, {
-        lang: effectiveLang,
-        companyName: companyName,
-      });
-    } catch (err) {
-      console.error('Erreur export PDF fiche technique:', err);
-    } finally {
-      setPdfExporting(false);
-    }
-  };
-
   const productSections: Record<string, { label: string; render: () => React.ReactNode } | null> = {
     hero: {
       label: effectiveLang === 'FR' ? 'Hero Produit' : 'Product Hero',
@@ -229,8 +221,10 @@ function ProductView({ slug, fallbackProduct, isPreview = false }: ProductPageTe
           onOpenQuote={() => setIsConsultationOpen(true)}
           lang={effectiveLang}
           series={text(product.series)}
-          onDownloadPdf={handleDownloadPdf}
-          pdfExporting={pdfExporting}
+          rangeName={text(product.rangeName)}
+          // Source de vérité : le nom enregistré sur le produit courant
+          // (Firestore/CMS), jamais un titre de page CMS hérité d'un clone.
+          authoritativeTitle={productTitle ?? slug}
         />
       ),
     },
@@ -322,7 +316,15 @@ function ProductView({ slug, fallbackProduct, isPreview = false }: ProductPageTe
 
       {/* Main Product Sections —
           chaque section est enveloppée par EditableWrapper et ordonnée dynamiquement via SectionDragDropProvider */}
-      <main>
+      <main
+        data-product-main
+        style={{
+          paddingTop: PRODUCT_MAIN_TOP,
+          // Le hero ne rejoue pas l'offset du header : il est porté par <main>.
+          // Sa valeur par défaut (utilisée par les autres pages) reste intacte.
+          ['--product-hero-top' as string]: '0px',
+        }}
+      >
         <SectionDragDropProvider allSectionKeys={activeOrder}>
           {activeOrder.map((key) => {
             const sec = productSections[key];

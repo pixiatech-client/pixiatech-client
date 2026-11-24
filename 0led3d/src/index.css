@@ -1,0 +1,71 @@
+@import "tailwindcss";
+
+/* ============================================================================
+   THÈME DU MODULE TESSERA MK-250
+   Lors de l'intégration dans votre application, modifiez uniquement ces
+   variables CSS pour changer automatiquement la couleur d'accentuation
+   (boutons, faisceaux Light Beam, onglets actifs, repères et icônes).
+   ============================================================================ */
+:root {
+  --tessera-accent: #e87a24;
+  --tessera-accent-hover: #f28936;
+  --tessera-accent-light: #fff3d6;
+  --tessera-accent-rgb: 232, 122, 36;
+}
+
+@theme {
+  --font-display: "Archivo", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    background-color: #090a0c;
+    color: #f4f4f5;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+  }
+}
+
+/* ============================================================================
+   VERRE PLAT TRANSPARENT / FLAT GLASSMORPHISM (SANS BISEAUTAGE NI RELIEF)
+   ============================================================================ */
+.tessera-glass {
+  background: rgba(12, 13, 17, 0.72);
+  backdrop-filter: blur(22px) saturate(145%);
+  -webkit-backdrop-filter: blur(22px) saturate(145%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.48);
+}
+
+.tessera-glass-header {
+  background: rgba(255, 255, 255, 0.045);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tessera-glass-well {
+  background: rgba(0, 0, 0, 0.36);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tessera-glass-pill {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.11);
+}
+
+.tessera-glass-pill:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}

@@ -24,11 +24,13 @@ import {
   ArrowLeft,
   ArrowDownRight,
   Eye,
+  Move,
   RotateCcw,
 } from 'lucide-react';
 import {
   findSectionKey,
   getElementLinkKey,
+  getRegisteredSections,
   getSectionNode,
   resolveElementKey,
   setSelectedElement,
@@ -139,6 +141,18 @@ export const VisualInPlaceEditor: React.FC = () => {
   const [libraryError, setLibraryError] = useState<string | null>(null);
   const [libraryQuery, setLibraryQuery] = useState<string>('');
   const [libraryFilter, setLibraryFilter] = useState<'all' | 'image' | 'video' | 'used'>('all');
+
+  // Sélection multiple par rectangle (lasso) + déplacement de groupe
+  const [marqueeRect, setMarqueeRect] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
+  const [groupItems, setGroupItems] = useState<
+    { el: HTMLElement; sectionKey: string; elementKey: string; baseOffsetX: number; baseOffsetY: number }[]
+  >([]);
+  const [groupBox, setGroupBox] = useState<{ top: number; left: number; width: number; height: number } | null>(null);
+  const suppressNextClickRef = useRef(false);
+  const pagesRef = useRef(pages);
+  pagesRef.current = pages;
+  const currentPageDataRef = useRef(currentPageData);
+  currentPageDataRef.current = currentPageData;
 
   // Éléments de survol pour l'inspection
   const hoveredElementRef = useRef<HTMLElement | null>(null);
@@ -355,7 +369,6 @@ export const VisualInPlaceEditor: React.FC = () => {
         outline: 2px dashed var(--ui-accent, #C3F910) !important;
         outline-offset: 3px !important;
         cursor: text !important;
-        position: relative !important;
       }
       .pixia-el-selected {
         outline: 2px solid var(--ui-accent, #C3F910) !important;
@@ -382,7 +395,6 @@ export const VisualInPlaceEditor: React.FC = () => {
         outline-offset: 3px !important;
         cursor: pointer !important;
         filter: brightness(1.08) !important;
-        position: relative !important;
       }
       [contenteditable="true"] {
         -webkit-text-fill-color: currentColor !important;
@@ -458,7 +470,26 @@ export const VisualInPlaceEditor: React.FC = () => {
         if (!sectionKey && !contactKey) continue;
 
         if (isMediaElement(raw)) {
-          if (sectionKey) return { el: raw, sectionKey, media: true };
+          if (sectionKey) {
+            // Dans le Hero, l'image/vidéo d'arrière-plan est gérée par le panneau de réglage
+            // (icône engrenage à droite) : ne pas ouvrir la modale au clic sur le fond.
+            if (sectionKey === 'hero') {
+              const secNode = getSectionNode(sectionKey);
+              const secRect = secNode?.getBoundingClientRect();
+              const cs = window.getComputedStyle(raw);
+              const parentCs = raw.parentElement ? window.getComputedStyle(raw.parentElement) : null;
+              const isAbs = cs.position === 'absolute' || parentCs?.position === 'absolute';
+              const r = raw.getBoundingClientRect();
+              const coversHero = Boolean(
+                secRect && secRect.width > 0 && secRect.height > 0 &&
+                r.width >= secRect.width * 0.7 && r.height >= secRect.height * 0.7
+              );
+              if (raw.closest('.pointer-events-none') || (isAbs && coversHero)) {
+                continue;
+              }
+            }
+            return { el: raw, sectionKey, media: true };
+          }
           continue;
         }
 
@@ -510,12 +541,20 @@ export const VisualInPlaceEditor: React.FC = () => {
 
     // 2. Click Handler Universel avec interception de navigation
     const handleClick = (e: MouseEvent) => {
+      if (suppressNextClickRef.current) {
+        e.preventDefault();
+        e.stopPropagation();
+        suppressNextClickRef.current = false;
+        return;
+      }
       // Origine réelle de l'événement : si le clic provient directement
       // de l'interface CMS (barre d'outils, bouton, icône SVG, input, etc.),
       // on ne doit ni intercepter, ni sélectionner d'élément sous-jacent.
       if (e.target && isCmsTarget(e.target)) {
         return;
       }
+      setGroupItems([]);
+      setGroupBox(null);
 
       const picked = pickAtPoint(e.clientX, e.clientY);
       if (!picked) {
@@ -658,11 +697,12 @@ export const VisualInPlaceEditor: React.FC = () => {
       // Cas 2: Clic sur un texte — feuille de texte ou élément à clé explicite, bouton ou lien.
       const isButtonOrLink = Boolean(clickableParent) || target.tagName === 'BUTTON' || target.tagName === 'A';
       if (
-        !target.hasAttribute('data-text-key') &&
-        !target.hasAttribute('data-element-key') &&
-        !target.hasAttribute('data-editable') &&
-        !isSimpleTextElement(target) &&
-        !isButtonOrLink
+        target.hasAttribute('data-cms-group') ||
+        (!target.hasAttribute('data-text-key') &&
+          !target.hasAttribute('data-element-key') &&
+          !target.hasAttribute('data-editable') &&
+          !isSimpleTextElement(target) &&
+          !isButtonOrLink)
       ) {
         // Sélection seule (barre d'outils), pas d'édition.
         return;
@@ -769,13 +809,199 @@ export const VisualInPlaceEditor: React.FC = () => {
 
     // 3. Désélection : Échap ou clic sur une zone neutre.
     const handleDeselectKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setSelectedElement(null);
+      if (e.key === 'Escape') {
+        setSelectedElement(null);
+        setGroupItems([]);
+        setGroupBox(null);
+      }
     };
 
     const handleDeselectClick = (e: MouseEvent) => {
       const target = e.target as Element | null;
       if (target && isCmsTarget(target)) return;
-      if (!target || target === document.body) setSelectedElement(null);
+      if (!target || target === document.body) {
+        setSelectedElement(null);
+        setGroupItems([]);
+        setGroupBox(null);
+      }
+    };
+
+    // 4. Sélection multiple par rectangle (cliquer-glisser)
+    let dragStart: { x: number; y: number } | null = null;
+    let isMarqueeActive = false;
+
+    const handleMarqueeDown = (e: MouseEvent) => {
+      if (e.button !== 0) return;
+      const target = e.target as HTMLElement | null;
+      if (!target || isCmsTarget(target)) return;
+      if (target.isContentEditable || target.closest('[contenteditable="true"]')) return;
+      dragStart = { x: e.clientX, y: e.clientY };
+      isMarqueeActive = false;
+    };
+
+    const handleMarqueeMove = (e: MouseEvent) => {
+      if (!dragStart) return;
+      const dx = e.clientX - dragStart.x;
+      const dy = e.clientY - dragStart.y;
+      if (!isMarqueeActive && Math.hypot(dx, dy) > 8) {
+        isMarqueeActive = true;
+        document.body.style.userSelect = 'none';
+        clearHover();
+      }
+      if (!isMarqueeActive) return;
+      setMarqueeRect({
+        x: Math.min(dragStart.x, e.clientX),
+        y: Math.min(dragStart.y, e.clientY),
+        w: Math.abs(dx),
+        h: Math.abs(dy),
+      });
+    };
+
+    const handleMarqueeUp = (e: MouseEvent) => {
+      if (!dragStart) return;
+      const start = dragStart;
+      dragStart = null;
+      if (!isMarqueeActive) return;
+      isMarqueeActive = false;
+      document.body.style.userSelect = '';
+      suppressNextClickRef.current = true;
+      window.setTimeout(() => {
+        suppressNextClickRef.current = false;
+      }, 50);
+
+      const rx = Math.min(start.x, e.clientX);
+      const ry = Math.min(start.y, e.clientY);
+      const rw = Math.abs(e.clientX - start.x);
+      const rh = Math.abs(e.clientY - start.y);
+      setMarqueeRect(null);
+
+      if (rw < 10 || rh < 10) return;
+
+      const rRight = rx + rw;
+      const rBottom = ry + rh;
+      const rawMatches: { el: HTMLElement; sectionKey: string }[] = [];
+
+      for (const { node: secNode, sectionKey } of getRegisteredSections()) {
+        const secRect = secNode.getBoundingClientRect();
+        const candidates = secNode.querySelectorAll<HTMLElement>(
+          '[data-element-key], [data-text-key], button, a, h1, h2, h3, h4, p, span, li, img, video'
+        );
+        for (const el of Array.from(candidates)) {
+          if (isCmsTarget(el)) continue;
+          if (el.closest('svg')) continue;
+          // Ne jamais sélectionner les images/vidéos d'arrière-plan (elles doivent rester figées)
+          if (isMediaElement(el)) {
+            if (el.closest('.pointer-events-none')) continue;
+            const cs = window.getComputedStyle(el);
+            const parentCs = el.parentElement ? window.getComputedStyle(el.parentElement) : null;
+            if (cs.position === 'absolute' || parentCs?.position === 'absolute') {
+              const r = el.getBoundingClientRect();
+              if (secRect.width > 0 && secRect.height > 0 && r.width >= secRect.width * 0.7 && r.height >= secRect.height * 0.7) {
+                continue;
+              }
+            }
+          }
+          const isExplicit = el.hasAttribute('data-element-key') || el.hasAttribute('data-text-key');
+          const isAction = el.tagName === 'BUTTON' || el.tagName === 'A';
+          if (!isExplicit && !isAction && !isMediaElement(el) && !isSimpleTextElement(el)) continue;
+          const rect = el.getBoundingClientRect();
+          if (rect.width <= 0 || rect.height <= 0) continue;
+          const intersects =
+            rect.left < rRight &&
+            rect.right > rx &&
+            rect.top < rBottom &&
+            rect.bottom > ry;
+          if (intersects) {
+            // Si le texte est dans un badge/pilule ou item avec icône/point (inline-flex avec svg/dot),
+            // promouvoir la sélection vers ce conteneur pour déplacer icône, bordure et texte ensemble.
+            let chosen: HTMLElement = el;
+            const parent = el.parentElement;
+            // Promotion vers le conteneur parent (badge/pilule/item avec icône ou point) :
+            // on remonte si le parent est un inline-flex compact, qu'il contient un SVG,
+            // un élément arrondi, ou un point Unicode/texte court (● ○ •) servant d'icône.
+            const isInlineCompact = (el: HTMLElement) => {
+              const d = window.getComputedStyle(el).display;
+              return d === 'inline-flex' || d === 'inline-grid' || d === 'flex' || d === 'grid';
+            };
+            const hasIconContent = (el: HTMLElement) =>
+              el.querySelector('svg') !== null ||
+              el.className.includes('rounded') ||
+              // Repère un "point" : premier enfant de type texte dont le contenu est ≤4 chars
+              Array.from(el.childNodes).some(
+                (n) =>
+                  (n instanceof Text && n.textContent && n.textContent.trim().length <= 4) ||
+                  (n instanceof HTMLElement &&
+                    n.children.length === 0 &&
+                    (n.textContent || '').trim().length <= 4)
+              );
+            if (
+              parent &&
+              parent !== secNode &&
+              !isCmsTarget(parent) &&
+              parent.children.length <= 5 &&
+              isInlineCompact(parent) &&
+              hasIconContent(parent)
+            ) {
+              chosen = parent;
+            }
+            if (!rawMatches.some((m) => m.el === chosen)) {
+              rawMatches.push({ el: chosen, sectionKey });
+            }
+          }
+        }
+      }
+
+      // Éviter de sélectionner à la fois un parent et ses enfants (ex: bouton + span)
+      const deduped = rawMatches.filter(
+        (m) => !rawMatches.some((other) => other.el !== m.el && other.el.contains(m.el))
+      );
+
+      for (const prev of Array.from(document.querySelectorAll('.pixia-el-selected'))) {
+        prev.classList.remove('pixia-el-selected', 'pixia-el-anchor', 'pixia-el-media');
+      }
+
+      if (deduped.length === 0) {
+        setGroupItems([]);
+        setGroupBox(null);
+        return;
+      }
+
+      setSelectedElement(null);
+      const sectionsData = (currentPageDataRef.current?.sections || {}) as Record<string, Record<string, unknown>>;
+      const items = deduped.map(({ el, sectionKey }) => {
+        el.classList.add('pixia-el-selected');
+        const root = getSectionNode(sectionKey);
+        const elementKey = resolveElementKey(el, root);
+        const bag = (sectionsData[sectionKey]?._elements as Record<string, ElementStyle> | undefined) || {};
+        const st = bag[elementKey] || {};
+        return {
+          el,
+          sectionKey,
+          elementKey,
+          baseOffsetX: st.offsetX ?? 0,
+          baseOffsetY: st.offsetY ?? 0,
+        };
+      });
+
+      let minL = Infinity;
+      let minT = Infinity;
+      let maxR = -Infinity;
+      let maxB = -Infinity;
+      for (const item of items) {
+        const rect = item.el.getBoundingClientRect();
+        minL = Math.min(minL, rect.left);
+        minT = Math.min(minT, rect.top);
+        maxR = Math.max(maxR, rect.right);
+        maxB = Math.max(maxB, rect.bottom);
+      }
+
+      setGroupItems(items);
+      setGroupBox({
+        top: minT,
+        left: minL,
+        width: Math.max(0, maxR - minL),
+        height: Math.max(0, maxB - minT),
+      });
     };
 
     document.addEventListener('mouseover', handleMouseOver, true);
@@ -783,13 +1009,20 @@ export const VisualInPlaceEditor: React.FC = () => {
     document.addEventListener('click', handleClick, true);
     document.addEventListener('keydown', handleDeselectKey);
     document.addEventListener('click', handleDeselectClick);
+    document.addEventListener('mousedown', handleMarqueeDown, true);
+    window.addEventListener('mousemove', handleMarqueeMove);
+    window.addEventListener('mouseup', handleMarqueeUp);
 
     return () => {
+      document.body.style.userSelect = '';
       document.removeEventListener('mouseover', handleMouseOver, true);
       document.removeEventListener('mouseout', handleMouseOut, true);
       document.removeEventListener('click', handleClick, true);
       document.removeEventListener('keydown', handleDeselectKey);
       document.removeEventListener('click', handleDeselectClick);
+      document.removeEventListener('mousedown', handleMarqueeDown, true);
+      window.removeEventListener('mousemove', handleMarqueeMove);
+      window.removeEventListener('mouseup', handleMarqueeUp);
       const el = document.getElementById('pixia-visual-editor-styles');
       if (el) el.remove();
     };
@@ -1580,7 +1813,7 @@ export const VisualInPlaceEditor: React.FC = () => {
               </div>
             )}
 
-            {/* Actions */}
+      {/* Actions */}
             <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#222220]">
               <button
                 type="button"
@@ -1606,6 +1839,109 @@ export const VisualInPlaceEditor: React.FC = () => {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Rectangle de sélection multiple (lasso) */}
+      {marqueeRect && (
+        <div
+          data-cms-ui="true"
+          className="fixed z-[290] pointer-events-none border-2 border-emerald-400 bg-emerald-400/15 rounded-sm"
+          style={{
+            left: marqueeRect.x,
+            top: marqueeRect.y,
+            width: marqueeRect.w,
+            height: marqueeRect.h,
+          }}
+        />
+      )}
+
+      {/* Cadre vert de sélection de groupe avec poignée flèche 4 directions directement sur le cadre */}
+      {isEditing && groupItems.length > 0 && groupBox && (
+        <div
+          data-cms-ui="true"
+          className="fixed z-[270] pointer-events-none border-2 border-emerald-400/90 rounded"
+          style={{
+            left: groupBox.left - 6,
+            top: groupBox.top - 6,
+            width: groupBox.width + 12,
+            height: groupBox.height + 12,
+          }}
+        >
+          {/* Poignée de déplacement 4 directions sur le bord supérieur du carré vert */}
+          <button
+            type="button"
+            data-cms-ui="true"
+            onMouseDown={(downEv) => {
+              downEv.preventDefault();
+              downEv.stopPropagation();
+              const startX = downEv.clientX;
+              const startY = downEv.clientY;
+              const startBox = { ...groupBox };
+              let lastDx = 0;
+              let lastDy = 0;
+
+              const onMove = (moveEv: MouseEvent) => {
+                lastDx = Math.round(moveEv.clientX - startX);
+                lastDy = Math.round(moveEv.clientY - startY);
+                for (const item of groupItems) {
+                  const nx = item.baseOffsetX + lastDx;
+                  const ny = item.baseOffsetY + lastDy;
+                  if (window.getComputedStyle(item.el).display === 'inline') {
+                    item.el.style.setProperty('display', 'inline-block', 'important');
+                  }
+                  item.el.style.setProperty('transform', `translate(${nx}px, ${ny}px)`, 'important');
+                  item.el.setAttribute('data-cms-offset', '1');
+                }
+                setGroupBox({
+                  ...startBox,
+                  left: startBox.left + lastDx,
+                  top: startBox.top + lastDy,
+                });
+              };
+
+              const onUp = () => {
+                window.removeEventListener('mousemove', onMove);
+                window.removeEventListener('mouseup', onUp);
+                if (lastDx === 0 && lastDy === 0) return;
+                const updatedItems = groupItems.map((item) => {
+                  const nx = item.baseOffsetX + lastDx;
+                  const ny = item.baseOffsetY + lastDy;
+                  updateElementStyle(item.sectionKey, item.elementKey, { offsetX: nx, offsetY: ny });
+                  return { ...item, baseOffsetX: nx, baseOffsetY: ny };
+                });
+                setGroupItems(updatedItems);
+                void persist(`Groupe (${updatedItems.length} éléments)`);
+              };
+
+              window.addEventListener('mousemove', onMove);
+              window.addEventListener('mouseup', onUp);
+            }}
+            title={`Déplacer le groupe (${groupItems.length} éléments)`}
+            aria-label="Déplacer le groupe"
+            className="pointer-events-auto absolute -top-3.5 left-1/2 -translate-x-1/2 w-7 h-7 rounded-md bg-emerald-500 text-black border border-emerald-300 shadow-lg flex items-center justify-center cursor-move hover:bg-emerald-400 transition-colors"
+          >
+            <Move className="w-4 h-4" />
+          </button>
+
+          {/* Bouton discret pour fermer la sélection */}
+          <button
+            type="button"
+            data-cms-ui="true"
+            onClick={(e) => {
+              e.stopPropagation();
+              for (const item of groupItems) {
+                item.el.classList.remove('pixia-el-selected');
+              }
+              setGroupItems([]);
+              setGroupBox(null);
+            }}
+            title="Fermer la sélection (Échap)"
+            aria-label="Fermer la sélection"
+            className="pointer-events-auto absolute -top-3 -right-3 w-6 h-6 rounded-full bg-[#111110] text-emerald-400 border border-emerald-400/80 shadow flex items-center justify-center cursor-pointer hover:bg-emerald-500 hover:text-black transition-colors"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
         </div>
       )}
     </>

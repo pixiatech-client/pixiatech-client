@@ -1,0 +1,6 @@
+{
+  "name": "TESSERA — Architecture Cinétique & Surfaces LED",
+  "description": "Systèmes d'affichage LED cinétiques motorisés sur glissières linéaires pour l'architecture, la scénographie et les espaces d'exception.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

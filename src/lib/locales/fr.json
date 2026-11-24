@@ -1,6 +1,11 @@
 {
   "langName": "FR",
   "recommended": "Recommandé",
+  "notFound": {
+    "heading": "On dirait que vous êtes perdu",
+    "message": "La page que vous cherchez n'est pas disponible !",
+    "cta": "Retour à l'accueil"
+  },
   "common": {
     "loading": "Chargement...",
     "errorLoading": "Erreur de chargement",

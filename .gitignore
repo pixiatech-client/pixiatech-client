@@ -99,3 +99,7 @@ dump-*.js
 /scripts/probe-assets/
 /scripts/ref-*.png
 /backups/
+
+/0slider/
+/0slider.zip
+

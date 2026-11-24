@@ -119,6 +119,11 @@ export default async function WebSlugPage({
     return <GestionCookiesPage />;
   }
 
-  // Unknown or empty slug → PixiaTech home (preserves the 307-not-found→home fix)
-  return <PixiaHomePage />;
+  // `/web` (ou `/` réécrit sur le domaine vitrine) reste la page d'accueil.
+  // Un slug réellement inconnu doit afficher la page 404, pas l'accueil.
+  if (!slug || slug.length === 0) {
+    return <PixiaHomePage />;
+  }
+
+  notFound();
 }

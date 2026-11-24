@@ -1,13 +1,14 @@
 'use client';
 
 import React from 'react';
-import { LedCanvasText } from './LedCanvasText';
+import { DotMatrixSignButton } from './DotMatrixSignButton';
 import { Language } from '../data/translations';
 import { useCms } from '@/lib/site-web/cms-context';
 import type { ProductHero } from '@/lib/products/types';
 import { text } from '@/lib/products/display';
 
 import { getCmsText, normalizeLang } from '@/lib/site-web/cms-i18n';
+import styles from './HeroSection.module.css';
 
 interface HeroSectionProps {
   onOpenQuote: () => void;
@@ -27,6 +28,16 @@ interface HeroSectionProps {
   productPhotosInOverview?: boolean;
   /** Série du produit (masthead PDF) : dernier fil d'Ariane. */
   series?: string;
+  /** Gamme du produit (ex. PXT AIR, PXT FINE) affichée dans le panneau matrice LED. */
+  rangeName?: string;
+  /**
+   * Nom faisant autorité, fourni uniquement par la fiche produit : il vient
+   * de la donnée produit (Firestore/CMS) et remplace toute surcharge de titre
+   * stockée sur la page CMS (les clones pouvaient conserver un ancien titre).
+   * Les autres pages utilisant le hero ne le passent pas : leur comportement
+   * CMS reste inchangé.
+   */
+  authoritativeTitle?: string;
   /**
    * Callback pour déclencher le téléchargement de la fiche technique en PDF.
    * Fourni uniquement depuis la page produit `/web/product/[slug]`.
@@ -44,6 +55,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   image,
   data,
   series,
+  rangeName,
+  authoritativeTitle,
   productPhotosInOverview = false,
   onDownloadPdf,
   pdfExporting = false,
@@ -59,8 +72,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     text(series);
 
   // Lecture CMS prioritaire avec support multilingue FR/EN
-  const title = getCmsText(cmsHero, 'title', activeLang, initialTitle || text(data?.title) || '');
+  const title =
+    authoritativeTitle ??
+    getCmsText(cmsHero, 'title', activeLang, initialTitle || text(data?.title) || '');
   const subtitle = getCmsText(cmsHero, 'subtitle', activeLang, text(data?.subtitle) ?? '');
+  const signBrand = getCmsText(cmsHero, 'signBrand', activeLang, 'PIXIATECH');
+  const signNote = getCmsText(cmsHero, 'signNote', activeLang, subtitle);
   const quoteCta = getCmsText(
     cmsHero,
     'primaryCta',
@@ -88,7 +105,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       className="theme-dark"
       style={{
         position: 'relative',
-        padding: 'calc(var(--nav-h, 88px) + clamp(50px, 7vh, 90px)) 0 0',
+        // Sur les fiches produit, `<main>` porte déjà la hauteur du header :
+        // `--product-hero-top` y vaut 0. Ailleurs, le repli historique est
+        // conservé à l'identique (aucune autre page n'est modifiée).
+        padding: 'var(--product-hero-top, calc(var(--nav-h, 88px) + clamp(24px, 4vh, 56px))) 0 0',
         background: 'radial-gradient(110% 80% at 50% 0%, #101010 0%, #080808 60%)',
       }}
     >
@@ -117,9 +137,21 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           )}
         </div>
 
-        {/* Dynamic Animated LED Matrix Canvas */}
-        <div data-text-key="title" title="Cliquer pour éditer le titre">
-          <LedCanvasText label={title} />
+        {/* Le panneau matrice LED affiche la gamme du produit (rangeName > series > title). */}
+        <div
+          data-text-key="title"
+          data-cms-group="true"
+          style={{ marginLeft: 'auto', marginRight: 'auto' }}
+          title="Cliquer pour sélectionner / redimensionner le panneau"
+        >
+          <h1 className="sr-only">{title}</h1>
+          <DotMatrixSignButton
+            label={text(rangeName) || text(series) || title}
+            done={text(rangeName) || text(series) || title}
+            brand={signBrand}
+            note={signNote}
+            noteDone={signNote}
+          />
         </div>
 
         {heroImage && (
@@ -187,7 +219,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               type="button"
               data-text-key="primaryCta"
               onClick={onOpenQuote}
-              className="btn btn-solid"
+              className={`btn btn-solid ${styles.primaryCta}`}
               style={{
                 padding: '16px 28px',
                 textTransform: 'none',
@@ -199,7 +231,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               {quoteCta}
             </button>
             {secondaryCta && (
-              <a className="btn btn-ghost" href="#specs" style={{ alignSelf: 'center' }}>
+              <a className={`btn btn-ghost ${styles.datasheetCta}`} href="#specs" style={{ alignSelf: 'center' }}>
                 {secondaryCta}
               </a>
             )}

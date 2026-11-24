@@ -46,9 +46,19 @@ let _settingsCache: { data: Settings; timestamp: number } | null = null;
 const SETTINGS_CACHE_TTL_MS = 60_000; // 60 seconds
 let _activeThemeCache: { themeId: string; accentColor?: string; timestamp: number } | null = null;
 const THEME_CACHE_TTL_MS = 60_000; // 60 seconds
+let _deliveryCache: { data: DeliverySettings; timestamp: number } | null = null;
+let _laborCache: { data: LaborSettings; timestamp: number } | null = null;
+let _locationsCache: { data: Locations; timestamp: number } | null = null;
+const LOCATIONS_CACHE_TTL_MS = 300_000; // 5 minutes
+const _productsCache = new Map<string, { data: { products: Product[]; hasMore: boolean }; timestamp: number }>();
+const PRODUCTS_CACHE_TTL_MS = 60_000; // 60 seconds
 
 export async function clearSettingsCache(): Promise<void> {
   _settingsCache = null;
+  _deliveryCache = null;
+  _laborCache = null;
+  _locationsCache = null;
+  _productsCache.clear();
 }
 
 export async function clearThemeCache(): Promise<void> {
@@ -160,6 +170,9 @@ export async function getSettings(): Promise<Settings> {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const getDeliverySettings = cache(async (): Promise<DeliverySettings> => {
+  if (_deliveryCache && Date.now() - _deliveryCache.timestamp < SETTINGS_CACHE_TTL_MS) {
+    return _deliveryCache.data;
+  }
   const { adminDb } = getFirebaseAdmin();
   // Configuration sûre par défaut : AUCUN tarif n'est inventé. Une lecture reste
   // une lecture — aucun document Firestore n'est créé en écriture ici.
@@ -175,10 +188,9 @@ export const getDeliverySettings = cache(async (): Promise<DeliverySettings> => 
   try {
     const docRef = adminDb.collection('settings').doc(DELIVERY_DOC_ID);
     const docSnap = await docRef.get();
-    if (docSnap.exists) {
-      return { ...defaults, ...docSnap.data() };
-    }
-    return defaults;
+    const result = docSnap.exists ? { ...defaults, ...docSnap.data() } : defaults;
+    _deliveryCache = { data: result, timestamp: Date.now() };
+    return result;
   } catch (error) {
     console.error("Error fetching delivery settings from Firestore:", error);
     return defaults;
@@ -186,6 +198,9 @@ export const getDeliverySettings = cache(async (): Promise<DeliverySettings> => 
 });
 
 export const getLaborSettings = cache(async (): Promise<LaborSettings> => {
+  if (_laborCache && Date.now() - _laborCache.timestamp < SETTINGS_CACHE_TTL_MS) {
+    return _laborCache.data;
+  }
   const { adminDb } = getFirebaseAdmin();
   // Configuration sûre par défaut : aucune règle d'installation n'est inventée.
   // Une lecture reste une lecture — aucun document Firestore n'est créé ici.
@@ -195,10 +210,9 @@ export const getLaborSettings = cache(async (): Promise<LaborSettings> => {
   try {
     const docRef = adminDb.collection('settings').doc(LABOR_DOC_ID);
     const docSnap = await docRef.get();
-    if (docSnap.exists) {
-      return docSnap.data() as LaborSettings;
-    }
-    return defaults;
+    const result = docSnap.exists ? (docSnap.data() as LaborSettings) : defaults;
+    _laborCache = { data: result, timestamp: Date.now() };
+    return result;
   } catch (error) {
     console.error("Error fetching labor settings from Firestore:", error);
     return defaults;
@@ -211,6 +225,12 @@ export const getLaborSettings = cache(async (): Promise<LaborSettings> => {
 
 export async function getProducts(options: { page?: number; limit?: number } = {}): Promise<{ products: Product[]; hasMore: boolean }> {
   const { page = 1, limit = 5 } = options;
+  const cacheKey = `${page}_${limit}`;
+  const cached = _productsCache.get(cacheKey);
+  if (cached && Date.now() - cached.timestamp < PRODUCTS_CACHE_TTL_MS) {
+    return cached.data;
+  }
+
   const { adminDb } = getFirebaseAdmin();
   if (!adminDb) {
     console.error("Firestore is not initialized for getProducts.");
@@ -287,7 +307,9 @@ export async function getProducts(options: { page?: number; limit?: number } = {
       }
     }
 
-    return { products, hasMore };
+    const result = { products, hasMore };
+    _productsCache.set(cacheKey, { data: result, timestamp: Date.now() });
+    return result;
   } catch (error) {
     console.error("Error fetching products from Firestore:", error);
     return { products: [], hasMore: false };
@@ -316,10 +338,15 @@ export async function getProductSpecs(): Promise<Record<string, ProductSpec[]>> 
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function getLocations(): Promise<Locations> {
+  if (_locationsCache && Date.now() - _locationsCache.timestamp < LOCATIONS_CACHE_TTL_MS) {
+    return _locationsCache.data;
+  }
   const { adminDb } = getFirebaseAdmin();
   const citiesSnapshot = await adminDb.collection('cities').get();
   const cities = citiesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-  return Promise.resolve({ villes: cities as any });
+  const result: Locations = { villes: cities as any };
+  _locationsCache = { data: result, timestamp: Date.now() };
+  return result;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

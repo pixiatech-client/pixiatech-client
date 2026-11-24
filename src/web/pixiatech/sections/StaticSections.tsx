@@ -201,6 +201,7 @@ export const ProjectsSection: React.FC<SectionCommonProps> = ({
             return (
             <div
               key={p.title}
+              data-element-key={`project-card-${idx}`}
               style={{ display: 'block' }}
               className="group"
             >
@@ -255,6 +256,7 @@ export const ProjectsSection: React.FC<SectionCommonProps> = ({
               </div>
 
               <div
+                data-element-key={`project-meta-${idx}`}
                 style={{
                   display: 'flex',
                   justifyContent: 'space-between',
@@ -264,6 +266,7 @@ export const ProjectsSection: React.FC<SectionCommonProps> = ({
                 }}
               >
                 <span
+                  data-element-key={`project-title-${idx}`}
                   style={{
                     fontSize: 14.5,
                     fontWeight: 700,
@@ -274,6 +277,7 @@ export const ProjectsSection: React.FC<SectionCommonProps> = ({
                   {projectTitle(p, lang)}
                 </span>
                 <span
+                  data-element-key={`project-year-${idx}`}
                   style={{
                     fontSize: 10.5,
                     letterSpacing: '.14em',
@@ -287,6 +291,7 @@ export const ProjectsSection: React.FC<SectionCommonProps> = ({
               </div>
 
               <div
+                data-element-key={`project-tag-${idx}`}
                 style={{
                   fontSize: 10.5,
                   letterSpacing: '.18em',

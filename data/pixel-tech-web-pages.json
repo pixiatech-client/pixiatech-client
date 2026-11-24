@@ -4,7 +4,7 @@
       "id": "home",
       "name": "home",
       "slug": "/home",
-      "updatedAt": "2026-11-22T11:30:06.872Z",
+      "updatedAt": "2026-11-24T20:25:31.350Z",
       "sections": {
         "pixia-web": {
           "text_1790257213042": "sdsdsdsdÉDITEUR DIRECT : CLIQUEZ SUR UN TEXTE OU UNE IMAGE",
@@ -71,8 +71,8 @@
           },
           "text_1790511327180": "SUPPORTQSZS",
           "text_1790511351723": "SUPPORT 2026",
-          "minHeight": 1375,
-          "paddingBottom": 1,
+          "minHeight": 1341,
+          "paddingBottom": 0,
           "_elements": {
             "section:1/div:1/div:2/div:3/span:2": {
               "text_fr": "CONFIGURATION",
@@ -125,14 +125,44 @@
           "layout": {
             "visible": true
           },
-          "badge": "05 / MÉTHODOLOGIE & PROCESS"
+          "badge": "05 / MÉTHODOLOGIE & PROCESS",
+          "bgColor": "#000001"
         },
         "insights": {
-          "minHeight": 965,
-          "paddingBottom": 159,
+          "minHeight": 698,
+          "paddingBottom": 0,
           "insight_1_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2F58a79297-045f-44ea-b870-572542b62d61_9yq9y.png?alt=media",
           "insight_0_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FInstallation_d_un_mur_LED_professionnel_qf9zi.png?alt=media",
-          "_elements": {},
+          "_elements": {
+            "section:1/div:1/div:2/a:1": {
+              "offsetX": 5,
+              "offsetY": -100
+            },
+            "section:1/div:1/div:2/a:2": {
+              "offsetX": 5,
+              "offsetY": -100
+            },
+            "section:1/div:1/div:2/a:3": {
+              "offsetX": 5,
+              "offsetY": -100
+            },
+            "badge": {
+              "offsetX": 4,
+              "offsetY": -65
+            },
+            "title": {
+              "offsetX": 4,
+              "offsetY": -65
+            },
+            "titleLine2": {
+              "offsetX": 4,
+              "offsetY": -65
+            },
+            "primaryCta": {
+              "offsetX": -11,
+              "offsetY": 39
+            }
+          },
           "insight_2_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2F8d23b33e-8cda-483f-9765-8d5a2859c6ab_4ngro.png?alt=media",
           "visible": true,
           "layout": {
@@ -260,7 +290,7 @@
               "fr": {
                 "value": "Illuminez votre enseigne.",
                 "status": "source",
-                "updatedAt": "2026-11-19T18:27:46.469Z",
+                "updatedAt": "2026-11-22T17:31:41.244Z",
                 "sourceText": "Illuminez votre enseigne."
               }
             },
@@ -353,23 +383,6 @@
             "div:2/section:1/div:7/div:1/div:3/span:1": {
               "text": "PARIS · MONDE 11"
             },
-            "tagline": {
-              "fontSize": "30px",
-              "offsetX": 0,
-              "offsetY": 8,
-              "backgroundColor": "transparent",
-              "color": "#ffffff",
-              "fontWeight": "700",
-              "width": "499px"
-            },
-            "description": {
-              "fontSize": "16px",
-              "color": "#ffffff",
-              "backgroundColor": "transparent",
-              "offsetX": 0,
-              "offsetY": 0,
-              "width": "631px"
-            },
             "section:1/div:5/div:1/div:3/span:1": {
               "text_fr": "INSTALLATION PARTOUT EN FRANCE",
               "color": "#ffffff",
@@ -419,11 +432,6 @@
                 "gradientDirection": "to bottom"
               }
             },
-            "title": {
-              "fontSize": "62px",
-              "width": "898px",
-              "backgroundColor": "transparent"
-            },
             "slideImage2": {
               "src": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FECRAN_LED_LOCATION__2___2___2___2___2___2__etc9v.webp?alt=media",
               "mediaType": "image",
@@ -456,7 +464,7 @@
                 "type": "signature",
                 "intensity": 60,
                 "duration": 300,
-                "color": "var(--accent, var(--ui-accent))",
+                "color": "#cf5a1c",
                 "amplitude": 12
               },
               "borderRadius": "8px",
@@ -473,7 +481,7 @@
               "backgroundColor": "#0a0a09",
               "borderWidth": "2px",
               "borderStyle": "solid",
-              "borderColor": "var(--accent, var(--ui-accent))",
+              "borderColor": "#cf5a1c",
               "buttonEffect": {
                 "type": "none"
               },
@@ -489,6 +497,14 @@
             },
             "slider2.primaryCta": {
               "href": "https://google.frzzzzz"
+            },
+            "title": {
+              "width": "646px",
+              "fontSize": "60px"
+            },
+            "tagline": {
+              "fontSize": "40px",
+              "width": "440px"
             }
           },
           "slideImage2": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FECRAN_LED_LOCATION__2___2___2___2___2___2__etc9v.webp?alt=media",
@@ -531,6 +547,15 @@
               "textAlign": "center",
               "text": "Built for every environment. 111",
               "text_fr": "Built for every environment. "
+            },
+            "badge": {
+              "offsetX": 192,
+              "offsetY": 28
+            },
+            "title": {
+              "offsetX": 185,
+              "offsetY": 28,
+              "color": "var(--accent, var(--ui-accent))"
             }
           },
           "market_rental_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FLOCATION_ECRAN_EVENMENTIEL_3yxyk.webp?alt=media",
@@ -547,7 +572,7 @@
           },
           "minHeight": 724,
           "paddingBottom": 0,
-          "bgColor": "#0d0d0c",
+          "bgColor": "#fcfcfc",
           "textColor": "#f5f4f0",
           "_i18n": {
             "badge": {
@@ -573,8 +598,9 @@
               "text_fr": "ENGAGEMENTS"
             },
             "div:1/div:1/div:2/div:2/a:1": {
-              "offsetX": 16,
-              "offsetY": 0
+              "offsetX": 3,
+              "offsetY": -5,
+              "width": "197px"
             }
           }
         },
@@ -597,26 +623,27 @@
               "width": "1036px",
               "fontSize": "60px"
             },
+            "title": {
+              "color": "var(--accent, var(--ui-accent))",
+              "offsetX": -37,
+              "offsetY": 41,
+              "width": "1382px"
+            },
             "subtitle": {
-              "width": "862px",
-              "offsetX": -56,
-              "offsetY": -24,
-              "fontSize": "18px",
-              "fontWeight": "400"
+              "fontSize": "20px",
+              "width": "494px",
+              "offsetX": -30,
+              "offsetY": -23
             },
             "badge": {
-              "offsetX": -64,
-              "offsetY": 32
-            },
-            "title": {
-              "fontSize": "50px",
-              "textAlign": "right"
+              "offsetX": -38,
+              "offsetY": 59
             }
           },
           "paddingTop": 0,
           "overlayColor": "#d50b0b",
           "overlayOpacity": 85,
-          "minHeight": 632,
+          "minHeight": 528,
           "marginBottom": 0,
           "paddingBottom": 0,
           "visible": true,
@@ -705,6 +732,7 @@
               "fontSize": "48px"
             },
             "title": {
+              "color": "#cf5a1c",
               "fontSize": "60px"
             },
             "section:1/div:1/div:2/div:2/div:2/div:3/div:2/div:1": {
@@ -751,16 +779,17 @@
           "titleLine2": "Où vous placer face à l’écran ?",
           "title": "À quelle distance pour une image parfaite ?",
           "description": "Le pas de pixel est l’espace entre deux pixels, mesuré en millimètres. Plus il est petit, plus l’image est détaillée à courte distance. Lorsque le public est plus éloigné, un pas plus large peut suffire. Le bon choix dépend de la distance de visionnage et des contenus à afficher",
-          "minHeight": 974,
-          "paddingBottom": 52,
+          "minHeight": 833,
+          "paddingBottom": 0,
           "textColor": "#292929",
           "overlayOpacity": 0,
           "overlayColor": "#212121",
-          "badge": "03 / PAS DE PIXEL"
+          "badge": "03 / PAS DE PIXEL",
+          "bgColor": "#ffffff"
         },
         "projects": {
-          "minHeight": 1070,
-          "paddingBottom": 105,
+          "minHeight": 797,
+          "paddingBottom": 0,
           "_elements": {
             "div:1/section:1/div:1/div:3/div:1/div:2/span:1": {
               "text_fr": "Comment sublime la scène du festival d’été."
@@ -797,13 +826,17 @@
               "width": "477px"
             },
             "section:1/div:1/div:3/div:1/div:2/span:2": {
-              "text_fr": "2026"
+              "text_fr": "2026",
+              "offsetX": 2,
+              "offsetY": -157
             },
             "section:1/div:1/div:3/div:1/div:2/span:2/span:1": {
               "text_fr": "— 2026"
             },
             "section:1/div:1/div:3/div:2/div:2/span:2": {
-              "text_fr": "2026"
+              "text_fr": "2026",
+              "offsetX": 2,
+              "offsetY": -157
             },
             "section:1/div:1/div:3/div:1/div:2/span:1": {
               "text_fr": ""
@@ -814,11 +847,15 @@
             },
             "project_1_image": {
               "src": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fshowreel%2Fvideos%2FDesign_sans_titre_nntt3r.mp4?alt=media",
-              "mediaType": "video"
+              "mediaType": "video",
+              "offsetX": -4,
+              "offsetY": -2
             },
             "project_0_image": {
               "src": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fshowreel%2Fvideos%2F2025-11-07___09.19.19_a8308487_06z5m5.mp4?alt=media",
-              "mediaType": "video"
+              "mediaType": "video",
+              "offsetX": -4,
+              "offsetY": -2
             },
             "primaryCta": {
               "hover": {
@@ -839,14 +876,46 @@
               "borderRadius": "12px"
             },
             "title": {
-              "width": "1014px"
+              "width": "822px",
+              "color": "#cf5a1c",
+              "fontSize": "60px",
+              "offsetX": 2,
+              "offsetY": 15
             },
             "titleLine2": {
               "width": "497px"
             },
             "description": {
-              "offsetX": 0,
-              "offsetY": -84
+              "offsetX": 2,
+              "offsetY": -69
+            },
+            "badge": {
+              "offsetX": 2,
+              "offsetY": 15
+            },
+            "section:1/div:1/div:3/div:1/div:2": {
+              "offsetX": -6,
+              "offsetY": 155
+            },
+            "section:1/div:1/div:3/div:2/div:2": {
+              "offsetX": -6,
+              "offsetY": 155
+            },
+            "project-meta-0": {
+              "offsetX": -5,
+              "offsetY": -130
+            },
+            "project-meta-1": {
+              "offsetX": -3,
+              "offsetY": -136
+            },
+            "project-card-0": {
+              "offsetX": 6,
+              "offsetY": -94
+            },
+            "project-card-1": {
+              "offsetX": 6,
+              "offsetY": -94
             }
           },
           "_i18n": {
@@ -893,7 +962,8 @@
           "paddingTop": 108,
           "title": "Déployé dans le monde réel.\nDe l’idée à la première lumière.",
           "titleLine2": "",
-          "badge": "07 / PROJETS & RÉALISATIONS"
+          "badge": "07 / PROJETS & RÉALISATIONS",
+          "bgColor": "#0d0d0d"
         },
         "showreel": {
           "_elements": {
@@ -930,6 +1000,10 @@
             "ch2Desc": {
               "color": "#ffffff",
               "backgroundColor": "transparent"
+            },
+            "div:1/div:1/div:1/div:1/div:1/img:1": {
+              "offsetX": 2,
+              "offsetY": 5
             }
           },
           "_i18n": {
@@ -1505,18 +1579,18 @@
             },
             "cameraKeyframes": {
               "fr": {
-                "value": "[{\"id\":\"kf-1793720895300\",\"name\":\"Clé 03\",\"time\":0,\"zoom\":1.12,\"x\":0.1,\"y\":-5.3,\"originX\":49.97,\"originY\":57.2,\"easing\":\"easeInOut\"},{\"id\":\"kf-1795115225769\",\"name\":\"Clé 01\",\"time\":0.91,\"zoom\":25,\"x\":-13.6,\"y\":-5.3,\"originX\":49.2,\"originY\":60,\"easing\":\"easeInOut\"},{\"id\":\"kf-1793720813029\",\"name\":\"Clé 02\",\"time\":0.778,\"zoom\":12.41,\"x\":6,\"y\":-5.3,\"originX\":49.1,\"originY\":61.2,\"easing\":\"easeInOut\"}]",
+                "value": "[{\"id\":\"kf-1793720895300\",\"name\":\"Clé 03\",\"time\":0,\"zoom\":1.12,\"x\":0.1,\"y\":-5.3,\"originX\":49.97,\"originY\":57.2,\"easing\":\"easeInOut\"},{\"id\":\"kf-1793720813029\",\"name\":\"Clé 02\",\"time\":0.778,\"zoom\":12.41,\"x\":6,\"y\":-5.3,\"originX\":49.1,\"originY\":61.2,\"easing\":\"easeInOut\"}]",
                 "status": "source",
-                "updatedAt": "2026-11-19T19:11:09.611Z",
-                "sourceText": "[{\"id\":\"kf-1793720895300\",\"name\":\"Clé 03\",\"time\":0,\"zoom\":1.12,\"x\":0.1,\"y\":-5.3,\"originX\":49.97,\"originY\":57.2,\"easing\":\"easeInOut\"},{\"id\":\"kf-1795115225769\",\"name\":\"Clé 01\",\"time\":0.91,\"zoom\":25,\"x\":-13.6,\"y\":-5.3,\"originX\":49.2,\"originY\":60,\"easing\":\"easeInOut\"},{\"id\":\"kf-1793720813029\",\"name\":\"Clé 02\",\"time\":0.778,\"zoom\":12.41,\"x\":6,\"y\":-5.3,\"originX\":49.1,\"originY\":61.2,\"easing\":\"easeInOut\"}]"
+                "updatedAt": "2026-11-22T16:54:18.470Z",
+                "sourceText": "[{\"id\":\"kf-1793720895300\",\"name\":\"Clé 03\",\"time\":0,\"zoom\":1.12,\"x\":0.1,\"y\":-5.3,\"originX\":49.97,\"originY\":57.2,\"easing\":\"easeInOut\"},{\"id\":\"kf-1793720813029\",\"name\":\"Clé 02\",\"time\":0.778,\"zoom\":12.41,\"x\":6,\"y\":-5.3,\"originX\":49.1,\"originY\":61.2,\"easing\":\"easeInOut\"}]"
               }
             },
             "ledKeyframes": {
               "fr": {
-                "value": "[{\"id\":\"led-kf-1\",\"name\":\"Clé 01 — Grille globale\",\"time\":0,\"zoom\":1,\"x\":0,\"y\":0,\"originX\":50,\"originY\":50,\"easing\":\"easeInOut\"},{\"id\":\"led-kf-2\",\"name\":\"Clé 02 — Cabinets 500mm\",\"time\":0.502,\"zoom\":2.2,\"x\":-10.9,\"y\":0,\"originX\":50,\"originY\":62.5,\"easing\":\"easeInOut\"}]",
+                "value": "[{\"id\":\"led-kf-1795365305242\",\"name\":\"Clé 01\",\"time\":0.002,\"zoom\":1.16,\"x\":-6.4,\"y\":1.5,\"originX\":0,\"originY\":88.6,\"easing\":\"linear\"},{\"id\":\"led-kf-1795365852935\",\"name\":\"Clé 02\",\"time\":0.737,\"zoom\":2.26,\"x\":-52.8,\"y\":34.9,\"originX\":0,\"originY\":88.6,\"easing\":\"easeInOut\"}]",
                 "status": "source",
-                "updatedAt": "2026-11-05T15:35:36.535Z",
-                "sourceText": "[{\"id\":\"led-kf-1\",\"name\":\"Clé 01 — Grille globale\",\"time\":0,\"zoom\":1,\"x\":0,\"y\":0,\"originX\":50,\"originY\":50,\"easing\":\"easeInOut\"},{\"id\":\"led-kf-2\",\"name\":\"Clé 02 — Cabinets 500mm\",\"time\":0.502,\"zoom\":2.2,\"x\":-10.9,\"y\":0,\"originX\":50,\"originY\":62.5,\"easing\":\"easeInOut\"}]"
+                "updatedAt": "2026-11-22T16:54:35.420Z",
+                "sourceText": "[{\"id\":\"led-kf-1795365305242\",\"name\":\"Clé 01\",\"time\":0.002,\"zoom\":1.16,\"x\":-6.4,\"y\":1.5,\"originX\":0,\"originY\":88.6,\"easing\":\"linear\"},{\"id\":\"led-kf-1795365852935\",\"name\":\"Clé 02\",\"time\":0.737,\"zoom\":2.26,\"x\":-52.8,\"y\":34.9,\"originX\":0,\"originY\":88.6,\"easing\":\"easeInOut\"}]"
               }
             }
           },
@@ -1621,9 +1695,9 @@
           "videoScreenTop": "53.412",
           "videoScreenWidth": "14.319",
           "videoScreenHeight": "11.44",
-          "cameraKeyframes": "[{\"id\":\"kf-1793720895300\",\"name\":\"Clé 03\",\"time\":0,\"zoom\":1.12,\"x\":0.1,\"y\":-5.3,\"originX\":49.97,\"originY\":57.2,\"easing\":\"easeInOut\"},{\"id\":\"kf-1795115225769\",\"name\":\"Clé 01\",\"time\":0.91,\"zoom\":25,\"x\":-13.6,\"y\":-5.3,\"originX\":49.2,\"originY\":60,\"easing\":\"easeInOut\"},{\"id\":\"kf-1793720813029\",\"name\":\"Clé 02\",\"time\":0.778,\"zoom\":12.41,\"x\":6,\"y\":-5.3,\"originX\":49.1,\"originY\":61.2,\"easing\":\"easeInOut\"}]",
+          "cameraKeyframes": "[{\"id\":\"kf-1793720895300\",\"name\":\"Clé 03\",\"time\":0,\"zoom\":1.12,\"x\":0.1,\"y\":-5.3,\"originX\":49.97,\"originY\":57.2,\"easing\":\"easeInOut\"},{\"id\":\"kf-1793720813029\",\"name\":\"Clé 02\",\"time\":0.778,\"zoom\":12.41,\"x\":6,\"y\":-5.3,\"originX\":49.1,\"originY\":61.2,\"easing\":\"easeInOut\"}]",
           "showVideoOutline": false,
-          "ledKeyframes": "[{\"id\":\"led-kf-1\",\"name\":\"Clé 01 — Grille globale\",\"time\":0,\"zoom\":1,\"x\":0,\"y\":0,\"originX\":50,\"originY\":50,\"easing\":\"easeInOut\"},{\"id\":\"led-kf-2\",\"name\":\"Clé 02 — Cabinets 500mm\",\"time\":0.502,\"zoom\":2.2,\"x\":-10.9,\"y\":0,\"originX\":50,\"originY\":62.5,\"easing\":\"easeInOut\"}]"
+          "ledKeyframes": "[{\"id\":\"led-kf-1795365305242\",\"name\":\"Clé 01\",\"time\":0.002,\"zoom\":1.16,\"x\":-6.4,\"y\":1.5,\"originX\":0,\"originY\":88.6,\"easing\":\"linear\"},{\"id\":\"led-kf-1795365852935\",\"name\":\"Clé 02\",\"time\":0.737,\"zoom\":2.26,\"x\":-52.8,\"y\":34.9,\"originX\":0,\"originY\":88.6,\"easing\":\"easeInOut\"}]"
         },
         "technology": {
           "_elements": {
@@ -1681,7 +1755,8 @@
               "width": "210px"
             },
             "title": {
-              "width": "959px"
+              "width": "959px",
+              "color": "#cf5a1c"
             },
             "tech_solidskin_image": {
               "src": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2Fe04d1b87-6c5c-46ae-b3ce-fa2978731c40__2__lvn1h.webp?alt=media",
@@ -1728,6 +1803,101 @@
               "backgroundColor": "transparent",
               "width": "277px",
               "fontWeight": "700"
+            },
+            "div:1/section:1/div:2/div:1/h1:1": {
+              "color": "var(--accent, var(--ui-accent))",
+              "fontSize": "59px",
+              "width": "512px",
+              "offsetX": -5,
+              "offsetY": 93
+            },
+            "div:1/section:1/div:2/div:1/p:1": {
+              "text_fr": "08. Produit Phare · Architecture LED Cinétique",
+              "color": "#7d7d7d",
+              "offsetX": 2,
+              "offsetY": 93,
+              "textTransform": "uppercase",
+              "fontSize": "10.5px"
+            },
+            "div:1/section:1/div:2/div:1/p:1/span:1": {
+              "color": "#ffffff"
+            },
+            "div:1/section:1/div:3/div:1/button:1": {
+              "offsetX": 6,
+              "offsetY": -49,
+              "fontSize": "16px"
+            },
+            "div:1/section:1/div:2/div:2/div:1/button:3": {
+              "offsetX": 146,
+              "offsetY": 7
+            },
+            "div:1/section:1/div:2/div:1/p:2": {
+              "offsetX": -1,
+              "offsetY": 98
+            },
+            "div:1/section:1/div:2/img:1": {
+              "offsetX": 2,
+              "offsetY": 5
+            },
+            "div:1/section:1/div:4/div:1/div:1/span:2": {
+              "offsetX": 2,
+              "offsetY": 0
+            },
+            "div:1/section:1/div:4/div:1/div:2/span:1/span:1": {
+              "offsetX": 2,
+              "offsetY": 0
+            },
+            "div:1/section:1/div:4/div:1/div:2/span:2/span:1": {
+              "offsetX": 2,
+              "offsetY": 0
+            },
+            "div:1/section:1/div:4/div:1/div:2/span:3/span:1": {
+              "offsetX": 2,
+              "offsetY": 0
+            },
+            "div:1/section:1/div:4/div:1/div:2/span:4/span:1": {
+              "offsetX": 2,
+              "offsetY": 0
+            },
+            "div:1/section:1/div:4/div:1/div:3/h2:1": {
+              "offsetX": 32,
+              "offsetY": -77
+            },
+            "div:1/section:1/div:4/div:1/div:3/p:1": {
+              "offsetX": 32,
+              "offsetY": -77
+            },
+            "div:1/section:1/div:4/div:1/div:4/button:1": {
+              "offsetX": 32,
+              "offsetY": -77
+            },
+            "div:1/section:1/div:4/div:1/div:4/button:2": {
+              "offsetX": 32,
+              "offsetY": -77
+            },
+            "mk250-view-switcher": {
+              "offsetX": 195,
+              "offsetY": -33
+            },
+            "mk250-photo-badge": {
+              "offsetX": 30,
+              "offsetY": -77
+            },
+            "mk250-photo-check-0": {
+              "offsetX": 30,
+              "offsetY": -77
+            },
+            "mk250-photo-check-1": {
+              "offsetX": 30,
+              "offsetY": -77
+            },
+            "mk250-photo-check-2": {
+              "offsetX": 30,
+              "offsetY": -77
+            },
+            "mk250-photo-check-3": {
+              "offsetX": 30,
+              "offsetY": -77
             }
           },
           "_i18n": {
@@ -1858,8 +2028,9 @@
           "title": "Pourquoi choisir\nPIXIATECH ?",
           "description": "Un projet maîtrisé, des coûts détaillés et un interlocuteur présent avant comme après l’installation.",
           "badge": "08 / NOS ENGAGEMENTS",
-          "minHeight": 1044,
-          "paddingBottom": 90
+          "minHeight": 573,
+          "paddingBottom": 29,
+          "bgColor": "#000001"
         },
         "experience": {
           "image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2F_cran_LED_incurv__immersif_pour_exp_rience_visuelle_grand_format_4ap8x.webp?alt=media",
@@ -1885,8 +2056,8 @@
               }
             }
           },
-          "minHeight": 900,
-          "paddingBottom": 80,
+          "minHeight": 632,
+          "paddingBottom": 0,
           "visible": true,
           "layout": {
             "visible": true
@@ -1967,8 +2138,8 @@
             "visible": true
           },
           "primaryCta": "EXPLORER LE CATALOGUE →",
-          "minHeight": 542,
-          "paddingBottom": 151,
+          "minHeight": 428,
+          "paddingBottom": 37,
           "bgColor": "#f5f4f0"
         },
         "kinetic": {
@@ -2003,7 +2174,7 @@
           },
           "visible": false,
           "layout": {
-            "visible": false
+            "visible": true
           },
           "minHeight": 1666,
           "paddingBottom": 56,
@@ -2032,11 +2203,21 @@
                 "updatedAt": "2026-11-07T12:58:06.576Z",
                 "sourceText": "Écran LED cinétique d’intérieur : modules motorisés de 248,5 mm, caisson 500 × 500 mm et mouvement synchronisé. Une solution d’affichage dynamique pour la scénographie, l’événementiel et les installations LED grand format."
               }
+            },
+            "badge": {
+              "fr": {
+                "value": "09 / FEATURED — SPKI-250 KINETIC",
+                "status": "source",
+                "updatedAt": "2026-11-24T17:48:02.869Z",
+                "sourceText": "09 / FEATURED — SPKI-250 KINETIC"
+              }
             }
           },
           "title2": "La profondeur devient partie   ",
           "title3": "intégrante de l'image.",
-          "description": "Écran LED cinétique d’intérieur : modules motorisés de 248,5 mm, caisson 500 × 500 mm et mouvement synchronisé. Une solution d’affichage dynamique pour la scénographie, l’événementiel et les installations LED grand format."
+          "description": "Écran LED cinétique d’intérieur : modules motorisés de 248,5 mm, caisson 500 × 500 mm et mouvement synchronisé. Une solution d’affichage dynamique pour la scénographie, l’événementiel et les installations LED grand format.",
+          "badge": "09 / FEATURED — SPKI-250 KINETIC",
+          "deleted": true
         },
         "footer": {
           "_elements": {
@@ -2055,8 +2236,21 @@
             "footer_col4_address": {
               "text_fr": "20–24 avenue Henri Barbusse, 93000 Bobigny, France "
             },
+            "footer_col2_link_1": {
+              "width": "276px"
+            },
             "footer_col1_title": {
-              "width": "100px"
+              "width": "209px",
+              "color": "var(--accent, var(--ui-accent))"
+            },
+            "footer_col2_title": {
+              "color": "var(--accent, var(--ui-accent))"
+            },
+            "footer_col3_title": {
+              "color": "var(--accent, var(--ui-accent))"
+            },
+            "footer_col4_title": {
+              "color": "var(--accent, var(--ui-accent))"
             }
           }
         },
@@ -2085,6 +2279,14 @@
           "layout": {
             "visible": true
           }
+        },
+        "main": {
+          "_elements": {
+            "body:1/div:5/main:1/div:1/div:2/span:2": {
+              "offsetX": 1,
+              "offsetY": 1
+            }
+          }
         }
       },
       "sectionOrder": [
@@ -2094,15 +2296,15 @@
         "products",
         "markets",
         "pitch",
-        "experience",
         "process",
-        "insights",
-        "projects",
         "technology",
-        "kinetic",
+        "insights",
+        "experience",
+        "projects",
         "header",
         "contact",
-        "footer"
+        "footer",
+        "kinetic"
       ]
     },
     "product_wp": {
@@ -2518,7 +2720,7 @@
       "id": "insights",
       "name": "insights",
       "slug": "/insights",
-      "updatedAt": "2026-11-20T23:09:41.470Z",
+      "updatedAt": "2026-11-24T20:26:54.333Z",
       "sections": {
         "insights_hero": {
           "_i18n": {
@@ -2568,10 +2770,10 @@
             },
             "featured_desc": {
               "fr": {
-                "value": "Découvrez les étapes pour configurer votre projet de location ou d’achat, obtenir une estimation gratuite et sans engagement, puis échanger avec un conseiller PIXIATECH pour préciser votre demande. qzzd",
+                "value": "Découvrez les étapes pour configurer votre projet de location ou d’achat, obtenir une estimation gratuite et sans engagement, puis échanger avec un conseiller PIXIATECH pour préciser votre demande.",
                 "status": "source",
-                "updatedAt": "2026-11-20T23:09:39.353Z",
-                "sourceText": "Découvrez les étapes pour configurer votre projet de location ou d’achat, obtenir une estimation gratuite et sans engagement, puis échanger avec un conseiller PIXIATECH pour préciser votre demande. qzzd"
+                "updatedAt": "2026-11-20T23:11:09.615Z",
+                "sourceText": "Découvrez les étapes pour configurer votre projet de location ou d’achat, obtenir une estimation gratuite et sans engagement, puis échanger avec un conseiller PIXIATECH pour préciser votre demande."
               }
             },
             "featured_category": {
@@ -2609,7 +2811,7 @@
               }
             }
           },
-          "featured_desc": "Découvrez les étapes pour configurer votre projet de location ou d’achat, obtenir une estimation gratuite et sans engagement, puis échanger avec un conseiller PIXIATECH pour préciser votre demande. qzzd",
+          "featured_desc": "Découvrez les étapes pour configurer votre projet de location ou d’achat, obtenir une estimation gratuite et sans engagement, puis échanger avec un conseiller PIXIATECH pour préciser votre demande.",
           "featured_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2Fvideoframe_3330_4hacf.png?alt=media",
           "featured_category": "GUIDE — CONFIGURATEUR PIXIATECH"
         }
@@ -2671,6 +2873,406 @@
           }
         }
       }
+    },
+    "product__ecrans-led-interieurs-2": {
+      "id": "product__ecrans-led-interieurs-2",
+      "name": "ÉCRANS LED INTÉRIEURS 2",
+      "slug": "/web/product/ecrans-led-interieurs-2",
+      "updatedAt": "2026-11-24T16:11:26.182Z",
+      "sections": {
+        "next": {
+          "_elements": {
+            "div:2/section:1/div:1/div:2/h2:1": {
+              "text": "Donnons vie à\nvotre affichage. Ça c'est bien je peux je vais prendre ça ça ça marche parfaitement c'est intuitif c'est correct on va prendre cette logique là et la mélanger avec cette ce style là attends voir je vais je vais faire un truc"
+            }
+          }
+        },
+        "specs": {
+          "visible": true,
+          "layout": {
+            "visible": true
+          }
+        },
+        "hero": {
+          "_elements": {
+            "section:1/div:1/div:3/div:2/a:1": {
+              "backgroundColor": "transparent",
+              "color": "#f2f2f2",
+              "text_fr": "CONTACTER UN CONSEILLER"
+            },
+            "subtitle": {
+              "fontSize": "18px"
+            },
+            "section:1/div:1/div:3/div:1/div:2/span:2": {
+              "text_fr": "ENTREPRISES"
+            },
+            "section:1/div:1/div:3/div:1/div:2/span:3": {
+              "text_fr": "COMMERCES"
+            },
+            "section:1/div:1/div:3/div:1/div:2/span:4": {
+              "text_fr": "ESPACES D’ACCUEIL"
+            },
+            "section:1/div:1/div:3/div:1/div:2/span:5": {
+              "text_fr": "ÉVÉNEMENTIEL"
+            },
+            "primaryCta": {
+              "color": "#f2f2f2"
+            },
+            "section:1/div:1/div:4/div:1/div:1": {
+              "text_fr": "1,25 à 3,9 mm"
+            },
+            "section:1/div:1/div:4/div:2/div:1": {
+              "text_fr": "600 à 1 000 "
+            }
+          },
+          "_i18n": {
+            "title": {
+              "fr": {
+                "value": "QJKSBFJbePXT Fine (template maitre)",
+                "status": "source",
+                "updatedAt": "2026-11-14T15:55:42.400Z",
+                "sourceText": "QJKSBFJbePXT Fine (template maitre)"
+              }
+            },
+            "subtitle": {
+              "fr": {
+                "value": "Des écrans LED intérieurs sur mesure pour valoriser vos contenus et vos espaces professionnels.",
+                "status": "source",
+                "updatedAt": "2026-11-24T10:56:57.209Z",
+                "sourceText": "Des écrans LED intérieurs sur mesure pour valoriser vos contenus et vos espaces professionnels."
+              }
+            },
+            "primaryCta": {
+              "fr": {
+                "value": "CONFIGURER MON PROJET",
+                "status": "source",
+                "updatedAt": "2026-11-24T10:59:54.442Z",
+                "sourceText": "CONFIGURER MON PROJET"
+              }
+            }
+          },
+          "title": "QJKSBFJbePXT Fine (template maitre)",
+          "subtitle": "Des écrans LED intérieurs sur mesure pour valoriser vos contenus et vos espaces professionnels.",
+          "primaryCta": "CONFIGURER MON PROJET"
+        }
+      }
+    },
+    "product__ecrans": {
+      "id": "product__ecrans",
+      "name": "Nouveau produit 2",
+      "slug": "/web/product/ecrans",
+      "updatedAt": "2026-11-24T16:26:19.489Z",
+      "sections": {
+        "next": {
+          "_elements": {
+            "div:2/section:1/div:1/div:2/h2:1": {
+              "text": "Donnons vie à\nvotre affichage. Ça c'est bien je peux je vais prendre ça ça ça marche parfaitement c'est intuitif c'est correct on va prendre cette logique là et la mélanger avec cette ce style là attends voir je vais je vais faire un truc"
+            }
+          }
+        },
+        "specs": {
+          "visible": true,
+          "layout": {
+            "visible": true
+          }
+        },
+        "hero": {
+          "_elements": {
+            "section:1/div:1/div:3/div:2/a:1": {
+              "backgroundColor": "transparent",
+              "color": "#f2f2f2",
+              "text_fr": "CONTACTER UN CONSEILLER"
+            },
+            "subtitle": {
+              "fontSize": "18px"
+            },
+            "section:1/div:1/div:3/div:1/div:2/span:2": {
+              "text_fr": "ENTREPRISES"
+            },
+            "section:1/div:1/div:3/div:1/div:2/span:3": {
+              "text_fr": "COMMERCES"
+            },
+            "section:1/div:1/div:3/div:1/div:2/span:4": {
+              "text_fr": "ESPACES D’ACCUEIL"
+            },
+            "section:1/div:1/div:3/div:1/div:2/span:5": {
+              "text_fr": "ÉVÉNEMENTIEL"
+            },
+            "primaryCta": {
+              "color": "#f2f2f2"
+            },
+            "section:1/div:1/div:4/div:1/div:1": {
+              "text_fr": "1,25 à 3,9 mm"
+            },
+            "section:1/div:1/div:4/div:2/div:1": {
+              "text_fr": "600 à 1 000 "
+            }
+          },
+          "_i18n": {
+            "title": {
+              "fr": {
+                "value": "QJKSBFJbePXT Fine (template maitre)",
+                "status": "source",
+                "updatedAt": "2026-11-14T15:55:42.400Z",
+                "sourceText": "QJKSBFJbePXT Fine (template maitre)"
+              }
+            },
+            "subtitle": {
+              "fr": {
+                "value": "Des écrans LED intérieurs sur mesure pour valoriser vos contenus et vos espaces professionnels.",
+                "status": "source",
+                "updatedAt": "2026-11-24T10:56:57.209Z",
+                "sourceText": "Des écrans LED intérieurs sur mesure pour valoriser vos contenus et vos espaces professionnels."
+              }
+            },
+            "primaryCta": {
+              "fr": {
+                "value": "CONFIGURER MON PROJET",
+                "status": "source",
+                "updatedAt": "2026-11-24T10:59:54.442Z",
+                "sourceText": "CONFIGURER MON PROJET"
+              }
+            }
+          },
+          "title": "QJKSBFJbePXT Fine (template maitre)",
+          "subtitle": "Des écrans LED intérieurs sur mesure pour valoriser vos contenus et vos espaces professionnels.",
+          "primaryCta": "CONFIGURER MON PROJET"
+        }
+      }
+    },
+    "product__ecrans-led-interieurs": {
+      "id": "product__ecrans-led-interieurs",
+      "name": "ÉCRANS 2",
+      "slug": "/web/product/ecrans-led-interieurs",
+      "updatedAt": "2026-11-24T17:16:16.259Z",
+      "sections": {
+        "next": {
+          "_elements": {
+            "div:2/section:1/div:1/div:2/h2:1": {
+              "text": "Donnons vie à\nvotre affichage. Ça c'est bien je peux je vais prendre ça ça ça marche parfaitement c'est intuitif c'est correct on va prendre cette logique là et la mélanger avec cette ce style là attends voir je vais je vais faire un truc"
+            }
+          }
+        },
+        "specs": {
+          "visible": true,
+          "layout": {
+            "visible": true
+          }
+        },
+        "hero": {
+          "_elements": {
+            "section:1/div:1/div:3/div:2/a:1": {
+              "backgroundColor": "transparent",
+              "color": "#f2f2f2",
+              "text_fr": "CONTACTER UN CONSEILLER"
+            },
+            "subtitle": {
+              "fontSize": "18px"
+            },
+            "section:1/div:1/div:3/div:1/div:2/span:2": {
+              "text_fr": "ENTREPRISES"
+            },
+            "section:1/div:1/div:3/div:1/div:2/span:3": {
+              "text_fr": "COMMERCES"
+            },
+            "section:1/div:1/div:3/div:1/div:2/span:4": {
+              "text_fr": "ESPACES D’ACCUEIL"
+            },
+            "section:1/div:1/div:3/div:1/div:2/span:5": {
+              "text_fr": "ÉVÉNEMENTIEL"
+            },
+            "primaryCta": {
+              "color": "#f2f2f2"
+            },
+            "section:1/div:1/div:4/div:1/div:1": {
+              "text_fr": "1,25 à 3,9 mm"
+            },
+            "section:1/div:1/div:4/div:2/div:1": {
+              "text_fr": "600 à 1 000 "
+            }
+          },
+          "_i18n": {
+            "title": {
+              "fr": {
+                "value": "QJKSBFJbePXT Fine (template maitre)",
+                "status": "source",
+                "updatedAt": "2026-11-14T15:55:42.400Z",
+                "sourceText": "QJKSBFJbePXT Fine (template maitre)"
+              }
+            },
+            "subtitle": {
+              "fr": {
+                "value": "Des écrans LED intérieurs sur mesure pour valoriser vos contenus et vos espaces professionnels.",
+                "status": "source",
+                "updatedAt": "2026-11-24T10:56:57.209Z",
+                "sourceText": "Des écrans LED intérieurs sur mesure pour valoriser vos contenus et vos espaces professionnels."
+              }
+            },
+            "primaryCta": {
+              "fr": {
+                "value": "CONFIGURER MON PROJET",
+                "status": "source",
+                "updatedAt": "2026-11-24T10:59:54.442Z",
+                "sourceText": "CONFIGURER MON PROJET"
+              }
+            }
+          },
+          "title": "QJKSBFJbePXT Fine (template maitre)",
+          "subtitle": "Des écrans LED intérieurs sur mesure pour valoriser vos contenus et vos espaces professionnels.",
+          "primaryCta": "CONFIGURER MON PROJET"
+        }
+      }
+    },
+    "product__nouveau-produit-2": {
+      "id": "product__nouveau-produit-2",
+      "name": "Nouveau produit 2",
+      "slug": "/web/product/nouveau-produit-2",
+      "updatedAt": "2026-11-24T20:35:15.018Z",
+      "sections": {
+        "next": {
+          "_elements": {
+            "div:2/section:1/div:1/div:2/h2:1": {
+              "text": "Donnons vie à\nvotre affichage. Ça c'est bien je peux je vais prendre ça ça ça marche parfaitement c'est intuitif c'est correct on va prendre cette logique là et la mélanger avec cette ce style là attends voir je vais je vais faire un truc"
+            }
+          }
+        },
+        "specs": {
+          "visible": true,
+          "layout": {
+            "visible": true
+          }
+        },
+        "hero": {
+          "_elements": {
+            "section:1/div:1/div:3/div:2/a:1": {
+              "backgroundColor": "transparent",
+              "color": "#f2f2f2"
+            },
+            "title": {
+              "textAlign": "left",
+              "offsetX": 6,
+              "offsetY": -13,
+              "width": "1377px"
+            }
+          },
+          "_i18n": {
+            "title": {
+              "fr": {
+                "value": "QJKSBFJbePXT Fine (template maitre)",
+                "status": "source",
+                "updatedAt": "2026-11-14T15:55:42.400Z",
+                "sourceText": "QJKSBFJbePXT Fine (template maitre)"
+              }
+            }
+          },
+          "title": "QJKSBFJbePXT Fine (template maitre)"
+        },
+        "fieldwork": {
+          "minHeight": 839,
+          "paddingBottom": 94
+        }
+      }
+    },
+    "product__teste": {
+      "id": "product__teste",
+      "name": "Nouveau produit 3",
+      "slug": "/web/product/teste",
+      "updatedAt": "2026-11-24T19:57:25.934Z",
+      "sections": {
+        "next": {
+          "_elements": {
+            "div:2/section:1/div:1/div:2/h2:1": {
+              "text": "Donnons vie à\nvotre affichage. Ça c'est bien je peux je vais prendre ça ça ça marche parfaitement c'est intuitif c'est correct on va prendre cette logique là et la mélanger avec cette ce style là attends voir je vais je vais faire un truc"
+            }
+          }
+        },
+        "specs": {
+          "visible": true,
+          "layout": {
+            "visible": true
+          }
+        },
+        "hero": {
+          "_elements": {
+            "section:1/div:1/div:3/div:2/a:1": {
+              "backgroundColor": "transparent",
+              "color": "#f2f2f2"
+            },
+            "title": {
+              "width": "958px",
+              "height": "306px",
+              "offsetY": 0
+            }
+          },
+          "_i18n": {
+            "title": {
+              "fr": {
+                "value": "QJKSBFJbePXT Fine (template maitre)",
+                "status": "source",
+                "updatedAt": "2026-11-14T15:55:42.400Z",
+                "sourceText": "QJKSBFJbePXT Fine (template maitre)"
+              }
+            }
+          },
+          "title": "QJKSBFJbePXT Fine (template maitre)"
+        }
+      }
+    },
+    "product__amine": {
+      "id": "product__amine",
+      "name": "Nouveau produit 3",
+      "slug": "/web/product/amine",
+      "updatedAt": "2026-11-24T20:24:43.977Z",
+      "sections": {
+        "next": {
+          "_elements": {
+            "div:2/section:1/div:1/div:2/h2:1": {
+              "text": "Donnons vie à\nvotre affichage. Ça c'est bien je peux je vais prendre ça ça ça marche parfaitement c'est intuitif c'est correct on va prendre cette logique là et la mélanger avec cette ce style là attends voir je vais je vais faire un truc"
+            }
+          }
+        },
+        "specs": {
+          "visible": true,
+          "layout": {
+            "visible": true
+          }
+        },
+        "hero": {
+          "_elements": {
+            "section:1/div:1/div:3/div:2/a:1": {
+              "backgroundColor": "transparent",
+              "color": "#f2f2f2"
+            },
+            "title": {
+              "offsetY": -1,
+              "fontSize": "8px",
+              "offsetX": 70,
+              "textAlign": "center"
+            }
+          },
+          "_i18n": {
+            "title": {
+              "fr": {
+                "value": "QJKSBFJbePXT Fine (template maitre)",
+                "status": "source",
+                "updatedAt": "2026-11-14T15:55:42.400Z",
+                "sourceText": "QJKSBFJbePXT Fine (template maitre)"
+              }
+            }
+          },
+          "title": "QJKSBFJbePXT Fine (template maitre)"
+        },
+        "header": {
+          "_elements": {
+            "div:1/div:1/div:2/div:2/a:1": {
+              "width": "193px",
+              "offsetX": 2,
+              "offsetY": -3,
+              "fontSize": "13.5px"
+            }
+          }
+        }
+      }
     }
   },
   "settings": {
@@ -2680,9 +3282,9 @@
     "phone": "+33 1 89 70 42 00",
     "address": "75008 Paris, France",
     "officeHours": "Lun - Ven, 09h00 - 19h00 CET",
-    "accentColor": "#A855F7",
+    "accentColor": "#00E5FF",
     "backendName": "Pixel Tech Web",
     "backendApiUrl": "/api/site-web"
   },
-  "updatedAt": "2026-11-22T15:31:24.431Z"
+  "updatedAt": "2026-11-24T20:35:15.106Z"
 }

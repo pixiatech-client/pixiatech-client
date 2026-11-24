@@ -1,0 +1,27 @@
+/* Styles des CTA du hero produit.
+   Le thème CMS impose globalement `.btn-solid` (fond accent, texte noir) avec
+   `!important` ; ces règles sont volontairement plus spécifiques et ciblent
+   uniquement les deux boutons du hero, sans toucher aux autres pages. */
+
+/* 1. « Recevoir une étude technique » : fond et contour d'accent inchangés,
+   seul le texte passe en blanc au survol. */
+section:global(#hero) .primaryCta:hover,
+section:global(#hero) button.primaryCta:hover {
+  color: #fff !important;
+}
+
+/* 2. « Télécharger la fiche technique » : fond noir, texte blanc, contour
+   accent. Au survol, inversion fond/texte, le contour reste accent. */
+section:global(#hero) .datasheetCta,
+section:global(#hero) a.datasheetCta {
+  background: #080808 !important;
+  color: #fff !important;
+  border-color: var(--accent, #ff9900) !important;
+}
+
+section:global(#hero) .datasheetCta:hover,
+section:global(#hero) a.datasheetCta:hover {
+  background: #fff !important;
+  color: #080808 !important;
+  border-color: var(--accent, #ff9900) !important;
+}

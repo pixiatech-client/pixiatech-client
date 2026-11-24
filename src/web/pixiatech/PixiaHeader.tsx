@@ -8,6 +8,8 @@ import { Language } from '../pixiatech-translations';
 import { useI18n } from '@/lib/i18n';
 import { SearchModal } from './SearchModal';
 import { Shield, Globe } from 'lucide-react';
+import { useCms } from '@/lib/site-web/cms-context';
+import { megaMenuLockedStore, useStoreValue } from '@/web/cms/editor-ui-store';
 import { ProductsProvider, useProducts } from '@/lib/products/products-context';
 import type { ProductRecord, MegaMenu, MegaMenuItem } from '@/lib/products/types';
 import { trackProductClick } from '@/lib/analytics/tracker';
@@ -61,6 +63,8 @@ interface MenuItemModel {
   previewTitle: string;
   /** Tag d'environnement : 'indoor' | 'outdoor' | 'both' | '' */
   environment: 'indoor' | 'outdoor' | 'both' | '';
+  /** Gamme de produits (ex. PXT FLEX) */
+  rangeName: string | null;
 }
 
 interface MenuColumnModel {
@@ -130,6 +134,7 @@ function makeModel(
     descFr,
     previewTitle,
     environment,
+    rangeName: product?.rangeName ?? null,
   };
 }
 
@@ -230,8 +235,26 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
     return path;
   };
 
+  const { isEditing } = useCms();
+  const megaMenuLocked = useStoreValue(megaMenuLockedStore);
+  const isMegaLocked = isEditing && megaMenuLocked;
+
   const [scrolled, setScrolled] = useState(false);
-  const [megaOpen, setMegaOpen] = useState(false);
+  const [megaOpenState, setMegaOpenState] = useState(false);
+  const megaOpen = isMegaLocked || megaOpenState;
+  const setMegaOpen = (next: boolean | ((prev: boolean) => boolean)) => {
+    setMegaOpenState((prev) => {
+      const resolved = typeof next === 'function' ? next(prev) : next;
+      if (isMegaLocked && !resolved) return true;
+      return resolved;
+    });
+  };
+
+  useEffect(() => {
+    if (!isMegaLocked) {
+      setMegaOpenState(false);
+    }
+  }, [isMegaLocked]);
   const [hoveredItemId, setHoveredItemId] = useState<string>('wp');
   const [previewImgFailed, setPreviewImgFailed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -353,7 +376,15 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
     model.flat.find((m) => m.id === hoveredItemId) ?? model.flat.find((m) => m.clickable) ?? null;
 
   const preview = hoveredItem;
-  const previewName = preview?.previewTitle ?? preview?.label ?? '';
+  // Titre grand : on préfère le vrai nom du produit Firestore pour éviter
+  // d'afficher le même texte que le label de rangeName (doublon).
+  const previewName =
+    preview?.product?.name ||
+    preview?.legacy?.name ||
+    preview?.previewTitle ||
+    preview?.label ||
+    '';
+  const previewRangeName = preview?.rangeName ?? preview?.product?.rangeName ?? null;
   const previewImgRaw = preview?.img ?? null;
   useEffect(() => setPreviewImgFailed(false), [previewImgRaw]);
   const previewImg = previewImgRaw && !previewImgFailed ? previewImgRaw : null;
@@ -1148,17 +1179,19 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                               gap: 12,
                             }}
                           >
-                            <span
-                              className="mega-title"
-                              style={{
-                                fontSize: 15,
-                                fontWeight: 600,
-                                color: isHovered ? accentColor : '#EDEBE6',
-                                transition: 'color .2s ease',
-                              }}
-                            >
-                              {m.label}
-                            </span>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+                              <span
+                                className="mega-title"
+                                style={{
+                                  fontSize: 15,
+                                  fontWeight: 600,
+                                  color: isHovered ? accentColor : '#EDEBE6',
+                                  transition: 'color .2s ease',
+                                }}
+                              >
+                                {m.label}
+                              </span>
+                            </div>
                             <span
                               style={{
                                 fontSize: 10,
@@ -1274,7 +1307,23 @@ const PixiaHeaderContent: React.FC<PixiaHeaderProps> = ({
                       gap: 8,
                     }}
                   >
-                    <span>{activeLang === 'FR' ? 'SÉRIE SÉLECTIONNÉE' : 'FEATURED SERIES'}</span>
+                    <span>
+                      {previewRangeName
+                        ? (activeLang === 'FR' ? 'GAMME' : 'RANGE')
+                        : (activeLang === 'FR' ? 'SÉRIE SÉLECTIONNÉE' : 'FEATURED SERIES')}
+                    </span>
+                    {previewRangeName && (
+                      <span
+                        style={{
+                          color: accentColor,
+                          fontWeight: 700,
+                          fontSize: 10.5,
+                          letterSpacing: '.14em',
+                        }}
+                      >
+                        {previewRangeName}
+                      </span>
+                    )}
                     {preview?.environment && (
                       <span
                         style={{

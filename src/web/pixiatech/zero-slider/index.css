@@ -1,0 +1,32 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;1,400;1,500&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap');
+
+.pxt-label {
+  font-size: 11px;
+  line-height: 1.15;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.pxt-editorial-serif {
+  font-family: "Cormorant Garamond", Georgia, serif;
+}
+
+/* Masquer les scrollbars dans la fiche projet tout en permettant le défilement */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zero-slider-root *,
+  .zero-slider-root *::before,
+  .zero-slider-root *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

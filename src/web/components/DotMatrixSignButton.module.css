@@ -1,0 +1,111 @@
+/*
+  "The dot matrix sign button" from Animorio · https://animorio.com
+  License: free on your own sites and your clients' sites, paid work included.
+  Not for resale, redistribution, templates or code collections · https://animorio.com/en/license/
+*/
+.root {
+  --fondo: #000000;
+  --pannello: #0b0b0b;
+  --bordo: #262626;
+  --bordo-su: #4a4a4a;
+  --cella-spenta: #161616;
+  --cella-lettera: #3a3732;
+  --accento: #ffb13d;
+  --accento-chiaro: #ffd78f;
+  --testo: #8a8680;
+  --testo-forte: #e8e4dd;
+}
+
+.root,
+.root * {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* Le panneau est intégré dans le hero produit : pas de plein écran ici. */
+.stage {
+  width: 100%;
+  display: grid;
+  place-items: center;
+}
+
+.sign {
+  display: grid;
+  justify-items: center;
+  gap: clamp(14px, 3.2vh, 26px);
+  width: 100%;
+}
+
+.brand {
+  font-size: clamp(10px, 1.6vh, 12px);
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--testo);
+  font-variation-settings: 'wdth' 112;
+}
+
+.btn {
+  position: relative;
+  display: block;
+  width: 100%;
+  padding: clamp(20px, 3.6vh, 34px) clamp(20px, 3.5vw, 36px);
+  border: 1px solid var(--bordo);
+  border-radius: 14px;
+  background: var(--pannello);
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: border-color 0.35s ease;
+}
+
+.btn:focus-visible {
+  border-color: var(--accento);
+}
+
+@media (hover: hover) {
+  .btn:hover {
+    border-color: var(--bordo-su);
+  }
+}
+
+.btn.isLit {
+  border-color: var(--bordo-su);
+}
+
+.cells {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* the glass over the cells: one hairline of reflection along the top and a soft shade at the bottom */
+.glass {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0, rgba(255, 255, 255, 0.015) 1.5px, transparent 30%),
+    linear-gradient(0deg, rgba(0, 0, 0, 0.35) 0, transparent 40%);
+  z-index: 1;
+}
+
+.note {
+  font-size: clamp(12px, 1.9vh, 14px);
+  color: var(--testo);
+  font-variation-settings: 'wdth' 100;
+}
+
+.note.isDone {
+  color: var(--accento);
+}
+
+.sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

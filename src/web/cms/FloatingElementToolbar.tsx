@@ -756,6 +756,14 @@ export const FloatingElementToolbar: React.FC<{
 
   const bumpFontSize = useCallback(
     (delta: number) => {
+      // Si l'élément contient un panneau matrice LED ([data-sign]), A-/A+ redimensionne l'écran
+      if (selected?.el?.querySelector('[data-sign]')) {
+        const storedW = parseFloat(style.width || '') || 0;
+        const currentW = storedW > 0 ? storedW : selected.el.getBoundingClientRect().width || 800;
+        const nextW = Math.round(Math.max(260, Math.min(1520, currentW + delta * 25)));
+        commit({ width: `${nextW}px` });
+        return;
+      }
       // Si aucune taille n'est encore stockée, lire la taille réelle du DOM
       const stored = parseFloat(style.fontSize || '') || 0;
       const current = stored > 0
@@ -763,7 +771,7 @@ export const FloatingElementToolbar: React.FC<{
         : (selected?.el ? parseFloat(window.getComputedStyle(selected.el).fontSize) || 16 : 16);
       commit({ fontSize: `${Math.max(8, Math.min(160, current + delta))}px` });
     },
-    [commit, style.fontSize, selected]
+    [commit, style.fontSize, style.width, selected]
   );
 
   // Sauvegarde et restauration de sélection pour éviter de la perdre au clic sur la barre d'outils
@@ -1164,6 +1172,10 @@ export const FloatingElementToolbar: React.FC<{
       target.style.textDecoration = '';
       target.style.textTransform = '';
       target.style.textAlign = '';
+      target.style.removeProperty('margin-left');
+      target.style.removeProperty('margin-right');
+      target.style.removeProperty('align-self');
+      target.style.removeProperty('justify-self');
       target.style.borderRadius = '';
       target.style.borderColor = '';
       target.style.borderWidth = '';
@@ -1650,7 +1662,9 @@ export const FloatingElementToolbar: React.FC<{
               <span className="font-mono text-[11px] font-bold">A−</span>
             </button>
             <span className="font-mono text-[11px] text-[#B9B7B1] min-w-[36px] text-center font-bold px-1.5 py-0.5 bg-[#161614] rounded border border-[#333]">
-              {style.fontSize || (selected?.el ? `${Math.round(parseFloat(window.getComputedStyle(selected.el).fontSize) || 16)}px` : '16px')}
+              {selected?.el?.querySelector('[data-sign]')
+                ? (style.width || `${Math.round(selected.el.getBoundingClientRect().width || 800)}px`)
+                : (style.fontSize || (selected?.el ? `${Math.round(parseFloat(window.getComputedStyle(selected.el).fontSize) || 16)}px` : '16px'))}
             </span>
             <button
               type="button"
@@ -2047,6 +2061,22 @@ export const FloatingElementToolbar: React.FC<{
               >
                 <RotateCcw className="w-3.5 h-3.5" />
               </button>
+            </div>
+
+            {/* Alignement horizontal de l'objet / média / groupe */}
+            <div className="flex items-center gap-1 bg-[#0a0a09] px-2 py-1 rounded-lg border border-[#262624]">
+              <span className="font-mono text-[10px] text-[#888] uppercase mr-1">Aligner</span>
+              {ALIGNS.slice(0, 3).map(({ value, icon: Icon, label }) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => commit({ textAlign: value })}
+                  className={`${iconBtn} ${style.textAlign === value ? on : off}`}
+                  title={`Aligner l'élément : ${label}`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                </button>
+              ))}
             </div>
 
             {/* Outil Lien / Redirection */}

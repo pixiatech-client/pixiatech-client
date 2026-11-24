@@ -1,6 +1,57 @@
 import type React from 'react';
 import { fluidFontSizePx } from './fluid-font-size';
 
+export type StyleKey =
+  | 'paddingTop'
+  | 'paddingBottom'
+  | 'paddingLeft'
+  | 'paddingRight'
+  | 'marginTop'
+  | 'marginBottom'
+  | 'minHeight'
+  | 'titleFontSize'
+  | 'overlayOpacity'
+  | 'bgColor'
+  | 'textColor'
+  | 'bgImage'
+  | 'overlayColor';
+
+const ALL_KEYS: readonly StyleKey[] = [
+  'paddingTop',
+  'paddingBottom',
+  'paddingLeft',
+  'paddingRight',
+  'marginTop',
+  'marginBottom',
+  'minHeight',
+  'titleFontSize',
+  'overlayOpacity',
+  'bgColor',
+  'textColor',
+  'bgImage',
+  'overlayColor',
+];
+
+export const SPACING_KEYS: readonly StyleKey[] = ['paddingTop', 'paddingBottom', 'paddingLeft', 'paddingRight', 'minHeight'];
+export const FULL_STYLE_KEYS: readonly StyleKey[] = ALL_KEYS;
+export const BGMAP_STYLE_KEYS: readonly StyleKey[] = ALL_KEYS.filter(
+  (k) => k !== 'overlayOpacity' && k !== 'overlayColor'
+);
+export const BGMAP_TITLELESS_KEYS: readonly StyleKey[] = ALL_KEYS.filter(
+  (k) => k !== 'overlayOpacity' && k !== 'overlayColor' && k !== 'titleFontSize'
+);
+export const SHOWREEL_STYLE_KEYS: readonly StyleKey[] = [
+  'paddingTop',
+  'paddingBottom',
+  'paddingLeft',
+  'paddingRight',
+  'minHeight',
+  'bgColor',
+  'bgImage',
+  'overlayOpacity',
+  'overlayColor',
+];
+
 /**
  * useSectionStyle
  * --------------
@@ -38,6 +89,7 @@ export function useSectionStyle(cmsData: Record<string, unknown>): SectionStyleR
 
   const bgColor = (cmsData.bgColor as string | undefined) || undefined;
   const bgImage = (cmsData.bgImage as string | undefined) || undefined;
+  const bgParallax = Boolean(cmsData.bgParallax);
 
   const overlayOpacity = numOrUndef(cmsData.overlayOpacity);
   const hasOverlay     = !!bgImage && !!overlayOpacity && overlayOpacity > 0;
@@ -65,6 +117,7 @@ export function useSectionStyle(cmsData: Record<string, unknown>): SectionStyleR
       backgroundSize:     'cover',
       backgroundPosition: 'center',
       backgroundRepeat:   'no-repeat',
+      ...(bgParallax ? { backgroundAttachment: 'fixed' } : {}),
     } : {}),
   };
 

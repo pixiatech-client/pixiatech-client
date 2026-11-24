@@ -6,6 +6,7 @@ import { usePrefersReducedMotion } from '../../pixiatech-hooks';
 import { useCms } from '@/lib/site-web/cms-context';
 import { getCmsText, normalizeLang } from '@/lib/site-web/cms-i18n';
 import { useSectionStyle } from '../../cms/useSectionStyle';
+import { PitchAnimorioSlider } from './PitchAnimorioSlider';
 
 const PRESETS = [0.7, 0.9, 1.2, 1.5, 1.8, 2.5, 2.9, 3.9, 4.8, 6.6, 10];
 const MIN = 0.7;
@@ -69,6 +70,7 @@ export const PitchSection: React.FC<PitchSectionProps> = ({
     unit: activeLang === 'fr' ? 'mm pas de pixel' : 'mm pixel pitch',
     pixelsLabel: 'PIXELS / M²',
     typicalLabel: activeLang === 'fr' ? 'UTILISATION TYPIQUE' : 'TYPICAL USE',
+    applicationLabel: activeLang === 'fr' ? 'APPLICATION IDÉALE' : 'IDEAL APPLICATION',
     cta: getCmsText(
       cmsData,
       'primaryCta',
@@ -282,147 +284,15 @@ export const PitchSection: React.FC<PitchSectionProps> = ({
               {t.desc}
             </p>
 
-            {/* Giant Pitch Display Number */}
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, marginBottom: 28 }}>
-              <span
-                style={{
-                  fontSize: 'clamp(56px, 16vw, 120px)',
-                  fontWeight: 900,
-                  letterSpacing: '-.03em',
-                  lineHeight: 1,
-                  color: '#111110',
-                  fontVariantNumeric: 'tabular-nums',
-                }}
-              >
-                {pitch === Math.round(pitch) ? pitch : pitch.toFixed(1)}
-              </span>
-              <span style={{ fontSize: 18, color: '#8A8880', fontWeight: 600 }}>{t.unit}</span>
-            </div>
-
-            {/* Range Slider */}
-            <div style={{ maxWidth: 'min(520px, 100%)' }}>
-              <input
-                type="range"
-                className="xr-range"
-                min={MIN}
-                max={MAX}
-                step={0.1}
-                value={pitch}
-                onChange={(e) => setPitch(parseFloat(e.target.value))}
-                style={{
-                  width: '100%',
-                  height: 4,
-                  appearance: 'none',
-                  background: '#d6d4ce',
-                  outline: 'none',
-                  cursor: 'pointer',
-                  borderRadius: 2,
-                }}
-                aria-label={lang === 'FR' ? 'Sélecteur de pas de pixel' : 'Pixel pitch selector'}
-              />
-
-              {/* Preset Buttons Bar */}
-              <div
-                className="pitch-presets"
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  marginTop: 12,
-                  gap: 2,
-                  overflowX: 'auto',
-                  scrollbarWidth: 'none',
-                }}
-              >
-                {PRESETS.map((p) => {
-                  const near = Math.abs(pitch - p) < 0.05;
-                  return (
-                    <button
-                      key={p}
-                      type="button"
-                      onClick={() => setPitch(p)}
-                      style={{
-                        background: 'transparent',
-                        border: 'none',
-                        cursor: 'pointer',
-                        padding: '6px 2px',
-                        fontSize: 11,
-                        letterSpacing: '.05em',
-                        fontFamily: 'var(--font-mono)',
-                        color: near ? 'var(--accent, var(--ui-accent))' : '#A3A19B',
-                        fontWeight: near ? 800 : 500,
-                        borderTop: near ? '2px solid var(--accent, var(--ui-accent))' : '2px solid transparent',
-                        transition: 'color .2s ease, border-color .2s ease',
-                      }}
-                    >
-                      {p === Math.round(p) ? p : p.toFixed(1)}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Stats: Pixels / M2 and Typical Use */}
-            <div
-              style={{
-                display: 'flex',
-                flexWrap: 'wrap',
-                gap: 'clamp(24px, 6vw, 52px)',
-                marginTop: 48,
-                paddingTop: 32,
-                borderTop: '1px solid #dfddd5',
-              }}
-            >
-              <div style={{ minWidth: 0 }}>
-                <div
-                  style={{
-                    fontSize: 28,
-                    fontWeight: 800,
-                    color: '#111110',
-                    fontVariantNumeric: 'tabular-nums',
-                    overflowWrap: 'break-word',
-                  }}
-                >
-                  {pixelsPerM2(pitch, lang)}
-                </div>
-                <div
-                  style={{
-                    fontSize: 10,
-                    letterSpacing: '.18em',
-                    color: '#8A8880',
-                    marginTop: 6,
-                    fontFamily: 'var(--font-mono)',
-                    fontWeight: 700,
-                  }}
-                >
-                  {t.pixelsLabel}
-                </div>
-              </div>
-
-              <div style={{ minWidth: 0 }}>
-                <div
-                  style={{
-                    fontSize: 28,
-                    fontWeight: 800,
-                    color: '#111110',
-                    overflowWrap: 'break-word',
-                  }}
-                >
-                  {getTypicalUse(pitch)}
-                </div>
-                <div
-                  style={{
-                    fontSize: 10,
-                    letterSpacing: '.18em',
-                    color: '#8A8880',
-                    marginTop: 6,
-                    fontFamily: 'var(--font-mono)',
-                    fontWeight: 700,
-                  }}
-                >
-                  {t.typicalLabel}
-                </div>
-              </div>
-            </div>
+            {/* Interactive Pitch Slider with Animorio Rolling Digits & Fused Tiers (Image 01) */}
+            <PitchAnimorioSlider
+              pitch={pitch}
+              onPitchChange={setPitch}
+              lang={lang}
+              unitLabel={t.unit}
+              pixelsLabel={t.pixelsLabel}
+              applicationLabel={t.applicationLabel}
+            />
 
             {/* CTA Link */}
             <div style={{ marginTop: 44 }}>
@@ -568,27 +438,22 @@ export const PitchSection: React.FC<PitchSectionProps> = ({
                   }}
                 />
 
-                {/* Human Silhouette SVG (Identical to Image 2) */}
+                {/* Architectural Standing Human Silhouette SVG */}
                 <svg
-                  width="14"
-                  height="30"
-                  viewBox="0 0 14 30"
+                  width="18"
+                  height="34"
+                  viewBox="0 0 24 44"
                   style={{
                     position: 'absolute',
                     top: '50%',
-                    left: 8,
+                    left: 6,
                     transform: 'translateY(-50%)',
                   }}
-                  fill="none"
-                  stroke="#111110"
-                  strokeWidth="1.4"
+                  fill="#111110"
+                  aria-hidden="true"
                 >
-                  <circle cx="7" cy="4" r="3" />
-                  <line x1="7" y1="7" x2="7" y2="18" />
-                  <line x1="7" y1="10" x2="1" y2="15" />
-                  <line x1="7" y1="10" x2="13" y2="15" />
-                  <line x1="7" y1="18" x2="2" y2="27" />
-                  <line x1="7" y1="18" x2="12" y2="27" />
+                  <circle cx="12" cy="5.5" r="3.6" />
+                  <path d="M12 10.5c-3.8 0-6.2 1.8-6.6 5.2l-.7 8.4c-.1 1 .6 1.8 1.5 1.9.8.1 1.5-.5 1.6-1.4l.6-6.2.5 19.6c0 1.1.8 2 1.8 2s1.7-.9 1.7-2l.6-10.5.6 10.5c0 1.1.7 2 1.7 2s1.8-.9 1.8-2l.5-19.6.6 6.2c.1.9.8 1.5 1.6 1.4.9-.1 1.6-.9 1.5-1.9l-.7-8.4c-.4-3.4-2.8-5.2-6.6-5.2Z" />
                 </svg>
 
                 {/* Distance Value & Label */}

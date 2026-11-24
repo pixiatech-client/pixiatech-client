@@ -4,11 +4,10 @@ import React, { useState, useRef, useLayoutEffect, useEffect } from 'react';
 import { useCms } from '@/lib/site-web/cms-context';
 import { Eye, EyeOff } from 'lucide-react';
 import { SectionResizeHandle } from './SectionResizeHandle';
-import { SectionStylePanel } from './SectionStylePanel';
-import type { StyleKey } from './SectionStylePanel';
+import { SectionBackgroundControl } from './SectionBackgroundControl';
+import type { StyleKey } from './useSectionStyle';
 import { useSectionDragDrop } from './SectionDragDropManager';
 import { registerSection } from './section-registry';
-import { stylePanelStore, useStoreValue } from './editor-ui-store';
 
 interface EditableWrapperProps {
   sectionKey: string;
@@ -50,7 +49,6 @@ export const EditableWrapper: React.FC<EditableWrapperProps> = ({
   }, [sectionKey, toggleSectionVisibility, saveCurrentPage]);
 
   const [isHovered, setIsHovered] = useState(false);
-  const openStylePanel = useStoreValue(stylePanelStore);
   const [liveMinHeight, setLiveMinHeight] = useState<number | null>(null);
   const [livePaddingBottom, setLivePaddingBottom] = useState<number | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -114,13 +112,19 @@ export const EditableWrapper: React.FC<EditableWrapperProps> = ({
       ? Number(layout.minHeight)
       : undefined;
 
+  const isDeleted = sectionData?.deleted === true;
   const isVisible =
+    !isDeleted &&
     sectionData?.visible !== false &&
     layout.visible !== false;
 
   const isSelected = selectedBlockId === sectionKey;
 
-  // Dynamically apply CMS spacing and height directly to the inner <section> element
+  const bgColor = (sectionData?.bgColor as string | undefined) || (layout?.bgColor as string | undefined) || '';
+  const bgImage = (sectionData?.bgImage as string | undefined) || (layout?.bgImage as string | undefined) || '';
+  const bgParallax = Boolean(sectionData?.bgParallax ?? layout?.bgParallax ?? false);
+
+  // Dynamically apply CMS spacing, height and background overrides directly to the inner <section> element
   useLayoutEffect(() => {
     const root = wrapperRef.current;
     if (!root) return;
@@ -146,7 +150,22 @@ export const EditableWrapper: React.FC<EditableWrapperProps> = ({
     } else if (effMinH === 0) {
       sec.style.minHeight = '';
     }
-  }, [pTop, pBottom, pLeft, pRight, savedMinHeight, livePaddingBottom, liveMinHeight]);
+    if (bgColor) {
+      sec.style.backgroundColor = bgColor;
+    } else {
+      sec.style.removeProperty('background-color');
+    }
+    if (bgImage) {
+      sec.style.backgroundImage = `url(${bgImage})`;
+      sec.style.backgroundSize = 'cover';
+      sec.style.backgroundPosition = 'center';
+      sec.style.backgroundRepeat = 'no-repeat';
+      sec.style.backgroundAttachment = bgParallax ? 'fixed' : 'scroll';
+    } else {
+      sec.style.removeProperty('background-image');
+      sec.style.removeProperty('background-attachment');
+    }
+  }, [pTop, pBottom, pLeft, pRight, savedMinHeight, livePaddingBottom, liveMinHeight, bgColor, bgImage, bgParallax]);
 
   // Dès lors que la section sert à quelque chose, le niveau structurel doit être
   // IDENTIQUE en public et en édition : le contenu est rendu directement comme
@@ -157,6 +176,7 @@ export const EditableWrapper: React.FC<EditableWrapperProps> = ({
   // provoquait la perte des modifications après actualisation. Rendre le même
   // arbre supprime aussi le remontage complet des sections au basculement en
   // édition (qui faisait sauter la page vers le footer).
+  if (isDeleted) return null;
   if (!isVisible && !isEditing) return null;
 
   // `liveMinHeight` n'est alimenté que pendant l'édition (poignée de
@@ -219,15 +239,12 @@ export const EditableWrapper: React.FC<EditableWrapperProps> = ({
           réglages) est désormais centralisée dans la barre fixe unique
           `CmsSectionBar`, sous la barre d'administration. */}
 
-      {/* Panneau de style contextuel — reprend les contrôles de l'ancien drawer
-          dans l'éditeur direct, sur le même système (useSectionStyle +
-          updateSectionField + saveCurrentPage). */}
-      {isEditing && isVisible && openStylePanel === sectionKey && (
-        <SectionStylePanel
+      {/* Bouton carré discret sur le bord droit (sort de droite vers la gauche) : arrière-plan & parallaxe */}
+      {isEditing && isVisible && (
+        <SectionBackgroundControl
           sectionKey={sectionKey}
           sectionLabel={sectionLabel}
-          onClose={() => stylePanelStore.set(null)}
-          capabilities={styleCapabilities}
+          visible={isHovered || isSelected}
         />
       )}
 

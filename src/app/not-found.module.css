@@ -1,0 +1,104 @@
+/* Une seule couleur de fond sur la page 404 : on neutralise le fond du layout
+   racine (html/body, wrapper, main, header et bandeaux) pour cette page uniquement. */
+:global(html):has(.page404),
+:global(body):has(.page404),
+:global(body):has(.page404) main,
+:global(body):has(.page404) div:has(.page404) {
+  background: #fff !important;
+}
+
+:global(body):has(.page404) {
+  transition: none !important;
+}
+
+:global(body):has(.page404) div:has(.page404) {
+  padding-top: 0 !important;
+}
+
+:global(body):has(.page404) :global(header),
+:global(body):has(.page404) main > *:not(.page404),
+:global(body):has(.page404) :global(.flare),
+:global(body):has(.page404) :global(.directional-flare),
+:global(body):has(.page404) [data-pixia-bottom-nav] {
+  display: none !important;
+}
+
+.page404 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100dvh;
+  padding: 40px 16px;
+  background: #fff;
+  font-family: var(--font-arvo), Arvo, Georgia, serif;
+  overflow: hidden;
+}
+
+.container {
+  width: 100%;
+  max-width: 1170px;
+  margin: 0 auto;
+}
+
+.textCenter {
+  text-align: center;
+}
+
+.fourZeroFourBg {
+  height: 500px;
+  background-image: url('/404-bg.gif');
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+}
+
+.fourZeroFourBg h1 {
+  margin: 0;
+  padding-top: 120px;
+  font-size: 80px;
+  line-height: 1;
+  text-align: center;
+}
+
+.contentBox {
+  margin-top: -50px;
+}
+
+.contentBox h3 {
+  margin: 0;
+  font-size: 32px;
+  line-height: 1.25;
+}
+
+.contentBox p {
+  margin: 12px 0 0;
+  font-size: 18px;
+  color: #555;
+}
+
+@media (max-width: 768px) {
+  .page404 {
+    padding: 24px 12px;
+  }
+
+  .fourZeroFourBg {
+    height: 320px;
+  }
+
+  .fourZeroFourBg h1 {
+    padding-top: 80px;
+    font-size: 56px;
+  }
+
+  .contentBox {
+    margin-top: -24px;
+  }
+
+  .contentBox h3 {
+    font-size: 26px;
+  }
+
+  .contentBox p {
+    font-size: 16px;
+  }
+}

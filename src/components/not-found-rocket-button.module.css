@@ -1,0 +1,266 @@
+/* The rocket launch button, adapted from Animorio:
+   https://animorio.com/en/animations/rocket-launch-button/ */
+
+.wrapper {
+  --pill: #181a23;
+  --pill-edge: #262935;
+  --well: #0b0c12;
+  --ink: #f4f1ea;
+  --muted: #8b8d99;
+  --coral: #ff5a3c;
+  --hull: #f1ede4;
+  --glass: #7cc6ff;
+  --smoke: #d6d2cc;
+  --flame: #ff8a2b;
+
+  position: relative;
+  width: min(340px, calc(100vw - 48px));
+  margin: 20px auto 0;
+  touch-action: manipulation;
+}
+
+.sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.stage {
+  position: relative;
+  z-index: 1;
+}
+
+.launch {
+  display: grid;
+  gap: 14px;
+}
+
+.hint {
+  margin: 0;
+  padding-left: 72px;
+  color: var(--muted);
+  font-family: var(--font-arvo), Arvo, Georgia, serif;
+  font-size: 13px;
+  letter-spacing: 0.005em;
+  text-align: left;
+}
+
+.hint span {
+  display: inline-block;
+}
+
+/* ---------------------------------------------------------------- the button */
+.btn {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 64px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--pill-edge), var(--pill) 46%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.09),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 1px 0 rgba(0, 0, 0, 0.6),
+    0 18px 40px -16px rgba(0, 0, 0, 0.9);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.heat {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(180px 80px at 32px 100%, rgba(255, 138, 43, 0.5), transparent 70%);
+  box-shadow: 0 0 56px -6px rgba(255, 120, 40, 0.45);
+  opacity: 0;
+  pointer-events: none;
+  will-change: opacity;
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--coral);
+  outline-offset: 5px;
+}
+
+:global(html[data-using='pointer']) .btn:focus-visible {
+  outline: none;
+}
+
+.pad {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 30%, #12141c, var(--well) 70%);
+  box-shadow:
+    inset 0 2px 6px rgba(0, 0, 0, 0.8),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.ring {
+  position: absolute;
+  inset: -6px;
+  width: 64px;
+  height: 64px;
+  overflow: visible;
+  transform: rotate(-90deg);
+  fill: none;
+  stroke: var(--coral);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+
+.label {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 72px;
+  right: 16px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.line {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-arvo), Arvo, Georgia, serif;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.012em;
+  white-space: nowrap;
+}
+
+.lineCount,
+.lineDone {
+  visibility: hidden;
+}
+
+.digits {
+  position: relative;
+  display: inline-block;
+  height: 1.25em;
+  min-width: 0.7em;
+  overflow: hidden;
+  color: var(--coral);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.reel {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25em;
+}
+
+.check {
+  width: 20px;
+  height: 20px;
+  margin-right: 2px;
+  fill: none;
+  stroke: var(--coral);
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+
+/* ---------------------------------------------------------------- the sky and the rocket */
+.sky {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.skyBack {
+  z-index: 0;
+}
+
+.rocket {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 3;
+  width: 80px;
+  height: 120px;
+  overflow: visible;
+  visibility: hidden;
+  pointer-events: none;
+  will-change: transform;
+}
+
+/* the SVG's internal classes stay global so the copied markup works unchanged */
+.rocket :global(.rocket__hull) { fill: url(#rk-hull); }
+.rocket :global(.rocket__hull-a) { stop-color: #a8a49c; }
+.rocket :global(.rocket__hull-b) { stop-color: var(--hull); }
+.rocket :global(.rocket__hull-c) { stop-color: var(--hull); }
+.rocket :global(.rocket__hull-d) { stop-color: #8e8a83; }
+.rocket :global(.rocket__cap),
+.rocket :global(.rocket__fin) { fill: url(#rk-fin); }
+.rocket :global(.rocket__fin-a) { stop-color: var(--coral); }
+.rocket :global(.rocket__fin-b) { stop-color: color-mix(in srgb, var(--coral) 62%, #000); }
+.rocket :global(.rocket__band) { fill: rgba(0, 0, 0, 0.16); }
+.rocket :global(.rocket__keel) { fill: color-mix(in srgb, var(--coral) 70%, #000); }
+.rocket :global(.rocket__nozzle) { fill: url(#rk-metal); }
+.rocket :global(.rocket__rim) { fill: #2a2d38; }
+.rocket :global(.rocket__glass) { fill: var(--glass); }
+.rocket :global(.rocket__shine) {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.85);
+  stroke-width: 1.1;
+  stroke-linecap: round;
+}
+.rocket :global(.rocket__halo) { fill: url(#rk-glow); }
+.rocket :global(.rocket__glow-a) { stop-color: var(--flame); stop-opacity: 0.42; }
+.rocket :global(.rocket__glow-m) { stop-color: var(--flame); stop-opacity: 0.14; }
+.rocket :global(.rocket__glow-b) { stop-color: var(--flame); stop-opacity: 0; }
+.rocket :global(.rocket__splash) { fill: url(#rk-glow); opacity: 0; }
+.rocket :global(.rocket__fire) { fill: url(#rk-flame); }
+.rocket :global(.rocket__flame-a) { stop-color: #fff6dc; }
+.rocket :global(.rocket__flame-b) { stop-color: var(--flame); }
+.rocket :global(.rocket__flame-c) { stop-color: #c8321a; stop-opacity: 0; }
+.rocket :global(.rocket__core) { fill: url(#rk-core); }
+.rocket :global(.rocket__core-a) { stop-color: #fff2c4; stop-opacity: 0.8; }
+.rocket :global(.rocket__core-b) { stop-color: #fff2c4; stop-opacity: 0; }
+.rocket :global(.rocket__knots) { fill: #fff4d2; }
+.rocket :global(.rocket__sparks) {
+  fill: none;
+  stroke: #ffe2a6;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+}
+.rocket :global(.rocket__burn) { fill: url(#rk-heat); opacity: 0; }
+.rocket :global(.rocket__heat-a) { stop-color: var(--flame); stop-opacity: 0; }
+.rocket :global(.rocket__heat-b) { stop-color: var(--flame); stop-opacity: 0.85; }
+
+@media (max-width: 768px) {
+  .wrapper {
+    margin-top: 12px;
+  }
+
+  .hint {
+    padding-left: 64px;
+    font-size: 12px;
+  }
+}

@@ -9,6 +9,13 @@ const LOCAL_ARTICLES_FILE = path.join(process.cwd(), 'data', 'pixel-tech-web-art
 
 // Mémoire cache pour SSR rapide
 let inMemoryArticlesCache: Record<string, InsightArticle> | null = null;
+let inMemoryArticlesTimestamp = 0;
+const ARTICLES_CACHE_TTL_MS = 60_000; // 60 secondes
+
+export function clearArticlesCache(): void {
+  inMemoryArticlesCache = null;
+  inMemoryArticlesTimestamp = 0;
+}
 
 function getSeedArticles(): Record<string, InsightArticle> {
   const map: Record<string, InsightArticle> = {};
@@ -70,6 +77,10 @@ async function getFirestoreDb() {
  * Lit tous les articles (seed initial + surcharges Firestore / JSON local).
  */
 export async function getArticles(): Promise<InsightArticle[]> {
+  if (inMemoryArticlesCache && Date.now() - inMemoryArticlesTimestamp < ARTICLES_CACHE_TTL_MS) {
+    return Object.values(inMemoryArticlesCache);
+  }
+
   const seed = getSeedArticles();
   const jsonLocal = readJsonArticles();
 
@@ -94,6 +105,7 @@ export async function getArticles(): Promise<InsightArticle[]> {
   };
 
   inMemoryArticlesCache = merged;
+  inMemoryArticlesTimestamp = Date.now();
   return Object.values(merged);
 }
 
@@ -173,6 +185,7 @@ export async function saveArticle(
   // Invalidation cache mémoire
   if (inMemoryArticlesCache) {
     inMemoryArticlesCache[slug] = updated;
+    inMemoryArticlesTimestamp = Date.now();
   }
 
   return updated;
@@ -201,6 +214,7 @@ export async function deleteArticle(slug: string): Promise<boolean> {
 
   if (inMemoryArticlesCache) {
     delete inMemoryArticlesCache[slug];
+    inMemoryArticlesTimestamp = Date.now();
   }
 
   return true;

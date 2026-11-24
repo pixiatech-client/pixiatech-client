@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic';
 import { redirect, notFound } from 'next/navigation';
 import { QuoteBuilder } from '@/components/quote-builder';
 import { EmergencyStopPage } from '@/components/emergency-stop-page';
+import { VALID_STEPS } from '@/lib/quote-routes';
 
 import { getSettings, getDeliverySettings, getLaborSettings, getProducts, getLocations, getWizardSettings } from '@/app/actions/public-actions';
 import type { Settings, DeliverySettings, LaborSettings, Product, Locations, WizardSettings } from '@/lib/types';
@@ -43,9 +44,15 @@ export default async function StepPage(props: {
     redirect('/?step=1');
   }
 
-  // All named step paths redirect to root — everything stays at /
-  if (stepName) {
+  // Slugs historiques du configurateur : on garde la redirection vers l'accueil
+  // (le wizard vit désormais sur /?step=N). Tout autre chemin est une vraie 404.
+  const KNOWN_LEGACY_STEPS = new Set([...VALID_STEPS, 'step-one', 'step1']);
+  if (stepName && KNOWN_LEGACY_STEPS.has(stepName)) {
     redirect('/');
+  }
+
+  if (stepName) {
+    notFound();
   }
 
   // Deep-link: ?step=N opens wizard directly at step N

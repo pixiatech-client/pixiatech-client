@@ -18,6 +18,17 @@ const EXCLUDED_PATHS = [
   '/mon-compte',
 ];
 
+// Cache client persistant entre les navigations pour éviter de relancer
+// 5 Server Actions lourdes à chaque changement de page.
+let _clientCachedShopData: {
+  allProducts: Product[];
+  settings: Settings;
+  laborSettings: LaborSettings;
+  deliverySettings: DeliverySettings;
+  locations: Locations | null;
+} | null = null;
+let _clientLoadPromise: Promise<typeof _clientCachedShopData> | null = null;
+
 export function FloatingChatWrapper() {
   const pathname = usePathname();
   const [data, setData] = useState<{
@@ -26,7 +37,7 @@ export function FloatingChatWrapper() {
     laborSettings: LaborSettings;
     deliverySettings: DeliverySettings;
     locations: Locations | null;
-  } | null>(null);
+  } | null>(_clientCachedShopData);
   const [shifted, setShifted] = useState(false);
 
   const shouldShow = !EXCLUDED_PATHS.some((p) => pathname.startsWith(p));
@@ -44,31 +55,45 @@ export function FloatingChatWrapper() {
   }, []);
 
   useEffect(() => {
-    if (!shouldShow || data) return;
+    if (!shouldShow) return;
+    if (_clientCachedShopData) {
+      if (!data) setData(_clientCachedShopData);
+      return;
+    }
 
     let cancelled = false;
-    (async () => {
-      try {
-        const [settings, deliverySettings, laborSettings, productsResult, locations] = await Promise.all([
-          getSettings(),
-          getDeliverySettings(),
-          getLaborSettings(),
-          getProducts({ limit: 1000 }),
-          getLocations(),
-        ]);
-        if (!cancelled) {
-          setData({
+    if (!_clientLoadPromise) {
+      _clientLoadPromise = (async () => {
+        try {
+          const [settings, deliverySettings, laborSettings, productsResult, locations] = await Promise.all([
+            getSettings(),
+            getDeliverySettings(),
+            getLaborSettings(),
+            getProducts({ limit: 1000 }),
+            getLocations(),
+          ]);
+          const loaded = {
             allProducts: productsResult.products,
             settings,
             laborSettings,
             deliverySettings,
             locations,
-          });
+          };
+          _clientCachedShopData = loaded;
+          return loaded;
+        } catch (error) {
+          console.error('Failed to load shop data for chatbot:', error);
+          _clientLoadPromise = null;
+          return null;
         }
-      } catch (error) {
-        console.error('Failed to load shop data for chatbot:', error);
+      })();
+    }
+
+    _clientLoadPromise.then((loaded) => {
+      if (!cancelled && loaded) {
+        setData(loaded);
       }
-    })();
+    });
 
     return () => { cancelled = true; };
   }, [shouldShow, data]);

@@ -796,7 +796,31 @@ export function applyElementStyle(el: HTMLElement, style: ElementStyle, lang?: s
   if (style.fontStyle !== undefined) el.style.fontStyle = style.fontStyle;
   if (style.textDecoration !== undefined) el.style.textDecoration = style.textDecoration;
   if (style.textTransform !== undefined) el.style.textTransform = style.textTransform;
-  if (style.textAlign !== undefined) el.style.textAlign = style.textAlign;
+  if (style.textAlign !== undefined) {
+    el.style.textAlign = style.textAlign;
+    // Alignement horizontal de l'objet/bloc dans son conteneur (blocs, flex, grid, médias, groupes)
+    if (style.textAlign === 'left') {
+      el.style.marginLeft = '0px';
+      el.style.marginRight = 'auto';
+      el.style.alignSelf = 'flex-start';
+      el.style.justifySelf = 'start';
+    } else if (style.textAlign === 'center') {
+      el.style.marginLeft = 'auto';
+      el.style.marginRight = 'auto';
+      el.style.alignSelf = 'center';
+      el.style.justifySelf = 'center';
+    } else if (style.textAlign === 'right') {
+      el.style.marginLeft = 'auto';
+      el.style.marginRight = '0px';
+      el.style.alignSelf = 'flex-end';
+      el.style.justifySelf = 'end';
+    } else {
+      el.style.removeProperty('margin-left');
+      el.style.removeProperty('margin-right');
+      el.style.removeProperty('align-self');
+      el.style.removeProperty('justify-self');
+    }
+  }
   if (style.padding !== undefined) el.style.padding = style.padding;
   if (neutralizeLayout) {
     // Titre Hero Contact sur écran étroit : on rend la main au CSS du composant
@@ -1082,7 +1106,34 @@ export function useCmsElementStyles(): void {
     const unsubscribe = subscribeSections(() => {
       cancelAnimationFrame(raf3);
       raf3 = requestAnimationFrame(apply);
+      attachObservers();
     });
+
+    // Réappliquer les styles CMS lorsqu'un sous-arbre dynamique se monte à l'intérieur
+    // d'une section déjà montée (ex. basculement d'onglet Scène 3D -> Châssis & Rail).
+    let rafMut = 0;
+    const observers: MutationObserver[] = [];
+    const attachObservers = () => {
+      for (const obs of observers) obs.disconnect();
+      observers.length = 0;
+      for (const { node } of getRegisteredSections()) {
+        const mo = new MutationObserver((mutations) => {
+          const hasContentAddition = mutations.some((m) =>
+            Array.from(m.addedNodes).some(
+              (n) => n instanceof HTMLElement && !n.hasAttribute('data-cms-ui') && !n.closest('[data-cms-ui]')
+            )
+          );
+          if (!hasContentAddition) return;
+          cancelAnimationFrame(rafMut);
+          rafMut = requestAnimationFrame(() => {
+            requestAnimationFrame(apply);
+          });
+        });
+        mo.observe(node, { childList: true, subtree: true });
+        observers.push(mo);
+      }
+    };
+    attachObservers();
 
     // Le titre Hero Contact neutralise certaines propriétés CMS sous un seuil
     // de largeur (voir `shouldNeutralizeCmsLayout`). Il faut donc rejouer
@@ -1106,6 +1157,8 @@ export function useCmsElementStyles(): void {
       cancelAnimationFrame(raf2);
       cancelAnimationFrame(raf3);
       cancelAnimationFrame(raf4);
+      cancelAnimationFrame(rafMut);
+      for (const obs of observers) obs.disconnect();
       unsubscribe();
       if (typeof layoutQuery.removeEventListener === 'function') {
         layoutQuery.removeEventListener('change', reapplyOnViewportChange);

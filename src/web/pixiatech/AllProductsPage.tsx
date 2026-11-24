@@ -9,7 +9,6 @@ import { PixiaHeader } from './PixiaHeader';
 import { PixiaFooter } from './PixiaFooter';
 import { RevealRoot } from './RevealRoot';
 import { ConsultationModal } from './ConsultationModal';
-import { BackToTopButton } from './BackToTopButton';
 import { Language } from '../pixiatech-translations';
 import { useCms } from '@/lib/site-web/cms-context';
 import { getCmsText } from '@/lib/site-web/cms-i18n';
@@ -865,7 +864,6 @@ function AllProductsView({
       </section>
       </main>
       <PixiaFooter companyName="PIXIATECH" lang={lang} onOpenConsultation={handleOpenConsultation} />
-      <BackToTopButton lang={lang} />
     </RevealRoot>
   );
 };
