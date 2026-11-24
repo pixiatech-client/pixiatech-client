@@ -4,7 +4,7 @@
       "id": "home",
       "name": "home",
       "slug": "/home",
-      "updatedAt": "2026-11-24T22:06:28.685Z",
+      "updatedAt": "2026-11-24T22:10:05.250Z",
       "sections": {
         "pixia-web": {
           "text_1790257213042": "sdsdsdsdÉDITEUR DIRECT : CLIQUEZ SUR UN TEXTE OU UNE IMAGE",
@@ -885,20 +885,19 @@
               "width": "822px",
               "color": "#cf5a1c",
               "fontSize": "60px",
-              "offsetX": 3,
-              "offsetY": -20
+              "offsetX": 2,
+              "offsetY": 15
             },
             "titleLine2": {
               "width": "497px"
             },
             "description": {
-              "offsetX": 11,
-              "offsetY": -118,
-              "width": "604px"
+              "offsetX": 2,
+              "offsetY": -69
             },
             "badge": {
-              "offsetX": 10,
-              "offsetY": 3
+              "offsetX": 2,
+              "offsetY": 15
             },
             "section:1/div:1/div:3/div:1/div:2": {
               "offsetX": -6,
@@ -3354,5 +3353,5 @@
     "backendName": "Pixel Tech Web",
     "backendApiUrl": "/api/site-web"
   },
-  "updatedAt": "2026-11-24T22:06:28.838Z"
+  "updatedAt": "2026-11-24T22:10:05.392Z"
 }
