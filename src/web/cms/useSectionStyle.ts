@@ -91,6 +91,9 @@ export function useSectionStyle(cmsData: Record<string, unknown>): SectionStyleR
   const bgImage = (cmsData.bgImage as string | undefined) || undefined;
   const bgParallax = Boolean(cmsData.bgParallax);
 
+  const heightVal  = numOrUndef(cmsData.height);
+  const height     = heightVal && heightVal > 0 ? heightVal : undefined;
+
   const overlayOpacity = numOrUndef(cmsData.overlayOpacity);
   const hasOverlay     = !!bgImage && !!overlayOpacity && overlayOpacity > 0;
   const overlayHex     = hasOverlay
@@ -110,6 +113,7 @@ export function useSectionStyle(cmsData: Record<string, unknown>): SectionStyleR
     ...(marginTop     !== undefined && { marginTop }),
     ...(marginBottom  !== undefined && { marginBottom }),
     ...(minHeight     !== undefined && { minHeight }),
+    ...(height        !== undefined && { height, overflow: 'hidden' as const }),
     ...(bgColor       !== undefined && { backgroundColor: bgColor }),
     ...(textColor     !== undefined && { color: textColor }),
     ...(bgImage ? {
@@ -117,7 +121,7 @@ export function useSectionStyle(cmsData: Record<string, unknown>): SectionStyleR
       backgroundSize:     'cover',
       backgroundPosition: 'center',
       backgroundRepeat:   'no-repeat',
-      ...(bgParallax ? { backgroundAttachment: 'fixed' } : {}),
+      backgroundAttachment: bgParallax ? 'fixed' : 'scroll',
     } : {}),
   };
 

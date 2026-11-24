@@ -179,6 +179,20 @@ export const SectionBackgroundControl: React.FC<SectionBackgroundControlProps> =
                 {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
               </button>
             </div>
+            <button
+              type="button"
+              onClick={() => {
+                window.dispatchEvent(
+                  new CustomEvent('pixia-open-bg-media-modal', {
+                    detail: { sectionKey },
+                  })
+                );
+              }}
+              className="w-full flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-lg bg-[#161615] hover:bg-white/10 border border-[#2B2B28] text-white text-[11px] font-semibold transition-colors cursor-pointer"
+            >
+              <ImageIcon className="w-3.5 h-3.5 text-[color:var(--ui-accent)]" />
+              <span>Remplacer l&apos;arrière-plan</span>
+            </button>
             {bgImage && (
               <div className="flex items-center justify-between gap-2 pt-1">
                 <div className="h-10 w-16 rounded overflow-hidden border border-[#2B2B28] bg-black shrink-0">

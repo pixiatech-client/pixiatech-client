@@ -17,6 +17,14 @@ export const ManifestoSection: React.FC<ManifestoSectionProps> = ({ lang = 'FR' 
   const cms = useSectionStyle(cmsData);
   const activeLang = isEditing ? currentLang : normalizeLang(lang);
 
+  // Quand une hauteur est imposée depuis le CMS, réduire le padding interne
+  // pour que la section puisse effectivement descendre sous sa hauteur naturelle.
+  const requestedHeight = Number(cmsData.height ?? cmsData.minHeight);
+  const compactPadding =
+    Number.isFinite(requestedHeight) && requestedHeight > 0
+      ? Math.max(24, Math.min(170, Math.round((requestedHeight - 520) / 2)))
+      : undefined;
+
   const t = {
     eyebrow: getCmsText(
       cmsData,
@@ -152,7 +160,16 @@ export const ManifestoSection: React.FC<ManifestoSectionProps> = ({ lang = 'FR' 
         }}
       />
 
-      <div className="wrap sec-manifesto" style={{ position: 'relative', zIndex: 1 }}>
+      <div
+        className="wrap sec-manifesto"
+        style={{
+          position: 'relative',
+          zIndex: 1,
+          ...(compactPadding !== undefined
+            ? { paddingTop: compactPadding, paddingBottom: compactPadding }
+            : {}),
+        }}
+      >
         <div
           data-reveal="true"
           data-text-key="badge"

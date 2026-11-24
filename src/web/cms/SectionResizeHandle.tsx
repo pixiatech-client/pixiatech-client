@@ -112,7 +112,9 @@ export const SectionResizeHandle: React.FC<SectionResizeHandleProps> = ({
           onResizeEnd(finalClampedHeight, finalPaddingBottom);
         }
 
-        // Persist both minHeight and paddingBottom to CMS
+        // Persist the exact height so a section can shrink below its natural
+        // content height, plus minHeight/paddingBottom for the existing layout.
+        updateSectionField(sectionKey, 'height', finalClampedHeight);
         updateSectionField(sectionKey, 'minHeight', finalClampedHeight);
         updateSectionField(sectionKey, 'paddingBottom', finalPaddingBottom);
         void saveCurrentPage();

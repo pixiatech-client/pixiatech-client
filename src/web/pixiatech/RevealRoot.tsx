@@ -1,20 +1,16 @@
 'use client';
 
 import { useRef, type ReactNode } from 'react';
-import { usePrefersReducedMotion, useRevealObserver } from '../pixiatech-hooks';
-import { useCms } from '@/lib/site-web/cms-context';
+import { useRevealObserver } from '../pixiatech-hooks';
 
 /**
- * Root wrapper that observes every `[data-reveal="true"]` descendant and
- * toggles `.is-revealed` as it scrolls into view. Falls back to immediate
- * reveal under prefers-reduced-motion or when the CMS editor is active.
+ * Root wrapper: every `[data-reveal="true"]` descendant is marked visible on mount.
+ * No IntersectionObserver, no scroll-linked reveal. CMS fields and text keys stay untouched.
  */
 export function RevealRoot({ children, className, style }: { children: ReactNode; className?: string; style?: React.CSSProperties }) {
   const rootRef = useRef<HTMLDivElement | null>(null);
-  const reduced = usePrefersReducedMotion();
-  const { isEditing } = useCms();
 
-  useRevealObserver(rootRef, { immediate: reduced || isEditing, trigger: isEditing });
+  useRevealObserver(rootRef, { immediate: true });
 
   return (
     <div ref={rootRef} className={className} style={style}>

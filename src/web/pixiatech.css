@@ -2,8 +2,8 @@
    Route-scoped to the PixiaTech-branded pages (/web home + /web/insights).
    Imported ONLY by HomePage and InsightsPage so it never collides with the
    PXT Fine route (which keeps web.css's natural --accent).
-   web.css is the shared design system; this file overrides accent + adds the
-   data-reveal scroll animation that the original site drives from JS. */
+   web.css is the shared design system; this file overrides accent. Content marked
+   data-reveal is rendered immediately: no scroll masking, no reveal timeline. */
 
 #pixia-web .xer-site {
   color: var(--ink);
@@ -21,41 +21,22 @@
   --ease-smooth: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-/* ---- 1. Scroll Reveal Cinématographique Haute Fidélité ---- */
+/* ---- 1. Contenus statiques : aucun masquage ni décalage au scroll ---- */
 #pixia-web [data-reveal='true'] {
-  opacity: 0;
-  transform: translate3d(0, 28px, 0);
-  filter: blur(5px);
-  transition: opacity 0.85s var(--ease-out-expo),
-              transform 1.05s var(--ease-out-expo),
-              filter 0.85s var(--ease-out-expo);
-  will-change: opacity, transform, filter;
-  backface-visibility: hidden;
+  opacity: 1 !important;
+  transform: none !important;
+  filter: none !important;
+  transition: none !important;
+  transition-delay: 0s !important;
+  will-change: auto !important;
+  backface-visibility: visible !important;
 }
 
 #pixia-web [data-reveal='true'].is-revealed {
-  opacity: 1;
-  transform: translate3d(0, 0, 0);
-  filter: blur(0px);
+  opacity: 1 !important;
+  transform: none !important;
+  filter: none !important;
 }
-
-/* Staggering séquentiel fluide pour les groupes et listes d'éléments */
-#pixia-web [data-reveal-group] > [data-reveal='true']:nth-child(1),
-#pixia-web .stagger-children > [data-reveal='true']:nth-child(1) { transition-delay: 0.04s; }
-#pixia-web [data-reveal-group] > [data-reveal='true']:nth-child(2),
-#pixia-web .stagger-children > [data-reveal='true']:nth-child(2) { transition-delay: 0.10s; }
-#pixia-web [data-reveal-group] > [data-reveal='true']:nth-child(3),
-#pixia-web .stagger-children > [data-reveal='true']:nth-child(3) { transition-delay: 0.16s; }
-#pixia-web [data-reveal-group] > [data-reveal='true']:nth-child(4),
-#pixia-web .stagger-children > [data-reveal='true']:nth-child(4) { transition-delay: 0.22s; }
-#pixia-web [data-reveal-group] > [data-reveal='true']:nth-child(5),
-#pixia-web .stagger-children > [data-reveal='true']:nth-child(5) { transition-delay: 0.28s; }
-#pixia-web [data-reveal-group] > [data-reveal='true']:nth-child(6),
-#pixia-web .stagger-children > [data-reveal='true']:nth-child(6) { transition-delay: 0.34s; }
-#pixia-web [data-reveal-group] > [data-reveal='true']:nth-child(7),
-#pixia-web .stagger-children > [data-reveal='true']:nth-child(7) { transition-delay: 0.40s; }
-#pixia-web [data-reveal-group] > [data-reveal='true']:nth-child(8),
-#pixia-web .stagger-children > [data-reveal='true']:nth-child(8) { transition-delay: 0.46s; }
 
 /* ---- 2. Micro-interactions & Retours Tactiles Boutons ---- */
 #pixia-web .btn,

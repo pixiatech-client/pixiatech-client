@@ -58,6 +58,8 @@ interface ImageEditState {
   kind: MediaKind;
   currentSrc: string;
   alt: string;
+  /** Mode arrière-plan de section (via SectionBackgroundControl). */
+  bgSectionKey?: string;
 }
 
 /** Entrée de la bibliothèque d'images réelle (API /api/site-web/media-library). */
@@ -231,6 +233,57 @@ export const VisualInPlaceEditor: React.FC = () => {
     });
     setNewImageSrc(el.getAttribute('src') || '');
   }, [currentPageData]);
+
+  // Écoute le bouton « Remplacer l'arrière-plan » du panneau SectionBackgroundControl
+  useEffect(() => {
+    if (!isEditing) return;
+    const handler = (ev: Event) => {
+      const detail = (ev as CustomEvent<{ sectionKey?: string }>).detail;
+      const sectionKey = detail?.sectionKey;
+      if (!sectionKey) return;
+
+      const secNode = getSectionNode(sectionKey);
+      if (sectionKey === 'hero' && secNode) {
+        const mediaEls = Array.from(
+          secNode.querySelectorAll<HTMLElement>('img[data-image-key], video[data-image-key]')
+        );
+        const activeSlideEl =
+          mediaEls.find((el) => {
+            const p = el.parentElement;
+            return p && (p.style.opacity === '1' || p.style.pointerEvents === 'auto');
+          }) || mediaEls[0];
+        if (activeSlideEl) {
+          openImageModalForElement(activeSlideEl);
+          return;
+        }
+      }
+
+      const secData = (currentPageData?.sections?.[sectionKey] as Record<string, unknown> | undefined) || {};
+      const layout = (secData.layout as Record<string, unknown> | undefined) || {};
+      const existingBg = String(secData.bgImage ?? layout.bgImage ?? '');
+      setOverlayConfig({
+        enabled: false,
+        color: '#000000',
+        opacity: 45,
+        gradientEnabled: false,
+        gradientStartColor: '#000000',
+        gradientStartOpacity: 45,
+        gradientEndColor: '#000000',
+        gradientEndOpacity: 85,
+        gradientDirection: 'to bottom',
+      });
+      setActiveImageTarget({
+        element: secNode || document.body,
+        kind: isMediaVideo(existingBg) ? 'video' : 'image',
+        currentSrc: existingBg,
+        alt: sectionKey,
+        bgSectionKey: sectionKey,
+      });
+      setNewImageSrc(existingBg);
+    };
+    window.addEventListener('pixia-open-bg-media-modal', handler);
+    return () => window.removeEventListener('pixia-open-bg-media-modal', handler);
+  }, [isEditing, currentPageData, openImageModalForElement]);
 
   // Charge la bibliothèque réelle depuis l'API admin (lecture seule). En cas
   // d'échec, on retombe sur les images de démonstration historiques.
@@ -1033,6 +1086,21 @@ export const VisualInPlaceEditor: React.FC = () => {
     const finalSrc = srcToApply || newImageSrc;
     if (!activeImageTarget) return;
 
+    if (activeImageTarget.bgSectionKey) {
+      const bgKey = activeImageTarget.bgSectionKey;
+      if (finalSrc) {
+        updateSectionField(bgKey, 'bgImage', finalSrc);
+      }
+      setSelectedBlockId(bgKey);
+      setIsApplying(true);
+      const ok = await persist(`${bgKey}.bgImage`);
+      setIsApplying(false);
+      if (ok) {
+        setActiveImageTarget(null);
+      }
+      return;
+    }
+
     const targetEl = activeImageTarget.element;
     const effectiveSrc = finalSrc || activeImageTarget.currentSrc;
     const isTargetVideo = isMediaVideo(effectiveSrc);
@@ -1179,7 +1247,9 @@ export const VisualInPlaceEditor: React.FC = () => {
                   </span>
                 </label>
                 <div className="relative h-44 rounded-xl overflow-hidden border border-[#222] bg-[#141414] flex items-center justify-center">
-                  {isMediaVideo(activeImageTarget.currentSrc) ? (
+                  {!activeImageTarget.currentSrc ? (
+                    <span className="text-[11px] font-mono text-[#666]">Aucun média actuel</span>
+                  ) : isMediaVideo(activeImageTarget.currentSrc) ? (
                     <video
                       src={activeImageTarget.currentSrc}
                       controls

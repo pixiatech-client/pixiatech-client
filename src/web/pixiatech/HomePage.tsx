@@ -16,6 +16,7 @@ import { ShowreelSection } from './sections/ShowreelSection';
 import { MarketsSection } from './sections/MarketsSection';
 import { KineticSection } from './sections/KineticSection';
 import { ProductsSection } from './sections/ProductsSection';
+import { TechShowcaseSection } from './sections/TechShowcaseSection';
 import { FeaturedKineticSection } from './sections/led3d/FeaturedKineticSection';
 import { PitchSection } from './sections/PitchSection';
 import {
@@ -56,6 +57,7 @@ const HOME_SECTION_STYLE_CAPS: Record<string, readonly StyleKey[]> = {
   hero: BGMAP_STYLE_KEYS, // cms.section + cms.title, aucun voile rendu
   manifesto: FULL_STYLE_KEYS, // les trois
   kinetic: FULL_STYLE_KEYS, // les trois
+  kinetic_3d: SPACING_KEYS,
   products: FULL_STYLE_KEYS, // les trois
   technology: FULL_STYLE_KEYS, // les trois
   pitch: FULL_STYLE_KEYS, // les trois
@@ -78,6 +80,7 @@ export const DEFAULT_HOME_SECTION_ORDER = [
   'showreel',
   'markets',
   'kinetic',
+  'kinetic_3d',
   'products',
   'technology',
   'pitch',
@@ -122,9 +125,13 @@ const HOME_SECTIONS: Record<
     render: (p) => <ProductsSection lang={p.lang} onOpenConsultation={p.openConsultation} />,
   },
   technology: {
+    label: 'Technologies Propriétaires (5 Techs)',
+    render: (p) => <TechShowcaseSection lang={p.lang} onOpenConsultation={p.openConsultation} />,
+  },
+  kinetic_3d: {
     label: 'Architecture LED Cinétique 3D (MK-250)',
     render: () => (
-      <div id="technology">
+      <div id="kinetic-3d">
         <FeaturedKineticSection />
       </div>
     ),

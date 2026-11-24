@@ -120,6 +120,13 @@ export const EditableWrapper: React.FC<EditableWrapperProps> = ({
 
   const isSelected = selectedBlockId === sectionKey;
 
+  const savedHeight =
+    sectionData?.height !== undefined && Number(sectionData.height) > 0
+      ? Number(sectionData.height)
+      : layout.height !== undefined && Number(layout.height) > 0
+      ? Number(layout.height)
+      : undefined;
+
   const bgColor = (sectionData?.bgColor as string | undefined) || (layout?.bgColor as string | undefined) || '';
   const bgImage = (sectionData?.bgImage as string | undefined) || (layout?.bgImage as string | undefined) || '';
   const bgParallax = Boolean(sectionData?.bgParallax ?? layout?.bgParallax ?? false);
@@ -150,6 +157,19 @@ export const EditableWrapper: React.FC<EditableWrapperProps> = ({
     } else if (effMinH === 0) {
       sec.style.minHeight = '';
     }
+    // Hauteur explicite issue de la poignée : contrairement à min-height, elle
+    // permet aussi de réduire une section dont le contenu est plus haut.
+    const effHeight = liveMinHeight !== null ? liveMinHeight : savedHeight;
+    if (effHeight !== undefined && effHeight > 0) {
+      sec.style.height = `${effHeight}px`;
+      sec.style.overflow = 'hidden';
+      sec.dataset.cmsHeightApplied = 'true';
+    } else if (sec.dataset.cmsHeightApplied === 'true') {
+      sec.style.removeProperty('height');
+      sec.style.removeProperty('overflow');
+      delete sec.dataset.cmsHeightApplied;
+    }
+
     if (bgColor) {
       sec.style.backgroundColor = bgColor;
     } else {
@@ -165,7 +185,7 @@ export const EditableWrapper: React.FC<EditableWrapperProps> = ({
       sec.style.removeProperty('background-image');
       sec.style.removeProperty('background-attachment');
     }
-  }, [pTop, pBottom, pLeft, pRight, savedMinHeight, livePaddingBottom, liveMinHeight, bgColor, bgImage, bgParallax]);
+  }, [pTop, pBottom, pLeft, pRight, savedMinHeight, savedHeight, livePaddingBottom, liveMinHeight, bgColor, bgImage, bgParallax]);
 
   // Dès lors que la section sert à quelque chose, le niveau structurel doit être
   // IDENTIQUE en public et en édition : le contenu est rendu directement comme
