@@ -69,9 +69,6 @@ tsc_errors.txt
 /scripts/backup.js
 /backup-audit-2026/
 
-# widget chatbot
-/chatbot-widget/node_modules
-
 # python bytecode (skill helpers)
 __pycache__/
 *.pyc

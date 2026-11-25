@@ -3,9 +3,8 @@
  *
  * Exécution : npx tsx scripts/test-pixia-bootstrap.ts
  *
- * Le widget reste désactivé (NEW_PIXIA_ASSISTANT_ENABLED = false). Ces tests
- * vérifient l'alimentation en données réelles et le comportement fail-closed,
- * sans jamais activer le nouveau rendu pour les visiteurs.
+ * Ces tests vérifient l'alimentation en données réelles et le comportement
+ * fail-closed du point d'entrée unique, sans jamais injecter de démonstration.
  */
 import {
   isBootstrapPayloadValid,
@@ -14,12 +13,6 @@ import type {
   BootstrapPayload,
   ClientProfile,
 } from '../src/components/pixia-assistant/core/types';
-import {
-  NEW_PIXIA_ASSISTANT_ENABLED,
-  isNewPixiaAssistantAvailable,
-  registerPixiaBootstrapLoader,
-  resolvePixiaBootstrap,
-} from '../src/components/chat/pixia-assistant-switch';
 import { buildPixiaAssistantBootstrap } from '../src/lib/pixia-assistant/bootstrap-builder';
 import type {
   PixiaAssistantSessionSnapshot,
@@ -319,19 +312,20 @@ console.log('--- 7. Bootstrap invalide ---');
 }
 
 async function main(): Promise<void> {
-  console.log('--- 8. Erreur de chargement du bootstrap ---');
+  console.log('--- 8. Point d’entrée unique : validation fail-closed ---');
   {
-    check(NEW_PIXIA_ASSISTANT_ENABLED === false, 'drapeau du nouveau widget désactivé');
-    registerPixiaBootstrapLoader(async () => bootstrapFrom(build(ANONYMOUS)));
-    check(isNewPixiaAssistantAvailable() === false, 'loader branché mais widget indisponible');
-    const result = await resolvePixiaBootstrap();
-    check(result === null, 'resolvePixiaBootstrap retourne null tant que le drapeau est false');
-    registerPixiaBootstrapLoader(async () => {
-      throw new Error('chargement indisponible');
-    });
-    const errored = await resolvePixiaBootstrap();
-    check(errored === null, 'erreur de chargement → ancien assistant conservé');
-    registerPixiaBootstrapLoader(null);
+    const valid = bootstrapFrom(build(ANONYMOUS));
+    check(isBootstrapPayloadValid(valid), 'bootstrap réel accepté par le validateur');
+    check(!isBootstrapPayloadValid(null), 'payload absent rejeté');
+    check(!isBootstrapPayloadValid(undefined), 'payload indéfini rejeté');
+    check(
+      !isBootstrapPayloadValid({ ...valid, pricingFormulaStatus: 'local' }),
+      'tarification locale rejetée'
+    );
+    check(
+      !isBootstrapPayloadValid({ ...valid, products: [{ ...valid.products[0]!, id: '' }] }),
+      'produit sans identifiant rejeté'
+    );
   }
 
   console.log(`\nRésultat : ${assertions - failures}/${assertions} assertions réussies.`);

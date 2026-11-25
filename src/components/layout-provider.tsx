@@ -88,7 +88,6 @@ export function LayoutProvider({
       (window.location.hostname === 'pixiatech.com' ||
         window.location.hostname === 'www.pixiatech.com'));
   const isAdminPage = pathname.startsWith('/admin');
-  const isEmbedPage = pathname.startsWith('/embed') || pathname.startsWith('/chat-widget');
   const isLegalPage =
     pathname.startsWith('/mentions-legales') ||
     pathname.startsWith('/politique-confidentialite') ||
@@ -98,12 +97,11 @@ export function LayoutProvider({
     isLegalPage ||
     (isWebDomain &&
       !isAdminPage &&
-      !isEmbedPage &&
       !pathname.startsWith('/mon-compte') &&
       !pathname.startsWith('/boutique') &&
       !pathname.startsWith('/quote'));
   const isQuotePage = pathname.startsWith('/quote');
-  const isFrontendPage = !isAdminPage && !isEmbedPage && !isWebPage;
+  const isFrontendPage = !isAdminPage && !isWebPage;
   const isBoutiquePage = pathname.startsWith('/boutique');
   const isBoutiqueIndexPage = pathname === '/boutique';
   const isHomePage = pathname === '/' && !isWebDomain;
@@ -218,8 +216,8 @@ export function LayoutProvider({
             )}
             {(isFrontendPage || isWebPage) && <FloatingChatWrapper />}
             {/* Une seule enveloppe visuelle Pixia pour le site ET l'application.
-                Le moteur conversationnel reste porté par FloatingChatWrapper →
-                WizardBotFlow (props, API, auth, historique inchangés). */}
+                Le moteur conversationnel est porté par FloatingChatWrapper →
+                FloatingChatWidget, alimenté par le bootstrap réel PixiaTech. */}
             <PixiaGlobalAnimation
               active={isWebPage || isFrontendPage}
               heroSelector={isFrontendPage ? 'main' : undefined}
@@ -239,13 +237,11 @@ export function LayoutProvider({
           </CartProvider>
           </ProfileProvider>
         </ThemeProvider>
-        {!isAdminPage && !isEmbedPage && <CookieConsentBanner />}
-        {!isAdminPage && !isEmbedPage && <AnalyticsTracker />}
-        {/* Bouton retour en haut — visible sur toutes les pages sauf embed/chat-widget.
+        {!isAdminPage && <CookieConsentBanner />}
+        {!isAdminPage && <AnalyticsTracker />}
+        {/* Bouton retour en haut — visible sur toutes les pages.
             Sur mobile avec bottom nav, le bouton remonte de 80px pour ne pas chevaucher la nav. */}
-        {!isEmbedPage && (
-          <BackToTopButton bottomOffset={showBottomNav ? 80 : 0} />
-        )}
+        <BackToTopButton bottomOffset={showBottomNav ? 80 : 0} />
         <ShadcnToaster />
         <SonnerToaster 
           position="bottom-right" 

@@ -4,7 +4,6 @@ import { ChevronUp, Pencil, X } from 'lucide-react';
 import { AnimatePresence, motion, useReducedMotion, type Transition } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { t } from '../../../core/i18n/translations';
-import { computeDemoTestEstimate, formatDemoEuro } from '../../../core/pricing/demo-test-pricing';
 import type { BootstrapPayload, STEP } from '../../../core/types';
 import type { PixiaEngineState } from '../pixia-fsm-bridge';
 import { buildSpecificationTimeline } from './SpecificationSummary';
@@ -138,8 +137,6 @@ export function PixiaDynamicIslandPill({
 interface PixiaDynamicIslandExpandedProps {
   engine: PixiaEngineState;
   bootstrap: BootstrapPayload;
-  demoShowPrices?: boolean;
-  onToggleDemoPrices?: () => void;
   onClose: () => void;
   onEditStep?: (step: STEP) => void;
 }
@@ -147,8 +144,6 @@ interface PixiaDynamicIslandExpandedProps {
 export function PixiaDynamicIslandExpanded({
   engine,
   bootstrap,
-  demoShowPrices = false,
-  onToggleDemoPrices,
   onClose,
   onEditStep,
 }: PixiaDynamicIslandExpandedProps) {
@@ -164,14 +159,6 @@ export function PixiaDynamicIslandExpanded({
     isLockedPostContract,
     visitedSteps,
   } = buildSpecificationTimeline(engine, bootstrap);
-
-  const demoEstimate = demoShowPrices
-    ? computeDemoTestEstimate({
-        configState: engine.configState,
-        includeDelivery: engine.includeDelivery,
-        includeInstallation: engine.includeInstallation,
-      })
-    : null;
 
   const ActiveIcon = currentRow.icon;
   const stepDigits = pad2(progress.current);
@@ -353,80 +340,16 @@ export function PixiaDynamicIslandExpanded({
         </div>
       </motion.div>
 
-      {/* Footer Price with Temporary Demo Breakdown */}
-      <div className="border-t border-white/10 bg-[#141418]/90 px-4 py-3 space-y-2 shrink-0">
+      {/* Footer prix : toujours sur estimation, sans chiffre de démonstration */}
+      <div className="border-t border-white/10 bg-[#141418]/90 px-4 py-3 shrink-0">
         <div className="flex items-center justify-between gap-2">
-          <div>
-            <p className="text-[11px] font-medium text-[#9E9EA7]">
-              {lang === 'fr' ? 'Estimation tarifaire' : 'Quote estimate'}
-            </p>
-            {!demoShowPrices && (
-              <p className="text-[10px] text-[#71717A] truncate max-w-[200px]">
-                {t(lang, 'ui.demoNotice')}
-              </p>
-            )}
-          </div>
-          {onToggleDemoPrices ? (
-            <button
-              type="button"
-              onClick={onToggleDemoPrices}
-              className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold shrink-0 cursor-pointer transition-colors ${
-                demoShowPrices
-                  ? 'border-[#34D399]/45 bg-[#34D399]/15 text-[#6EE7B7]'
-                  : 'border-[#38BDF8]/35 bg-[#38BDF8]/12 text-[#BAE6FD] hover:bg-[#38BDF8]/20'
-              }`}
-            >
-              {demoShowPrices
-                ? lang === 'fr'
-                  ? 'Test chiffré ON'
-                  : 'Demo pricing ON'
-                : priceDisplay}
-            </button>
-          ) : (
-            <span className="inline-flex items-center rounded-full border border-[#38BDF8]/35 bg-[#38BDF8]/12 px-2.5 py-1 text-xs font-semibold text-[#BAE6FD] shrink-0">
-              {priceDisplay}
-            </span>
-          )}
+          <p className="text-[11px] font-medium text-[#9E9EA7]">
+            {lang === 'fr' ? 'Estimation tarifaire' : 'Quote estimate'}
+          </p>
+          <span className="inline-flex items-center rounded-full border border-[#38BDF8]/35 bg-[#38BDF8]/12 px-2.5 py-1 text-xs font-semibold text-[#BAE6FD] shrink-0">
+            {priceDisplay}
+          </span>
         </div>
-
-        {demoShowPrices && demoEstimate && (
-          <div className="rounded-xl border border-[#34D399]/25 bg-[#0F241D]/55 p-2 space-y-1 text-[11px]">
-            <div className="flex items-center justify-between text-[#D4D4D8]">
-              <span>{lang === 'fr' ? 'Prix global produit' : 'Product price'}</span>
-              <span className="font-mono font-semibold text-white tabular-nums">
-                {formatDemoEuro(demoEstimate.productGlobalPrice, lang)}
-              </span>
-            </div>
-            <div className="flex items-center justify-between text-[#D4D4D8]">
-              <span>{lang === 'fr' ? 'Prix livraison' : 'Delivery price'}</span>
-              <span className="font-mono font-semibold text-white tabular-nums">
-                {engine.includeDelivery === false
-                  ? lang === 'fr'
-                    ? 'Non incluse (0 €)'
-                    : 'Excluded (€0)'
-                  : formatDemoEuro(demoEstimate.deliveryPrice, lang)}
-              </span>
-            </div>
-            <div className="flex items-center justify-between text-[#D4D4D8]">
-              <span>
-                {lang === 'fr' ? 'Prix maintenance & installation' : 'Maintenance & install'}
-              </span>
-              <span className="font-mono font-semibold text-white tabular-nums">
-                {engine.includeInstallation === false
-                  ? lang === 'fr'
-                    ? 'Non incluse (0 €)'
-                    : 'Excluded (€0)'
-                  : formatDemoEuro(demoEstimate.maintenanceInstallationPrice, lang)}
-              </span>
-            </div>
-            <div className="pt-1 border-t border-white/10 flex items-center justify-between font-semibold text-[#6EE7B7]">
-              <span>{lang === 'fr' ? 'Total estimatif (Test)' : 'Total (Test)'}</span>
-              <span className="font-mono text-xs text-[#34D399] tabular-nums">
-                {formatDemoEuro(demoEstimate.totalPrice, lang)}
-              </span>
-            </div>
-          </div>
-        )}
       </div>
     </motion.div>
   );

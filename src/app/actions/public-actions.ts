@@ -5,8 +5,8 @@
 //
 // S0 (containment) : copie autonome des actions réellement publiques et non
 // sensibles qui vivaient dans `@/app/admin/actions` ('use server'). Le but est
-// de couper toute liaison entre les routes publiques (/chat-widget, /embed,
-// /[[...step]], flows de devis...) et le module admin, car une référence à ce
+// de couper toute liaison entre les routes publiques (configurateur, flows de
+// devis...) et le module admin, car une référence à ce
 // module réenregistre l'ensemble de ses exports dans les manifests de build
 // des routes publiques.
 //
@@ -594,7 +594,7 @@ export async function verifyQuoteToken(token: string): Promise<{ success: boolea
 // ─────────────────────────────────────────────────────────────────────────────
 // PUBLIC-BUT-OBJECT-AUTHORIZED — S1-5
 // ─────────────────────────────────────────────────────────────────────────────
-// Actions nécessaires aux flux publics (chat-widget, embed, signature, devis)
+// Actions nécessaires aux flux publics (signature, devis)
 // mais SANS contrôle d'autorisation par objet. Correction prévue au batch S1-5
 // (preuve de possession du devis via OTP/token). Logique inchangée en S0.
 

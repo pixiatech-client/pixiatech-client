@@ -73,7 +73,7 @@ export function computePaymentSchedule(total: number): { firstPayment: number; r
 //    dans Firestore (settings/delivery, settings/labor).
 //  - Aucun tarif par défaut caché (600 €, 250 €, 50 €, 1 tech / 40 m², etc.).
 //  - Ces fonctions sont pures : elles ne lisent pas Firestore et n'écrivent rien.
-//    quote-builder, SignatureFlow, WizardBotFlow, les API et les actions serveur
+//    quote-builder, SignatureFlow, l'Assistant Bot Pixia, les API et les actions serveur
 //    doivent toutes passer par ces fonctions.
 // ─────────────────────────────────────────────────────────────────────────────
 

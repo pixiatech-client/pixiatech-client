@@ -7,7 +7,6 @@ import {
   ArrowLeft,
   ArrowRight,
   ArrowUp,
-  BadgeEuro,
   Check,
   FileText,
   Globe,
@@ -20,7 +19,6 @@ import {
 import { AnimatePresence, motion } from 'framer-motion';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { t } from '../../core/i18n/translations';
-import { computeDemoTestEstimate, formatDemoEuro } from '../../core/pricing/demo-test-pricing';
 import {
   STEP,
   type BootstrapPayload,
@@ -134,7 +132,6 @@ export function PixiaChatWorkspace({
   const [localFormAttempts, setLocalFormAttempts] = useState(0);
   const [rentalCommentInput, setRentalCommentInput] = useState('');
   const [showReport, setShowReport] = useState(true);
-  const [demoShowPrices, setDemoShowPrices] = useState(false);
   const [showActionsMenu, setShowActionsMenu] = useState(false);
   const [islandExpanded, setIslandExpanded] = useState(false);
   // Valeur déterministe côté serveur : la vraie mesure est faite dans l'effet
@@ -698,30 +695,6 @@ export function PixiaChatWorkspace({
                     );
                   })()}
 
-                  {/* TEMPORARY TEST TOGGLE — Basculer Sur estimation <-> Prix démo chiffrés */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDemoShowPrices((v) => !v);
-                      setShowActionsMenu(false);
-                    }}
-                    className="w-full flex items-center justify-between rounded-xl px-2.5 py-2 text-xs font-medium text-[#E4E4E7] hover:bg-white/[0.08] transition-colors cursor-pointer"
-                  >
-                    <span className="inline-flex items-center gap-2">
-                      <BadgeEuro className="h-3.5 w-3.5 text-[#34D399]" />
-                      <span>{lang === 'fr' ? 'Prix démo (Test)' : 'Demo prices (Test)'}</span>
-                    </span>
-                    <span
-                      className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
-                        demoShowPrices
-                          ? 'bg-[#3f9b78]/25 text-[#34D399]'
-                          : 'bg-white/8 text-[#71717A]'
-                      }`}
-                    >
-                      {demoShowPrices ? 'ON' : 'OFF'}
-                    </span>
-                  </button>
-
                   {/* Recommencer */}
                   <button
                     type="button"
@@ -876,24 +849,10 @@ export function PixiaChatWorkspace({
                       </p>
                     </div>
                     <div className="text-right shrink-0 pt-0.5">
-                      <span
-                        className={`text-[11px] font-bold tabular-nums whitespace-nowrap ${
-                          demoShowPrices ? 'text-[#34D399] font-mono' : 'text-[#93C5FD]'
-                        }`}
-                      >
-                        {demoShowPrices
-                          ? formatDemoEuro(
-                              computeDemoTestEstimate({
-                                configState: engine.configState,
-                                includeDelivery: null,
-                                includeInstallation: null,
-                                productOverride: msg.selectedProduct,
-                              }).productGlobalPrice,
-                              lang
-                            )
-                          : bootstrap.settings.isPriceHidden
-                            ? t(lang, 'ui.priceHidden')
-                            : t(lang, 'ui.onQuote')}
+                      <span className="text-[11px] font-bold tabular-nums whitespace-nowrap text-[#93C5FD]">
+                        {bootstrap.settings.isPriceHidden
+                          ? t(lang, 'ui.priceHidden')
+                          : t(lang, 'ui.onQuote')}
                       </span>
                       <span className="block text-[9.5px] font-mono text-[#71717A] tabular-nums mt-0.5">
                         {msg.selectedProduct.tileWidthMm}×{msg.selectedProduct.tileHeightMm} mm
@@ -1008,7 +967,6 @@ export function PixiaChatWorkspace({
               lang={lang}
               blockedPeriods={bootstrap.blockedPeriods}
               isPriceHidden={bootstrap.settings.isPriceHidden}
-              demoShowPrices={demoShowPrices}
               sheetContainer={sheetHost}
               initialStart={engine.configState.rentalStartDate}
               initialEnd={engine.configState.rentalEndDate}
@@ -1101,8 +1059,6 @@ export function PixiaChatWorkspace({
               lang={lang}
               products={engine.recommendedProducts}
               isPriceHidden={bootstrap.settings.isPriceHidden}
-              demoShowPrices={demoShowPrices}
-              configState={engine.configState}
               initialSelectedId={engine.configState.selectedProduct?.id ?? null}
               onSelect={chooseProduct}
             />
@@ -1513,8 +1469,6 @@ export function PixiaChatWorkspace({
           <PixiaDynamicIslandExpanded
             engine={engine}
             bootstrap={bootstrap}
-            demoShowPrices={demoShowPrices}
-            onToggleDemoPrices={() => setDemoShowPrices((v) => !v)}
             onClose={() => setIslandExpanded(false)}
             onEditStep={handleEditStep}
           />
@@ -1545,8 +1499,6 @@ export function PixiaChatWorkspace({
             <SpecificationSummary
               engine={engine}
               bootstrap={bootstrap}
-              demoShowPrices={demoShowPrices}
-              onToggleDemoPrices={() => setDemoShowPrices((v) => !v)}
               onEditStep={handleEditStep}
             />
           </motion.div>

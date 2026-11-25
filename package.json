@@ -7,7 +7,6 @@
     "build": "npx next build",
     "start": "npx next start",
     "lint": "npx next lint",
-    "build:widget": "cd chatbot-widget && npm install && npx vite build && cd .. && node -e \"require('fs').copyFileSync('chatbot-widget/dist/widget.js','public/widget.js')\"",
     "build:info": "node scripts/write-build-info.mjs",
     "version:bump": "node scripts/bump-version.mjs",
     "push": "node scripts/push.mjs",
@@ -24,7 +23,7 @@
     "test:shop-links": "node --experimental-strip-types scripts/test-shop-links.ts",
     "test:analytics-session": "node --experimental-strip-types scripts/test-analytics-api-session.ts",
     "check:client-boundary": "node scripts/check-client-server-boundary.mjs",
-    "prebuild": "npm run build:info && npm run build:widget",
+    "prebuild": "npm run build:info",
     "postbuild": "node scripts/copy-standalone-assets.mjs"
   },
   "dependencies": {

@@ -6,7 +6,7 @@
   "maxRentalWidth": 6,
   "maxRentalHeight": 5,
   "maxProductsPerQuote": 3,
-  "previewScreenImageUrl": "https://pixiatech.com/wp-content/uploads/2025/11/Final-Comp.mp4",
+  "previewScreenImageUrl": "/youtube-video.mp4",
   "emergencyStopEnabled": false,
   "emergencyReturnUrl": "/",
   "emergencyStopMessage": "Pour des raisons de maintenance, notre outil d'estimation en ligne est actuellement suspendu. Veuillez nous excuser pour la gêne occasionnée.",

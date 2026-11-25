@@ -5,15 +5,12 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import gsap from 'gsap';
 import { t } from '../../../core/i18n/translations';
-import { computeDemoTestEstimate, formatDemoEuro } from '../../../core/pricing/demo-test-pricing';
-import type { ConfigState, Language, Product } from '../../../core/types';
+import type { Language, Product } from '../../../core/types';
 
 interface ProductCatalogStepProps {
   lang: Language;
   products: Product[];
   isPriceHidden: boolean;
-  demoShowPrices?: boolean;
-  configState?: ConfigState;
   initialSelectedId?: string | null;
   onSelect: (product: Product) => void;
 }
@@ -40,8 +37,6 @@ export function ProductCatalogStep({
   lang,
   products,
   isPriceHidden,
-  demoShowPrices = false,
-  configState,
   initialSelectedId = null,
   onSelect,
 }: ProductCatalogStepProps) {
@@ -380,16 +375,6 @@ export function ProductCatalogStep({
 
   const comparedProducts = products.filter((p) => compareIds.includes(p.id));
   const priceDisplay = isPriceHidden ? t(lang, 'ui.priceHidden') : t(lang, 'ui.onQuote');
-  const getCardPriceLabel = (product: Product) => {
-    if (!demoShowPrices || !configState) return priceDisplay;
-    const est = computeDemoTestEstimate({
-      configState,
-      includeDelivery: null,
-      includeInstallation: null,
-      productOverride: product,
-    });
-    return `${formatDemoEuro(est.productGlobalPrice, lang)}`;
-  };
 
   const flyPortal =
     typeof document !== 'undefined'
@@ -556,12 +541,8 @@ export function ProductCatalogStep({
                 </div>
 
                 <div className="text-right shrink-0 pt-0.5">
-                  <span
-                    className={`text-xs font-bold tabular-nums whitespace-nowrap ${
-                      demoShowPrices ? 'text-[#34D399] font-mono' : 'text-[#93C5FD]'
-                    }`}
-                  >
-                    {getCardPriceLabel(product)}
+                  <span className="text-xs font-bold tabular-nums whitespace-nowrap text-[#93C5FD]">
+                    {priceDisplay}
                   </span>
                   <span className="block text-[10px] font-mono text-[#71717A] tabular-nums mt-0.5">
                     {product.tileWidthMm}×{product.tileHeightMm} mm
@@ -825,11 +806,9 @@ export function ProductCatalogStep({
                     {comparedProducts.map((p) => (
                       <td
                         key={p.id}
-                        className={`py-3 px-3 font-semibold ${
-                          demoShowPrices ? 'font-mono text-[#34D399]' : 'font-sans text-[#93C5FD]'
-                        }`}
+                        className="py-3 px-3 font-sans font-semibold text-[#93C5FD]"
                       >
-                        {getCardPriceLabel(p)}
+                        {priceDisplay}
                       </td>
                     ))}
                   </tr>

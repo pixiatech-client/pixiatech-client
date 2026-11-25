@@ -2,23 +2,22 @@
 
 import { getPixiaAssistantBootstrap } from '@/app/actions/pixia-assistant-actions';
 import { isBootstrapPayloadValid } from '@/components/pixia-assistant/core/bootstrap-validation';
-import { registerPixiaBootstrapLoader } from './pixia-assistant-switch';
+import type { BootstrapPayload } from '@/components/pixia-assistant/core/types';
 
 /**
- * Branche la source réelle sur la bascule contrôlée.
+ * Unique source de bootstrap de l'Assistant Bot Pixia.
  *
- * L'enregistrement se fait à l'import du module, donc avant le premier rendu
- * des deux surfaces qui utilisent `resolvePixiaBootstrap()`. Le drapeau
- * `NEW_PIXIA_ASSISTANT_ENABLED` reste à `false` : ce branchement ne rend pas
- * le nouveau widget visible pour les visiteurs.
+ * La Server Action ne prend aucun argument et résout le client depuis
+ * `client_session`. Toute erreur, absence de service ou payload invalide
+ * retourne `null` : aucun assistant de repli, aucune donnée de démonstration.
  */
-async function loadRealPixiaBootstrap() {
-  const result = await getPixiaAssistantBootstrap();
-  if (!result.ok) return null;
-  if (!isBootstrapPayloadValid(result.bootstrap)) return null;
-  return result.bootstrap;
+export async function loadPixiaBootstrap(): Promise<BootstrapPayload | null> {
+  try {
+    const result = await getPixiaAssistantBootstrap();
+    if (!result.ok) return null;
+    if (!isBootstrapPayloadValid(result.bootstrap)) return null;
+    return result.bootstrap;
+  } catch {
+    return null;
+  }
 }
-
-registerPixiaBootstrapLoader(loadRealPixiaBootstrap);
-
-export {};

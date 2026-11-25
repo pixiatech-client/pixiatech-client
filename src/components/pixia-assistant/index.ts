@@ -1,10 +1,9 @@
 'use client';
 
 /**
- * Assistant Bot Pixia — Nouveau socle visuel et moteur conversationnel.
- * Phase 1 : socle UI/FSM intégré et compatible Next.js / React 19 / Tailwind v3.
- * Les connecteurs métier (Firestore, session client, pricing-engine, devis/PDF)
- * seront branchés en Phase 2 & 3.
+ * Assistant Bot Pixia — assistant unique intégré à l'application Next.js.
+ * Le bootstrap est alimenté par les services PixiaTech réels via Server Action ;
+ * aucun mode démonstration ni assistant de repli n'est admis.
  */
 
 export { PixiaChatWorkspace } from './features/pixia-bot/PixiaChatWorkspace';

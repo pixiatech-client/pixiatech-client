@@ -16,16 +16,13 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { t } from '../../../core/i18n/translations';
-import { computeDemoTestEstimate, formatDemoEuro } from '../../../core/pricing/demo-test-pricing';
 import { computeRentalDays } from '../../../core/pricing/pricing-engine';
-import { createInitialConfigState } from '../../../core/fsm/pixia-fsm';
 import type { BlockedPeriod, Language } from '../../../core/types';
 
 interface RentalCalendarStepProps {
   lang: Language;
   blockedPeriods: BlockedPeriod[];
   isPriceHidden?: boolean;
-  demoShowPrices?: boolean;
   sheetContainer?: HTMLElement | null;
   initialStart: string | null;
   initialEnd: string | null;
@@ -87,7 +84,6 @@ export function RentalCalendarStep({
   lang,
   blockedPeriods,
   isPriceHidden = false,
-  demoShowPrices = false,
   sheetContainer,
   initialStart,
   initialEnd,
@@ -274,20 +270,6 @@ export function RentalCalendarStep({
     : '';
   const isSingleDay = Boolean(startDate && effectiveEndDate === startDate);
   const daysCount = startDate ? computeRentalDays(startDate, effectiveEndDate) : 0;
-
-  const demoRentalEstimate =
-    demoShowPrices && startDate
-      ? computeDemoTestEstimate({
-          configState: {
-            ...createInitialConfigState(),
-            projectType: 'location',
-            rentalStartDate: startDate,
-            rentalEndDate: effectiveEndDate,
-          },
-          includeDelivery: true,
-          includeInstallation: null,
-        })
-      : null;
 
   const bottomTimeSheet = (
     <AnimatePresence>
@@ -646,12 +628,8 @@ export function RentalCalendarStep({
           <div className="pt-1.5 border-t border-[#10B981]/25 space-y-1">
             <div className="flex items-center justify-between font-semibold text-white">
               <span>{lang === 'fr' ? 'Total location' : 'Rental total'}</span>
-              <span className="text-[#34D399] font-mono tabular-nums">
-                {demoRentalEstimate
-                  ? formatDemoEuro(demoRentalEstimate.productGlobalPrice, lang)
-                  : isPriceHidden
-                    ? t(lang, 'ui.priceHidden')
-                    : t(lang, 'ui.onQuote')}
+              <span className="font-mono tabular-nums text-[#93C5FD]">
+                {isPriceHidden ? t(lang, 'ui.priceHidden') : t(lang, 'ui.onQuote')}
               </span>
             </div>
             <div className="flex items-center justify-between text-[#A7F3D0]">
@@ -660,11 +638,7 @@ export function RentalCalendarStep({
                 {lang === 'fr' ? 'Livraison' : 'Delivery'}
               </span>
               <span className="font-mono tabular-nums">
-                {demoRentalEstimate
-                  ? formatDemoEuro(demoRentalEstimate.deliveryPrice, lang)
-                  : lang === 'fr'
-                    ? 'À confirmer'
-                    : 'To confirm'}
+                {lang === 'fr' ? 'À confirmer' : 'To confirm'}
               </span>
             </div>
           </div>

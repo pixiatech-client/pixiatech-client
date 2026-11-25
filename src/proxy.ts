@@ -1,58 +1,33 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-// Routes that may be loaded inside an iframe from external origins (e.g. WordPress).
-const IFRAME_ROUTES = ['/chat-widget', '/embed'];
-
 // Apply baseline security headers to every response (defense in depth).
 // CSP is permissive enough to keep the existing PayPal/Firebase/Three.js features working.
-function applySecurityHeaders(response: NextResponse, isHttps: boolean, isEmbeddable: boolean): NextResponse {
+function applySecurityHeaders(response: NextResponse, isHttps: boolean): NextResponse {
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(self), geolocation=()');
 
-  if (isEmbeddable) {
-    // Allow framing from any origin so WordPress (and other sites) can embed the chat widget.
-    // X-Frame-Options is removed in favour of the modern CSP frame-ancestors directive.
-    response.headers.set(
-      'Content-Security-Policy',
-      [
-        "default-src 'self'",
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://*.paypal.com https://*.firebaseio.com https://apis.google.com https://*.googleapis.com",
-        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://api.fontshare.com",
-        "img-src 'self' data: blob: https:",
-        "media-src 'self' blob: data: https://pixiatech.com https://firebasestorage.googleapis.com",
-        "font-src 'self' data: https://fonts.gstatic.com https://cdn.fontshare.com",
-        "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.cloudfunctions.net wss: https://*.paypal.com",
-        "frame-src 'self' blob: data: https://*.paypal.com https://www.youtube.com https://pixiatech-client.firebaseapp.com https://*.firebaseapp.com",
-        "frame-ancestors *",
-        "object-src 'self' blob: data:",
-        "base-uri 'self'",
-        "form-action 'self'",
-      ].join('; ')
-    );
-  } else {
-    // Permet l'affichage en iframe au sein du même domaine (ex: aperçu de facture dans l'espace client)
-    // tout en bloquant les sites tiers non autorisés contre le clickjacking.
-    response.headers.set('X-Frame-Options', 'SAMEORIGIN');
-    response.headers.set(
-      'Content-Security-Policy',
-      [
-        "default-src 'self'",
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://*.paypal.com https://*.firebaseio.com https://apis.google.com https://*.googleapis.com",
-        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://api.fontshare.com",
-        "img-src 'self' data: blob: https:",
-        "media-src 'self' blob: data: https://pixiatech.com https://firebasestorage.googleapis.com",
-        "font-src 'self' data: https://fonts.gstatic.com https://cdn.fontshare.com",
-        "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.cloudfunctions.net wss: https://*.paypal.com",
-        "frame-src 'self' blob: data: https://*.paypal.com https://www.youtube.com https://pixiatech-client.firebaseapp.com https://*.firebaseapp.com",
-        "frame-ancestors 'self' https://pixiatech.com https://*.pixiatech.com https://*.pixiatech.pro",
-        "object-src 'self' blob: data:",
-        "base-uri 'self'",
-        "form-action 'self'",
-      ].join('; ')
-    );
-  }
+  // Permet l'affichage en iframe au sein du même domaine (ex: aperçu de facture dans l'espace client)
+  // tout en bloquant les sites tiers non autorisés contre le clickjacking.
+  response.headers.set('X-Frame-Options', 'SAMEORIGIN');
+  response.headers.set(
+    'Content-Security-Policy',
+    [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://*.paypal.com https://*.firebaseio.com https://apis.google.com https://*.googleapis.com",
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://api.fontshare.com",
+      "img-src 'self' data: blob: https:",
+      "media-src 'self' blob: data: https://pixiatech.com https://firebasestorage.googleapis.com",
+      "font-src 'self' data: https://fonts.gstatic.com https://cdn.fontshare.com",
+      "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.cloudfunctions.net wss: https://*.paypal.com",
+      "frame-src 'self' blob: data: https://*.paypal.com https://www.youtube.com https://pixiatech-client.firebaseapp.com https://*.firebaseapp.com",
+      "frame-ancestors 'self' https://pixiatech.com https://*.pixiatech.com https://*.pixiatech.pro",
+      "object-src 'self' blob: data:",
+      "base-uri 'self'",
+      "form-action 'self'",
+    ].join('; ')
+  );
 
   if (isHttps) {
     // Only set HSTS over HTTPS so we don't brick localhost dev
@@ -91,7 +66,7 @@ export async function proxy(request: NextRequest) {
     .map((host) => host.trim().toLowerCase())
     .filter(Boolean);
   // Chemins réservés à l'application : jamais réécrits vers /web, même sur un hôte Web.
-  const APP_ONLY_PREFIXES = ['/admin', '/mon-compte', '/boutique', '/quote', '/api', '/_next', '/embed', '/chat-widget', '/test-admin', '/test-db'];
+  const APP_ONLY_PREFIXES = ['/admin', '/mon-compte', '/boutique', '/quote', '/api', '/_next', '/test-admin', '/test-db'];
 
   const rawHost = request.headers.get('x-forwarded-host') ?? request.headers.get('host') ?? request.nextUrl.host;
   const hostname = rawHost.split(':')[0].toLowerCase().trim();
@@ -122,8 +97,7 @@ export async function proxy(request: NextRequest) {
   }
 
   // Public pages: cache on CDN
-  const publicPages = ['/', '/embed', '/chat-widget', '/quote/success', '/quote/verify', '/contact'];
-  const isEmbeddable = IFRAME_ROUTES.includes(pathname);
+  const publicPages = ['/', '/quote/success', '/quote/verify', '/contact'];
   const isHttps = (request.headers.get('x-forwarded-proto') ?? request.nextUrl.protocol.replace(':', '')) === 'https';
 
   if (isWebHost && !pathname.startsWith('/web')) {
@@ -144,14 +118,14 @@ export async function proxy(request: NextRequest) {
         },
       });
       response.headers.set('Cache-Control', 'public, max-age=60, s-maxage=120');
-      return applySecurityHeaders(response, isHttps, isEmbeddable);
+      return applySecurityHeaders(response, isHttps);
     }
   }
 
   if (publicPages.includes(pathname)) {
     const response = NextResponse.next();
     response.headers.set('Cache-Control', 'public, max-age=60, s-maxage=120');
-    return applySecurityHeaders(response, isHttps, isEmbeddable);
+    return applySecurityHeaders(response, isHttps);
   }
 
   // Client espace routes: check client_session cookie
@@ -186,7 +160,7 @@ export async function proxy(request: NextRequest) {
     // AdminLayout already verifies session continuously on the client.
     if (request.headers.get('rsc') === '1') {
       const response = NextResponse.next();
-      return applySecurityHeaders(response, isHttps, isEmbeddable);
+      return applySecurityHeaders(response, isHttps);
     }
 
     const MAX_RETRIES = 0;
@@ -226,7 +200,7 @@ export async function proxy(request: NextRequest) {
   }
 
   const response = NextResponse.next();
-  return applySecurityHeaders(response, isHttps, isEmbeddable);
+  return applySecurityHeaders(response, isHttps);
 }
 
 export const config = {
@@ -234,8 +208,6 @@ export const config = {
     '/',
     '/web',
     '/web/:path*',
-    '/embed',
-    '/chat-widget',
     '/quote/success',
     '/quote/verify',
     '/contact',

@@ -33,18 +33,10 @@ export function emitMascotRelease(): void {
   setMascotTakeover(false);
 }
 
-export function notifyIframeParentClose(): void {
-  if (typeof window !== 'undefined' && window.parent && window.parent !== window) {
-    window.parent.postMessage({ type: 'close-chatbot' }, '*');
-  }
-}
-
 export const EXCLUDED_FLOATING_ROUTES = [
   '/boutique/paiement',
   '/boutique/commande',
   '/admin',
-  '/embed',
-  '/chat-widget',
   '/mon-compte',
 ];
 

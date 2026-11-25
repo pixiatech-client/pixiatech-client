@@ -1,13 +1,13 @@
 /**
  * Coordination événementielle entre l'animation globale de Pixia
- * (`components/pixia/PixiaGlobalAnimation`) et le chatbot flottant existant
- * (`components/chat/FloatingChatButton`).
+ * (`components/pixia/PixiaGlobalAnimation`) et l'Assistant Bot Pixia intégré
+ * (`components/pixia-assistant/surfaces/FloatingChatWidget`).
  *
  * Objectifs :
- *   - un seul chatbot : l'animation réutilise `WizardBotFlow` via le bouton
- *     flottant, elle n'instancie aucune conversation parallèle ;
+ *   - un seul assistant : l'animation ouvre le workspace Pixia, elle
+ *     n'instancie aucune conversation parallèle ;
  *   - une seule mascotte visible à la fois : quand l'animation prend le relais
- *     (« takeover »), le robot flottant historique se masque ;
+ *     (« takeover »), la mascotte flottante du chatbot se masque ;
  *   - les drapeaux posés sur `window` couvrent le cas où un composant monte
  *     APRÈS que l'autre a émis son événement (les données du chatbot sont
  *     chargées en asynchrone). Les événements restent le canal « live », les
@@ -34,8 +34,8 @@ function pixiaWindow(): PixiaWindow {
 }
 
 /**
- * Demande l'ouverture du chatbot existant (WizardBotFlow).
- * Idempotent : l'état ouvert est porté par `FloatingChatButton`.
+ * Demande l'ouverture de l'Assistant Bot Pixia (`FloatingChatWidget`).
+ * Idempotent : l'état ouvert est porté par `FloatingChatWidget`.
  */
 export function openPixiaChatbot(): void {
   if (typeof window === 'undefined') return;

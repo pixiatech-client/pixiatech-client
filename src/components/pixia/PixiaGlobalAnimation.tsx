@@ -23,15 +23,15 @@
  *   4. retour vers le haut → la courbe est parcourue à l'envers : le robot
  *      ressort de son icône, reprend sa taille, retrouve immédiatement sa
  *      liberté de déplacement et la bulle de bienvenue réapparaît ;
- *   5. clic (robot du Hero **ou** icône dockée) → ouverture du chatbot
- *      existant (`FloatingChatButton` → `WizardBotFlow`) via l'événement
- *      `pixia:open-chatbot`. Aucun second chatbot, aucune conversation
- *      parallèle, aucune croix supplémentaire.
+ *   5. clic (robot du Hero **ou** icône dockée) → ouverture de l'Assistant Bot
+ *      Pixia (`FloatingChatWidget`) via l'événement `pixia:open-chatbot`.
+ *      Aucun second chatbot, aucune conversation parallèle, aucune croix
+ *      supplémentaire.
  *
  * Une seule mascotte visible à la fois : pendant que ce composant prend le
- * relais, le robot flottant historique se retire entièrement
+ * relais, la mascotte flottante du chat se retire entièrement
  * (`pixia:mascot-takeover`) — y compris sa croix, la fermeture du chat restant
- * celle de la vraie fenêtre `WizardBotFlow`.
+ * celle de `PixiaChatWorkspace`.
  *
  * Contraintes respectées : aucune écriture React par frame (transform/opacité
  * écrits directement sur les nœuds), `transform`/`opacity` uniquement, boucle
@@ -150,8 +150,8 @@ function rootRem(): number {
 /**
  * Taille du robot complet.
  *
- * Elle reprend exactement celle du robot flottant historique
- * (`FloatingChatButton` dans l'historique Git) : `w-28 h-28` puis
+ * Elle reprend exactement celle de la mascotte flottante du chat
+ * (`PixiaFloatingMascot`) : `w-28 h-28` puis
  * `sm:w-44 sm:h-44`. Tailwind exprime ces classes en `rem` (7 rem puis 11 rem) ;
  * on refait donc le même calcul à partir de la police racine du site au lieu
  * d'inventer des pixels — les proportions restent celles de l'original.

@@ -61,7 +61,7 @@ Les vulnérabilités critiques (IDOR quote-requests) et la majorité des risques
 - Rate limited. ✅
 
 ### S5. Middleware / Headers HTTP
-- CSP par route (iframe `/chat-widget`/`/embed` = `frame-ancestors *`, autre = `X-Frame-Options: DENY`). ✅ PASS
+- CSP unique (`frame-ancestors` limité au domaine PixiaTech, `X-Frame-Options: SAMEORIGIN`). ✅ PASS
 - `nosniff`, `Referrer-Policy`, `Permissions-Policy`. ✅ PASS
 - HSTS conditionné au HTTPS. ✅ PASS
 - Log par-requête supprimé (`middleware.ts`). ✅ PASS
@@ -86,7 +86,7 @@ Les vulnérabilités critiques (IDOR quote-requests) et la majorité des risques
 ### S11. SEO / Méta / robots / sitemap
 | Vérification | Résultat |
 |---|---|
-| robots.txt | ✅ **AJOUTÉ** `src/app/robots.ts` — disallow `/admin`, `/mon-compte`, `/api/`, `/quote/`, `/embed`, `/chat-widget`, `/test-admin`, `/test-db` ; sitemap référencé (vérifié en runtime 200) |
+| robots.txt | ✅ **AJOUTÉ** `src/app/robots.ts` — disallow `/admin`, `/mon-compte`, `/api/`, `/quote/`, `/test-admin`, `/test-db` ; sitemap référencé (vérifié en runtime 200) |
 | sitemap.xml | ✅ **AJOUTÉ** `src/app/sitemap.ts` — `/`, `/boutique`, `/boutique/panier` (vérifié en runtime 200) |
 | Metadata racine | ✅ **ENRICHIE** — `metadataBase`, template `%s | PixiaTech`, `openGraph` (type website, image `/favicon-512.png`), favicon versionné `icons` `/favicon.ico?v=3` |
 | Metadata par page | ⚠️ WARNING — les pages sont des **Client Components** (`"use client"`) : impossible d'ajouter `metadata`/`generateMetadata` sans les rendre serveur (refactor invasif, écarté). Title/description standards appliqués par le layout racine. |

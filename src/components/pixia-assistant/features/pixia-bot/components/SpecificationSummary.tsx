@@ -19,7 +19,6 @@ import {
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { t } from '../../../core/i18n/translations';
-import { computeDemoTestEstimate, formatDemoEuro } from '../../../core/pricing/demo-test-pricing';
 import { computeAreaSqm, computeRentalDays } from '../../../core/pricing/pricing-engine';
 import { STEP, type BootstrapPayload } from '../../../core/types';
 import { getStepProgress, type PixiaEngineState } from '../pixia-fsm-bridge';
@@ -27,8 +26,6 @@ import { getStepProgress, type PixiaEngineState } from '../pixia-fsm-bridge';
 interface SpecificationSummaryProps {
   engine: PixiaEngineState;
   bootstrap: BootstrapPayload;
-  demoShowPrices?: boolean;
-  onToggleDemoPrices?: () => void;
   onEditStep?: (step: STEP) => void;
 }
 
@@ -376,8 +373,6 @@ export function buildSpecificationTimeline(
 export function SpecificationSummary({
   engine,
   bootstrap,
-  demoShowPrices = false,
-  onToggleDemoPrices,
   onEditStep,
 }: SpecificationSummaryProps) {
   const { lang } = engine;
@@ -390,14 +385,6 @@ export function SpecificationSummary({
     isLockedPostContract,
     visitedSteps,
   } = buildSpecificationTimeline(engine, bootstrap);
-
-  const demoEstimate = demoShowPrices
-    ? computeDemoTestEstimate({
-        configState: engine.configState,
-        includeDelivery: engine.includeDelivery,
-        includeInstallation: engine.includeInstallation,
-      })
-    : null;
 
   return (
     <motion.aside
@@ -519,78 +506,10 @@ export function SpecificationSummary({
             {lang === 'fr' ? 'Estimation tarifaire' : 'Quote estimate'}
           </span>
 
-          {onToggleDemoPrices ? (
-            <button
-              type="button"
-              onClick={onToggleDemoPrices}
-              title={
-                lang === 'fr'
-                  ? 'Basculer entre Sur estimation et Tarifs démo (test)'
-                  : 'Toggle between On quote and Demo prices (test)'
-              }
-              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold backdrop-blur-xs transition-colors cursor-pointer ${
-                demoShowPrices
-                  ? 'border-[#34D399]/45 bg-[#34D399]/15 text-[#6EE7B7]'
-                  : 'border-[#38BDF8]/30 bg-[#38BDF8]/10 text-[#BAE6FD] hover:bg-[#38BDF8]/20'
-              }`}
-            >
-              <span>
-                {demoShowPrices
-                  ? lang === 'fr'
-                    ? 'Test chiffré ON'
-                    : 'Demo pricing ON'
-                  : priceDisplay}
-              </span>
-            </button>
-          ) : (
-            <span className="inline-flex items-center rounded-full border border-[#38BDF8]/30 bg-[#38BDF8]/10 px-2.5 py-0.5 text-xs font-semibold text-[#BAE6FD] backdrop-blur-xs">
-              {priceDisplay}
-            </span>
-          )}
+          <span className="inline-flex items-center rounded-full border border-[#38BDF8]/30 bg-[#38BDF8]/10 px-2.5 py-0.5 text-xs font-semibold text-[#BAE6FD] backdrop-blur-xs">
+            {priceDisplay}
+          </span>
         </div>
-
-        {demoShowPrices && demoEstimate ? (
-          <div className="rounded-xl border border-[#34D399]/25 bg-[#0F241D]/55 p-2.5 space-y-1.5 text-xs">
-            <div className="flex items-center justify-between text-[#D4D4D8]">
-              <span>{lang === 'fr' ? 'Prix global produit' : 'Product global price'}</span>
-              <span className="font-mono font-semibold text-white tabular-nums">
-                {formatDemoEuro(demoEstimate.productGlobalPrice, lang)}
-              </span>
-            </div>
-            <div className="flex items-center justify-between text-[#D4D4D8]">
-              <span>{lang === 'fr' ? 'Prix livraison' : 'Delivery price'}</span>
-              <span className="font-mono font-semibold text-white tabular-nums">
-                {engine.includeDelivery === false
-                  ? lang === 'fr'
-                    ? 'Non incluse (0 €)'
-                    : 'Excluded (€0)'
-                  : formatDemoEuro(demoEstimate.deliveryPrice, lang)}
-              </span>
-            </div>
-            <div className="flex items-center justify-between text-[#D4D4D8]">
-              <span>
-                {lang === 'fr' ? 'Prix maintenance & installation' : 'Maintenance & installation'}
-              </span>
-              <span className="font-mono font-semibold text-white tabular-nums">
-                {engine.includeInstallation === false
-                  ? lang === 'fr'
-                    ? 'Non incluse (0 €)'
-                    : 'Excluded (€0)'
-                  : formatDemoEuro(demoEstimate.maintenanceInstallationPrice, lang)}
-              </span>
-            </div>
-            <div className="pt-1.5 border-t border-white/10 flex items-center justify-between font-semibold">
-              <span className="text-[#6EE7B7]">
-                {lang === 'fr' ? 'Total estimatif (Test)' : 'Estimated total (Test)'}
-              </span>
-              <span className="font-mono text-sm text-[#34D399] tabular-nums">
-                {formatDemoEuro(demoEstimate.totalPrice, lang)}
-              </span>
-            </div>
-          </div>
-        ) : (
-          <p className="text-[11px] leading-relaxed text-[#71717A]">{t(lang, 'ui.demoNotice')}</p>
-        )}
       </div>
     </motion.aside>
   );

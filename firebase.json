@@ -1,23 +1,4 @@
 {
-  "hosting": {
-    "site": "pixiatech-client",
-    "public": "chatbot-widget/dist",
-    "headers": [
-      {
-        "source": "**",
-        "headers": [
-          {
-            "key": "Access-Control-Allow-Origin",
-            "value": "*"
-          },
-          {
-            "key": "Cache-Control",
-            "value": "public, max-age=3600"
-          }
-        ]
-      }
-    ]
-  },
   "firestore": {
     "rules": "src/firestore.rules",
     "indexes": "firestore.indexes.json"
