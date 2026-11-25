@@ -1,5 +1,7 @@
 'use client';
 
+import '../../pixia-assistant.css';
+
 import {
   AlertTriangle,
   ArrowLeft,
@@ -135,9 +137,9 @@ export function PixiaChatWorkspace({
   const [demoShowPrices, setDemoShowPrices] = useState(false);
   const [showActionsMenu, setShowActionsMenu] = useState(false);
   const [islandExpanded, setIslandExpanded] = useState(false);
-  const [isWindowLg, setIsWindowLg] = useState<boolean>(() =>
-    typeof window !== 'undefined' ? window.matchMedia('(min-width: 1024px)').matches : true
-  );
+  // Valeur déterministe côté serveur : la vraie mesure est faite dans l'effet
+  // ci-dessous (évite un écart d'hydratation entre serveur et navigateur).
+  const [isWindowLg, setIsWindowLg] = useState<boolean>(true);
   const [clientAccountLayout, setClientAccountLayout] = useState<{
     view: 'ask' | 'login' | 'confirm';
     unfolded: boolean;
@@ -511,7 +513,7 @@ export function PixiaChatWorkspace({
       onScroll={(e) => {
         if (e.currentTarget.scrollTop !== 0) e.currentTarget.scrollTop = 0;
       }}
-      className={`relative flex flex-col overflow-hidden bg-[#17171A] text-[#F4F4F5] transition-all duration-300 ${
+      className={`pixia-assistant-root relative flex flex-col overflow-hidden bg-[#17171A] text-[#F4F4F5] transition-all duration-300 ${
         compact
           ? `w-full h-full ${
               orbTone === 'error'

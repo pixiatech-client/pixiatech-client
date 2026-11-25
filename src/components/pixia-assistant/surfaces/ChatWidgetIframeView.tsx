@@ -2,47 +2,38 @@
 
 import { useEffect, useState } from 'react';
 import { resolveLanguage } from '../core/i18n/translations';
-import type { BootstrapPayload } from '../core/types';
+import type { BootstrapPayload, Language } from '../core/types';
 import { PixiaChatWorkspace } from '../features/pixia-bot/PixiaChatWorkspace';
-import { fetchBootstrap } from '../services/pixia-api';
 import { notifyIframeParentClose } from './pixia-events';
 
-export function ChatWidgetIframeView() {
-  const [bootstrap, setBootstrap] = useState<BootstrapPayload | null>(null);
-  const [error, setError] = useState<string | null>(null);
+interface ChatWidgetIframeViewProps {
+  /**
+   * Bootstrap réel transmis par l'hôte Next.js. Ce composant ne sait pas
+   * charger de données lui-même : aucun fallback de démonstration n'est possible.
+   */
+  bootstrap: BootstrapPayload;
+  onClose?: () => void;
+}
 
-  const search = new URLSearchParams(window.location.search);
-  const lang = resolveLanguage(search.get('lang'));
+export function ChatWidgetIframeView({
+  bootstrap,
+  onClose = notifyIframeParentClose,
+}: ChatWidgetIframeViewProps) {
+  // Valeur serveur déterministe : la langue de l'iframe est lue après montage.
+  const [lang, setLang] = useState<Language>('fr');
 
   useEffect(() => {
-    fetchBootstrap()
-      .then(setBootstrap)
-      .catch((err) => setError(err instanceof Error ? err.message : 'Unable to load'));
+    const search = new URLSearchParams(window.location.search);
+    setLang(resolveLanguage(search.get('lang')));
   }, []);
 
-  if (error) {
-    return (
-      <div className="p-6 text-sm text-[#FB7185] bg-[#17171A] h-screen">
-        {error}
-      </div>
-    );
-  }
-
-  if (!bootstrap) {
-    return (
-      <div className="p-6 text-sm text-[#A1A1AA] bg-[#17171A] h-screen">
-        {lang === 'fr' ? 'Chargement de Assistant Bot Pixia…' : 'Loading Assistant Bot Pixia…'}
-      </div>
-    );
-  }
-
   return (
-    <div className="h-screen w-screen bg-[#17171A]">
+    <div className="pixia-assistant-root h-screen w-screen bg-[#17171A]">
       <PixiaChatWorkspace
         bootstrap={bootstrap}
         initialLang={lang}
         compact
-        onClose={notifyIframeParentClose}
+        onClose={onClose}
       />
     </div>
   );

@@ -35,9 +35,9 @@ export function PixiaFloatingMascot({
   initialPosition = 'center',
   onOpen,
 }: PixiaFloatingMascotProps) {
-  const [coords, setCoords] = useState<{ x: number; y: number }>(() =>
-    computeInitialCoords(initialPosition)
-  );
+  // Valeur initiale déterministe pour le prerender serveur : la position réelle
+  // est calculée après montage, quand `window` est disponible.
+  const [coords, setCoords] = useState<{ x: number; y: number }>({ x: 240, y: 200 });
   const [isDragging, setIsDragging] = useState(false);
   const [showGreeting, setShowGreeting] = useState(true);
   const [videoFailed, setVideoFailed] = useState(false);
@@ -50,6 +50,11 @@ export function PixiaFloatingMascot({
     originY: number;
     moved: boolean;
   } | null>(null);
+
+  // Placement réel après hydratation (évite un décalage serveur/navigateur).
+  useEffect(() => {
+    setCoords(computeInitialCoords(initialPosition));
+  }, [initialPosition]);
 
   // Auto-hide transient welcome message after 4.5s
   useEffect(() => {
