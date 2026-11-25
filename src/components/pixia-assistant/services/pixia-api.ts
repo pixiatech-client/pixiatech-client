@@ -1,5 +1,9 @@
 'use client';
 
+import {
+  clearPixiaAssistantClientSession,
+  resolvePixiaAssistantClientProfile,
+} from '@/app/actions/pixia-assistant-actions';
 import type {
   BootstrapPayload,
   ClientFormState,
@@ -8,6 +12,27 @@ import type {
   Language,
   PricingCalculationResult,
 } from '../core/types';
+
+/**
+ * Une réponse HTML (404, redirection, erreur serveur) ne doit jamais être
+ * parsée comme du JSON : le message d'erreur reste explicite et la vraie cause
+ * peut être corrigée côté serveur.
+ */
+async function readJsonBody<T>(res: Response, fallbackMessage: string): Promise<T> {
+  const contentType = (res.headers.get('content-type') || '').toLowerCase();
+  if (!contentType.includes('application/json')) {
+    throw new Error(`${fallbackMessage} (réponse inattendue du serveur)`);
+  }
+  return (await res.json()) as T;
+}
+
+async function readJsonOrThrow<T>(res: Response, fallbackMessage: string): Promise<T> {
+  const data = await readJsonBody<{ error?: string } & T>(res, fallbackMessage);
+  if (!res.ok) {
+    throw new Error(data.error || fallbackMessage);
+  }
+  return data;
+}
 
 export async function fetchBootstrap(params?: {
   botEnabled?: boolean;
@@ -20,10 +45,7 @@ export async function fetchBootstrap(params?: {
   if (params?.priceHidden !== undefined) query.set('priceHidden', String(params.priceHidden));
   const qs = query.toString();
   const res = await fetch(`/api/pixia/bootstrap${qs ? `?${qs}` : ''}`);
-  if (!res.ok) {
-    throw new Error('Failed to load PIXIA configuration');
-  }
-  return res.json() as Promise<BootstrapPayload>;
+  return readJsonOrThrow<BootstrapPayload>(res, 'Configuration indisponible');
 }
 
 export interface CreateQuoteResponse {
@@ -74,11 +96,7 @@ export async function createQuoteWithContract(payload: {
     }),
   });
 
-  const data = await res.json();
-  if (!res.ok) {
-    throw new Error(data.error || 'Quote creation failed');
-  }
-  return data as CreateQuoteResponse;
+  return readJsonOrThrow<CreateQuoteResponse>(res, 'Création du devis impossible');
 }
 
 export async function verifyQuoteOtp(
@@ -90,7 +108,12 @@ export async function verifyQuoteOtp(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ code }),
   });
-  const data = await res.json();
+  const data = await readJsonBody<{
+    success: boolean;
+    capabilityToken?: string;
+    error?: string;
+    attemptsLeft?: number;
+  }>(res, 'Vérification du code impossible');
   if (!res.ok) {
     return {
       success: false,
@@ -113,7 +136,7 @@ export async function resendQuoteOtp(
   const res = await fetch(`/api/pixia/quotes/${encodeURIComponent(quoteId)}/otp/resend`, {
     method: 'POST',
   });
-  return res.json();
+  return readJsonBody(res, 'Renvoi du code impossible');
 }
 
 export async function fetchDevSimulatedInbox(quoteId: string): Promise<{
@@ -124,7 +147,7 @@ export async function fetchDevSimulatedInbox(quoteId: string): Promise<{
 } | null> {
   const res = await fetch(`/api/pixia/dev/simulated-inbox/${encodeURIComponent(quoteId)}`);
   if (!res.ok) return null;
-  return res.json();
+  return readJsonBody(res, 'Boîte de simulation indisponible');
 }
 
 export async function uploadQuotePdf(
@@ -141,29 +164,40 @@ export async function uploadQuotePdf(
     headers,
     body: JSON.stringify({ pdfBase64 }),
   });
-  const data = await res.json();
-  if (!res.ok) {
-    throw new Error(data.error || 'PDF upload failed');
-  }
-  return data;
+  return readJsonOrThrow<{ success: boolean; pdfUrl: string }>(res, 'Envoi du PDF impossible');
 }
 
+/**
+ * Connexion client réelle : la route boutique existante vérifie le mot de passe
+ * et pose le cookie signé `client_session`. Le profil affiché est ensuite
+ * résolu côté serveur, jamais fabriqué dans le navigateur.
+ */
 export async function loginClientAccount(
   email: string,
   password: string
 ): Promise<{ success: boolean; profile?: ClientProfile; error?: string }> {
-  const res = await fetch('/api/pixia/auth/login', {
+  const res = await fetch('/api/boutique/login-password', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password }),
   });
-  const data = await res.json();
+
   if (!res.ok) {
-    return { success: false, error: data.error || 'Authentication failed' };
+    const data = await readJsonBody<{ error?: string }>(res, 'Connexion impossible');
+    return { success: false, error: data.error || 'Connexion impossible' };
   }
-  return data as { success: true; profile: ClientProfile };
+
+  await readJsonBody<{ success: boolean }>(res, 'Connexion impossible');
+  const session = await resolvePixiaAssistantClientProfile();
+  if (!session.profile) {
+    return {
+      success: false,
+      error: 'Aucun profil client actif ne correspond à cette session.',
+    };
+  }
+  return { success: true, profile: session.profile };
 }
 
 export async function logoutClientAccount(): Promise<void> {
-  await fetch('/api/pixia/auth/logout', { method: 'POST' });
+  await clearPixiaAssistantClientSession();
 }

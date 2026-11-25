@@ -267,6 +267,12 @@ export function ClientAccountStep({
         ref={cardRef}
         className="relative rounded-2xl border border-white/12 bg-[#202025] p-3 space-y-2.5 overflow-visible"
       >
+        <p className="text-[11px] font-medium text-[#D4D4D8]">
+          {lang === 'fr'
+            ? 'Bonjour ! Nous avons retrouvé votre compte. Est-ce bien vous ?'
+            : 'Hello! We found your account. Is this you?'}
+        </p>
+
         {/* Overlay hosting flying GSAP token chips above unfolded cards */}
         <div
           ref={overlayRef}

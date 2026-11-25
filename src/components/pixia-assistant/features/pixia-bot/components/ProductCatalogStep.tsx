@@ -382,7 +382,7 @@ export function ProductCatalogStep({
           <div
             ref={flyRef}
             aria-hidden="true"
-            className="pointer-events-none fixed left-0 top-0 z-[2002] overflow-hidden bg-[#17171A] border border-white/40"
+            className="pointer-events-none fixed left-0 top-0 z-[2002] overflow-hidden bg-[#17171A] border border-white/40 pixia-assistant-scope"
             style={{ visibility: 'hidden' }}
           >
             {flyImageUrl ? (

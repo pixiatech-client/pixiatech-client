@@ -6,6 +6,8 @@
  * Ces tests vérifient l'alimentation en données réelles et le comportement
  * fail-closed du point d'entrée unique, sans jamais injecter de démonstration.
  */
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import {
   isBootstrapPayloadValid,
 } from '../src/components/pixia-assistant/core/bootstrap-validation';
@@ -311,6 +313,10 @@ console.log('--- 7. Bootstrap invalide ---');
   check(!isBootstrapPayloadValid(invalidProduct), 'produit mal formé rejeté');
 }
 
+function readSource(relativePath: string): string {
+  return readFileSync(resolve(process.cwd(), relativePath), 'utf8');
+}
+
 async function main(): Promise<void> {
   console.log('--- 8. Point d’entrée unique : validation fail-closed ---');
   {
@@ -326,6 +332,32 @@ async function main(): Promise<void> {
       !isBootstrapPayloadValid({ ...valid, products: [{ ...valid.products[0]!, id: '' }] }),
       'produit sans identifiant rejeté'
     );
+  }
+
+  console.log('--- 9. Intégration fidèle et connexion réelle ---');
+  {
+    const api = readSource('src/components/pixia-assistant/services/pixia-api.ts');
+    check(!api.includes('/api/pixia/auth/login'), 'aucun appel à la route de connexion fictive');
+    check(!api.includes('/api/pixia/auth/logout'), 'aucun appel à la route de déconnexion fictive');
+    check(api.includes('/api/boutique/login-password'), 'connexion client via la vraie route boutique');
+    check(api.includes('application/json'), 'réponses JSON contrôlées par Content-Type');
+
+    const session = readSource('src/lib/pixia-assistant/session.ts');
+    check(session.includes('requireRole'), 'session administrateur vérifiée côté serveur');
+    check(session.includes("collection('customers')"), 'profil client réel lu dans Firestore');
+    check(!session.includes('upsertCustomer'), 'aucune création de profil client depuis la session admin');
+
+    const css = readSource('src/components/pixia-assistant/pixia-assistant.css');
+    check(css.includes('.pixia-assistant-scope'), 'scope CSS étendu à toutes les surfaces du module');
+    check(css.includes('outline: none'), 'outline du site hôte neutralisé dans le module');
+    check(css.includes('--font-mono'), 'polices originales du module restaurées');
+
+    const widget = readSource('src/components/pixia-assistant/surfaces/FloatingChatWidget.tsx');
+    const mascot = readSource('src/components/pixia-assistant/features/pixia-bot/components/PixiaFloatingMascot.tsx');
+    const catalog = readSource('src/components/pixia-assistant/features/pixia-bot/components/ProductCatalogStep.tsx');
+    check(widget.includes('pixia-assistant-scope'), 'panneau modal dans le scope assistant');
+    check(mascot.includes('pixia-assistant-scope'), 'mascotte dans le scope assistant');
+    check(catalog.includes('pixia-assistant-scope'), 'portal volant dans le scope assistant');
   }
 
   console.log(`\nRésultat : ${assertions - failures}/${assertions} assertions réussies.`);

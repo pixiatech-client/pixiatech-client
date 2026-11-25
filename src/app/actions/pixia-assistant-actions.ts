@@ -1,5 +1,6 @@
 'use server';
 
+import { cookies } from 'next/headers';
 import {
   getDeliverySettings,
   getLaborSettings,
@@ -10,7 +11,10 @@ import {
 } from '@/app/actions/public-actions';
 import { getBlockedPeriods, getPdfSettings } from '@/app/actions/quote-actions';
 import { buildPixiaAssistantBootstrap } from '@/lib/pixia-assistant/bootstrap-builder';
-import type { PixiaBootstrapResult } from '@/lib/pixia-assistant/bootstrap-types';
+import type {
+  PixiaAssistantSessionSnapshot,
+  PixiaBootstrapResult,
+} from '@/lib/pixia-assistant/bootstrap-types';
 import { readPixiaAssistantSession } from '@/lib/pixia-assistant/session';
 
 const PAGE_SIZE = 1000;
@@ -79,4 +83,23 @@ export async function getPixiaAssistantBootstrap(): Promise<PixiaBootstrapResult
     console.error('[pixia-assistant] bootstrap action failed:', error);
     return { ok: false, reason: 'service_unavailable' };
   }
+}
+
+/**
+ * Réoptimise uniquement l'identité du module après une connexion client réelle.
+ * L'identité reste résolue côté serveur ; le navigateur ne fournit aucun rôle.
+ */
+export async function resolvePixiaAssistantClientProfile(): Promise<PixiaAssistantSessionSnapshot> {
+  try {
+    return await readPixiaAssistantSession();
+  } catch (error) {
+    console.error('[pixia-assistant] session refresh failed:', error);
+    return { loggedIn: false, customerId: null, email: '', profile: null };
+  }
+}
+
+/** Déconnecte seulement la session client, sans toucher à la session admin. */
+export async function clearPixiaAssistantClientSession(): Promise<void> {
+  const cookieStore = await cookies();
+  cookieStore.delete('client_session');
 }

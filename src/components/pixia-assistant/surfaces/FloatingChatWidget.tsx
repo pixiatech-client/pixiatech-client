@@ -171,7 +171,7 @@ export function FloatingChatWidget({
               ref={modalPanelRef}
               role="dialog"
               aria-label="Assistant Bot Pixia"
-              className="w-full max-w-[940px] pointer-events-auto"
+              className="w-full max-w-[940px] pointer-events-auto pixia-assistant-scope"
             >
               <PixiaChatWorkspace
                 bootstrap={bootstrap}

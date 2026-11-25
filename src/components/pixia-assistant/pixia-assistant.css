@@ -1,6 +1,7 @@
-/* Styles scopés pour le nouvel Assistant Bot Pixia (adaptés de Tailwind v4 vers Tailwind v3) */
+/* Styles du module original, scopés à toutes ses surfaces pour l'intégration
+   Next.js : panneau, rapport desktop, portal volant et mascotte. */
 
-.pixia-assistant-root {
+:is(.pixia-assistant-root, .pixia-assistant-scope) {
   --font-display: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
   --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
@@ -9,64 +10,100 @@
   color: #F4F4F5;
 }
 
-.pixia-assistant-root h1,
-.pixia-assistant-root h2,
-.pixia-assistant-root h3,
-.pixia-assistant-root h4 {
+/* La config Tailwind v3 de l'hôte mappe font-sans/font-mono sur Inter : on
+   rétablit les stacks d'origine du module, y compris sur les utilitaires. */
+:is(.pixia-assistant-root, .pixia-assistant-scope).font-sans,
+:is(.pixia-assistant-root, .pixia-assistant-scope).font-body,
+:is(.pixia-assistant-root, .pixia-assistant-scope) .font-sans,
+:is(.pixia-assistant-root, .pixia-assistant-scope) .font-body {
+  font-family: var(--font-sans) !important;
+}
+
+:is(.pixia-assistant-root, .pixia-assistant-scope).font-mono,
+:is(.pixia-assistant-root, .pixia-assistant-scope) .font-mono {
+  font-family: var(--font-mono) !important;
+}
+
+:is(.pixia-assistant-root, .pixia-assistant-scope).font-display,
+:is(.pixia-assistant-root, .pixia-assistant-scope).font-headline,
+:is(.pixia-assistant-root, .pixia-assistant-scope) .font-display,
+:is(.pixia-assistant-root, .pixia-assistant-scope) .font-headline {
+  font-family: var(--font-display) !important;
+}
+
+:is(.pixia-assistant-root, .pixia-assistant-scope) h1,
+:is(.pixia-assistant-root, .pixia-assistant-scope) h2,
+:is(.pixia-assistant-root, .pixia-assistant-scope) h3,
+:is(.pixia-assistant-root, .pixia-assistant-scope) h4 {
   font-family: var(--font-display);
   text-wrap: balance;
 }
 
-/* Custom sleek dark scrollbar matching Pixia dark UI (scopé à l'assistant) */
-.pixia-assistant-root * {
+/* Le thème web de l'hôte applique un outline orange à :focus-visible. Le module
+   original n'a pas cette règle : ses états de focus propres (anneau lumineux,
+   bordure bleue, beam des pixia-glass-btn) restent seuls actifs. */
+:is(.pixia-assistant-root, .pixia-assistant-scope) :is(
+  button,
+  input,
+  textarea,
+  select,
+  a,
+  [role='button'],
+  [tabindex]
+):focus-visible {
+  outline: none;
+}
+
+/* Custom sleek dark scrollbar matching Pixia dark UI */
+:is(.pixia-assistant-root, .pixia-assistant-scope) * {
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
 }
 
-.pixia-assistant-root ::-webkit-scrollbar {
+:is(.pixia-assistant-root, .pixia-assistant-scope) ::-webkit-scrollbar {
   width: 5px;
   height: 5px;
 }
 
-.pixia-assistant-root ::-webkit-scrollbar-track {
+:is(.pixia-assistant-root, .pixia-assistant-scope) ::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.pixia-assistant-root ::-webkit-scrollbar-thumb {
+:is(.pixia-assistant-root, .pixia-assistant-scope) ::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.16);
   border-radius: 9999px;
 }
 
-.pixia-assistant-root ::-webkit-scrollbar-thumb:hover {
+:is(.pixia-assistant-root, .pixia-assistant-scope) ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.3);
 }
 
-.pixia-assistant-root ::-webkit-scrollbar-button {
+:is(.pixia-assistant-root, .pixia-assistant-scope) ::-webkit-scrollbar-button {
   display: none;
   width: 0;
   height: 0;
 }
 
-.pixia-assistant-root .tabular-nums {
+:is(.pixia-assistant-root, .pixia-assistant-scope) .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
 
-/* Remove native up/down spin buttons on numeric inputs inside assistant */
-.pixia-assistant-root input[type='number']::-webkit-inner-spin-button,
-.pixia-assistant-root input[type='number']::-webkit-outer-spin-button {
+/* Remove ugly browser native up/down spin buttons on all numeric inputs */
+:is(.pixia-assistant-root, .pixia-assistant-scope) input[type='number']::-webkit-inner-spin-button,
+:is(.pixia-assistant-root, .pixia-assistant-scope) input[type='number']::-webkit-outer-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
 
-.pixia-assistant-root input[type='number'] {
+:is(.pixia-assistant-root, .pixia-assistant-scope) input[type='number'] {
   -moz-appearance: textfield;
   appearance: textfield;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .pixia-assistant-root *,
-  .pixia-assistant-root *::before,
-  .pixia-assistant-root *::after {
+  :is(.pixia-assistant-root, .pixia-assistant-scope) *,
+  :is(.pixia-assistant-root, .pixia-assistant-scope) *::before,
+  :is(.pixia-assistant-root, .pixia-assistant-scope) *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
@@ -197,9 +234,9 @@
   }
 }
 
-/* Le flux de conversation est le seul zone de défilement active lorsque la
+/* Le flux de conversation est la seule zone de défilement active lorsque la
    fenêtre est ouverte : aucun report de scroll vers la page en arrière-plan. */
-.pixia-assistant-root [data-pixia-chat-stream] {
+:is(.pixia-assistant-root, .pixia-assistant-scope) [data-pixia-chat-stream] {
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
 }

@@ -545,31 +545,35 @@ export function usePixiaEngine(params: {
   const resendOtp = useCallback(async () => {
     if (!engine?.quoteId) return;
     setOtpError(null);
-    const res = await resendQuoteOtp(engine.quoteId);
-    if (!res.success) {
-      setOtpError(res.error ?? 'RESEND_FAILED');
-      return;
+    try {
+      const res = await resendQuoteOtp(engine.quoteId);
+      if (!res.success) {
+        setOtpError(res.error ?? 'RESEND_FAILED');
+        return;
+      }
+      if (emailMode === 'dev-simulated') {
+        const sim = await fetchDevSimulatedInbox(engine.quoteId);
+        if (sim) setDevSimulatedOtp(sim.code);
+      }
+      setEngine((prev) =>
+        prev
+          ? {
+              ...prev,
+              security: {
+                ...prev.security,
+                otpAttemptsLeft: 3,
+                otpCooldownSeconds: res.cooldownSeconds ?? 300,
+                resendAttemptsLeft:
+                  typeof res.resendAttemptsLeft === 'number'
+                    ? res.resendAttemptsLeft
+                    : Math.max(0, prev.security.resendAttemptsLeft - 1),
+              },
+            }
+          : prev
+      );
+    } catch (err) {
+      setOtpError(err instanceof Error ? err.message : 'RESEND_FAILED');
     }
-    if (emailMode === 'dev-simulated') {
-      const sim = await fetchDevSimulatedInbox(engine.quoteId);
-      if (sim) setDevSimulatedOtp(sim.code);
-    }
-    setEngine((prev) =>
-      prev
-        ? {
-            ...prev,
-            security: {
-              ...prev.security,
-              otpAttemptsLeft: 3,
-              otpCooldownSeconds: res.cooldownSeconds ?? 300,
-              resendAttemptsLeft:
-                typeof res.resendAttemptsLeft === 'number'
-                  ? res.resendAttemptsLeft
-                  : Math.max(0, prev.security.resendAttemptsLeft - 1),
-            },
-          }
-        : prev
-    );
   }, [engine?.quoteId, emailMode]);
 
   const retryPdfGeneration = useCallback(() => {
