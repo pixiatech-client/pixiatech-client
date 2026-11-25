@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
+import { consumePendingChatOpen, isMascotTakeover } from '@/lib/pixia-global';
 import type { BootstrapPayload, Language } from '../core/types';
 import { PixiaFloatingMascot } from '../features/pixia-bot/components/PixiaFloatingMascot';
 import { PixiaChatWorkspace } from '../features/pixia-bot/PixiaChatWorkspace';
@@ -24,9 +25,9 @@ export function FloatingChatWidget({
 }: FloatingChatWidgetProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [hasMountedChat, setHasMountedChat] = useState(false);
-  const [mascotHiddenByTakeover, setMascotHiddenByTakeover] = useState(
-    Boolean(window.__pixiaMascotTakeover)
-  );
+  // L'état du relais est lu dans un effet (API navigateur) pour ne pas casser
+  // le rendu serveur / l'hydratation : le drapeau global est la référence.
+  const [mascotHiddenByTakeover, setMascotHiddenByTakeover] = useState(false);
 
   const visible = shouldRenderFloatingChat(
     currentPathname,
@@ -34,7 +35,11 @@ export function FloatingChatWidget({
   );
 
   useEffect(() => {
-    if (window.__pixiaChatOpenPending) {
+    setMascotHiddenByTakeover(isMascotTakeover());
+
+    // Consomme la demande d'ouverture posée avant le montage du widget,
+    // exactement comme le fait le bouton flottant historique.
+    if (consumePendingChatOpen()) {
       setHasMountedChat(true);
       setIsOpen(true);
       emitChatState(true);

@@ -10,7 +10,10 @@
 export { PixiaChatWorkspace } from './features/pixia-bot/PixiaChatWorkspace';
 export { usePixiaEngine } from './features/pixia-bot/usePixiaEngine';
 export { PixiaFloatingMascot } from './features/pixia-bot/components/PixiaFloatingMascot';
-export { PixiaDynamicIsland } from './features/pixia-bot/components/PixiaDynamicIsland';
+export {
+  PixiaDynamicIslandExpanded,
+  PixiaDynamicIslandPill,
+} from './features/pixia-bot/components/PixiaDynamicIsland';
 export { PixiaOrb } from './features/pixia-bot/components/PixiaOrb';
 export { FloatingChatWidget } from './surfaces/FloatingChatWidget';
 export * from './surfaces/pixia-events';
