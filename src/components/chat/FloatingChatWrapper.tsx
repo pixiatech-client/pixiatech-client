@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
+// Enregistre la source de bootstrap réelle avant toute résolution de la bascule.
+import '@/components/chat/pixia-bootstrap-loader';
 import { FloatingChatButton } from '@/components/chat/FloatingChatButton';
 import { FloatingChatWidget } from '@/components/pixia-assistant/surfaces/FloatingChatWidget';
 import {

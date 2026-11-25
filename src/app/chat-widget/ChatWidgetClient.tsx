@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+// Enregistre la source de bootstrap réelle avant toute résolution de la bascule.
+import '@/components/chat/pixia-bootstrap-loader';
 import { WizardBotFlow } from '@/components/chat/WizardBotFlow';
 import { ChatWidgetIframeView } from '@/components/pixia-assistant/surfaces/ChatWidgetIframeView';
 import {

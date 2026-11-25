@@ -1,5 +1,6 @@
 'use client';
 
+import { isBootstrapPayloadValid } from '@/components/pixia-assistant/core/bootstrap-validation';
 import type { BootstrapPayload } from '@/components/pixia-assistant/core/types';
 
 /**
@@ -17,8 +18,9 @@ export type PixiaBootstrapLoader = () => Promise<BootstrapPayload | null>;
 let bootstrapLoader: PixiaBootstrapLoader | null = null;
 
 /**
- * Point de branchement réservé à la phase suivante : le bootstrap sera fourni
- * par les véritables services PixiaTech (public-actions, session-status, etc.).
+ * Branche la source de bootstrap réelle (services PixiaTech) sur la bascule.
+ * Sans loader enregistré, le nouveau module reste indisponible même si le
+ * drapeau est activé plus tard.
  */
 export function registerPixiaBootstrapLoader(loader: PixiaBootstrapLoader | null): void {
   bootstrapLoader = loader;
@@ -37,7 +39,9 @@ export async function resolvePixiaBootstrap(): Promise<BootstrapPayload | null> 
 
   try {
     const bootstrap = await bootstrapLoader();
-    if (!bootstrap || bootstrap.demoMode) return null;
+    if (!bootstrap || bootstrap.demoMode || !isBootstrapPayloadValid(bootstrap)) {
+      return null;
+    }
     return bootstrap;
   } catch {
     return null;
