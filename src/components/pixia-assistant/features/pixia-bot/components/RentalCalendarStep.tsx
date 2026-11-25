@@ -22,7 +22,8 @@ import type { BlockedPeriod, Language } from '../../../core/types';
 interface RentalCalendarStepProps {
   lang: Language;
   blockedPeriods: BlockedPeriod[];
-  isPriceHidden?: boolean;
+  // Valeur officielle transmise par le bootstrap ; aucune bascule locale.
+  isPriceHidden: boolean;
   sheetContainer?: HTMLElement | null;
   initialStart: string | null;
   initialEnd: string | null;
@@ -83,7 +84,7 @@ function overlapsBlockedPeriod(
 export function RentalCalendarStep({
   lang,
   blockedPeriods,
-  isPriceHidden = false,
+  isPriceHidden,
   sheetContainer,
   initialStart,
   initialEnd,

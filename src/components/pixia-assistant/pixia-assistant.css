@@ -196,3 +196,10 @@
     opacity: 0;
   }
 }
+
+/* Le flux de conversation est le seul zone de défilement active lorsque la
+   fenêtre est ouverte : aucun report de scroll vers la page en arrière-plan. */
+.pixia-assistant-root [data-pixia-chat-stream] {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}

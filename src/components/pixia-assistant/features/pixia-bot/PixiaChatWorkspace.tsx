@@ -608,6 +608,7 @@ export function PixiaChatWorkspace({
               type="button"
               onClick={() => setShowActionsMenu((open) => !open)}
               aria-expanded={showActionsMenu}
+              aria-haspopup="menu"
               aria-label={lang === 'fr' ? 'Menu actions' : 'Actions menu'}
               className={`inline-flex h-9 w-9 items-center justify-center rounded-full border transition-colors cursor-pointer backdrop-blur-md ${
                 showActionsMenu
@@ -625,6 +626,7 @@ export function PixiaChatWorkspace({
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -6, scale: 0.96 }}
                   transition={{ duration: 0.16, ease: 'easeOut' }}
+                  role="menu"
                   className="absolute right-0 top-11 z-40 w-56 rounded-2xl border border-white/15 bg-[#1B1B20]/95 backdrop-blur-xl p-1.5 shadow-[0_18px_40px_rgba(0,0,0,0.75)] space-y-1"
                 >
                   {/* Langue FR / EN */}
@@ -784,6 +786,7 @@ export function PixiaChatWorkspace({
       {/* Conversational Stream */}
       <div
         ref={scrollStreamRef}
+        data-pixia-chat-stream
         className={`flex-1 min-h-0 overflow-y-auto px-5 pb-4 space-y-3.5 transition-[padding] duration-300 ${
           showInnerOrb ? (compact ? 'pt-[136px]' : 'pt-[164px]') : 'pt-[74px]'
         }`}

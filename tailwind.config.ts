@@ -120,6 +120,7 @@ const config = {
         },
       },
       borderRadius: {
+        xs: "0.25rem",
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
@@ -149,8 +150,34 @@ const config = {
         "wiggle": "wiggle 0.5s ease-in-out infinite",
       },
       boxShadow: {
+        xs: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
         sm: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
         'aura-accent-glow': '0 0 20px rgba(59, 130, 246, 0.3)',
+      },
+      // L'assistant Pixia a été conçu avec Tailwind v4, dont l'échelle
+      // d'opacité accepte toutes les valeurs. Ces paliers restent ceux du
+      // design d'origine : sans eux, Tailwind v3 ignore les bordures et
+      // transparences subtiles et laisse apparaître la bordure claire par
+      // défaut sur le panneau de conversation.
+      opacity: {
+        2: '0.02',
+        3: '0.03',
+        6: '0.06',
+        8: '0.08',
+        12: '0.12',
+        14: '0.14',
+        16: '0.16',
+        18: '0.18',
+        22: '0.22',
+        35: '0.35',
+        45: '0.45',
+        55: '0.55',
+        65: '0.65',
+        85: '0.85',
+        96: '0.96',
+      },
+      backdropBlur: {
+        xs: '4px',
       }
     },
   },

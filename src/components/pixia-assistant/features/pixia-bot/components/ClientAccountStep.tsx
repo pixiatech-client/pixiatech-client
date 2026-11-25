@@ -11,7 +11,6 @@ import {
   Mail,
   MapPin,
   Phone,
-  Sparkles,
   User,
   UserPlus,
 } from 'lucide-react';
@@ -257,11 +256,6 @@ export function ClientAccountStep({
       setView('confirm');
       setUnfolded(false);
     }
-  };
-
-  const fillDemoAccount = () => {
-    setEmail('camille.laurent@atelier-lumiere.fr');
-    setPassword('Pixia2026!');
   };
 
   if (view === 'confirm' && clientProfile) {
@@ -537,19 +531,9 @@ export function ClientAccountStep({
         onSubmit={handleLoginSubmit}
         className="rounded-2xl border border-white/12 bg-[#202025] p-3.5 space-y-3"
       >
-        <div className="flex items-center justify-between gap-2">
-          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-white">
-            <KeyRound className="h-3.5 w-3.5 text-[#38BDF8]" />
-            {lang === 'fr' ? 'Connexion client' : 'Client sign in'}
-          </span>
-          <button
-            type="button"
-            onClick={fillDemoAccount}
-            className="inline-flex items-center gap-1 rounded-full border border-[#38BDF8]/40 bg-[#38BDF8]/10 px-2.5 py-1 text-[10.5px] font-medium text-[#93C5FD] hover:bg-[#38BDF8]/20 cursor-pointer"
-          >
-            <Sparkles className="h-3 w-3" />
-            {lang === 'fr' ? 'Compte démo' : 'Demo account'}
-          </button>
+        <div className="flex items-center gap-1.5 text-xs font-semibold text-white">
+          <KeyRound className="h-3.5 w-3.5 text-[#38BDF8]" />
+          {lang === 'fr' ? 'Connexion client' : 'Client sign in'}
         </div>
 
         <div className="space-y-2">

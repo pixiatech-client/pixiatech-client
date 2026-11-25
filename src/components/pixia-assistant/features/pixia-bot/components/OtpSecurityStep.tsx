@@ -22,6 +22,10 @@ interface OtpSecurityStepProps {
 
 type OtpPhase = 'idle' | 'checking' | 'approved' | 'error';
 
+// Les outils de simulation OTP restent disponibles aux développeurs en local,
+// mais ne doivent jamais apparaître dans l'interface de production.
+const DEV_SIMULATED_UI = process.env.NODE_ENV !== 'production';
+
 export function OtpSecurityStep({
   lang,
   email,
@@ -434,8 +438,8 @@ export function OtpSecurityStep({
         </div>
       </form>
 
-      {/* Suggestion Pill from Simulated Messages (Dev Demo Mode) */}
-      {emailMode === 'dev-simulated' && devSimulatedOtp && !isApproved && (
+      {/* Suggestion Pill from Simulated Messages — développement uniquement */}
+      {DEV_SIMULATED_UI && emailMode === 'dev-simulated' && devSimulatedOtp && !isApproved && (
         <button
           type="button"
           onClick={handlePasteFromSuggestion}

@@ -499,7 +499,7 @@ export function SpecificationSummary({
         </AnimatePresence>
       </div>
 
-      {/* Pricing Footer (with Temporary Test Demo Toggle Breakdown) */}
+      {/* Pied de page tarifaire : uniquement la configuration officielle */}
       <div className="pt-3 border-t border-white/10 space-y-2">
         <div className="flex items-center justify-between gap-2">
           <span className="text-xs font-medium text-[#9E9EA7]">

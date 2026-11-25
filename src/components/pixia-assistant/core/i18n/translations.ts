@@ -7,7 +7,7 @@ export function resolveLanguage(param?: string | null): Language {
 const DICT = {
   fr: {
     // 1. Messages conversationnels bot.*
-    'bot.welcome': 'Bonjour, je suis Assistant Bot Pixia. Configurons votre écran LED et préparons votre estimation en quelques étapes.',
+    'bot.welcome': 'Bonjour ! Bienvenue chez PixiaTech. Ensemble, estimons votre projet d’écran LED.',
     'bot.questionType': 'Souhaitez-vous un projet d’achat ou de location ?',
     'bot.optionSale': 'Achat',
     'bot.optionSaleDesc': 'Installation permanente clé en main',
@@ -120,7 +120,7 @@ const DICT = {
     'bot.clientManual': 'Très bien, saisissons vos coordonnées étape par étape.',
   },
   en: {
-    'bot.welcome': 'Hello, I am Assistant Bot Pixia. Let us configure your LED display project and prepare your estimate step by step.',
+    'bot.welcome': 'Hello! Welcome to PixiaTech. Let’s estimate your LED screen project together.',
     'bot.questionType': 'Are you looking for a purchase or a rental project?',
     'bot.optionSale': 'Purchase',
     'bot.optionSaleDesc': 'Turnkey permanent installation',

@@ -139,7 +139,7 @@ export function PixiaFloatingMascot({
   return (
     <div
       data-pixia-drag="true"
-      className="pointer-events-auto z-30"
+      className="pointer-events-auto z-[1990]"
       draggable={false}
       tabIndex={0}
       role="button"
