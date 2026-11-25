@@ -2,15 +2,23 @@
 
 import {
   clearPixiaAssistantClientSession,
+  getPixiaAssistantBootstrap,
   resolvePixiaAssistantClientProfile,
 } from '@/app/actions/pixia-assistant-actions';
+import {
+  createPixiaAssistantQuote,
+  persistPixiaAssistantQuotePdf,
+  resendPixiaAssistantQuoteOtp,
+  verifyPixiaAssistantQuoteOtp,
+} from '@/app/actions/pixia-assistant-quote-actions';
+import type { PriceSnapshot } from '@/lib/types';
+import { isBootstrapPayloadValid } from '../core/bootstrap-validation';
 import type {
   BootstrapPayload,
   ClientFormState,
   ClientProfile,
   ConfigState,
   Language,
-  PricingCalculationResult,
 } from '../core/types';
 
 /**
@@ -26,26 +34,17 @@ async function readJsonBody<T>(res: Response, fallbackMessage: string): Promise<
   return (await res.json()) as T;
 }
 
-async function readJsonOrThrow<T>(res: Response, fallbackMessage: string): Promise<T> {
-  const data = await readJsonBody<{ error?: string } & T>(res, fallbackMessage);
-  if (!res.ok) {
-    throw new Error(data.error || fallbackMessage);
+/**
+ * Le bootstrap vient de la Server Action officielle, jamais d'une route
+ * des routes HTTP du prototype : ces routes n'existent pas dans l'application
+ * Next.js.
+ */
+export async function fetchBootstrap(): Promise<BootstrapPayload> {
+  const result = await getPixiaAssistantBootstrap();
+  if (!result.ok || !isBootstrapPayloadValid(result.bootstrap)) {
+    throw new Error('Configuration indisponible');
   }
-  return data;
-}
-
-export async function fetchBootstrap(params?: {
-  botEnabled?: boolean;
-  otpEnabled?: boolean;
-  priceHidden?: boolean;
-}): Promise<BootstrapPayload> {
-  const query = new URLSearchParams();
-  if (params?.botEnabled !== undefined) query.set('botEnabled', String(params.botEnabled));
-  if (params?.otpEnabled !== undefined) query.set('otpEnabled', String(params.otpEnabled));
-  if (params?.priceHidden !== undefined) query.set('priceHidden', String(params.priceHidden));
-  const qs = query.toString();
-  const res = await fetch(`/api/pixia/bootstrap${qs ? `?${qs}` : ''}`);
-  return readJsonOrThrow<BootstrapPayload>(res, 'Configuration indisponible');
+  return result.bootstrap;
 }
 
 export interface CreateQuoteResponse {
@@ -53,9 +52,9 @@ export interface CreateQuoteResponse {
   quoteId: string;
   reference: string;
   otpRequired: boolean;
-  emailMode: 'dev-simulated' | 'smtp';
-  capabilityToken: string | null;
-  priceSnapshot: PricingCalculationResult;
+  emailMode: 'smtp';
+  capabilityToken: null;
+  priceSnapshot: PriceSnapshot;
 }
 
 export async function createQuoteWithContract(payload: {
@@ -66,62 +65,49 @@ export async function createQuoteWithContract(payload: {
   includeInstallation: boolean;
   signatureDataUrl: string;
   otpEnabledOverride?: boolean;
+  selectedCityId?: string | null;
 }): Promise<CreateQuoteResponse> {
-  const res = await fetch('/api/pixia/quotes', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      language: payload.language,
-      clientDetails: payload.clientDetails,
-      configState: {
-        projectType: payload.configState.projectType,
-        environment: payload.configState.environment,
-        width: payload.configState.width,
-        height: payload.configState.height,
-        distance: payload.configState.distance,
-        pixelPitch: payload.configState.pixelPitch,
-        pitchLabel: payload.configState.pitchLabel,
-        productId: payload.configState.selectedProduct?.id,
-        quantity: payload.configState.quantity,
-        installationPhoto: payload.configState.installationPhoto,
-        rentalStartDate: payload.configState.rentalStartDate,
-        rentalEndDate: payload.configState.rentalEndDate,
-        rentalStartTime: payload.configState.rentalStartTime,
-        rentalEndTime: payload.configState.rentalEndTime,
-      },
-      includeDelivery: payload.includeDelivery,
-      includeInstallation: payload.includeInstallation,
-      signatureDataUrl: payload.signatureDataUrl,
-      otpEnabledOverride: payload.otpEnabledOverride,
-    }),
+  const result = await createPixiaAssistantQuote({
+    language: payload.language,
+    clientDetails: payload.clientDetails,
+    configState: {
+      projectType: payload.configState.projectType,
+      width: payload.configState.width,
+      height: payload.configState.height,
+      quantity: payload.configState.quantity,
+      selectedProductId: payload.configState.selectedProduct?.id ?? null,
+      selectedCityId: payload.selectedCityId ?? null,
+      rentalStartDate: payload.configState.rentalStartDate,
+      rentalEndDate: payload.configState.rentalEndDate,
+      rentalStartTime: payload.configState.rentalStartTime,
+      rentalEndTime: payload.configState.rentalEndTime,
+      installationPhoto: payload.configState.installationPhoto,
+    },
+    includeDelivery: payload.includeDelivery,
+    includeInstallation: payload.includeInstallation,
+    signatureDataUrl: payload.signatureDataUrl,
   });
 
-  return readJsonOrThrow<CreateQuoteResponse>(res, 'Création du devis impossible');
+  if (!result.success || !result.quoteId) {
+    throw new Error(result.error || 'Création du devis impossible');
+  }
+
+  return {
+    success: result.success,
+    quoteId: result.quoteId,
+    reference: result.reference,
+    otpRequired: result.otpRequired,
+    emailMode: result.emailMode,
+    capabilityToken: result.capabilityToken,
+    priceSnapshot: result.priceSnapshot as PriceSnapshot,
+  };
 }
 
 export async function verifyQuoteOtp(
   quoteId: string,
   code: string
-): Promise<{ success: boolean; capabilityToken?: string; error?: string; attemptsLeft?: number }> {
-  const res = await fetch(`/api/pixia/quotes/${encodeURIComponent(quoteId)}/otp/verify`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ code }),
-  });
-  const data = await readJsonBody<{
-    success: boolean;
-    capabilityToken?: string;
-    error?: string;
-    attemptsLeft?: number;
-  }>(res, 'Vérification du code impossible');
-  if (!res.ok) {
-    return {
-      success: false,
-      error: data.error || 'INVALID_CODE',
-      attemptsLeft: typeof data.attemptsLeft === 'number' ? data.attemptsLeft : undefined,
-    };
-  }
-  return data;
+): Promise<{ success: boolean; error?: string }> {
+  return verifyPixiaAssistantQuoteOtp(quoteId, code);
 }
 
 export async function resendQuoteOtp(
@@ -130,41 +116,17 @@ export async function resendQuoteOtp(
   success: boolean;
   cooldownSeconds?: number;
   resendAttemptsLeft?: number;
-  retryAfterSeconds?: number;
   error?: string;
 }> {
-  const res = await fetch(`/api/pixia/quotes/${encodeURIComponent(quoteId)}/otp/resend`, {
-    method: 'POST',
-  });
-  return readJsonBody(res, 'Renvoi du code impossible');
-}
-
-export async function fetchDevSimulatedInbox(quoteId: string): Promise<{
-  devSimulation: boolean;
-  to: string;
-  code: string;
-  expiresAt: number;
-} | null> {
-  const res = await fetch(`/api/pixia/dev/simulated-inbox/${encodeURIComponent(quoteId)}`);
-  if (!res.ok) return null;
-  return readJsonBody(res, 'Boîte de simulation indisponible');
+  return resendPixiaAssistantQuoteOtp(quoteId);
 }
 
 export async function uploadQuotePdf(
   quoteId: string,
   pdfBase64: string,
-  capabilityToken: string | null
+  _capabilityToken: string | null
 ): Promise<{ success: boolean; pdfUrl: string }> {
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (capabilityToken) {
-    headers.Authorization = `Bearer ${capabilityToken}`;
-  }
-  const res = await fetch(`/api/pixia/quotes/${encodeURIComponent(quoteId)}/pdf`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({ pdfBase64 }),
-  });
-  return readJsonOrThrow<{ success: boolean; pdfUrl: string }>(res, 'Envoi du PDF impossible');
+  return persistPixiaAssistantQuotePdf(quoteId, pdfBase64);
 }
 
 /**

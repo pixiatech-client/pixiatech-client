@@ -26,6 +26,7 @@ import {
   type Language,
   type ProjectType,
 } from '../../core/types';
+import { buildCitySuggestions } from './city-suggestions';
 import { AiCatalogCommandPalette } from './components/AiCatalogCommandPalette';
 import { ClientAccountStep } from './components/ClientAccountStep';
 import { ClientFieldInputStep } from './components/ClientFieldInputStep';
@@ -1235,7 +1236,7 @@ export function PixiaChatWorkspace({
               kind="deliveryCity"
               lang={lang}
               initialValue={engine.form.deliveryCity}
-              citySuggestions={bootstrap.locations.villes.map((v) => v.name)}
+              citySuggestions={buildCitySuggestions(bootstrap.locations.villes)}
               onError={setTextFieldError}
               onInvalidSubmit={() => setLocalFormAttempts((n) => n + 1)}
               onSubmit={confirmDeliveryCity}

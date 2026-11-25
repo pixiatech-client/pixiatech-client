@@ -12,7 +12,7 @@ interface ClientFieldInputStepProps {
   kind: ClientTextFieldKind;
   lang: Language;
   initialValue?: string;
-  citySuggestions?: string[];
+  citySuggestions?: Array<{ id: string; name: string }>;
   onError: (hasError: boolean) => void;
   onInvalidSubmit?: () => void;
   onSubmit: (value: string) => void;
@@ -195,11 +195,12 @@ export function ClientFieldInputStep({
 
       {kind === 'deliveryCity' && citySuggestions.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
-          {citySuggestions.map((city) => {
+          {citySuggestions.map((suggestion) => {
+            const city = suggestion.name;
             const active = trimmed.toLowerCase() === city.toLowerCase();
             return (
               <button
-                key={city}
+                key={suggestion.id}
                 type="button"
                 onClick={() => {
                   setValue(city);

@@ -6,8 +6,9 @@
  * Ces tests vérifient l'alimentation en données réelles et le comportement
  * fail-closed du point d'entrée unique, sans jamais injecter de démonstration.
  */
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import {
   isBootstrapPayloadValid,
 } from '../src/components/pixia-assistant/core/bootstrap-validation';
@@ -317,6 +318,21 @@ function readSource(relativePath: string): string {
   return readFileSync(resolve(process.cwd(), relativePath), 'utf8');
 }
 
+function readSourceIfExists(relativePath: string): string {
+  const absolute = resolve(process.cwd(), relativePath);
+  return existsSync(absolute) ? readFileSync(absolute, 'utf8') : '';
+}
+
+async function importIfExists<T>(relativePath: string): Promise<T | null> {
+  const absolute = resolve(process.cwd(), relativePath);
+  if (!existsSync(absolute)) return null;
+  try {
+    return (await import(pathToFileURL(absolute).href)) as T;
+  } catch {
+    return null;
+  }
+}
+
 async function main(): Promise<void> {
   console.log('--- 8. Point d’entrée unique : validation fail-closed ---');
   {
@@ -358,6 +374,118 @@ async function main(): Promise<void> {
     check(widget.includes('pixia-assistant-scope'), 'panneau modal dans le scope assistant');
     check(mascot.includes('pixia-assistant-scope'), 'mascotte dans le scope assistant');
     check(catalog.includes('pixia-assistant-scope'), 'portal volant dans le scope assistant');
+  }
+
+  console.log('--- 10. Contrat : services officiels, aucune simulation ---');
+  {
+    const api = readSource('src/components/pixia-assistant/services/pixia-api.ts');
+    check(!api.includes('/api/pixia/'), 'aucun appel aux routes /api/pixia/* inexistantes');
+    check(!api.includes('/api/pixia/quotes'), 'aucun appel à la route de devis /api/pixia/quotes');
+    check(!api.includes('/api/pixia/dev/simulated-inbox'), 'aucune boîte de courrier simulée');
+    check(!api.includes('fetchDevSimulatedInbox'), 'aucune fonction OTP simulée dans le client');
+    check(api.includes("from '@/app/actions/pixia-assistant-quote-actions'"), 'devis/OTP/PDF passe par les Server Actions');
+
+    const actionsPath = 'src/app/actions/pixia-assistant-quote-actions.ts';
+    const actions = readSourceIfExists(actionsPath);
+    check(actions.length > 0, 'actions serveur de devis présentes');
+    check(actions.includes('createQuoteWithContract('), 'création via le service officiel createQuoteWithContract');
+    check(actions.includes('verifyQuoteOtp('), 'vérification via le service officiel verifyQuoteOtp');
+    check(actions.includes('resendQuoteOtp('), 'renvoi via le service officiel resendQuoteOtp');
+    check(actions.includes('updateQuotePdfUrl('), 'PDF persisté via updateQuotePdfUrl');
+    check(actions.includes('readPixiaAssistantSession()'), 'userid dérivé de la session serveur');
+    check(!actions.includes('otpCode:'), 'aucun code OTP renvoyé au navigateur');
+    check(actions.includes("emailMode: 'smtp'"), 'mode email réel, jamais simulé');
+    check(actions.includes('capabilityToken: null'), 'aucun jeton de capacité JSON fabriqué');
+    check(actions.includes('getQuoteRequest('), 'référence lue sur le devis officiel');
+    check(actions.includes('quotes/pdfs/'), 'PDF stocké à l’emplacement officiel');
+  }
+
+  console.log('--- 11. Montants : moteur partagé, aucun tarif inventé ---');
+  {
+    const path = 'src/lib/pixia-assistant/quote-pricing.ts';
+    const pricingSource = readSourceIfExists(path);
+    check(pricingSource.includes('computeProductLineTotal('), 'ligne produit calculée par le moteur partagé');
+    check(pricingSource.includes('computeDeliveryCostDetails('), 'livraison calculée par le moteur partagé');
+    check(pricingSource.includes('computeLaborCost('), 'installation calculée par le moteur partagé');
+    check(pricingSource.includes('buildPriceSnapshot('), 'snapshot figé par le constructeur officiel');
+    check(pricingSource.includes('resolveDestination('), 'destination résolue par le résolveur centralisé');
+
+    const pricing = await importIfExists<{
+      buildAssistantQuotePricing: (input: Record<string, unknown>) => {
+        snapshot: { productsSubtotal: number; delivery: { cost: number }; installation: { cost: number }; total: number };
+        productItems: Array<{ lineTotal: number }>;
+      };
+    }>(path);
+    check(pricing !== null, 'module de calcul de devis importable');
+    if (pricing) {
+      const base = {
+        config: {
+          projectType: 'vente', width: 2, height: 1, quantity: 1,
+          pixelPitch: 2.5, pitchLabel: 'P2.5',
+          selectedProductId: 'produit-officiel',
+          rentalStartDate: null, rentalEndDate: null,
+        },
+        client: { deliveryCity: 'Paris', deliveryPostcode: '75001' },
+        includeDelivery: true,
+        includeInstallation: true,
+        product: { id: 'produit-officiel', name: 'Dalle', salePricePerSqM: 100 },
+        locations: { villes: [{ id: 'city-1', name: 'Paris', postcode: '75001', postalCode: '75001', zoneId: 'Paris' }] },
+        settings: { estimationFlow: { taxEnabled: false, taxRate: 0, taxMode: 'ht' } },
+        laborSettings: { rules: [] },
+      };
+      const configured = pricing.buildAssistantQuotePricing({
+        ...base,
+        deliverySettings: {
+          defaultFee: 999, isDefaultFeeEnabled: false, isFreeDeliveryEnabled: false,
+          freeDeliveryThreshold: 0, deliveryFeeRules: [{ id: 'r1', zoneId: 'Paris', fee: 25 }],
+          unconfiguredZoneMessage: '',
+        },
+      });
+      check(configured.snapshot.productsSubtotal === 200, 'montant produits issu du moteur (2m × 1m × 100€)');
+      check(configured.snapshot.delivery.cost === 25, 'frais de livraison issus de la règle zone réelle');
+      check(configured.snapshot.installation.cost === 0, 'aucun coût d’installation inventé sans règle');
+      check(configured.snapshot.total === 225, 'total figé par le snapshot officiel');
+      check(configured.productItems[0]?.lineTotal === 200, 'ligne produit transmise au devis officiel');
+
+      const unknownCity = pricing.buildAssistantQuotePricing({
+        ...base,
+        client: { deliveryCity: 'Ville inconnue', deliveryPostcode: '' },
+        locations: { villes: [] },
+        deliverySettings: {
+          defaultFee: 999, isDefaultFeeEnabled: false, isFreeDeliveryEnabled: false,
+          freeDeliveryThreshold: 0, deliveryFeeRules: [], unconfiguredZoneMessage: '',
+        },
+      });
+      check(unknownCity.snapshot.delivery.cost === 0, 'ville non configurée → 0€, pas de tarif par défaut inventé');
+      check(unknownCity.snapshot.total === 200, 'total sans livraison non configurée');
+    }
+  }
+
+  console.log('--- 12. Villes : clés React stables et suggestions dédupliquées ---');
+  {
+    const suggestionsPath = 'src/components/pixia-assistant/features/pixia-bot/city-suggestions.ts';
+    const suggestionsModule = await importIfExists<{
+      buildCitySuggestions: (villes: Array<{ id: string; name: string; postcode: string; zoneId: string }>) => Array<{ id: string; name: string }>;
+    }>(suggestionsPath);
+    check(suggestionsModule !== null, 'utilitaire de suggestions de villes présent');
+    if (suggestionsModule) {
+      const suggestions = suggestionsModule.buildCitySuggestions([
+        { id: 'sd-93000', name: 'Saint-Denis', postcode: '93000', zoneId: 'z1' },
+        { id: 'sd-93200', name: 'Saint-Denis', postcode: '93200', zoneId: 'z2' },
+        { id: 'paris', name: 'Paris', postcode: '75001', zoneId: 'z3' },
+      ]);
+      check(suggestions.length === 2, 'deux Saint-Denis distinctes → un seul chip affiché');
+      check(suggestions.map((s) => s.name).join(',') === 'Saint-Denis,Paris', 'ordre des villes préservé');
+      check(new Set(suggestions.map((s) => s.id)).size === 2, 'clés de suggestions réellement uniques');
+      check(suggestions[0]?.id === 'sd-93000', 'clé issue de l’identifiant réel de la ville');
+    }
+
+    const workspace = readSource('src/components/pixia-assistant/features/pixia-bot/PixiaChatWorkspace.tsx');
+    check(workspace.includes('buildCitySuggestions('), 'suggestions construites depuis les vraies villes du bootstrap');
+    check(!workspace.includes('villes.map((v) => v.name)'), 'plus de liste de noms bruts avec doublons');
+    const field = readSource('src/components/pixia-assistant/features/pixia-bot/components/ClientFieldInputStep.tsx');
+    check(field.includes('key={suggestion.id}'), 'clé React = identifiant stable de la ville');
+    check(!/key=\{(city|index|i)\}/.test(field), 'aucune clé par nom de ville ni par index');
   }
 
   console.log(`\nRésultat : ${assertions - failures}/${assertions} assertions réussies.`);

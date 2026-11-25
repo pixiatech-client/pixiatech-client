@@ -33,7 +33,7 @@ import {
   switchEngineLanguage,
   type PixiaEngineState,
 } from '../../core/fsm/pixia-fsm';
-import { buildPriceSnapshot } from '../../core/pricing/pricing-engine';
+import type { PriceSnapshot } from '@/lib/types';
 import {
   STEP,
   type BootstrapPayload,
@@ -47,7 +47,6 @@ import {
 import { generateQuotePdfDocument, type GeneratedQuotePdf } from '../pdf/pdf-generator';
 import {
   createQuoteWithContract,
-  fetchDevSimulatedInbox,
   loginClientAccount,
   logoutClientAccount,
   resendQuoteOtp,
@@ -79,6 +78,7 @@ export function usePixiaEngine(params: {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   const timersRef = useRef<number[]>([]);
+  const priceSnapshotRef = useRef<PriceSnapshot | null>(null);
 
   const clearPendingTimers = useCallback(() => {
     for (const id of timersRef.current) {
@@ -151,22 +151,10 @@ export function usePixiaEngine(params: {
       setIsGeneratingPdf(true);
       setPdfError(null);
       try {
-        const snapshot = buildPriceSnapshot({
-          product: current.configState.selectedProduct,
-          width: current.configState.width ?? 1,
-          height: current.configState.height ?? 1,
-          quantity: current.configState.quantity,
-          transactionType: current.configState.projectType ?? 'vente',
-          rentalStartDate: current.configState.rentalStartDate,
-          rentalEndDate: current.configState.rentalEndDate,
-          includeDelivery: Boolean(current.includeDelivery),
-          includeInstallation: Boolean(current.includeInstallation),
-          deliveryCity: current.form.deliveryCity,
-          locations: bootstrap.locations,
-          deliverySettings: bootstrap.deliverySettings,
-          laborSettings: bootstrap.laborSettings,
-          settings: bootstrap.settings,
-        });
+        const snapshot = priceSnapshotRef.current;
+        if (!snapshot) {
+          throw new Error('Snapshot de prix officiel indisponible.');
+        }
 
         const pdfDoc = generateQuotePdfDocument({
           lang: current.lang,
@@ -210,6 +198,7 @@ export function usePixiaEngine(params: {
     setQuoteError(null);
     setOtpError(null);
     setDevSimulatedOtp(null);
+    priceSnapshotRef.current = null;
     setGeneratedPdf(null);
     setPdfError(null);
     setEngine((prev) => createInitialEngineState(prev?.lang ?? initialLang, bootstrap));
@@ -467,15 +456,16 @@ export function usePixiaEngine(params: {
           includeInstallation: Boolean(engine.includeInstallation),
           signatureDataUrl,
           otpEnabledOverride: bootstrap.settings.isEmailVerificationEnabled,
+          selectedCityId: bootstrap.locations.villes.find(
+            (v) =>
+              v.name.toLowerCase() === engine.form.deliveryCity.trim().toLowerCase() &&
+              v.postcode === engine.form.deliveryPostcode.trim()
+          )?.id ?? null,
         });
 
+        priceSnapshotRef.current = result.priceSnapshot;
         setEmailMode(result.emailMode);
-        if (result.otpRequired && result.emailMode === 'dev-simulated') {
-          const sim = await fetchDevSimulatedInbox(result.quoteId);
-          if (sim) setDevSimulatedOtp(sim.code);
-        } else {
-          setDevSimulatedOtp(null);
-        }
+        setDevSimulatedOtp(null);
 
         setEngine((prev) =>
           prev
@@ -515,10 +505,7 @@ export function usePixiaEngine(params: {
                   ...prev,
                   security: {
                     ...prev.security,
-                    otpAttemptsLeft:
-                      typeof res.attemptsLeft === 'number'
-                        ? res.attemptsLeft
-                        : Math.max(0, prev.security.otpAttemptsLeft - 1),
+                    otpAttemptsLeft: Math.max(0, prev.security.otpAttemptsLeft - 1),
                   },
                 }
               : prev
@@ -526,9 +513,8 @@ export function usePixiaEngine(params: {
           return false;
         }
         setDevSimulatedOtp(null);
-        const token = res.capabilityToken ?? null;
         const id = window.setTimeout(() => {
-          setEngine((prev) => (prev ? completeOtpVerification(prev, token) : prev));
+          setEngine((prev) => (prev ? completeOtpVerification(prev, null) : prev));
         }, 1150);
         timersRef.current.push(id);
         return true;
@@ -551,10 +537,7 @@ export function usePixiaEngine(params: {
         setOtpError(res.error ?? 'RESEND_FAILED');
         return;
       }
-      if (emailMode === 'dev-simulated') {
-        const sim = await fetchDevSimulatedInbox(engine.quoteId);
-        if (sim) setDevSimulatedOtp(sim.code);
-      }
+      setDevSimulatedOtp(null);
       setEngine((prev) =>
         prev
           ? {
@@ -574,7 +557,7 @@ export function usePixiaEngine(params: {
     } catch (err) {
       setOtpError(err instanceof Error ? err.message : 'RESEND_FAILED');
     }
-  }, [engine?.quoteId, emailMode]);
+  }, [engine?.quoteId]);
 
   const retryPdfGeneration = useCallback(() => {
     if (!engine) return;

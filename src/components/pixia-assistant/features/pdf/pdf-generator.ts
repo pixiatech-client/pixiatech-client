@@ -1,12 +1,12 @@
 'use client';
 
 import { jsPDF } from 'jspdf';
+import type { PriceSnapshot } from '@/lib/types';
 import type {
   ClientFormState,
   ConfigState,
   Language,
   PdfSettings,
-  PricingCalculationResult,
   Settings,
 } from '../../core/types';
 
@@ -29,13 +29,15 @@ export function generateQuotePdfDocument(params: {
   form: ClientFormState;
   includeDelivery: boolean;
   includeInstallation: boolean;
-  priceSnapshot: PricingCalculationResult;
+  priceSnapshot: PriceSnapshot;
   signatureDataUrl: string | null;
   pdfSettings: PdfSettings;
   settings: Settings;
 }): GeneratedQuotePdf {
   const { lang, reference, configState, form, priceSnapshot, pdfSettings, settings } = params;
   const isFr = lang === 'fr';
+  const areaSqm = Math.round((Number(configState.width) || 0) * (Number(configState.height) || 0) * 100) / 100;
+  const totalAreaSqm = Math.round(areaSqm * Math.max(1, configState.quantity || 1) * 100) / 100;
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
   const pageWidth = 210;
@@ -45,9 +47,7 @@ export function generateQuotePdfDocument(params: {
 
   const priceLabel = settings.isPriceHidden
     ? (isFr ? 'Tarif confidentiel' : 'Confidential pricing')
-    : priceSnapshot.displayMode === 'on_quote' || priceSnapshot.total === null
-      ? (isFr ? 'Sur estimation' : 'On quote')
-      : `${priceSnapshot.total.toFixed(2)} EUR`;
+    : `${priceSnapshot.total.toFixed(2)} EUR`;
 
   // Header band
   doc.setFillColor(20, 20, 19);
@@ -105,7 +105,7 @@ export function generateQuotePdfDocument(params: {
   const rightLines = [
     `${isFr ? 'Type' : 'Type'}: ${configState.projectType === 'location' ? (isFr ? 'Location' : 'Rental') : (isFr ? 'Achat' : 'Purchase')}`,
     `${isFr ? 'Environnement' : 'Environment'}: ${envLabel}`,
-    `${isFr ? 'Dimensions' : 'Dimensions'}: ${configState.width ?? '-'}m × ${configState.height ?? '-'}m (${priceSnapshot.areaSqm} m²)`,
+    `${isFr ? 'Dimensions' : 'Dimensions'}: ${configState.width ?? '-'}m × ${configState.height ?? '-'}m (${areaSqm} m²)`,
     `${isFr ? 'Distance vue' : 'Viewing distance'}: ${configState.distance ?? '-'}`,
     `${isFr ? 'Pas de pixel' : 'Pixel pitch'}: P${configState.pixelPitch ?? '-'}`,
     ...(configState.projectType === 'location' && configState.rentalStartDate
@@ -138,7 +138,7 @@ export function generateQuotePdfDocument(params: {
   const rows: Array<[string, string, string]> = [
     [
       configState.selectedProduct?.name ?? (isFr ? 'Écran LED configuré' : 'Configured LED Screen'),
-      `${configState.quantity} × ${priceSnapshot.areaSqm} m² (${priceSnapshot.totalAreaSqm} m²)`,
+      `${configState.quantity} × ${areaSqm} m² (${totalAreaSqm} m²)`,
       priceLabel,
     ],
     [
@@ -176,8 +176,8 @@ export function generateQuotePdfDocument(params: {
   doc.setTextColor(95, 94, 91);
   doc.text(
     isFr
-      ? `Régime fiscal configuré : ${priceSnapshot.taxMode.toUpperCase()} (${priceSnapshot.taxRate}%) · Statut : Validation ingénierie Pixiatech`
-      : `Tax mode: ${priceSnapshot.taxMode.toUpperCase()} (${priceSnapshot.taxRate}%) · Status: Pending Pixiatech engineering review`,
+      ? `Régime fiscal configuré : ${priceSnapshot.tax.mode.toUpperCase()} (${priceSnapshot.tax.rate}%) · Statut : Validation ingénierie Pixiatech`
+      : `Tax mode: ${priceSnapshot.tax.mode.toUpperCase()} (${priceSnapshot.tax.rate}%) · Status: Pending Pixiatech engineering review`,
     margin + 4,
     y + 13
   );
