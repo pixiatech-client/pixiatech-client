@@ -211,6 +211,80 @@ export const CmsProvider: React.FC<{
     };
   }, []);
 
+  // 2b. Un onglet public ouvert avant une modification ne doit pas rester sur
+  //     l'ancien cache localStorage (cause du toggle « parallaxe » qui semblait
+  //     sans effet alors que le serveur était déjà à true). On synchronise les
+  //     onglets entre eux et on revalide depuis le serveur quand l'onglet
+  //     redevient visible. Les éditions en cours ne sont jamais écrasées.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    let mounted = true;
+
+    const applyRemotePages = (raw: string | null) => {
+      if (!raw || isEditing) return;
+      try {
+        const parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== 'object') return;
+        // Pas de write-back : sinon les onglets s'enverraient l'événement
+        // storage en boucle.
+        const next = { ...pagesRef.current, ...parsed } as Record<string, CmsPageData>;
+        pagesRef.current = next;
+        setPages(next);
+      } catch {
+        // ignore malformed cache
+      }
+    };
+
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === STORAGE_KEY) {
+        applyRemotePages(event.newValue);
+        return;
+      }
+      if (event.key === SETTINGS_STORAGE_KEY && event.newValue && !isEditing) {
+        try {
+          const parsed = JSON.parse(event.newValue);
+          if (parsed && typeof parsed === 'object') {
+            setSettings((prev) => ({ ...DEFAULT_CMS_SETTINGS, ...prev, ...parsed }));
+          }
+        } catch {
+          // ignore malformed cache
+        }
+      }
+    };
+
+    const revalidateFromServer = async () => {
+      if (!mounted || isEditing || document.visibilityState !== 'visible') return;
+      try {
+        const res = await fetch('/api/site-web/pages', { cache: 'no-store' });
+        if (!res.ok || !mounted) return;
+        const data = await res.json();
+        if (data?.pages && typeof data.pages === 'object') {
+          commitPages((prev) => ({ ...prev, ...data.pages }));
+        }
+        if (data?.settings && typeof data.settings === 'object') {
+          setSettings(data.settings as CmsBackendSettings);
+          try {
+            localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(data.settings));
+          } catch {
+            // ignore quota
+          }
+        }
+      } catch {
+        // Silencieux : le cache local reste utilisable hors ligne.
+      }
+    };
+
+    window.addEventListener('storage', onStorage);
+    window.addEventListener('focus', revalidateFromServer);
+    document.addEventListener('visibilitychange', revalidateFromServer);
+    return () => {
+      mounted = false;
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener('focus', revalidateFromServer);
+      document.removeEventListener('visibilitychange', revalidateFromServer);
+    };
+  }, [commitPages, isEditing]);
+
   // 3. Re-fetch la page courante depuis le serveur à chaque changement de currentPageId.
   //    Garantit que toute modification réseau/serveur est immédiatement injectée dans l'état et le localStorage.
   useEffect(() => {
@@ -651,11 +725,14 @@ export const CmsProvider: React.FC<{
     }
     const targetPageId = pageOverride?.id || currentPageId;
     setSaveStatus('saving');
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 12000);
     try {
       const res = await fetch(`/api/site-web/pages/${targetPageId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(activePage),
+        signal: controller.signal,
       });
       if (res.ok) {
         const data = await res.json();
@@ -677,6 +754,8 @@ export const CmsProvider: React.FC<{
       setSaveStatus('error');
       setTimeout(() => setSaveStatus('idle'), 4000);
       return false;
+    } finally {
+      clearTimeout(timeoutId);
     }
   };
 

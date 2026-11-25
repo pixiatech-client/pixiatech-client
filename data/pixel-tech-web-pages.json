@@ -4,7 +4,7 @@
       "id": "home",
       "name": "home",
       "slug": "/home",
-      "updatedAt": "2026-11-24T22:10:05.250Z",
+      "updatedAt": "2026-11-25T15:57:53.606Z",
       "sections": {
         "pixia-web": {
           "text_1790257213042": "sdsdsdsdÉDITEUR DIRECT : CLIQUEZ SUR UN TEXTE OU UNE IMAGE",
@@ -71,7 +71,7 @@
           },
           "text_1790511327180": "SUPPORTQSZS",
           "text_1790511351723": "SUPPORT 2026",
-          "minHeight": 1341,
+          "minHeight": 1267,
           "paddingBottom": 0,
           "_elements": {
             "section:1/div:1/div:2/div:3/span:2": {
@@ -126,10 +126,11 @@
             "visible": true
           },
           "badge": "05 / MÉTHODOLOGIE & PROCESS",
-          "bgColor": "#000001"
+          "bgColor": "#000001",
+          "height": 1267
         },
         "insights": {
-          "minHeight": 698,
+          "minHeight": 745,
           "paddingBottom": 0,
           "insight_1_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2F58a79297-045f-44ea-b870-572542b62d61_9yq9y.png?alt=media",
           "insight_0_image": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FInstallation_d_un_mur_LED_professionnel_qf9zi.png?alt=media",
@@ -178,7 +179,9 @@
               }
             }
           },
-          "badge": "06 / RESSOURCES & INSIGHTS"
+          "badge": "06 / RESSOURCES & INSIGHTS",
+          "bgParallax": true,
+          "height": 745
         },
         "hero": {
           "_i18n": {
@@ -550,12 +553,12 @@
               "text_fr": "Built for every environment. "
             },
             "badge": {
-              "offsetX": 11,
-              "offsetY": 2
+              "offsetX": 189,
+              "offsetY": -6
             },
             "title": {
-              "offsetX": 0,
-              "offsetY": -14,
+              "offsetX": 178,
+              "offsetY": -22,
               "color": "var(--accent, var(--ui-accent))",
               "fontSize": "47.792px",
               "width": "960px"
@@ -573,7 +576,7 @@
           "layout": {
             "visible": true
           },
-          "minHeight": 724,
+          "minHeight": 801,
           "paddingBottom": 0,
           "bgColor": "#fcfcfc",
           "textColor": "#f5f4f0",
@@ -587,7 +590,8 @@
               }
             }
           },
-          "badge": "02 / MARCHÉS"
+          "badge": "02 / MARCHÉS",
+          "height": 801
         },
         "header": {
           "_elements": {
@@ -628,8 +632,8 @@
             },
             "title": {
               "color": "var(--accent, var(--ui-accent))",
-              "offsetX": 4,
-              "offsetY": -111,
+              "offsetX": -48,
+              "offsetY": -14,
               "width": "940px",
               "fontSize": "70px",
               "textTransform": "lowercase",
@@ -638,8 +642,8 @@
             "subtitle": {
               "fontSize": "20px",
               "width": "494px",
-              "offsetX": 7,
-              "offsetY": -215
+              "offsetX": -55,
+              "offsetY": -132
             },
             "badge": {
               "offsetX": 10,
@@ -649,7 +653,7 @@
           "paddingTop": 0,
           "overlayColor": "#d50b0b",
           "overlayOpacity": 85,
-          "minHeight": 657,
+          "minHeight": 237,
           "marginBottom": 0,
           "paddingBottom": 0,
           "visible": true,
@@ -705,7 +709,8 @@
           "titleLine3": "",
           "bgColor": "#fffff",
           "paddingRight": 0,
-          "paddingLeft": 72
+          "paddingLeft": 72,
+          "height": 237
         },
         "pitch": {
           "paddingTop": 16,
@@ -1024,8 +1029,8 @@
               "backgroundColor": "transparent"
             },
             "div:1/div:1/div:1/div:1/div:1/img:1": {
-              "offsetX": 2,
-              "offsetY": 5
+              "offsetX": 1,
+              "offsetY": 0
             }
           },
           "_i18n": {
@@ -1787,7 +1792,12 @@
             "tech_solidskin_desc": {
               "width": "495px",
               "backgroundColor": "transparent",
-              "fontWeight": "400"
+              "fontWeight": "400",
+              "height": "303px",
+              "offsetY": -235,
+              "fontSize": "34.5px",
+              "textAlign": "justify",
+              "offsetX": 0
             },
             "tech_armorled_image": {
               "src": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2F2f8ed08b-d78d-4283-9273-b227a5b96dea_13gjc.webp?alt=media",
@@ -2078,7 +2088,7 @@
               }
             }
           },
-          "minHeight": 632,
+          "minHeight": 467,
           "paddingBottom": 0,
           "visible": true,
           "layout": {
@@ -2095,7 +2105,8 @@
             }
           },
           "badge": "04 / PIXIATECH EXPERIENCE CENTER",
-          "bgParallax": true
+          "bgParallax": true,
+          "height": 467
         },
         "products": {
           "_elements": {
@@ -2352,7 +2363,10 @@
               "offsetX": -1,
               "offsetY": 13
             }
-          }
+          },
+          "height": 602,
+          "minHeight": 602,
+          "paddingBottom": 94
         }
       },
       "sectionOrder": [
@@ -3351,7 +3365,8 @@
     "officeHours": "Lun - Ven, 09h00 - 19h00 CET",
     "accentColor": "#FF9900",
     "backendName": "Pixel Tech Web",
-    "backendApiUrl": "/api/site-web"
+    "backendApiUrl": "/api/site-web",
+    "cmsEditorAutoSave": false
   },
-  "updatedAt": "2026-11-24T22:10:05.392Z"
+  "updatedAt": "2026-11-25T15:57:54.650Z"
 }

@@ -187,6 +187,161 @@ export const EditableWrapper: React.FC<EditableWrapperProps> = ({
     }
   }, [pTop, pBottom, pLeft, pRight, savedMinHeight, savedHeight, livePaddingBottom, liveMinHeight, bgColor, bgImage, bgParallax]);
 
+  // Effet parallaxe universel pour toute section ayant un média d'arrière-plan
+  // plein cadre (<img> ou <video>), sans jamais modifier la hiérarchie DOM.
+  useEffect(() => {
+    const root = wrapperRef.current;
+    if (!root) return;
+    const sec = ((root.querySelector(':scope > section') || root.querySelector('section')) as HTMLElement | null) || root;
+    if (!sec) return;
+
+    const trackedFixed = new Map<HTMLElement, Record<string, string>>();
+    const trackedTransform = new Set<HTMLElement>();
+
+    const restoreElement = (el: HTMLElement, prev: Record<string, string>) => {
+      for (const [prop, val] of Object.entries(prev)) {
+        if (val) {
+          el.style.setProperty(prop, val);
+        } else {
+          el.style.removeProperty(prop);
+        }
+      }
+    };
+
+    const cleanup = () => {
+      trackedFixed.forEach((prev, el) => restoreElement(el, prev));
+      trackedFixed.clear();
+      trackedTransform.forEach((el) => {
+        el.style.removeProperty('translate');
+        el.style.removeProperty('scale');
+        el.style.removeProperty('will-change');
+      });
+      trackedTransform.clear();
+      if (sec.dataset.cmsParallaxClip === 'true') {
+        sec.style.removeProperty('clip-path');
+        sec.style.removeProperty('isolation');
+        delete sec.dataset.cmsParallaxClip;
+      }
+    };
+
+    if (!bgParallax) {
+      cleanup();
+      return;
+    }
+
+    if (typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+      cleanup();
+      return;
+    }
+
+    if (!sec.style.clipPath) {
+      sec.style.clipPath = 'inset(0)';
+      sec.style.isolation = 'isolate';
+      sec.dataset.cmsParallaxClip = 'true';
+    }
+
+    const hasTransformedAncestor = (el: HTMLElement): boolean => {
+      let cur = el.parentElement;
+      while (cur && cur !== document.body) {
+        const cs = getComputedStyle(cur);
+        if (cs.transform !== 'none' || cs.filter !== 'none' || cs.perspective !== 'none') {
+          return true;
+        }
+        cur = cur.parentElement;
+      }
+      return false;
+    };
+
+    const findBgMedia = (): HTMLElement[] => {
+      const secW = sec.clientWidth;
+      const secH = sec.clientHeight;
+      if (secW === 0 || secH === 0) return [];
+      const candidates = Array.from(sec.querySelectorAll<HTMLElement>('img, video'));
+      return candidates.filter((el) => {
+        if (el.closest('[data-cms-ui]')) return false;
+        if (trackedFixed.has(el)) return true;
+        const w = el.offsetWidth;
+        const h = el.offsetHeight;
+        if (w >= secW * 0.75 && h >= secH * 0.75) return true;
+        const parent = el.parentElement;
+        if (parent && getComputedStyle(parent).position === 'absolute') {
+          return parent.offsetWidth >= secW * 0.85 && parent.offsetHeight >= secH * 0.85;
+        }
+        return false;
+      });
+    };
+
+    const applyParallaxModes = () => {
+      const targets = findBgMedia();
+      targets.forEach((el) => {
+        if (trackedFixed.has(el) || trackedTransform.has(el)) return;
+        if (!hasTransformedAncestor(el)) {
+          trackedFixed.set(el, {
+            position: el.style.position,
+            top: el.style.top,
+            left: el.style.left,
+            width: el.style.width,
+            height: el.style.height,
+            'max-width': el.style.maxWidth,
+            'z-index': el.style.zIndex,
+            'pointer-events': el.style.pointerEvents,
+          });
+          el.style.position = 'fixed';
+          el.style.top = '0';
+          el.style.left = '0';
+          el.style.width = '100vw';
+          el.style.height = '100vh';
+          el.style.maxWidth = 'none';
+          el.style.zIndex = '-1';
+          el.style.pointerEvents = 'none';
+        } else {
+          trackedTransform.add(el);
+        }
+      });
+    };
+
+    let rafId = 0;
+
+    const updateTransformParallax = () => {
+      rafId = 0;
+      applyParallaxModes();
+      if (trackedTransform.size === 0) return;
+
+      const rect = sec.getBoundingClientRect();
+      const vh = window.innerHeight || 1;
+      if (rect.bottom < -vh || rect.top > vh * 2) return;
+
+      const centerOffset = rect.top + rect.height / 2 - vh / 2;
+      const maxTravel = (vh + rect.height) / 2 || 1;
+      const progress = Math.max(-1, Math.min(1, centerOffset / maxTravel));
+      const amplitude = Math.min(Math.max(rect.height * 0.22, 64), 180);
+      const y = -progress * amplitude;
+
+      trackedTransform.forEach((el) => {
+        el.style.scale = '1.3';
+        el.style.translate = `0px ${y.toFixed(1)}px`;
+        el.style.willChange = 'translate, scale';
+      });
+    };
+
+    const scheduleUpdate = () => {
+      if (!rafId) {
+        rafId = window.requestAnimationFrame(updateTransformParallax);
+      }
+    };
+
+    updateTransformParallax();
+    window.addEventListener('scroll', scheduleUpdate, { passive: true });
+    window.addEventListener('resize', scheduleUpdate, { passive: true });
+
+    return () => {
+      if (rafId) window.cancelAnimationFrame(rafId);
+      window.removeEventListener('scroll', scheduleUpdate);
+      window.removeEventListener('resize', scheduleUpdate);
+      cleanup();
+    };
+  }, [bgParallax, bgImage]);
+
   // Dès lors que la section sert à quelque chose, le niveau structurel doit être
   // IDENTIQUE en public et en édition : le contenu est rendu directement comme
   // enfant de `wrapperRef` dans les deux modes. C'est indispensable car

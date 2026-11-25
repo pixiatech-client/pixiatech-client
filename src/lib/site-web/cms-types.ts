@@ -184,6 +184,8 @@ export interface CmsBackendSettings {
   accentColor: string;
   backendName: string;
   backendApiUrl: string;
+  /** Préférence éditeur : sauvegarde automatique. Désactivée par défaut. */
+  cmsEditorAutoSave?: boolean;
 }
 
 export interface CmsDb {
@@ -202,4 +204,5 @@ export const DEFAULT_CMS_SETTINGS: CmsBackendSettings = {
   accentColor: '#C3F910',
   backendName: 'Pixel Tech Web',
   backendApiUrl: '/api/site-web',
+  cmsEditorAutoSave: false,
 };

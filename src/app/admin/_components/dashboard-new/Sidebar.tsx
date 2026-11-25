@@ -41,6 +41,7 @@ import { useUser, useFirestore } from '@/firebase';
 import { collection, query, where, onSnapshot, doc } from 'firebase/firestore';
 import { useI18n } from '@/lib/i18n';
 import { APP_VERSION } from '@/lib/build-info';
+import { GooSwitch } from '@/components/ui/goo-switch';
 
 export type SidebarState = 'expanded' | 'compact' | 'hidden';
 export type SidebarTheme = 'light' | 'dark';
@@ -900,19 +901,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             {t('admin.roleBadgeDesc')}
                           </p>
                         </div>
-                        <button
-                          type="button"
-                          role="switch"
-                          aria-checked={tempLogoConfig.showRoleBadge !== false}
-                          onClick={() => setTempLogoConfig(prev => ({ ...prev, showRoleBadge: prev.showRoleBadge === false ? true : false }))}
-                          className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${tempLogoConfig.showRoleBadge !== false ? 'bg-blue-600' : 'bg-gray-300 dark:bg-zinc-700'
-                            }`}
-                        >
-                          <span
-                            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${tempLogoConfig.showRoleBadge !== false ? 'translate-x-5' : 'translate-x-0'
-                              }`}
-                          />
-                        </button>
+                        <GooSwitch
+                          aria-label={t('admin.roleBadgeTitle')}
+                          checked={tempLogoConfig.showRoleBadge !== false}
+                          onCheckedChange={(checked) =>
+                            setTempLogoConfig((prev) => ({ ...prev, showRoleBadge: checked }))
+                          }
+                        />
                       </div>
 
                       {/* Favicon du site (favicon.ico / .png) */}

@@ -121,7 +121,7 @@ export function useSectionStyle(cmsData: Record<string, unknown>): SectionStyleR
       backgroundSize:     'cover',
       backgroundPosition: 'center',
       backgroundRepeat:   'no-repeat',
-      backgroundAttachment: bgParallax ? 'fixed' : 'scroll',
+      ...(bgParallax ? { backgroundAttachment: 'fixed' } : {}),
     } : {}),
   };
 

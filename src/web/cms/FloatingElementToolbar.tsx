@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useCms } from '@/lib/site-web/cms-context';
+import { GooSwitch } from '@/components/ui/goo-switch';
 import {
   Bold,
   Italic,
@@ -247,7 +248,7 @@ const INTERNAL_PAGES = [
 export const FloatingElementToolbar: React.FC<{
   onOpenImageModal?: (element: HTMLElement) => void;
 }> = ({ onOpenImageModal }) => {
-  const { isEditing, isAdmin, currentPageData, currentLang, updateSectionField, updateElementStyle, toggleSectionVisibility, saveCurrentPage } = useCms();
+  const { isEditing, isAdmin, currentPageData, currentLang, settings, updateSectionField, updateElementStyle, toggleSectionVisibility, saveCurrentPage, saveSettings } = useCms();
 
   const [selected, setSelected] = useState<SelectedElement | null>(getSelectedElement());
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
@@ -293,11 +294,30 @@ export const FloatingElementToolbar: React.FC<{
   // Nouvelles fonctionnalités demandées : Historique Undo/Redo, Switch Sauvegarde auto, Déplacement libre et Dialogue Corbeille
   const [undoStack, setUndoStack] = useState<ElementStyle[]>([]);
   const [redoStack, setRedoStack] = useState<ElementStyle[]>([]);
-  const [autoSave, setAutoSave] = useState<boolean>(true);
+  // Préférence persistée côté serveur (settings CMS) : défaut DÉSACTIVÉ.
+  const [autoSave, setAutoSave] = useState<boolean>(() => settings.cmsEditorAutoSave ?? false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<boolean>(false);
 
   const toolbarRef = useRef<HTMLDivElement>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // La valeur serveur reste la source de vérité (rechargement, onglet public, focus).
+  useEffect(() => {
+    setAutoSave(settings.cmsEditorAutoSave ?? false);
+  }, [settings.cmsEditorAutoSave]);
+
+  const handleAutoSaveChange = useCallback(
+    (next: boolean) => {
+      setAutoSave(next);
+      void saveSettings({ cmsEditorAutoSave: next }).then((ok) => {
+        if (!ok) {
+          setAutoSave((current) => (current === next ? !next : current));
+          console.warn('[CMS] Préférence Auto-save non enregistrée.');
+        }
+      });
+    },
+    [saveSettings]
+  );
 
   const toggleAccordion = useCallback((acc: 'typo' | 'colors' | 'position') => {
     setActiveAccordion((curr) => (curr === acc ? null : acc));
@@ -1543,7 +1563,7 @@ export const FloatingElementToolbar: React.FC<{
 
         {/* ── Contrôles à l'extrême droite : Auto-save, Enregistrer, Sparkles, Corbeille, Fermer ── */}
         <div className="flex items-center gap-1.5 pl-2 ml-auto border-l border-[#2b2b28] shrink-0">
-          {/* Switch Auto-save */}
+          {/* Switch Auto-save — Goo Switch partagé, préférence persistée */}
           <div
             className="flex items-center gap-1.5 px-1"
             title={
@@ -1553,20 +1573,13 @@ export const FloatingElementToolbar: React.FC<{
             }
           >
             <span className="font-mono text-[10px] text-[#8a8880] select-none font-bold whitespace-nowrap">Auto-save</span>
-            <button
-              type="button"
-              onClick={() => setAutoSave((v) => !v)}
-              className={`relative inline-flex h-4 w-7 shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out ${
-                autoSave ? 'bg-[color:var(--ui-accent)]' : 'bg-[#333330]'
-              }`}
+            <GooSwitch
+              checked={autoSave}
+              onCheckedChange={handleAutoSaveChange}
+              size="xs"
+              aria-label="Sauvegarde automatique"
               title={autoSave ? 'Sauvegarde auto activée (cliquer pour désactiver)' : 'Sauvegarde auto désactivée (cliquer pour activer)'}
-            >
-              <span
-                className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-[#080808] shadow-md ring-0 transition duration-200 ease-in-out mt-0.5 ${
-                  autoSave ? 'translate-x-3.5' : 'translate-x-0.5'
-                }`}
-              />
-            </button>
+            />
           </div>
 
           {/* Bouton ENREGISTRER */}

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { MobileBottomSheet, useIsMobile } from '@/components/ui/bottom-sheet';
+import { GooSwitch } from '@/components/ui/goo-switch';
 import {
   Cookie,
   ShieldCheck,
@@ -47,36 +48,6 @@ function PreferencesShell({
     >
       {children}
     </div>
-  );
-}
-
-/** Toggle accordé avec var(--accent) */
-function AccentToggle({
-  checked,
-  onChange,
-}: {
-  checked: boolean;
-  onChange: (v: boolean) => void;
-}) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      onClick={() => onChange(!checked)}
-      className="relative inline-flex items-center w-11 h-6 rounded-full transition-colors cursor-pointer shrink-0 focus:outline-none"
-      style={{
-        backgroundColor: checked ? 'var(--accent)' : '#222220',
-      }}
-    >
-      <span
-        className="absolute top-[2px] left-[2px] w-5 h-5 rounded-full transition-transform"
-        style={{
-          backgroundColor: checked ? '#0a0a09' : '#ffffff',
-          transform: checked ? 'translateX(20px)' : 'translateX(0)',
-        }}
-      />
-    </button>
   );
 }
 
@@ -333,9 +304,10 @@ export function CookieConsentBanner() {
                     Nous permettent d'analyser anonymement les volumes de visites, les pages consultées et la performance d'affichage afin d'améliorer la rapidité et la pertinence de nos contenus.
                   </p>
                 </div>
-                <AccentToggle
+                <GooSwitch
+                  aria-label="Mesure d’audience et statistiques"
                   checked={preferences.analytics}
-                  onChange={(v) => setPreferences((prev) => ({ ...prev, analytics: v }))}
+                  onCheckedChange={(v) => setPreferences((prev) => ({ ...prev, analytics: v }))}
                 />
               </div>
 
@@ -347,9 +319,10 @@ export function CookieConsentBanner() {
                     Conservent vos paramètres personnalisés tels que la sélection de langue (FR/EN), l'affichage des devises et vos préférences d'interface.
                   </p>
                 </div>
-                <AccentToggle
+                <GooSwitch
+                  aria-label="Fonctionnalités et préférences"
                   checked={preferences.functional}
-                  onChange={(v) => setPreferences((prev) => ({ ...prev, functional: v }))}
+                  onCheckedChange={(v) => setPreferences((prev) => ({ ...prev, functional: v }))}
                 />
               </div>
 
@@ -361,9 +334,10 @@ export function CookieConsentBanner() {
                     Permettent d'afficher des suggestions de matériel LED adaptées à vos projets professionnels sur d'autres plateformes et de faciliter le partage sur les réseaux.
                   </p>
                 </div>
-                <AccentToggle
+                <GooSwitch
+                  aria-label="Marketing et réseaux sociaux"
                   checked={preferences.marketing}
-                  onChange={(v) => setPreferences((prev) => ({ ...prev, marketing: v }))}
+                  onCheckedChange={(v) => setPreferences((prev) => ({ ...prev, marketing: v }))}
                 />
               </div>
             </div>
