@@ -148,16 +148,15 @@ function rootRem(): number {
 }
 
 /**
- * Taille du robot complet.
+ * Taille du robot complet sur le site ET l'application.
  *
- * Elle reprend exactement celle de la mascotte flottante du chat
- * (`PixiaFloatingMascot`) : `w-28 h-28` puis
- * `sm:w-44 sm:h-44`. Tailwind exprime ces classes en `rem` (7 rem puis 11 rem) ;
- * on refait donc le même calcul à partir de la police racine du site au lieu
- * d'inventer des pixels — les proportions restent celles de l'original.
+ * Fixée à 100 × 100 px sur tous les écrans, comme demandé, pour rester
+ * identique à la mascotte flottante du chat (`PixiaFloatingMascot`).
+ * Les paramètres `vw`/`rem` sont conservés pour ne pas casser les appels
+ * existants (window resizing, orientation).
  */
-function boxSizeFor(vw: number, rem: number): number {
-  return vw < 640 ? 7 * rem : 11 * rem; // w-28 / sm:w-44
+function boxSizeFor(_vw: number, _rem: number): number {
+  return 100;
 }
 
 function iconSizeFor(vw: number): number {

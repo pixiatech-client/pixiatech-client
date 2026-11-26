@@ -537,6 +537,18 @@ async function main(): Promise<void> {
     check(!engine.includes('pdfDoc.base64'), 'plus aucun base64 envoyé par le moteur');
   }
 
+  console.log('--- 15. Taille du robot Pixia : 100 × 100 px sur le site et l’app ---');
+  {
+    const mascot = readSource('src/components/pixia-assistant/features/pixia-bot/components/PixiaFloatingMascot.tsx');
+    check(mascot.includes('const BOX_SIZE = 100;'), 'mascotte du chat limitée à 100 px');
+
+    const globalAnimation = readSource('src/components/pixia/PixiaGlobalAnimation.tsx');
+    check(globalAnimation.includes('function boxSizeFor(_vw: number, _rem: number): number {'), 'robot global : signature de calcul conservée');
+    check(globalAnimation.includes('return 100;'), 'robot global fixé à 100 px sur site et app');
+    check(!globalAnimation.includes('7 * rem'), 'plus de taille mobile rem calculée dynamiquement');
+    check(!globalAnimation.includes('11 * rem'), 'plus de taille desktop rem calculée dynamiquement');
+  }
+
   console.log(`\nRésultat : ${assertions - failures}/${assertions} assertions réussies.`);
   if (failures > 0) {
     console.error(`${failures} échec(s).`);
