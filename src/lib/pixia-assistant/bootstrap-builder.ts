@@ -374,6 +374,11 @@ function convertBlockedPeriods(value: unknown[]): BlockedPeriod[] {
 
 function convertPdfSettings(value: unknown): PdfSettings {
   const raw = asRecord(value);
+  const termsAndConditions = firstString(raw, ['termsAndConditions']);
+  const optionalString = (keys: string[]) => {
+    const found = firstString(raw, keys);
+    return found.length > 0 ? found : undefined;
+  };
   return {
     companyName: firstString(raw, ['companyName']),
     companyAddress: firstString(raw, ['address']),
@@ -381,8 +386,17 @@ function convertPdfSettings(value: unknown): PdfSettings {
     companyPhone: firstString(raw, ['phone']),
     siret: firstString(raw, ['siret']),
     // PixiaTech n'a qu'un seul texte de conditions générales.
-    footerFr: firstString(raw, ['termsAndConditions']),
-    footerEn: firstString(raw, ['termsAndConditions']),
+    footerFr: termsAndConditions,
+    footerEn: termsAndConditions,
+    // Le modèle de devis officiel utilise ces champs ; ils doivent arriver
+    // intactes au navigateur pour un rendu identique au parcours client.
+    logoUrl: optionalString(['logoUrl']),
+    backgroundUrl: optionalString(['backgroundUrl']),
+    quoteTitle: optionalString(['quoteTitle']),
+    quoteNumberPrefix: optionalString(['quoteNumberPrefix']),
+    termsAndConditions: optionalString(['termsAndConditions']),
+    bgColor: optionalString(['bgColor']),
+    themeId: optionalString(['themeId']),
   };
 }
 

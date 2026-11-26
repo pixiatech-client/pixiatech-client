@@ -488,6 +488,33 @@ async function main(): Promise<void> {
     check(!/key=\{(city|index|i)\}/.test(field), 'aucune clé par nom de ville ni par index');
   }
 
+  console.log('--- 13. PDF : modèle officiel du parcours client réutilisé par le bot ---');
+  {
+    const generator = readSource('src/components/pixia-assistant/features/pdf/pdf-generator.ts');
+    check(generator.includes("from 'html2canvas'"), 'capture DOM par html2canvas comme le parcours client');
+    check(generator.includes('.page-break-after'), 'capture des pages du modèle de devis officiel');
+    check(!generator.includes('doc.text('), 'aucun PDF redessiné texte par texte dans le bot');
+    check(generator.includes("orientation: 'portrait', unit: 'mm', format: 'a4'"), 'assemblage A4 identique à SignatureFlow');
+
+    const template = readSource('src/components/pixia-assistant/features/pdf/assistant-quote-pdf-template.tsx');
+    check(template.includes("from '@/app/admin/quote-pdf'"), 'rend le composant QuotePDF de l’application');
+    check(template.includes('createPortal('), 'modèle rendu hors du scope CSS du bot');
+
+    const model = readSource('src/components/pixia-assistant/features/pdf/quote-request-from-engine.ts');
+    check(model.includes('snapshot.productsSubtotal'), 'montant produit issu du snapshot officiel');
+    check(model.includes('snapshot.total'), 'total issu du snapshot officiel');
+    check(model.includes('priceSnapshot: snapshot'), 'snapshot transmis au modèle de devis');
+
+    const workspace = readSource('src/components/pixia-assistant/features/pixia-bot/PixiaChatWorkspace.tsx');
+    check(workspace.includes('<AssistantQuotePdfTemplate'), 'modèle officiel monté par le workspace du bot');
+    check(workspace.includes('pdfContainerRef: assistantPdfContainerRef'), 'conteneur du modèle fourni au moteur');
+
+    const bootstrapBuilder = readSource('src/lib/pixia-assistant/bootstrap-builder.ts');
+    check(bootstrapBuilder.includes("optionalString(['themeId'])"), 'thème du PDF officiel transmis au bot');
+    check(bootstrapBuilder.includes("optionalString(['logoUrl'])"), 'logo du PDF officiel transmis au bot');
+    check(!bootstrapBuilder.includes("optionalString(['capital'])"), 'capital admin jamais exposé au navigateur');
+  }
+
   console.log(`\nRésultat : ${assertions - failures}/${assertions} assertions réussies.`);
   if (failures > 0) {
     console.error(`${failures} échec(s).`);

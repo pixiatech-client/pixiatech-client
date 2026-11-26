@@ -1,6 +1,12 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type MutableRefObject,
+} from 'react';
 import {
   completeContractCreation,
   completeOtpVerification,
@@ -44,7 +50,11 @@ import {
   type ProjectType,
   type ScreenShape,
 } from '../../core/types';
-import { generateQuotePdfDocument, type GeneratedQuotePdf } from '../pdf/pdf-generator';
+import {
+  buildQuotePdfFilename,
+  renderQuotePdfFromTemplate,
+  type GeneratedQuotePdf,
+} from '../pdf/pdf-generator';
 import {
   createQuoteWithContract,
   loginClientAccount,
@@ -58,8 +68,10 @@ export function usePixiaEngine(params: {
   bootstrap: BootstrapPayload | null;
   initialLang: Language;
   onAutoClose?: () => void;
+  /** Conteneur hors écran du modèle de devis officiel (QuotePDF). */
+  pdfContainerRef: MutableRefObject<HTMLDivElement | null>;
 }) {
-  const { bootstrap, initialLang, onAutoClose } = params;
+  const { bootstrap, initialLang, onAutoClose, pdfContainerRef } = params;
   const [engine, setEngine] = useState<PixiaEngineState | null>(null);
   const [isTyping, setIsTyping] = useState(false);
   const [isSubmittingQuote, setIsSubmittingQuote] = useState(false);
@@ -79,6 +91,7 @@ export function usePixiaEngine(params: {
 
   const timersRef = useRef<number[]>([]);
   const priceSnapshotRef = useRef<PriceSnapshot | null>(null);
+  const [priceSnapshot, setPriceSnapshot] = useState<PriceSnapshot | null>(null);
 
   const clearPendingTimers = useCallback(() => {
     for (const id of timersRef.current) {
@@ -156,19 +169,15 @@ export function usePixiaEngine(params: {
           throw new Error('Snapshot de prix officiel indisponible.');
         }
 
-        const pdfDoc = generateQuotePdfDocument({
-          lang: current.lang,
-          reference: current.quoteReference,
-          createdAt: new Date().toISOString(),
-          configState: current.configState,
-          form: current.form,
-          includeDelivery: Boolean(current.includeDelivery),
-          includeInstallation: Boolean(current.includeInstallation),
-          priceSnapshot: snapshot,
-          signatureDataUrl: current.security.signatureDataUrl,
-          pdfSettings: bootstrap.pdfSettings,
-          settings: bootstrap.settings,
-        });
+        const container = pdfContainerRef.current;
+        if (!container) {
+          throw new Error('Modèle de devis officiel non monté.');
+        }
+        const filename = buildQuotePdfFilename(
+          current.form.company,
+          current.quoteReference
+        );
+        const pdfDoc = await renderQuotePdfFromTemplate(container, filename);
 
         setGeneratedPdf(pdfDoc);
         const uploaded = await uploadQuotePdf(
@@ -183,7 +192,7 @@ export function usePixiaEngine(params: {
         setIsGeneratingPdf(false);
       }
     },
-    [bootstrap]
+    [bootstrap, pdfContainerRef]
   );
 
   useEffect(() => {
@@ -199,6 +208,7 @@ export function usePixiaEngine(params: {
     setOtpError(null);
     setDevSimulatedOtp(null);
     priceSnapshotRef.current = null;
+    setPriceSnapshot(null);
     setGeneratedPdf(null);
     setPdfError(null);
     setEngine((prev) => createInitialEngineState(prev?.lang ?? initialLang, bootstrap));
@@ -464,6 +474,7 @@ export function usePixiaEngine(params: {
         });
 
         priceSnapshotRef.current = result.priceSnapshot;
+        setPriceSnapshot(result.priceSnapshot);
         setEmailMode(result.emailMode);
         setDevSimulatedOtp(null);
 
@@ -576,6 +587,7 @@ export function usePixiaEngine(params: {
     generatedPdf,
     isGeneratingPdf,
     pdfError,
+    priceSnapshot,
     clientProfile,
     authError,
     isLoggingIn,

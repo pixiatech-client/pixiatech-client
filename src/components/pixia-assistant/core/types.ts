@@ -146,6 +146,15 @@ export interface PdfSettings {
   siret: string;
   footerFr: string;
   footerEn: string;
+  /* Champs du modèle de devis officiel (QuotePDF) conservés tels quels : le bot
+     doit rendre exactement le même document que le parcours client normal. */
+  logoUrl?: string;
+  backgroundUrl?: string;
+  quoteTitle?: string;
+  quoteNumberPrefix?: string;
+  termsAndConditions?: string;
+  bgColor?: string;
+  themeId?: string;
 }
 
 export interface BootstrapPayload {

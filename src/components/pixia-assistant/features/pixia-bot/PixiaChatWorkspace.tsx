@@ -52,6 +52,8 @@ import { SpecificationSummary } from './components/SpecificationSummary';
 import { SuccessPdfStep } from './components/SuccessPdfStep';
 import { TechnicalSupportContactCard } from './components/TechnicalSupportContactCard';
 import { usePixiaEngine } from './usePixiaEngine';
+import { AssistantQuotePdfTemplate } from '../pdf/assistant-quote-pdf-template';
+import { buildAssistantQuoteRequest } from '../pdf/quote-request-from-engine';
 
 interface PixiaChatWorkspaceProps {
   bootstrap: BootstrapPayload;
@@ -68,6 +70,7 @@ export function PixiaChatWorkspace({
   hideInnerOrb = false,
   onClose,
 }: PixiaChatWorkspaceProps) {
+  const assistantPdfContainerRef = useRef<HTMLDivElement | null>(null);
   const {
     engine,
     isTyping,
@@ -80,6 +83,7 @@ export function PixiaChatWorkspace({
     generatedPdf,
     isGeneratingPdf,
     pdfError,
+    priceSnapshot,
     clientProfile,
     authError,
     isLoggingIn,
@@ -118,7 +122,30 @@ export function PixiaChatWorkspace({
     bootstrap,
     initialLang,
     onAutoClose: onClose,
+    pdfContainerRef: assistantPdfContainerRef,
   });
+
+  const selectedAssistantCity = bootstrap.locations.villes.find(
+    (city) =>
+      city.name.toLowerCase() === engine?.form.deliveryCity.trim().toLowerCase() &&
+      city.postcode === engine?.form.deliveryPostcode.trim()
+  );
+  const assistantPdfModel =
+    engine && priceSnapshot
+      ? buildAssistantQuoteRequest({
+          engine,
+          bootstrap,
+          snapshot: priceSnapshot,
+          selectedCity: selectedAssistantCity
+            ? {
+                id: selectedAssistantCity.id,
+                name: selectedAssistantCity.name,
+                postalCode: selectedAssistantCity.postcode,
+                zoneId: selectedAssistantCity.zoneId,
+              }
+            : null,
+        })
+      : null;
 
   const scrollStreamRef = useRef<HTMLDivElement | null>(null);
   const activeStepRef = useRef<HTMLDivElement | null>(null);
@@ -1481,6 +1508,21 @@ export function PixiaChatWorkspace({
 
       {/* Portal mount for bottom-up drawers inside the 9:16 card */}
       <div ref={setSheetHost} />
+
+      {/* Modèle de devis officiel rendu hors écran : le bot capture exactement
+          le même document que le parcours client normal. */}
+      <AssistantQuotePdfTemplate
+        quoteRequest={assistantPdfModel?.request ?? null}
+        specs={assistantPdfModel?.specs}
+        pdfSettings={bootstrap.pdfSettings}
+        selectedCity={selectedAssistantCity ? {
+          id: selectedAssistantCity.id,
+          name: selectedAssistantCity.name,
+          postalCode: selectedAssistantCity.postcode,
+          zoneId: selectedAssistantCity.zoneId,
+        } : null}
+        containerRef={assistantPdfContainerRef}
+      />
     </section>
   );
 
