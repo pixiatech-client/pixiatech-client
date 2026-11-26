@@ -10,7 +10,8 @@ interface PixiaFloatingMascotProps {
   onOpen: () => void;
 }
 
-const BOX_SIZE = 154;
+// Mascotte réduite de 20 % par rapport au prototype (154 px → 123 px).
+const BOX_SIZE = 123;
 const PADDING = 16;
 
 function computeInitialCoords(mode: 'center' | 'bottom-right'): { x: number; y: number } {
