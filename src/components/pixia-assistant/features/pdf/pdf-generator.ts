@@ -5,7 +5,10 @@ import { jsPDF } from 'jspdf';
 
 export interface GeneratedQuotePdf {
   filename: string;
-  base64: string;
+  /** Fichier PDF binaire. React Flight le transporte hors du tableau d'arguments
+   *  des Server Actions : contrairement à une chaîne base64, sa taille n'est pas
+   *  comptée dans la limite `arraySizeLimit` (1 000 000). */
+  blob: Blob;
   blobUrl: string;
 }
 
@@ -54,8 +57,7 @@ export async function renderQuotePdfFromTemplate(
     pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
   }
 
-  const dataUri = pdf.output('datauristring');
-  const base64 = dataUri.split(',')[1] ?? '';
-  const blobUrl = URL.createObjectURL(pdf.output('blob'));
-  return { filename, base64, blobUrl };
+  const blob = pdf.output('blob');
+  const blobUrl = URL.createObjectURL(blob);
+  return { filename, blob, blobUrl };
 }

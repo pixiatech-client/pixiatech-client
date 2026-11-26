@@ -217,17 +217,17 @@ export async function resendPixiaAssistantQuoteOtp(
 /** Persiste le PDF réellement généré dans Firebase Storage puis dans le devis. */
 export async function persistPixiaAssistantQuotePdf(
   quoteId: string,
-  pdfBase64: string
+  pdfBlob: Blob
 ): Promise<{ success: boolean; pdfUrl: string; error?: string }> {
   try {
-    const base64 = String(pdfBase64 || '')
-      .replace(/^data:application\/pdf;base64,/i, '')
-      .replace(/\s/g, '');
-    if (!/^[A-Za-z0-9+/]+={0,2}$/.test(base64)) {
+    // Le PDF voyage comme Blob (partie binaire FormData), pas comme chaîne
+    // base64 : React Flight limiterait sinon la longueur des chaînes contenues
+    // dans le tableau d'arguments des Server Actions à 1 000 000 de caractères.
+    if (!(pdfBlob instanceof Blob) || pdfBlob.size === 0) {
       return { success: false, pdfUrl: '', error: 'PDF invalide.' };
     }
 
-    const bytes = Buffer.from(base64, 'base64');
+    const bytes = Buffer.from(await pdfBlob.arrayBuffer());
     if (bytes.subarray(0, 4).toString() !== '%PDF') {
       return { success: false, pdfUrl: '', error: 'PDF invalide.' };
     }

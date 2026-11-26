@@ -180,11 +180,7 @@ export function usePixiaEngine(params: {
         const pdfDoc = await renderQuotePdfFromTemplate(container, filename);
 
         setGeneratedPdf(pdfDoc);
-        const uploaded = await uploadQuotePdf(
-          current.quoteId,
-          pdfDoc.base64,
-          current.capabilityToken
-        );
+        const uploaded = await uploadQuotePdf(current.quoteId, pdfDoc.blob);
         setEngine((prev) => (prev ? completePdfAndFinish(prev, uploaded.pdfUrl) : prev));
       } catch (err) {
         setPdfError(err instanceof Error ? err.message : 'PDF generation failed');

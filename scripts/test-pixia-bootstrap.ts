@@ -515,6 +515,28 @@ async function main(): Promise<void> {
     check(!bootstrapBuilder.includes("optionalString(['capital'])"), 'capital admin jamais exposé au navigateur');
   }
 
+  console.log('--- 14. Upload PDF : Blob binaire, aucun base64 dans les arguments React Flight ---');
+  {
+    const generator = readSource('src/components/pixia-assistant/features/pdf/pdf-generator.ts');
+    check(generator.includes("pdf.output('blob')"), 'PDF produit comme Blob binaire');
+    check(!generator.includes("output('datauristring')"), 'aucune chaîne data URI générée');
+    check(!generator.includes('const base64'), 'aucune chaîne base64 construite par le générateur');
+
+    const api = readSource('src/components/pixia-assistant/services/pixia-api.ts');
+    check(api.includes('pdfBlob: Blob'), 'service client envoie un Blob');
+    check(api.includes('persistPixiaAssistantQuotePdf(quoteId, pdfBlob)'), 'Blob transmis à la Server Action');
+    check(!api.includes('pdfBase64'), 'aucun base64 dans le service client');
+
+    const actions = readSource('src/app/actions/pixia-assistant-quote-actions.ts');
+    check(actions.includes('pdfBlob: Blob'), 'Server Action accepte un Blob');
+    check(actions.includes('await pdfBlob.arrayBuffer()'), 'Blob converti en octets côté serveur');
+    check(!actions.includes('String(pdfBase64'), 'aucune conversion base64 côté serveur');
+
+    const engine = readSource('src/components/pixia-assistant/features/pixia-bot/usePixiaEngine.ts');
+    check(engine.includes('uploadQuotePdf(current.quoteId, pdfDoc.blob)'), 'moteur envoie le Blob du PDF rendu');
+    check(!engine.includes('pdfDoc.base64'), 'plus aucun base64 envoyé par le moteur');
+  }
+
   console.log(`\nRésultat : ${assertions - failures}/${assertions} assertions réussies.`);
   if (failures > 0) {
     console.error(`${failures} échec(s).`);

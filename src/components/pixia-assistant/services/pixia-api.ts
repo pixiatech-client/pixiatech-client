@@ -123,10 +123,9 @@ export async function resendQuoteOtp(
 
 export async function uploadQuotePdf(
   quoteId: string,
-  pdfBase64: string,
-  _capabilityToken: string | null
+  pdfBlob: Blob
 ): Promise<{ success: boolean; pdfUrl: string }> {
-  return persistPixiaAssistantQuotePdf(quoteId, pdfBase64);
+  return persistPixiaAssistantQuotePdf(quoteId, pdfBlob);
 }
 
 /**
