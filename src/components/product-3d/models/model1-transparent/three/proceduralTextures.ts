@@ -623,7 +623,7 @@ export function createPixiatechMedallionTexture(
     tex.needsUpdate = true;
     onLoad?.();
   };
-  img.src = '/product-3d/product-3d/assets/aistudio/favicon_f9979c15.png';
+  img.src = '/product-3d/assets/aistudio/favicon_f9979c15.png';
 
   return tex;
 }

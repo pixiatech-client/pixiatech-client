@@ -295,15 +295,8 @@ export const DesignSection: React.FC<DesignSectionProps> = ({
   };
 
   return (
-    <section
-      id="design"
-      className="section theme-dark"
-      style={{
-        background: 'var(--black-3, #0d0d0c)',
-        borderTop: '1px solid var(--dark-line, #1f1f1f)',
-      }}
-    >
-      <div className="wrap">
+    <section id="design" className="section theme-dark design-section">
+      <div className="design-wrap">
         {/* Eyebrow */}
         <div
           data-text-key="eyebrow"
@@ -327,16 +320,8 @@ export const DesignSection: React.FC<DesignSectionProps> = ({
         )}
 
         {/* Nouveau système : architecture à gauche, vrai module 3D à droite */}
-        <div
-          className="g2"
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 420px), 1fr))',
-            gap: 'clamp(40px, 5vw, 88px)',
-            alignItems: 'start',
-          }}
-        >
-          <div className="space-y-6">
+        <div className="design-grid">
+          <div className="design-technical space-y-6">
             <div className="rounded-xl border border-white/10 bg-black/20 p-4">
               <div className="mb-3 text-[10px] font-bold uppercase tracking-[.24em] text-neutral-400">
                 Architecture — vues techniques
@@ -387,7 +372,7 @@ export const DesignSection: React.FC<DesignSectionProps> = ({
             />
           </div>
 
-          <div className="min-w-0">
+          <div className="design-viewer">
             <div className="mb-3 flex items-center justify-between gap-3">
               <div className="text-[10px] font-bold uppercase tracking-[.24em] text-neutral-400">
                 Visualisation 3D — {getProduct3DDefinition(modelId).label}
@@ -396,7 +381,7 @@ export const DesignSection: React.FC<DesignSectionProps> = ({
                 Modèle {getProduct3DDefinition(modelId).number}
               </span>
             </div>
-            <Product3DModule modelId={modelId} />
+            <Product3DModule modelId={modelId} className="product-3d-embed" />
           </div>
         </div>
 

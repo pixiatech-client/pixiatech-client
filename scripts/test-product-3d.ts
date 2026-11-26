@@ -17,7 +17,7 @@ function check(condition: boolean, label: string) {
 
 function source(path: string): string {
   const full = join(ROOT, path);
-  return existsSync(full) ? readFileSync(full, 'utf8') : '';
+  return existsSync(full) ? readFileSync(full, 'utf8').replace(/\r\n/g, '\n') : '';
 }
 
 function walk(dir: string, out: string[] = []): string[] {
@@ -107,11 +107,61 @@ function main() {
     return content.includes('0dalle/') || content.includes("'/0dalle") || content.includes('0dalle\\');
   });
   check(leaking.length === 0, 'aucun import ni chemin dynamique vers le dossier source 0dalle');
+  const textures = models.slice(0, 5).map((model) => `src/components/product-3d/models/${model}/three/proceduralTextures.ts`);
+  check(
+    textures.every((file) => {
+      const content = source(file);
+      return content.includes("img.src = '/product-3d/assets/aistudio/favicon_f9979c15.png'") && !content.includes("'/product-3d/product-3d/assets/");
+    }),
+    'logo des modèles servi depuis le chemin public correct'
+  );
 
   console.log('--- 7. Compatibilité descendante ---');
   check(catalog.includes('DEFAULT_PRODUCT_3D_MODEL'), 'modèle par défaut défini pour les produits anciens');
   check(design.includes('getProduct3DDefinition(modelId)'), 'un produit sans modèle utilise le repli sans erreur');
   check(admin.includes('getProduct3DDefinition(existing?.[\'3dModelId\'])'), 'admin : initialise le sélecteur depuis le produit existant');
+
+  console.log('--- 8. Correction du provider CMS ---');
+  const shell = source('src/app/web/web-cms-shell.tsx');
+  check(shell.includes("import { ProductsProvider } from '@/lib/products/products-context';"), 'shell CMS : import du ProductsProvider');
+  const providerOpen = shell.indexOf('<ProductsProvider>');
+  const bridgeOpen = shell.indexOf('<WebCmsBridge />');
+  const providerClose = shell.indexOf('</ProductsProvider>');
+  const childrenStart = shell.indexOf('{children}');
+  check(providerOpen >= 0 && bridgeOpen > providerOpen && providerClose > bridgeOpen, 'shell CMS : WebCmsBridge monté dans ProductsProvider');
+  check(childrenStart > providerClose, 'shell CMS : children laissés hors du provider ajouté');
+
+  console.log('--- 9. Grille Conception & Dimensions 42/58 ---');
+  check(design.includes('className="section theme-dark design-section"'), 'section : classe locale design-section');
+  check(design.includes('<div className="design-wrap">'), 'section : conteneur local design-wrap');
+  check(design.includes('<div className="design-grid">'), 'section : grille dédiée design-grid');
+  check(design.includes('<div className="design-technical space-y-6">'), 'section : panneau technique identifié');
+  check(design.includes('<div className="design-viewer">'), 'section : panneau 3D identifié');
+  check(design.includes('<Product3DModule modelId={modelId} className="product-3d-embed" />'), 'section : module 3D intégré sans doublon');
+  check((design.match(/id="design"/g) ?? []).length === 1, 'section : un seul #design');
+  const webCss = source('src/web/web.css');
+  check(webCss.includes('max-width: 1440px;'), 'CSS : largeur maximale du contenu à 1440 px');
+  check(webCss.includes('grid-template-columns: minmax(0, 42fr) minmax(0, 58fr);'), 'CSS : proportions 42/58');
+  check(webCss.includes('gap: 28px;'), 'CSS : espacement de 28 px entre panneaux');
+  check(webCss.includes('.design-technical,\n.design-viewer {\n  min-width: 0;\n}'), 'CSS : min-width: 0 uniquement sur les deux panneaux');
+  check(webCss.includes('@media (max-width: 1100px)'), 'CSS : palier tablette');
+  check(webCss.includes('@media (max-width: 820px)'), 'CSS : palier mobile');
+  check(webCss.includes('.design-technical { order: 1; }') && webCss.includes('.design-viewer { order: 2; }'), 'CSS : ordre technique puis 3D sur mobile');
+  check(webCss.includes('.product-3d-embed'), 'CSS : neutralisation limitée au module intégré');
+  check(webCss.includes('.product-3d-embed [class*="p3d-model"] > div {\n  height: 100% !important;\n}') && webCss.includes('.product-3d-embed [class*="p3d-model"] main {\n  height: 100% !important;'), 'CSS : hauteur propagée jusqu’à la scène 3D');
+  check(webCss.includes('.product-3d-embed [class*="lg:grid-cols-[0.95fr_1.25fr]"] {\n  height: 100% !important;'), 'CSS : grille interne du module conserve la hauteur');
+
+  console.log('--- 10. Confinement du fond des modules 3D ---');
+  for (const model of models.slice(0, 5)) {
+    const backdrop = source(`src/components/product-3d/models/${model}/components/AmbientBackdrop.tsx`);
+    check(backdrop.includes('absolute inset-0') && !backdrop.includes('fixed inset-0'), `${model} : fond en absolu, jamais fixed`);
+    check(backdrop.includes('h-[46%] w-[88%]') && !backdrop.includes('h-[36vh] w-[76vw]'), `${model} : bandeau dimensionné sur le module`);
+  }
+  for (const model of models) {
+    const entry = source(`src/components/product-3d/models/${model}/Model3D.tsx`);
+    check(entry.includes('relative') && entry.includes('overflow-hidden') && !entry.includes('overflow-auto'), `${model} : racine relative et fond coupé au module`);
+  }
+  check(shell.includes('<WebCmsBridge />\n      </ProductsProvider>'), 'CMS : panneau d’édition protégé contre useProducts');
 
   console.log(`\nRésultat : ${assertions - failures}/${assertions} assertions réussies.`);
   if (failures > 0) {

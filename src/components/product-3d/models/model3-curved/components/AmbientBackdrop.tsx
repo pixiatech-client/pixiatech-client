@@ -14,7 +14,7 @@ export const AmbientBackdrop: React.FC<AmbientBackdropProps> = ({ phase }) => {
       aria-hidden="true"
       data-testid="ambient-backdrop"
       data-phase={phase}
-      className="pointer-events-none fixed inset-0 z-0 overflow-hidden transition-colors duration-700"
+      className="pointer-events-none absolute inset-0 z-0 overflow-hidden transition-colors duration-700"
       style={{ backgroundColor: spec.baseHex }}
     >
       {/* Morphing volumetric orb 1 (top-left / center-left behind blueprint glass) */}
@@ -37,7 +37,7 @@ export const AmbientBackdrop: React.FC<AmbientBackdropProps> = ({ phase }) => {
 
       {/* Sweeping architectural light ribbon */}
       <div
-        className="animate-pixia-beam absolute top-[14%] left-[12%] h-[36vh] w-[76vw] blur-[90px] transition-colors duration-700"
+        className="animate-pixia-beam absolute top-[14%] left-[12%] h-[46%] w-[88%] blur-[90px] transition-colors duration-700"
         style={{
           background: `linear-gradient(90deg, transparent 0%, ${spec.orbPrimary} 35%, ${spec.orbSecondary} 68%, transparent 100%)`,
         }}
