@@ -10,7 +10,7 @@
  * le site (bulle de la mascotte + premier message du chat).
  */
 export const PIXIA_GREETING_FR =
-  'Bonjour, je suis Pixia, ton assistant. Besoin d\u2019aide ? Clique sur moi !';
+  'Bonjour, je suis Assistant Bot Pixia';
 
 export const PIXIA_GREETING_EN =
-  'Hello, I\u2019m Pixia, your assistant. Need help? Click me!';
+  'Hello, I am Assistant Bot Pixia';

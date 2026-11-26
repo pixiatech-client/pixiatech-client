@@ -6,6 +6,9 @@
   --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
   --ui-accent: #38BDF8;
+  /* Rétablit l'échelle Tailwind v4 (rounded-lg = 8px, md = 6px, sm = 4px)
+     écrasée par --radius: 1rem du thème hôte. */
+  --radius: 0.5rem;
   font-family: var(--font-sans);
   color: #F4F4F5;
 }
@@ -50,8 +53,9 @@
   a,
   [role='button'],
   [tabindex]
-):focus-visible {
-  outline: none;
+):is(:focus, :focus-visible) {
+  outline: none !important;
+  outline-offset: 0 !important;
 }
 
 /* Custom sleek dark scrollbar matching Pixia dark UI */
