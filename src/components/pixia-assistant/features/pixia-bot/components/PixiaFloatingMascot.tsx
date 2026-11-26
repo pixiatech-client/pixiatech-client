@@ -10,8 +10,8 @@ interface PixiaFloatingMascotProps {
   onOpen: () => void;
 }
 
-// Mascotte du chat alignée sur le robot global du site et de l'app : 100 × 100 px.
-const BOX_SIZE = 100;
+// Mascotte du chat alignée sur le robot global du site et de l'app : 110 × 110 px.
+const BOX_SIZE = 110;
 const PADDING = 16;
 
 function computeInitialCoords(mode: 'center' | 'bottom-right'): { x: number; y: number } {
