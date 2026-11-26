@@ -476,6 +476,17 @@ export interface Product {
   hero?: ProductHero;
   overview?: ProductOverview;
   design?: ProductDesign;
+  /** Identifiant stable du module 3D affiché sur la fiche produit. */
+  '3dModelId'?: string;
+  /** Paramètres propres au module 3D sélectionné (jamais de code source). */
+  '3dConfig'?: {
+    installationMode?: 'standing' | 'wall' | 'suspended';
+    finishId?: string;
+    pitchId?: string;
+    patternId?: string;
+    cameraPreset?: string;
+    [key: string]: string | number | boolean | null | undefined;
+  };
   features?: ProductFeatures;
   specs?: ProductSpecs;
   /**

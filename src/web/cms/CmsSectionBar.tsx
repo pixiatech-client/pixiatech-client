@@ -8,6 +8,7 @@ import { getSectionDragController } from './SectionDragDropManager';
 import { heroSlideStore, megaMenuLockedStore, useStoreValue } from './editor-ui-store';
 import { computeValidHeroSlides } from '@/web/pixiatech/sections/hero-slides';
 import { SectionReorderDrawer } from './SectionReorderDrawer';
+import { Product3DCmsControls } from './Product3DCmsControls';
 
 /** Libellés pour les blocs qui ne passent pas par `EditableWrapper`. */
 const STATIC_LABELS: Record<string, string> = {
@@ -331,6 +332,7 @@ export const CmsSectionBar: React.FC = () => {
         )}
       </div>
     </div>
+    {activeKey === 'design' && <Product3DCmsControls />}
     <SectionReorderDrawer open={reorderDrawerOpen} onClose={() => setReorderDrawerOpen(false)} />
     </>
   );

@@ -6,12 +6,18 @@ import { useCms } from '@/lib/site-web/cms-context';
 import type { ProductDesign } from '@/lib/products/types';
 import { dimensionForArt, text } from '@/lib/products/display';
 import { getCmsText, normalizeLang } from '@/lib/site-web/cms-i18n';
+import Product3DModule from '@/components/product-3d/Product3DModule';
+import { getProduct3DDefinition } from '@/components/product-3d/catalog';
 
 interface DesignSectionProps {
   lang?: Language;
   data?: ProductDesign;
   /** La matrice comparative du produit existe-t-elle ? Contrôle le lien #specs. */
   hasSpecsTable?: boolean;
+  /** Identifiant stable du module 3D, porté par le produit (jamais par le CMS). */
+  modelId?: string | null;
+  /** Mode d'installation propre au produit, si le modèle le prend en charge. */
+  installationMode?: string;
 }
 
 /* ── Hover-aware spec row ─────────────────────────────────────────────────── */
@@ -248,6 +254,8 @@ export const DesignSection: React.FC<DesignSectionProps> = ({
   lang = 'FR',
   data,
   hasSpecsTable = false,
+  modelId,
+  installationMode,
 }) => {
   const { pages, currentPageId } = useCms();
   const cmsDesign = (pages[currentPageId]?.sections?.design as Record<string, unknown>) || {};
@@ -318,74 +326,78 @@ export const DesignSection: React.FC<DesignSectionProps> = ({
           </h2>
         )}
 
-        {/* 2-Column: Blueprint SVG + Specs */}
+        {/* Nouveau système : architecture à gauche, vrai module 3D à droite */}
         <div
           className="g2"
           style={{
             display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 420px), 1fr))',
             gap: 'clamp(40px, 5vw, 88px)',
-            alignItems: 'center',
+            alignItems: 'start',
           }}
         >
-          {/* Blueprint SVG — cotes issues du produit courant */}
-          <svg
-            viewBox="0 0 560 282.8"
-            style={{ width: '100%', height: 'auto', display: 'block' }}
-            aria-label="Technical Cabinet & Module Blueprint"
-          >
-            {/* Main Cabinet Outer Box */}
-            <rect x="80" y="50" width="300" height="168.8" fill="rgba(255,255,255,0.01)" stroke="#3A3A36" strokeWidth="1.2" />
-            <line x1="230" y1="50" x2="230" y2="218.8" stroke="#252523" strokeWidth="0.6" strokeDasharray="3 3" />
-            <line x1="80" y1="134.4" x2="380" y2="134.4" stroke="#252523" strokeWidth="0.6" strokeDasharray="3 3" />
+          <div className="space-y-6">
+            <div className="rounded-xl border border-white/10 bg-black/20 p-4">
+              <div className="mb-3 text-[10px] font-bold uppercase tracking-[.24em] text-neutral-400">
+                Architecture — vues techniques
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-lg border border-white/10 bg-white/[0.02] p-3">
+                  <div className="mb-2 text-[10px] font-bold uppercase tracking-wider text-[color:var(--ui-accent)]">Face</div>
+                  <svg viewBox="0 0 200 110" className="h-24 w-full" aria-label="Vue de face">
+                    <rect x="20" y="14" width="160" height="82" fill="rgba(255,255,255,0.02)" stroke="#4A4A46" strokeWidth="1.2" />
+                    {[0, 1, 2, 3].map((i) => (
+                      <rect key={i} x={24 + i * 39} y="18" width="35" height="74" fill="rgba(var(--ui-accent-rgb),0.06)" stroke="#3A3A36" strokeWidth="0.8" />
+                    ))}
+                    {moduleArt && (
+                      <text x="20" y="8" fontSize="9" fill="var(--ui-accent)">MODULE — {moduleArt}</text>
+                    )}
+                  </svg>
+                </div>
+                <div className="rounded-lg border border-white/10 bg-white/[0.02] p-3">
+                  <div className="mb-2 text-[10px] font-bold uppercase tracking-wider text-[color:var(--ui-accent)]">Profil / Dos</div>
+                  <svg viewBox="0 0 200 110" className="h-24 w-full" aria-label="Vue de profil">
+                    <rect x="80" y="14" width="32" height="82" fill="rgba(var(--ui-accent-rgb),0.06)" stroke="#4A4A46" strokeWidth="1.2" />
+                    <line x1="80" y1="104" x2="112" y2="104" stroke="#4A4A46" strokeWidth="1" />
+                    {depthArt && (
+                      <text x="45" y="8" fontSize="9" fill="var(--ui-accent)">ÉPAISSEUR — {depthArt}</text>
+                    )}
+                  </svg>
+                </div>
+              </div>
+              {(moduleArt || cabinetArt || depthArt) && (
+                <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-neutral-300">
+                  {moduleArt && <span className="rounded-md bg-white/5 px-2 py-1">Module : {moduleArt}</span>}
+                  {cabinetArt && <span className="rounded-md bg-white/5 px-2 py-1">Cabinet : {cabinetArt}</span>}
+                  {depthArt && <span className="rounded-md bg-white/5 px-2 py-1">Profondeur : {depthArt}</span>}
+                </div>
+              )}
+              {installationMode && getProduct3DDefinition(modelId).supportsInstallationModes && (
+                <div className="mt-2 text-[11px] text-neutral-400">
+                  Mode d’installation : <span className="font-semibold text-white">{installationMode}</span>
+                </div>
+              )}
+            </div>
+            <SpecsList
+              specsList={specsList}
+              lang={lang}
+              onScrollToSpecs={handleScrollToSpecs}
+              photo={planPhoto}
+              hasSpecsTable={hasSpecsTable}
+            />
+          </div>
 
-            {/* Active Highlighted Module in var(--ui-accent, #C3F910) */}
-            <rect x="80" y="50" width="150" height="84.4" fill="rgba(var(--ui-accent-rgb),0.08)" stroke="var(--ui-accent, var(--ui-accent))" strokeWidth="1.8" />
-            {moduleArt && (
-              <>
-                <line x1="155" y1="50" x2="155" y2="24" stroke="var(--ui-accent, var(--ui-accent))" strokeWidth="1" />
-                <circle cx="155" cy="50" r="2.5" fill="var(--ui-accent, var(--ui-accent))" />
-                <text x="145" y="16" fontSize="11" fill="var(--ui-accent, var(--ui-accent))" fontWeight="700" letterSpacing="0.08em">
-                  MODULE — {moduleArt}
-                </text>
-              </>
-            )}
-
-            {/* Cabinet Dimension Lines */}
-            <line x1="80" y1="238.8" x2="380" y2="238.8" stroke="#4A4A46" strokeWidth="0.8" />
-            <line x1="80" y1="230.8" x2="80" y2="246.8" stroke="#4A4A46" strokeWidth="0.8" />
-            <line x1="380" y1="230.8" x2="380" y2="246.8" stroke="#4A4A46" strokeWidth="0.8" />
-            {cabinetArt && (
-              <text x="80" y="266.8" fontSize="11" fill="#C9C7C1" letterSpacing="0.08em" fontWeight="500">
-                CABINET — {cabinetArt}
-              </text>
-            )}
-
-            {/* Side View with Depth */}
-            <rect x="440" y="50" width="14.8" height="168.8" fill="rgba(var(--ui-accent-rgb),0.05)" stroke="#3A3A36" strokeWidth="1.2" />
-            <line x1="440" y1="50" x2="440" y2="218.8" stroke="var(--ui-accent, var(--ui-accent))" strokeWidth="2.8" />
-            {depthArt && (
-              <>
-                <line x1="440" y1="238.8" x2="454.8" y2="238.8" stroke="#4A4A46" strokeWidth="0.8" />
-                <line x1="440" y1="230.8" x2="440" y2="246.8" stroke="#4A4A46" strokeWidth="0.8" />
-                <line x1="454.8" y1="230.8" x2="454.8" y2="246.8" stroke="#4A4A46" strokeWidth="0.8" />
-                <text x="418" y="266.8" fontSize="11" fill="#C9C7C1" letterSpacing="0.08em">
-                  DEPTH — <tspan fill="var(--ui-accent, var(--ui-accent))" fontWeight="700">{depthArt}</tspan>
-                </text>
-              </>
-            )}
-            <text x="440" y="36" fontSize="11" fill="#7A7A76" fontWeight="600" letterSpacing="0.1em">SIDE</text>
-            <text x="80" y="36" fontSize="11" fill="#7A7A76" fontWeight="600" letterSpacing="0.1em">FRONT</text>
-          </svg>
-
-          {/* Specs list + photo */}
-          <SpecsList
-            specsList={specsList}
-            lang={lang}
-            onScrollToSpecs={handleScrollToSpecs}
-            photo={planPhoto}
-            hasSpecsTable={hasSpecsTable}
-          />
+          <div className="min-w-0">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div className="text-[10px] font-bold uppercase tracking-[.24em] text-neutral-400">
+                Visualisation 3D — {getProduct3DDefinition(modelId).label}
+              </div>
+              <span className="rounded-full border border-white/15 px-2 py-0.5 text-[10px] text-neutral-400">
+                Modèle {getProduct3DDefinition(modelId).number}
+              </span>
+            </div>
+            <Product3DModule modelId={modelId} />
+          </div>
         </div>
 
         {/* Configurations — masquées si le PDF n'en fournit pas */}

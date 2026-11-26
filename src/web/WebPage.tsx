@@ -143,6 +143,8 @@ function WebPageView({ seedProduct }: { seedProduct?: Product } = {}) {
             data={product?.design}
             lang={lang}
             hasSpecsTable={hasSpecs(product?.specs)}
+            modelId={product?.['3dModelId']}
+            installationMode={product?.['3dConfig']?.installationMode}
           />
         </EditableWrapper>
         )}

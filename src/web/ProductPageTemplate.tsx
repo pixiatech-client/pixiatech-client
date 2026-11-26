@@ -247,6 +247,8 @@ function ProductView({ slug, fallbackProduct, isPreview = false }: ProductPageTe
               data={sectionsProduct?.design}
               lang={effectiveLang}
               hasSpecsTable={hasSpecs(product?.specs)}
+              modelId={product?.['3dModelId']}
+              installationMode={product?.['3dConfig']?.installationMode}
             />
           ),
         }

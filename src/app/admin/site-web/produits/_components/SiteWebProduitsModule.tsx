@@ -61,6 +61,12 @@ import {
 } from '@/lib/products/products-service';
 import { slugify, groupDisplayName, productCategoryIds, MAX_PRODUCT_NAME_LENGTH, isValidShopUrl, normalizeShopUrl, sanitizeShopLinks, normalizeShopLinkTypes, sanitizeShopLinkTypes, shopLinkTypeForVariant, type ProductSpecModel, type ProductSpecGroup, type ProductSpecs } from '@/lib/products/types';
 import { SpecsMatrixEditor } from './SpecsMatrixEditor';
+import Product3DModule from '@/components/product-3d/Product3DModule';
+import {
+  PRODUCT_3D_MODELS,
+  getProduct3DDefinition,
+  isProduct3DModelId,
+} from '@/components/product-3d/catalog';
 import {
   SYSTEM_TEMPLATE_LABEL,
   SYSTEM_TEMPLATE_PROTECTED_MESSAGE,
@@ -1877,6 +1883,9 @@ function ProductForm({
   const [pdfAnalysis, setPdfAnalysis] = useState<Partial<Product> | null>(existing ?? null);
   const [pdfReanalysis, setPdfReanalysis] = useState<Partial<Product> | null>(null);
   const [pdfName, setPdfName] = useState<string | null>(null);
+  const [model3dId, setModel3dId] = useState<string>(
+    getProduct3DDefinition(existing?.['3dModelId']).id
+  );
   const [analyzing, setAnalyzing] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | undefined>(
@@ -1963,7 +1972,8 @@ function ProductForm({
     | 'fieldwork'
     | 'buttons'
     | 'description'
-    | 'seo';
+    | 'seo'
+    | 'model3d';
 
   const [activeSummarySection, setActiveSummarySection] = useState<SummarySectionKey | null>(null);
 
@@ -2494,6 +2504,11 @@ function ProductForm({
       label: 'RÉFÉRENCEMENT',
       value: seo?.description || seo?.title ? 'Description prête' : 'Non configuré',
     },
+    {
+      key: 'model3d',
+      label: 'PRÉSENTATION 3D',
+      value: getProduct3DDefinition(model3dId).label,
+    },
   ];
 
   // Avertissements d'import + visuels à joindre, pour l'analyse courante
@@ -2720,6 +2735,8 @@ function ProductForm({
         buttons,
         description,
         seo,
+        '3dModelId': isProduct3DModelId(model3dId) ? model3dId : undefined,
+        '3dConfig': existing?.['3dConfig'],
       });
 
       // On enchaîne sur la version la plus récente du document à chaque étape.
@@ -2813,6 +2830,8 @@ function ProductForm({
         buttons,
         description,
         seo,
+        '3dModelId': isProduct3DModelId(model3dId) ? model3dId : undefined,
+        '3dConfig': existing?.['3dConfig'],
       };
       if (pdfReanalysis) {
         Object.assign(body, pdfReanalysis);
@@ -4267,6 +4286,55 @@ function ProductForm({
                                 placeholder="Description pour les moteurs de recherche..."
                                 className="w-full px-3 py-2 rounded-xl text-xs bg-neutral-50 dark:bg-zinc-800 border border-neutral-300 dark:border-white/10 text-neutral-900 dark:text-white"
                               />
+                            </div>
+                          </div>
+                        )}
+
+                        {activeSummarySection === 'model3d' && (
+                          <div className="space-y-4">
+                            <div>
+                              <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-2">
+                                Présentation du produit — Modèle 3D
+                              </label>
+                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                {PRODUCT_3D_MODELS.map((model) => {
+                                  const active = getProduct3DDefinition(model3dId).id === model.id;
+                                  return (
+                                    <button
+                                      key={model.id}
+                                      type="button"
+                                      onClick={() => setModel3dId(model.id)}
+                                      aria-pressed={active}
+                                      className={`text-left rounded-xl border p-2 transition-all ${
+                                        active
+                                          ? 'border-[color:var(--ui-accent)] ring-2 ring-[color:rgba(var(--ui-accent-rgb),0.3)] bg-emerald-500/10'
+                                          : 'border-neutral-200 dark:border-white/10 hover:border-neutral-300 dark:hover:border-white/30'
+                                      }`}
+                                    >
+                                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                                      <img
+                                        src={model.thumbnail}
+                                        alt={model.label}
+                                        className="h-20 w-full rounded-md object-cover bg-black"
+                                      />
+                                      <div className="mt-2 text-[11px] font-bold text-neutral-800 dark:text-white">
+                                        {model.number} — {model.label}
+                                      </div>
+                                      <p className="mt-0.5 text-[10px] leading-snug text-neutral-500 dark:text-neutral-400">
+                                        {model.appearance}
+                                      </p>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="mb-2 text-[11px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                                Prévisualisation réelle — modèle {getProduct3DDefinition(model3dId).number}
+                              </div>
+                              <div className="rounded-xl border border-neutral-200 dark:border-white/10 bg-black p-1">
+                                <Product3DModule modelId={model3dId} />
+                              </div>
                             </div>
                           </div>
                         )}
