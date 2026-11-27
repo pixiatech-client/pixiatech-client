@@ -173,9 +173,12 @@ export const CmsProvider: React.FC<{
   useEffect(() => {
     let mounted = true;
     async function loadData() {
-      // Cache local s'il existe
-      const local = loadLocalPages();
-      if (local) commitPages((prev) => ({ ...DEFAULT_PAGES, ...prev, ...local }));
+      // Le HTML SSR contient déjà la source serveur fraîche (`initialPages`) :
+      // réappliquer le cache localStorage ici le ferait repasser dessus et
+      // réintroduirait d'anciennes valeurs CMS après l'hydratation. Le cache
+      // local ne sert que de repli quand aucune donnée serveur n'a été fournie.
+      const local = initialPages ? null : loadLocalPages();
+      if (local && mounted) commitPages((prev) => ({ ...DEFAULT_PAGES, ...prev, ...local }));
       if (mounted) {
         try {
           const res = await fetch('/api/site-web/pages', { cache: 'no-store' });

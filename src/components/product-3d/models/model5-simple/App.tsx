@@ -8,6 +8,11 @@ import {
   type DisplayPatternId,
   type WallMode,
 } from './data/panelSpecs';
+import {
+  readProduct3DBoolean,
+  readProduct3DParam,
+  useProduct3DModelConfig,
+} from '../../config-context';
 import { AmbientBackdrop } from './components/AmbientBackdrop';
 import { PhotonicsCanvas3D } from './components/PhotonicsCanvas3D';
 import {
@@ -16,14 +21,25 @@ import {
 } from './components/ArchitectureBlueprint';
 
 export default function App() {
-  const [wallMode, setWallMode] = useState<WallMode>('object');
+  const params = useProduct3DModelConfig('model5-simple').params;
+  const [wallMode, setWallMode] = useState<WallMode>(
+    readProduct3DParam(params, 'wallMode', 'object', ['object', 'surface'])
+  );
   const [explodeFactor, setExplodeFactor] = useState<number>(0);
-  const [finishId, setFinishId] = useState<ChassisFinishId>('obsidian');
-  const [patternId, setPatternId] = useState<DisplayPatternId>('fluid');
+  const [finishId, setFinishId] = useState<ChassisFinishId>(
+    readProduct3DParam(params, 'finishId', 'obsidian', ['obsidian', 'titanium', 'raw'])
+  );
+  const [patternId, setPatternId] = useState<DisplayPatternId>(
+    readProduct3DParam(params, 'patternId', 'fluid', ['fluid', 'ambient', 'calibration', 'off'])
+  );
   const [activeLayer, setActiveLayer] = useState<AssemblyLayerId | null>(null);
   const [selectedModuleIdx, setSelectedModuleIdx] = useState<number | null>(null);
-  const [showWireframe, setShowWireframe] = useState<boolean>(false);
-  const [cameraPreset, setCameraPreset] = useState<CameraPresetId>('perspective');
+  const [showWireframe, setShowWireframe] = useState<boolean>(
+    readProduct3DBoolean(params, 'showWireframe', false)
+  );
+  const [cameraPreset, setCameraPreset] = useState<CameraPresetId>(
+    readProduct3DParam(params, 'cameraPreset', 'perspective', ['perspective', 'front', 'profile', 'rear'])
+  );
   const [backgroundPhase, setBackgroundPhase] = useState<BackgroundPhaseId>('phase1');
 
   const handleSelectModule = (idx: number | null) => {

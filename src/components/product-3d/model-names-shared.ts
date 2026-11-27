@@ -3,14 +3,14 @@ import {
   type Product3DModelId,
 } from './catalog';
 
-/** Identifiant Firestore unique des noms globaux des six modules. */
+/** Identifiant Firestore unique des noms globaux des cinq modules. */
 export const PRODUCT_3D_NAMES_SETTING_ID = 'product_3d_model_names';
 
 export type Product3DModelNames = Readonly<Partial<Record<Product3DModelId, string>>>;
 export type EditableProduct3DModelNames = Partial<Record<Product3DModelId, string>>;
 
 /**
- * Ne conserve que les six identifiants techniques connus. Le client et
+ * Ne conserve que les cinq identifiants techniques connus. Le client et
  * l'endpoint admin appliquent exactement la même normalisation afin qu'un nom
  * saisi dans le CMS puisse être lu partout sans divergence.
  */

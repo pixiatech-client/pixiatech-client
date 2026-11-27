@@ -9,6 +9,12 @@ import {
   type HorizontalPanelCount,
   type InstallationModeId,
 } from './data/panelSpecs';
+import {
+  readProduct3DBoolean,
+  readProduct3DNumber,
+  readProduct3DParam,
+  useProduct3DModelConfig,
+} from '../../config-context';
 import { AmbientBackdrop } from './components/AmbientBackdrop';
 import { PhotonicsCanvas3D } from './components/PhotonicsCanvas3D';
 import {
@@ -17,16 +23,32 @@ import {
 } from './components/ArchitectureBlueprint';
 
 export default function App() {
-  const [installationMode, setInstallationMode] = useState<InstallationModeId>('standing');
-  const [panelCount, setPanelCount] = useState<HorizontalPanelCount>(1);
+  const modelConfig = useProduct3DModelConfig('model1-transparent');
+  const params = modelConfig.params;
+  const [installationMode, setInstallationMode] = useState<InstallationModeId>(
+    readProduct3DParam(params, 'installationMode', 'standing', ['standing', 'wall', 'suspended'])
+  );
+  const [panelCount, setPanelCount] = useState<HorizontalPanelCount>(
+    readProduct3DNumber(params, 'panelCount', 1, 1, 4) as HorizontalPanelCount
+  );
   const [explodeFactor, setExplodeFactor] = useState<number>(0);
-  const [finishId, setFinishId] = useState<ChassisFinishId>('obsidian');
-  const [patternId, setPatternId] = useState<DisplayPatternId>('video');
+  const [finishId, setFinishId] = useState<ChassisFinishId>(
+    readProduct3DParam(params, 'finishId', 'obsidian', ['obsidian', 'titanium', 'raw'])
+  );
+  const [patternId, setPatternId] = useState<DisplayPatternId>(
+    readProduct3DParam(params, 'patternId', 'video', ['video', 'fluid', 'ambient', 'calibration', 'off'])
+  );
   const [activeLayer, setActiveLayer] = useState<AssemblyLayerId | null>(null);
   const [selectedModuleIdx, setSelectedModuleIdx] = useState<number | null>(null);
-  const [showWireframe, setShowWireframe] = useState<boolean>(false);
-  const [showStand, setShowStand] = useState<boolean>(true);
-  const [cameraPreset, setCameraPreset] = useState<CameraPresetId>('perspective');
+  const [showWireframe, setShowWireframe] = useState<boolean>(
+    readProduct3DBoolean(params, 'showWireframe', false)
+  );
+  const [showStand, setShowStand] = useState<boolean>(
+    readProduct3DBoolean(params, 'showStand', true)
+  );
+  const [cameraPreset, setCameraPreset] = useState<CameraPresetId>(
+    readProduct3DParam(params, 'cameraPreset', 'perspective', ['perspective', 'front', 'profile', 'rear'])
+  );
   const [backgroundPhase, setBackgroundPhase] = useState<BackgroundPhaseId>('phase1');
 
   const handleSelectModule = (idx: number | null) => {

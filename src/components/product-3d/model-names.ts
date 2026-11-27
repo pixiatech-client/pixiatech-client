@@ -23,7 +23,7 @@ export {
 } from './model-names-shared';
 
 /**
- * Noms commerciaux globaux des six modules. Les identifiants techniques ne
+ * Noms commerciaux globaux des cinq modules. Les identifiants techniques ne
  * changent jamais : seul ce document Firestore est éditable.
  */
 const STORAGE_KEY = 'pixiatech_product_3d_model_names_v1';

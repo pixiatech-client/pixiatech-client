@@ -2,7 +2,6 @@ export type Product3DModelId =
   | 'model1-transparent'
   | 'model2-black'
   | 'model3-curved'
-  | 'model4-wall'
   | 'model5-simple'
   | 'model6-kinetic';
 
@@ -16,7 +15,6 @@ export type Product3DDefinition = {
   supportsInstallationModes: boolean;
   supportsCurvature: boolean;
   supportsWallGrids: boolean;
-  supportsVideo: boolean;
 };
 
 export const PRODUCT_3D_MODELS: Product3DDefinition[] = [
@@ -30,7 +28,6 @@ export const PRODUCT_3D_MODELS: Product3DDefinition[] = [
     supportsInstallationModes: false,
     supportsCurvature: true,
     supportsWallGrids: true,
-    supportsVideo: false,
   },
   {
     id: 'model2-black',
@@ -42,7 +39,6 @@ export const PRODUCT_3D_MODELS: Product3DDefinition[] = [
     supportsInstallationModes: false,
     supportsCurvature: true,
     supportsWallGrids: true,
-    supportsVideo: false,
   },
   {
     id: 'model3-curved',
@@ -54,19 +50,6 @@ export const PRODUCT_3D_MODELS: Product3DDefinition[] = [
     supportsInstallationModes: false,
     supportsCurvature: true,
     supportsWallGrids: false,
-    supportsVideo: false,
-  },
-  {
-    id: 'model4-wall',
-    number: 4,
-    label: 'Poster mural holographique',
-    sourceFolder: '0dallemural',
-    appearance: 'Film LED 1,8 mm transparent à 92 %, 1 à 4 panneaux, pose sur pied/mural/suspendu, motif vidéo importable.',
-    thumbnail: '/product-3d/model4-wall/favicon_f9979c15.png',
-    supportsInstallationModes: true,
-    supportsCurvature: false,
-    supportsWallGrids: false,
-    supportsVideo: true,
   },
   {
     id: 'model5-simple',
@@ -78,7 +61,6 @@ export const PRODUCT_3D_MODELS: Product3DDefinition[] = [
     supportsInstallationModes: false,
     supportsCurvature: false,
     supportsWallGrids: false,
-    supportsVideo: false,
   },
   {
     id: 'model6-kinetic',
@@ -90,7 +72,6 @@ export const PRODUCT_3D_MODELS: Product3DDefinition[] = [
     supportsInstallationModes: false,
     supportsCurvature: true,
     supportsWallGrids: true,
-    supportsVideo: false,
   },
 ];
 

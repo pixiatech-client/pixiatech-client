@@ -8,7 +8,7 @@ import { getProduct3DDefinition, type Product3DModelId } from './catalog';
  * Sélection TEMPORAIRE du modèle dans l'éditeur visuel.
  *
  * Cette valeur ne part jamais sur le réseau : elle pilote uniquement le rendu
- * de la section pendant que l'administrateur compare les six modules. La
+ * de la section pendant que l'administrateur compare les cinq modules. La
  * sauvegarde réelle se fait dans le document produit via `product3DModelPatch`.
  */
 const previewBySlug = new Map<string, string>();

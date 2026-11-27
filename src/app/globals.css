@@ -1530,3 +1530,31 @@ html.vt-back::view-transition-new(root) {
     animation: none;
   }
 }
+
+.blueprint-edge-mask {
+  mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(0, 0, 0, 0.78) 5%,
+    #000 11%,
+    #000 89%,
+    rgba(0, 0, 0, 0.78) 95%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(0, 0, 0, 0.78) 5%,
+    #000 11%,
+    #000 89%,
+    rgba(0, 0, 0, 0.78) 95%,
+    transparent 100%
+  );
+}
+
+@media not screen and (min-width: 769px) {
+  .blueprint-edge-mask {
+    mask-image: none;
+    -webkit-mask-image: none;
+  }
+}

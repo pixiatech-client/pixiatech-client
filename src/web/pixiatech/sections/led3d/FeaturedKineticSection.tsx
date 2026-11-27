@@ -320,7 +320,16 @@ export function FeaturedKineticSection() {
         }
       );
       sceneRef.current = sceneCtrl;
+      const visibilityObserver =
+        typeof IntersectionObserver === 'undefined'
+          ? null
+          : new IntersectionObserver(
+              (entries) => sceneCtrl.setPageVisible(entries.some((e) => e.isIntersecting)),
+              { rootMargin: '160px' }
+            );
+      visibilityObserver?.observe(sectionRef.current || mount);
       return () => {
+        visibilityObserver?.disconnect();
         sceneCtrl.dispose();
         sceneRef.current = null;
         if (objectUrlRef.current) {

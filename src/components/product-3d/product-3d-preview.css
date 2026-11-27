@@ -1,48 +1,98 @@
-/* Prévisualisation d'administration : on garde LE canvas original, mais aucun
-   panneau de commande. Aucune feuille des six modules n'est modifiée : ce
-   cadrage est local au conteneur de prévisualisation. */
+/* Prévisualisation d'administration : UN seul cadre, LE canvas d'origine.
+   Aucune feuille des cinq modules n'est modifiée : ce cadrage est local au
+   conteneur de prévisualisation. Les dimensions réelles sont posées en pixels
+   par Product3DPreview.tsx ; cette feuille neutralise seulement les cadres,
+   les débordements et les commandes internes. */
 
 .p3d-admin-preview {
   position: relative;
-  overflow: hidden;
+  display: block;
+  width: 100%;
+  overflow: hidden !important;
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 0.75rem;
   background: #090a0c;
   isolation: isolate;
 }
 
+/* Aucune barre de défilement, même si un module interne réclame un viewport. */
+.p3d-admin-preview,
+.p3d-admin-preview * {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+.p3d-admin-preview::-webkit-scrollbar,
+.p3d-admin-preview *::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+  display: none !important;
+}
+
+/* Un seul contour : les cadres internes des modules deviennent invisibles,
+   sans retirer leur DOM ni leurs événements. */
+.p3d-admin-preview > *,
+.p3d-admin-preview [id='atelier-3d'],
+.p3d-admin-preview section,
+.p3d-admin-preview main > div {
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background-color: transparent !important;
+}
+
 .p3d-admin-preview canvas[data-engine^='three.js'],
 .p3d-admin-preview canvas[data-p3d-preview-canvas='true'] {
   display: block !important;
+  position: relative !important;
+  inset: 0 !important;
   visibility: visible !important;
   opacity: 1 !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+  border-radius: inherit;
 }
 
 .p3d-admin-preview [data-p3d-preview-hidden='true'] {
   display: none !important;
 }
 
-/* Le conteneur d'administration porte une hauteur explicite (360/460 px).
-   Seuls les ANCÊTRES DOM du canvas sont alignés dessus : le renderer Three.js
-   relit la taille du mount via ResizeObserver, sans modifier OrbitControls,
-   la scène, les matériaux ni les animations. */
-.p3d-admin-preview[data-p3d-preview-root] > div,
-.p3d-admin-preview[data-p3d-preview-root] > div > div,
-.p3d-admin-preview[data-p3d-preview-root] main,
-.p3d-admin-preview[data-p3d-preview-root] :is(div, main, section):has(canvas) {
-  height: 100% !important;
+/* Les ancêtres du canvas sont dimensionnés en pixels par le composant.
+   Leur grille/flex d'origine peut réserver une colonne à des commandes masquées
+   (bande noire à gauche) : on la neutralise pour que le canvas démarre à 0. */
+.p3d-admin-preview :is(div, main, section):has(canvas) {
+  display: block !important;
+  position: relative !important;
+  inset: 0 !important;
+  transform: none !important;
+  translate: none !important;
+  box-sizing: border-box !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
   min-height: 0 !important;
-}
-
-/* Le cadre du module d'origine devient redondant dans la prévisualisation :
-   neutralisation visuelle uniquement, le DOM et les événements restent. */
-.p3d-admin-preview #atelier-3d {
+  max-height: 100% !important;
+  overflow: hidden !important;
   border: 0 !important;
-  border-radius: 0 !important;
   background: transparent !important;
 }
 
-/* Premiers enfants : mount WebGL, puis fallback d'erreur, puis commandes. */
-.p3d-admin-preview #atelier-3d > :not(:first-child):not(.glass-mirror) {
+.p3d-admin-preview [data-p3d-preview-sized='true'] {
+  flex-shrink: 0 !important;
+}
+
+/* Commandes, panneaux et overlays : le canvas seul reste interactif. */
+.p3d-admin-preview header,
+.p3d-admin-preview footer,
+.p3d-admin-preview aside,
+.p3d-admin-preview [role='tablist'],
+.p3d-admin-preview button,
+.p3d-admin-preview select,
+.p3d-admin-preview input,
+.p3d-admin-preview .fixed {
   display: none !important;
 }
 
@@ -56,4 +106,14 @@
 .p3d-admin-preview .p3d-model6-kinetic [role='tablist'],
 .p3d-admin-preview .p3d-model6-kinetic button {
   display: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .p3d-admin-preview *,
+  .p3d-admin-preview *::before,
+  .p3d-admin-preview *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

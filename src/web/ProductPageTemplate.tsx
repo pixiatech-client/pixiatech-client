@@ -255,6 +255,7 @@ function ProductView({ slug, fallbackProduct, isPreview = false }: ProductPageTe
               lang={effectiveLang}
               hasSpecsTable={hasSpecs(product?.specs)}
               modelId={model3dId}
+              config={product?.['3dConfig']}
               installationMode={product?.['3dConfig']?.installationMode}
             />
           ),

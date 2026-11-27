@@ -414,6 +414,9 @@ export interface ProductMediaItem {
   size?: number;
 }
 
+/** Valeurs libres d'un réglage de modèle 3D (toujours primitives Firestore). */
+export type Product3DParamValues = Record<string, string | number | boolean | null>;
+
 export interface ProductFile {
   name: string;
   url?: string;
@@ -485,14 +488,20 @@ export interface Product {
    */
   model3dId?: string;
   '3dModelId'?: string;
-  /** Paramètres propres au module 3D sélectionné (jamais de code source). */
+  /** Configuration du module 3D (modèles actifs et réglages éventuels). */
   '3dConfig'?: {
     installationMode?: 'standing' | 'wall' | 'suspended';
     finishId?: string;
     pitchId?: string;
     patternId?: string;
     cameraPreset?: string;
-    [key: string]: string | number | boolean | null | undefined;
+    /** Modèles désactivés : plus sélectionnables ni rendus sur la fiche publique. */
+    disabledModels?: string[];
+    /** Modèles masqués de la sélection administrative (données conservées). */
+    hiddenModels?: string[];
+    /** Réglages libres par modèle, édités dans les cartes de l'administration. */
+    modelParams?: Record<string, Product3DParamValues>;
+    [key: string]: string | number | boolean | null | undefined | string[] | Product3DParamValues | Record<string, Product3DParamValues>;
   };
   features?: ProductFeatures;
   specs?: ProductSpecs;

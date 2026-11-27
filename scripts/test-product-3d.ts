@@ -7,10 +7,16 @@ const MODELS = [
   { id: 'model1-transparent', source: '0dalleTransparent' },
   { id: 'model2-black', source: '0dalleblack' },
   { id: 'model3-curved', source: null },
-  { id: 'model4-wall', source: '0dallemural' },
   { id: 'model5-simple', source: '0dallesemple' },
   { id: 'model6-kinetic', source: '0dalleTransparent2026' },
 ] as const;
+
+/** Fichiers volontairement adaptés au CMS (contexte, fond cadré, plus d'upload visiteur). */
+const CMS_ADAPTED_FILES = new Set([
+  'App.tsx',
+  'components/AmbientBackdrop.tsx',
+  'components/PhotonicsCanvas3D.tsx',
+]);
 
 let assertions = 0;
 let failures = 0;
@@ -53,7 +59,7 @@ function sourceDir(model: (typeof MODELS)[number]): string {
 }
 
 function main() {
-  console.log('--- 1. Fidélité aux six sources originales ---');
+  console.log('--- 1. Fidélité aux cinq sources originales ---');
   for (const model of MODELS) {
     const from = sourceDir(model);
     const dest = join(ROOT, 'src/components/product-3d/models', model.id);
@@ -63,23 +69,19 @@ function main() {
     let identical = files.length > 0;
     for (const file of files) {
       const rel = file.slice(from.length + 1).replace(/\\/g, '/');
-      if (rel === 'main.tsx') continue;
+      if (rel === 'main.tsx' || CMS_ADAPTED_FILES.has(rel)) continue;
       const target = join(dest, rel);
-      let expected = rewriteAssets(readFileSync(file, 'utf8').replace(/\r\n/g, '\n'));
+      const expected = rewriteAssets(readFileSync(file, 'utf8').replace(/\r\n/g, '\n'));
       const actual = existsSync(target)
         ? readFileSync(target, 'utf8').replace(/\r\n/g, '\n').replace(/^'use client';\n/, '')
         : '';
-      // Correction TS indispensable : la source du modèle 4 transmet un second
-      // argument ignoré par l'implémentation d'origine.
-      if (model.id === 'model4-wall' && rel === 'components/PhotonicsCanvas3D.tsx') {
-        expected = expected.replace(
-          'afterDraw(done, renderDirty || nonVideoAnimating ? 25 : 420);',
-          'afterDraw(done);',
-        );
-      }
       if (expected !== actual) identical = false;
     }
-    check(identical, `${model.id} : TS/TSX identiques aux sources (hors 'use client' et chemins d’assets)`);
+    check(identical, `${model.id} : moteur TS/TSX identique à la source (hors adaptations CMS documentées)`);
+    const adaptedApp = source(`src/components/product-3d/models/${model.id}/App.tsx`);
+    const adaptedCanvas = source(`src/components/product-3d/models/${model.id}/components/PhotonicsCanvas3D.tsx`);
+    check(adaptedApp.includes('readProduct3DParam') && adaptedApp.includes('useProduct3DModelConfig'), `${model.id} : App adapté au contexte CMS`);
+    check(!adaptedCanvas.includes('type="file"') && !adaptedCanvas.includes('Vidéo .mp4') && !adaptedCanvas.includes('videoUrl?'), `${model.id} : aucun téléversement ni source vidéo`);
   }
 
   console.log('--- 2. Feuilles de style isolées et valides ---');
@@ -121,15 +123,16 @@ function main() {
 
   console.log('--- 4. Catalogue et chargement dynamique ---');
   const catalog = source('src/components/product-3d/catalog.ts');
-  for (let n = 1; n <= 6; n += 1) check(catalog.includes(`number: ${n},`), `modèle ${n} répertorié`);
+  for (const n of [1, 2, 3, 5, 6]) check(catalog.includes(`number: ${n},`), `modèle ${n} répertorié`);
   check(catalog.includes('DEFAULT_PRODUCT_3D_MODEL'), 'repli défini pour les produits anciens');
-  for (const folder of ['0dalleTransparent', '0dalleblack', '0dalleencurvé', '0dallemural', '0dallesemple', '0dalleTransparent2026']) {
+  for (const folder of ['0dalleTransparent', '0dalleblack', '0dalleencurvé', '0dallesemple', '0dalleTransparent2026']) {
     check(catalog.includes(`sourceFolder: '${folder}'`), `catalogue : vrai dossier source ${folder}`);
   }
   check(!catalog.includes('0dalleincurvé'), 'catalogue : faute de frappe « 0dalleincurvé » absente');
+  check(!catalog.includes('model4-wall') && !catalog.includes('0dallemural') && !catalog.includes('supportsVideo'), 'modèle 4 et capacité vidéo retirés du catalogue');
   const central = source('src/components/product-3d/Product3DModule.tsx');
   check(central.includes('dynamic(') && central.includes('ssr: false'), 'chargement client unique');
-  check((central.match(/'model\d-[a-z]+': \(\) => import/g) ?? []).length === 6, 'six imports dynamiques');
+  check((central.match(/'model\d-[a-z]+': \(\) => import/g) ?? []).length === 5, 'cinq imports dynamiques');
   check(central.includes('webglcontextlost') && central.includes('Réessayer'), 'nettoyage WebGL et reprise');
   for (const model of MODELS) check(central.includes(`./models/${model.id}/Model3D`), `${model.id} : chargé par le composant central`);
 
@@ -152,12 +155,12 @@ function main() {
   check(template.includes('cmsPageId={`product__${slug}`}') && heroSection.includes('cmsPageId'), 'hero produit : page CMS correcte dès le premier rendu');
   check(webCss.includes('[data-product-main]') && webCss.includes('--product-main-top'), 'hero produit : fond noir ciblé uniquement sur la fiche produit');
 
-  console.log('--- 6. CMS : six modèles, prévisualisation temporaire, sauvegarde et fond de section ---');
+  console.log('--- 6. CMS : cinq modèles, prévisualisation temporaire, sauvegarde et fond de section ---');
   const cms = source('src/web/cms/Product3DCmsControls.tsx');
   const picker = source('src/components/product-3d/Product3DModelPicker.tsx');
   const previewStore = source('src/components/product-3d/preview-store.ts');
   check(cms.includes('CHOISIR LE MODÈLE DE PRÉSENTATION 3D'), 'titre exact du panneau de sélection');
-  check(picker.includes('PRODUCT_3D_MODELS.map') && picker.includes('data-testid={`model-button-${model.id}`}'), 'six boutons distincts exposant leur identifiant');
+  check(picker.includes('PRODUCT_3D_MODELS.map') && picker.includes('data-testid={`model-button-${model.id}`}'), 'cinq boutons distincts exposant leur identifiant');
   check(picker.includes('{model.sourceFolder}') && picker.includes('title={model.sourceFolder}'), 'sélecteur : vrais noms de dossiers affichés');
   const namesSource = source('src/components/product-3d/model-names.ts');
   check(picker.includes('defaultProduct3DModelName') && namesSource.includes('return `Modèle ${definition.number}`'), 'libellés par défaut « Modèle N »');
@@ -193,19 +196,28 @@ function main() {
   check(names.includes('delete next[modelId]') && names.includes('resetProduct3DModelName'), 'restauration du nom par défaut');
   const preview = source('src/components/product-3d/Product3DPreview.tsx');
   const previewCss = source('src/components/product-3d/product-3d-preview.css');
-  check(preview.includes('<Product3DModule modelId={modelId} />'), 'prévisualisation : vrai composant original');
+  check(preview.includes('<Product3DModule modelId={modelId} onModelResolved={handleModelResolved} />'), 'prévisualisation : vrai composant original');
   check(preview.includes("startsWith('three.js')") && previewCss.includes("[data-p3d-preview-hidden='true']"), 'seul le canvas WebGL est conservé, sans panneau de contrôle');
   check(!preview.includes('PRODUCT_3D_MODELS.map'), 'un seul moteur 3D chargé à la fois');
   check(previewCss.includes('.p3d-admin-preview'), 'masquage local au conteneur de prévisualisation');
   check(preview.includes('data-p3d-preview-root="true"'), 'prévisualisation : racine marquée sans conteneur supplémentaire');
-  check(previewCss.includes(':has(canvas)') && previewCss.includes('height: 100% !important;') && previewCss.includes('min-height: 0 !important;'), 'prévisualisation : ancêtres du canvas alignés sur le conteneur');
+  check(preview.includes("setProperty('height'") && previewCss.includes(':has(canvas)') && previewCss.includes('min-height: 0 !important;'), 'prévisualisation : ancêtres du canvas alignés sur le conteneur');
   check(previewCss.includes('.p3d-model6-kinetic .fixed'), 'prévisualisation : dock fixe du modèle 6 neutralisé');
+  check(previewCss.includes('display: block !important') && !previewCss.includes('object-fit: contain'), 'prévisualisation : grille interne neutralisée, canvas sans letterbox');
   check(!existsSync(join(ROOT, 'src/app/pxt-admin-preview/page.tsx')), 'route temporaire /pxt-admin-preview supprimée');
   const admin = source('src/app/admin/site-web/produits/_components/SiteWebProduitsModule.tsx');
-  check(admin.includes('MODÈLE DE PRÉSENTATION 3D'), 'admin : section au libellé exact');
+  check(admin.includes('Modèle de présentation 3D'), 'admin : section au libellé exact');
   check((admin.match(/\.\.\.product3DModelPatch\(model3dId\),/g) ?? []).length === 2, 'admin : création et mise à jour du modèle');
-  check(admin.includes('<Product3DModelPicker') && admin.includes('<Product3DPreview'), 'admin : sélecteur et prévisualisation réelle');
-  check(admin.includes('lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]'), 'admin : formulation à gauche, prévisualisation à droite sur desktop');
+  check(admin.includes('<Product3DConfigCards') && admin.includes('<Product3DPreview'), 'admin : cartes de configuration et prévisualisation réelle');
+  check(admin.includes('lg:grid-cols-[minmax(0,1.22fr)_minmax(0,1fr)]'), 'admin : colonnes 55/45 sur desktop');
+  const cards = source('src/app/admin/site-web/produits/_components/Product3DConfigCards.tsx');
+  check(/PRODUCT_3D_MODELS\.map\(\(model(?:, index)?\) =>/.test(cards) && !cards.includes('model4-wall'), 'admin : cinq lignes, sans modèle 4');
+  check(cards.includes('data-testid="admin-3d-on-off-indicator"') && !cards.includes('aria-expanded'), 'admin : indicateur ON/OFF séparé, aucun accordéon');
+  check(!cards.includes('Ajouter une vidéo') && !cards.includes('Remplacer') && !cards.includes('Supprimer la vidéo') && !cards.includes('/video'), 'admin : aucune action vidéo dans les lignes');
+  check(admin.includes('withExclusiveModel') && !admin.includes('<Product3DModelPicker'), 'admin : sélection exclusive par produit, sans sélecteur additionnel');
+  check(!existsSync(join(ROOT, 'src/app/refonte-check/page.tsx')), 'aucune page publique /refonte-check');
+  check(!existsSync(join(ROOT, 'src/app/visual-check-3d/page.tsx')), 'aucune page publique /visual-check-3d');
+  check(!existsSync(join(ROOT, 'src/app/api/site-web/products/[slug]/video/route.ts')) && !existsSync(join(ROOT, 'src/lib/products/product-3d-videos.ts')), 'API et utilitaires vidéo supprimés');
   check(existsSync(join(ROOT, 'public/product-3d/assets/aistudio/favicon_f9979c15.png')), 'logo PixiaTech servi localement');
   for (const model of MODELS) {
     const dir = join(ROOT, 'public/product-3d', model.id);
@@ -232,6 +244,20 @@ function main() {
   check(dot.includes('if (!ready) return;') && dot.includes('ready = true;'), 'matrice LED : dessin différé après dimensionnement du canvas');
   check(!dot.includes('let OFF: number[];') && !dot.includes('rgb(fill) === undefined'), 'matrice LED : aucune couleur RGB indéfinie');
   check(dot.includes('gsap.ticker.add(draw)') && dot.includes('gsap.timeline('), 'matrice LED : animations d’origine conservées');
+
+  console.log('--- 10. Fond décoratif limité à son modèle ---');
+  for (const model of MODELS) {
+    const backdrop = source(`src/components/product-3d/models/${model.id}/components/AmbientBackdrop.tsx`);
+    check(
+      backdrop.includes('pointer-events-none absolute inset-0 z-0') && !backdrop.includes('fixed inset-0'),
+      `${model.id} : fond ancré au modèle, pas au viewport`,
+    );
+    const original = source(`0dalle/${model.source ?? '0dalleencurvé'}/src/components/AmbientBackdrop.tsx`);
+    check(
+      original.includes('pointer-events-none absolute inset-0 z-0') && !original.includes('fixed inset-0'),
+      `${model.source ?? '0dalleencurvé'} : source du fond également cadrée`,
+    );
+  }
 
   console.log(`\nRésultat : ${assertions - failures}/${assertions} assertions réussies.`);
   if (failures > 0) {

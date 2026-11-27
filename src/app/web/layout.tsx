@@ -3,7 +3,7 @@ import '@/web/cms/cms-text-scale.css';
 import { WebCmsShell } from './web-cms-shell';
 import { getCmsPages, getCmsSettings } from '@/lib/site-web/pages-store';
 import { generateThemeCss, DEFAULT_ACCENT } from '@/web/cms/theme-tokens';
-import { IntroPixiaTech } from '@/web/components/IntroPixiaTech';
+import { PixiaLogoStageOverlay } from '@/components/PixiaLogoStageOverlay';
 import { getSettings } from '@/app/actions/public-actions';
 import {
   DEFAULT_SITE_TITLE,
@@ -115,8 +115,8 @@ export default async function WebLayout({ children }: { children: React.ReactNod
       >
         <WebCmsShell initialPages={initialPages} initialSettings={initialSettings}>{children}</WebCmsShell>
       </div>
-      {/* Intro « pixels → texte » : première visite uniquement (localStorage). */}
-      <IntroPixiaTech />
+      {/* Intro architecturale : première visite uniquement (localStorage). */}
+      <PixiaLogoStageOverlay />
     </>
   );
 }

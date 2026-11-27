@@ -823,6 +823,23 @@ export function WebGLStage({
     };
 
     let disposed = false;
+    // La scène reste montée (le préloader attend `onReady`) mais on arrête de
+    // rendre dès qu'elle sort de l'écran ou que l'onglet est masqué.
+    let inViewport = true;
+    const visibilityObserver =
+      typeof IntersectionObserver === 'undefined'
+        ? null
+        : new IntersectionObserver(
+            (entries) => {
+              inViewport = entries.some((entry) => entry.isIntersecting);
+            },
+            { rootMargin: '160px' }
+          );
+    visibilityObserver?.observe(host);
+    const onDocumentVisibility = () => {
+      if (!document.hidden) lastTime = performance.now();
+    };
+    document.addEventListener('visibilitychange', onDocumentVisibility);
 
     const onResize = () => {
       const w = host.clientWidth || window.innerWidth;
@@ -881,6 +898,11 @@ export function WebGLStage({
 
     const tick = () => {
       if (disposed) return;
+      if (document.hidden || !inViewport) {
+        lastTime = performance.now();
+        frameId = requestAnimationFrame(tick);
+        return;
+      }
       const now = performance.now();
       const dt = Math.min(0.05, Math.max(0.001, (now - lastTime) / 1000));
       lastTime = now;
@@ -1068,6 +1090,8 @@ export function WebGLStage({
 
     return () => {
       disposed = true;
+      visibilityObserver?.disconnect();
+      document.removeEventListener('visibilitychange', onDocumentVisibility);
       window.clearTimeout(fallbackTimer);
       cancelAnimationFrame(frameId);
       clearTimeout(frameId);

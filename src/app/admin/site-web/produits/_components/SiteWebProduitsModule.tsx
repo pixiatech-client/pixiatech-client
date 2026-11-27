@@ -61,13 +61,20 @@ import {
 } from '@/lib/products/products-service';
 import { slugify, groupDisplayName, productCategoryIds, MAX_PRODUCT_NAME_LENGTH, isValidShopUrl, normalizeShopUrl, sanitizeShopLinks, normalizeShopLinkTypes, sanitizeShopLinkTypes, shopLinkTypeForVariant, type ProductSpecModel, type ProductSpecGroup, type ProductSpecs } from '@/lib/products/types';
 import { SpecsMatrixEditor } from './SpecsMatrixEditor';
+import { Product3DConfigCards } from './Product3DConfigCards';
+import { presentation3DMeta, presentation3DName } from './presentation-3d-meta';
+import './presentation-3d-admin.css';
+import { getProduct3DDefinition } from '@/components/product-3d/catalog';
+import {
+  withExclusiveModel,
+  type Product3DConfigValue,
+} from '@/components/product-3d/config-context';
 import Product3DPreview from '@/components/product-3d/Product3DPreview';
-import { Product3DModelPicker } from '@/components/product-3d/Product3DModelPicker';
 import {
   getProduct3DModelId,
   product3DModelPatch,
 } from '@/components/product-3d/model-field';
-import { product3DModelDisplayName, useProduct3DModelNames } from '@/components/product-3d/model-names';
+import { useProduct3DModelNames } from '@/components/product-3d/model-names';
 import {
   SYSTEM_TEMPLATE_LABEL,
   SYSTEM_TEMPLATE_PROTECTED_MESSAGE,
@@ -740,6 +747,7 @@ export function SiteWebProduitsModule({ initial, editSlug }: SiteWebProduitsModu
   if (state.view !== 'list') {
     return (
       <ProductForm
+        key={state.view === 'edit' ? state.product.slug : 'new'}
         view={state}
         onBack={() => setState({ view: 'list' })}
         onSaved={(msg) => {
@@ -1884,7 +1892,16 @@ function ProductForm({
   const [pdfAnalysis, setPdfAnalysis] = useState<Partial<Product> | null>(existing ?? null);
   const [pdfReanalysis, setPdfReanalysis] = useState<Partial<Product> | null>(null);
   const [pdfName, setPdfName] = useState<string | null>(null);
-  const [model3dId, setModel3dId] = useState<string>(getProduct3DModelId(existing));
+  const initialModel3dId = getProduct3DModelId(existing);
+  const [model3dId, setModel3dId] = useState<string>(initialModel3dId);
+  /**
+   * Configuration 3D LOCALE au produit en cours. Jamais de module-level store :
+   * le `key` du formulaire (slug) garantit en plus un remontage complet quand on
+   * passe d'un produit à l'autre. Exactement un modèle est actif au chargement.
+   */
+  const [threeDConfig, setThreeDConfig] = useState<Product3DConfigValue>(() =>
+    withExclusiveModel(existing?.['3dConfig'], initialModel3dId)
+  );
   const model3dCustomNames = useProduct3DModelNames();
   const [analyzing, setAnalyzing] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -2013,6 +2030,9 @@ function ProductForm({
   // Synchronisation avec existing lors d'une sauvegarde ou d'un changement de produit
   useEffect(() => {
     if (existing) {
+      const nextModelId = getProduct3DModelId(existing);
+      setModel3dId(nextModelId);
+      setThreeDConfig(withExclusiveModel(existing?.['3dConfig'], nextModelId));
       setName(existing.name ?? '');
       setCustomSlug(existing.slug ?? '');
       setIsSlugManuallyEdited(false);
@@ -2051,6 +2071,26 @@ function ProductForm({
       }
     }
   }, [existing]);
+
+  /**
+   * Sélection exclusive : un seul Switch ON par produit. La sélection est
+   * écrite immédiatement dans le document du produit existant ; la création
+   * l'emporte avec le reste du formulaire lors de `create()`.
+   */
+  const select3DModel = (id: string) => {
+    const nextModelId = getProduct3DDefinition(id).id;
+    const nextConfig = withExclusiveModel(threeDConfig, nextModelId);
+    setModel3dId(nextModelId);
+    setThreeDConfig(nextConfig);
+    if (existing && existing.slug && nextModelId !== model3dId) {
+      void saveProduct(existing.slug, {
+        ...product3DModelPatch(nextModelId),
+        '3dConfig': nextConfig,
+      } as unknown as Partial<Product>).catch((err) => {
+        toast.error((err as Error).message || 'La sélection du modèle n’a pas pu être enregistrée.');
+      });
+    }
+  };
 
   /** Persiste la galerie et la répercute immédiatement à l'écran. */
   const persistPhotos = async (next: ProductMediaItem[], message: string) => {
@@ -2730,7 +2770,7 @@ function ProductForm({
         description,
         seo,
         ...product3DModelPatch(model3dId),
-        '3dConfig': existing?.['3dConfig'],
+        '3dConfig': threeDConfig,
       });
 
       // On enchaîne sur la version la plus récente du document à chaque étape.
@@ -2825,7 +2865,7 @@ function ProductForm({
         description,
         seo,
         ...product3DModelPatch(model3dId),
-        '3dConfig': existing?.['3dConfig'],
+        '3dConfig': threeDConfig,
       };
       if (pdfReanalysis) {
         Object.assign(body, pdfReanalysis);
@@ -3480,43 +3520,97 @@ function ProductForm({
                 </div>
               </section>
 
-              <section data-testid="admin-3d-model-section">
-                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                  <h2 className="text-sm font-bold uppercase tracking-wide text-neutral-900 dark:text-white">
-                    MODÈLE DE PRÉSENTATION 3D
-                  </h2>
-                  <span className="text-[10px] font-semibold text-neutral-500 dark:text-neutral-400">
-                    Le nom personnalisé est global ; l’identifiant technique reste inchangé.
-                  </span>
-                </div>
+              <section
+                data-testid="admin-3d-model-section"
+                aria-labelledby="presentation-3d-heading"
+                className="relative w-full overflow-hidden rounded-2xl border border-slate-800/80 bg-[#0C0F16] text-slate-100 shadow-[0_24px_64px_-24px_rgba(15,23,42,0.42)]"
+              >
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute -top-28 left-1/3 h-56 w-2/3 -translate-x-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(245,158,11,0.09),rgba(59,130,246,0.04)_50%,transparent_75%)]"
+                />
 
-                <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:items-start">
+                <header className="relative z-10 flex flex-col gap-2 border-b border-white/[0.07] px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-7">
                   <div className="min-w-0">
-                    <Product3DModelPicker
-                      variant="admin"
-                      value={model3dId}
-                      onChange={(id) => setModel3dId(id)}
-                    />
-                    <p className="mt-2 text-[11px] leading-relaxed text-neutral-500 dark:text-neutral-400">
-                      Le modèle sélectionné est enregistré avec le produit et apparaîtra dans la section
-                      « Conception &amp; Dimensions ». Utilisez le crayon pour renommer un modèle, la flèche
-                      pour restaurer son nom par défaut.
+                    <h2
+                      id="presentation-3d-heading"
+                      className="text-base font-semibold tracking-tight text-white sm:text-lg [text-wrap:balance]"
+                    >
+                      Modèle de présentation 3D
+                    </h2>
+                    <p className="mt-0.5 text-xs text-slate-400 sm:text-[13px]">
+                      {model3dId
+                        ? 'Un modèle actif · Cinq modèles disponibles'
+                        : 'Aucun modèle actif · Cinq modèles disponibles'}
                     </p>
                   </div>
 
-                  <div className="min-w-0">
-                    <div className="mb-1.5 flex items-center justify-between gap-2">
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-                        Prévisualisation 3D
-                      </span>
-                      <span className="truncate text-[11px] font-bold text-neutral-800 dark:text-white">
-                        {product3DModelDisplayName(model3dId, model3dCustomNames)}
-                      </span>
+                  <div className="flex shrink-0 items-center gap-2 font-mono text-xs tabular-nums text-slate-400">
+                    <span className="text-slate-300">5 modèles</span>
+                    <span aria-hidden="true">·</span>
+                    <span className={model3dId ? 'text-amber-400' : 'text-slate-500'}>
+                      {model3dId
+                        ? `Actif : ${presentation3DName(model3dId, model3dCustomNames)}`
+                        : 'En veille'}
+                    </span>
+                  </div>
+                </header>
+
+                <div className="relative z-10 grid grid-cols-1 items-stretch lg:grid-cols-[minmax(0,1.22fr)_minmax(0,1fr)]">
+                  <div className="flex flex-col justify-between border-b border-white/[0.07] p-5 sm:p-6 lg:border-b-0 lg:border-r lg:p-7">
+                    <div>
+                      <div className="flex items-center justify-between gap-3 border-b border-white/[0.07] pb-3">
+                        <h3 className="text-xs font-semibold text-slate-300">Commandes</h3>
+                        <span className="truncate text-xs tabular-nums text-slate-400">
+                          Sélection exclusive
+                        </span>
+                      </div>
+
+                      <ul className="mt-1 divide-y divide-white/[0.06]" aria-label="Liste des modèles 3D">
+                        <Product3DConfigCards
+                          selectedModelId={model3dId}
+                          names={model3dCustomNames}
+                          onModelChange={select3DModel}
+                        />
+                      </ul>
                     </div>
-                    <Product3DPreview
-                      modelId={model3dId}
-                      className="h-[360px] lg:h-[460px]"
-                    />
+
+                    <p className="mt-4 flex items-center justify-between gap-3 border-t border-white/[0.06] pt-3 text-xs text-slate-400">
+                      <span className="truncate">État enregistré</span>
+                      <span className="shrink-0 font-mono text-[11px] tabular-nums text-slate-400">
+                        {presentation3DMeta(model3dId)?.category ?? 'En veille'}
+                      </span>
+                    </p>
+                  </div>
+
+                  <div className="flex min-w-0 flex-col justify-between p-5 sm:p-6 lg:p-7">
+                    <div>
+                      <div className="flex items-center justify-between gap-3 pb-3">
+                        <h3 className="text-xs font-semibold text-slate-300">
+                          Prévisualisation 3D
+                        </h3>
+                        <span className="truncate text-xs font-semibold text-white">
+                          {model3dId
+                            ? presentation3DName(model3dId, model3dCustomNames)
+                            : 'Inactif'}
+                        </span>
+                      </div>
+
+                      <div className="h-[290px] w-full overflow-hidden sm:h-[340px] lg:h-[360px]">
+                        <Product3DPreview
+                          modelId={model3dId}
+                          config={threeDConfig}
+                          className="h-full w-full rounded-xl"
+                        />
+                      </div>
+                    </div>
+
+                    <p className="mt-4 flex items-center justify-between gap-3 border-t border-white/[0.06] pt-3 text-xs text-slate-400">
+                      <span className="truncate">Glisser pour pivoter · Molette pour zoomer</span>
+                      <span className="shrink-0 font-mono text-[11px] tabular-nums text-slate-400">
+                        Temps réel 3D
+                      </span>
+                    </p>
                   </div>
                 </div>
               </section>

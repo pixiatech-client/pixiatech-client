@@ -11,6 +11,21 @@ import {
 } from './section-registry';
 import { fluidFontSize } from './fluid-font-size';
 import { isMediaVideo } from './media-utils';
+import {
+  computeOverlayBackground,
+  hexToRgba,
+  makeElementStyledId,
+  resolveThemeColor,
+  highSpecSelector,
+  type ImageOverlayConfig,
+} from './cms-style-utils';
+
+export {
+  computeOverlayBackground,
+  hexToRgba,
+  makeElementStyledId,
+} from './cms-style-utils';
+export type { ImageOverlayConfig } from './cms-style-utils';
 
 /**
  * Styles d'élément persistés par la barre contextuelle.
@@ -37,21 +52,6 @@ export type ElementVisualState = {
   borderWidth?: string;
   borderStyle?: string;
   borderRadius?: string;
-};
-
-/**
- * Configuration de l'overlay d'image personnalisable (Fonctionnalité 1)
- */
-export type ImageOverlayConfig = {
-  enabled: boolean;
-  color?: string; // Hex, ex: #000000
-  opacity?: number; // 0 à 100, ex: 45
-  gradientEnabled?: boolean;
-  gradientStartColor?: string; // Hex
-  gradientStartOpacity?: number; // 0 à 100
-  gradientEndColor?: string; // Hex
-  gradientEndOpacity?: number; // 0 à 100
-  gradientDirection?: 'to bottom' | 'to top' | 'to right' | 'to left' | 'to bottom right';
 };
 
 /**
@@ -190,39 +190,6 @@ export function withoutLinkStyle(style: Partial<ElementStyle>): ElementStyle {
 }
 
 
-export function makeElementStyledId(sectionKey: string, elementKey: string): string {
-  return `cms_${sectionKey}_${elementKey}`.replace(/[^a-zA-Z0-9_-]/g, '_');
-}
-
-/**
- * Convertit une couleur Hex et une opacité (0-100) en chaîne rgba(...)
- */
-export function hexToRgba(hex: string, opacityPercent: number): string {
-  let clean = (hex || '#000000').replace('#', '').trim();
-  if (clean.length === 3) {
-    clean = clean.split('').map((c) => c + c).join('');
-  }
-  const r = parseInt(clean.substring(0, 2), 16) || 0;
-  const g = parseInt(clean.substring(2, 4), 16) || 0;
-  const b = parseInt(clean.substring(4, 6), 16) || 0;
-  const a = Math.max(0, Math.min(100, opacityPercent ?? 45)) / 100;
-  return `rgba(${r}, ${g}, ${b}, ${a})`;
-}
-
-/**
- * Calcule l'arrière-plan CSS de l'overlay (couleur unie ou dégradé linéaire)
- */
-export function computeOverlayBackground(overlay: ImageOverlayConfig | undefined): string {
-  if (!overlay || !overlay.enabled) return 'none';
-  if (overlay.gradientEnabled) {
-    const dir = overlay.gradientDirection || 'to bottom';
-    const start = hexToRgba(overlay.gradientStartColor || '#000000', overlay.gradientStartOpacity ?? 45);
-    const end = hexToRgba(overlay.gradientEndColor || '#000000', overlay.gradientEndOpacity ?? 85);
-    return `linear-gradient(${dir}, ${start}, ${end})`;
-  }
-  return hexToRgba(overlay.color || '#000000', overlay.opacity ?? 45);
-}
-
 /**
  * Gère l'application de la couche visuelle d'overlay par-dessus un média
  */
@@ -282,23 +249,6 @@ function applyImageOverlay(el: HTMLElement, overlay: ImageOverlayConfig | undefi
 
 const dynamicRulesMap = new Map<string, string>();
 
-/**
- * Génère un sélecteur CSS à très haute spécificité en répétant l'attribut
- * `data-cms-styled-id`. Ceci permet aux règles dynamiques du CMS (normal /
- * hover / active, toutes en `!important`) de l'emporter sur les règles
- * `!important` globales du site public, par exemple :
- *   `a:not(.btn):not(.no-acc):hover { color: var(--accent) !important; }`
- * qui a une spécificité (0,3,1) et surclasserait un simple
- * `[data-cms-styled-id="x"]:hover` (0,2,0).
- *
- * Avec 4 répétitions de l'attribut + pseudo-classe : spécificité (0,5,1),
- * qui surclasse toute règle globale raisonnable.
- */
-function highSpecSelector(styledId: string, pseudo?: string): string {
-  const attr = `[data-cms-styled-id="${styledId}"]`;
-  return `${attr}${attr}${attr}${attr}${pseudo ?? ''}`;
-}
-
 function updateDynamicStylesheet(): void {
   if (typeof document === 'undefined') return;
   let styleTag = document.getElementById('cms-element-dynamic-styles') as HTMLStyleElement | null;
@@ -312,16 +262,6 @@ function updateDynamicStylesheet(): void {
     css += rule + '\n';
   });
   styleTag.textContent = css;
-}
-
-const THEME_ACCENT_ALIAS_REGEX = /^#(?:C3F910|F46201|CF5A1C|FF9900|E60505)$/i;
-
-function resolveThemeColor(val: string | undefined): string | undefined {
-  if (!val) return val;
-  if (THEME_ACCENT_ALIAS_REGEX.test(val.trim())) {
-    return 'var(--accent, var(--ui-accent))';
-  }
-  return val;
 }
 
 export function registerElementDynamicStyles(styledId: string, style: ElementStyle): void {

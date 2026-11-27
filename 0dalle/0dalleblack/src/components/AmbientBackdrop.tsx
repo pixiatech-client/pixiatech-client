@@ -13,7 +13,7 @@ export const AmbientBackdrop: React.FC<AmbientBackdropProps> = ({ phase }) => {
       aria-hidden="true"
       data-testid="ambient-backdrop"
       data-phase={phase}
-      className="pointer-events-none fixed inset-0 z-0 overflow-hidden transition-colors duration-700"
+      className="pointer-events-none absolute inset-0 z-0 overflow-hidden transition-colors duration-700"
       style={{ backgroundColor: spec.baseHex }}
     >
       {/* Morphing volumetric orb 1 (top-left / center-left behind blueprint glass) */}

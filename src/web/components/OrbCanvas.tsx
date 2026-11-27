@@ -21,52 +21,74 @@ export function OrbCanvas() {
       return;
     }
 
-    import('webgl-fluid')
-      .then((mod) => {
-        if (!isMounted || !canvasRef.current) return;
-        const WebGLFluid = (mod.default || mod) as (
-          canvas: HTMLCanvasElement,
-          options?: Record<string, unknown>
-        ) => void;
+    let started = false;
+    const startFluid = () => {
+      if (started || !isMounted || !canvasRef.current) return;
+      started = true;
+      import('webgl-fluid')
+        .then((mod) => {
+          if (!isMounted || !canvasRef.current) return;
+          const WebGLFluid = (mod.default || mod) as (
+            canvas: HTMLCanvasElement,
+            options?: Record<string, unknown>
+          ) => void;
 
-        try {
-          // Exact configuration from helloshivam.com
-          WebGLFluid(canvasRef.current, {
-            IMMEDIATE: true,
-            TRIGGER: 'hover',
-            SIM_RESOLUTION: 128,
-            DYE_RESOLUTION: 512,
-            CAPTURE_RESOLUTION: 512,
-            DENSITY_DISSIPATION: 2.5,
-            VELOCITY_DISSIPATION: 0.8,
-            PRESSURE: 0.8,
-            PRESSURE_ITERATIONS: 20,
-            CURL: 0,
-            SPLAT_RADIUS: 0.25,
-            SPLAT_FORCE: 3000,
-            SHADING: true,
-            COLORFUL: true,
-            COLOR_UPDATE_SPEED: 10,
-            PAUSED: false,
-            BACK_COLOR: { r: 0, g: 0, b: 0 },
-            TRANSPARENT: false,
-            BLOOM: true,
-            BLOOM_ITERATIONS: 8,
-            BLOOM_RESOLUTION: 256,
-            BLOOM_INTENSITY: 0.8,
-            BLOOM_THRESHOLD: 0.6,
-            BLOOM_SOFT_KNEE: 0.7,
-            SUNRAYS: true,
-            SUNRAYS_RESOLUTION: 196,
-            SUNRAYS_WEIGHT: 1,
-          });
-        } catch (err) {
-          console.warn('[WebGLFluid] Init error:', err);
-        }
-      })
-      .catch((err) => {
-        console.warn('[WebGLFluid] Failed to load module:', err);
-      });
+          try {
+            // Exact configuration from helloshivam.com
+            WebGLFluid(canvasRef.current, {
+              IMMEDIATE: true,
+              TRIGGER: 'hover',
+              SIM_RESOLUTION: 128,
+              DYE_RESOLUTION: 512,
+              CAPTURE_RESOLUTION: 512,
+              DENSITY_DISSIPATION: 2.5,
+              VELOCITY_DISSIPATION: 0.8,
+              PRESSURE: 0.8,
+              PRESSURE_ITERATIONS: 20,
+              CURL: 0,
+              SPLAT_RADIUS: 0.25,
+              SPLAT_FORCE: 3000,
+              SHADING: true,
+              COLORFUL: true,
+              COLOR_UPDATE_SPEED: 10,
+              PAUSED: false,
+              BACK_COLOR: { r: 0, g: 0, b: 0 },
+              TRANSPARENT: false,
+              BLOOM: true,
+              BLOOM_ITERATIONS: 8,
+              BLOOM_RESOLUTION: 256,
+              BLOOM_INTENSITY: 0.8,
+              BLOOM_THRESHOLD: 0.6,
+              BLOOM_SOFT_KNEE: 0.7,
+              SUNRAYS: true,
+              SUNRAYS_RESOLUTION: 196,
+              SUNRAYS_WEIGHT: 1,
+            });
+          } catch (err) {
+            console.warn('[WebGLFluid] Init error:', err);
+          }
+        })
+        .catch((err) => {
+          console.warn('[WebGLFluid] Failed to load module:', err);
+        });
+    };
+
+    // Le footer est loin du premier écran : ne charger WebGLFluid qu'à
+    // l'approche du viewport, sans désactiver l'effet une fois visible.
+    const visibilityObserver =
+      typeof IntersectionObserver === 'undefined'
+        ? null
+        : new IntersectionObserver(
+            (entries) => {
+              if (entries.some((entry) => entry.isIntersecting)) {
+                startFluid();
+                visibilityObserver?.disconnect();
+              }
+            },
+            { rootMargin: '200px' }
+          );
+    if (visibilityObserver) visibilityObserver.observe(canvas);
+    else startFluid();
 
     // Forward mousemove events from parent footer container to canvas when hovering over
     // links or buttons so the fluid doesn't stop when cursor is over text.
@@ -119,6 +141,7 @@ export function OrbCanvas() {
 
     return () => {
       isMounted = false;
+      visibilityObserver?.disconnect();
       parent.removeEventListener('mousemove', forwardPointer);
       parent.removeEventListener('mousedown', forwardMouseDown);
     };

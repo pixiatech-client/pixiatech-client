@@ -209,8 +209,28 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
     if (!container) return;
 
     let animId = 0;
+    let running = false;
     let targetP = 0;
     let curP = 0;
+
+    const schedule = () => {
+      if (running) return;
+      running = true;
+      animId = requestAnimationFrame(updateLoop);
+    };
+
+    const updateLoop = () => {
+      const delta = targetP - curP;
+      if (Math.abs(delta) < 0.0003) {
+        curP = targetP;
+        setScrollProgress(curP);
+        running = false; // Boucle arrêtée dès que le lerp est stabilisé.
+        return;
+      }
+      curP += delta * 0.12;
+      setScrollProgress(curP);
+      animId = requestAnimationFrame(updateLoop);
+    };
 
     const handleScroll = () => {
       const rect = container.getBoundingClientRect();
@@ -219,35 +239,21 @@ export const ShowreelSection: React.FC<ShowreelSectionProps> = ({ lang = 'FR', o
       if (totalH <= 0) return;
 
       const p = Math.max(0, Math.min(1, -rect.top / totalH));
+      if (p === targetP && running) return;
       targetP = p;
-    };
-
-    const updateLoop = () => {
-      curP += (targetP - curP) * 0.12;
-      if (Math.abs(targetP - curP) < 0.0003) {
-        curP = targetP;
-      }
-      setScrollProgress(curP);
-      animId = requestAnimationFrame(updateLoop);
+      schedule();
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('resize', handleScroll, { passive: true });
     handleScroll();
-    animId = requestAnimationFrame(updateLoop);
 
     return () => {
       window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleScroll);
       cancelAnimationFrame(animId);
     };
   }, []);
-
-  // Preload single master high-res image
-  useEffect(() => {
-    if (masterImageSrc) {
-      const img = new Image();
-      img.src = masterImageSrc;
-    }
-  }, [masterImageSrc]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();

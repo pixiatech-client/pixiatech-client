@@ -223,6 +223,7 @@ export class KineticWallScene {
   private frameId = 0;
   private isLoopTimer = false;
   private disposed = false;
+  private isPageVisible = true;
   private resizeObserver: ResizeObserver | null = null;
   private lastNow = performance.now();
   private simTime = 0;
@@ -1041,6 +1042,13 @@ export class KineticWallScene {
     this.controls.enableZoom = enabled;
   }
 
+  /** Met la boucle WebGL en pause quand la section quitte l'écran. */
+  public setPageVisible(visible: boolean) {
+    if (this.isPageVisible === visible) return;
+    this.isPageVisible = visible;
+    if (visible) this.lastNow = performance.now();
+  }
+
   public zoomBy(scaleFactor: number) {
     const offset = _hitPoint.copy(this.camera.position).sub(this.controls.target);
     const currentDist = offset.length();
@@ -1335,6 +1343,12 @@ export class KineticWallScene {
 
   private tick = () => {
     if (this.disposed) return;
+    if (!this.isPageVisible || document.hidden) {
+      this.lastNow = performance.now();
+      this.isLoopTimer = false;
+      this.frameId = requestAnimationFrame(this.tick);
+      return;
+    }
 
     const now = performance.now();
     const dt = Math.min(0.05, (now - this.lastNow) / 1000);

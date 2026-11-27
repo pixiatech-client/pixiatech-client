@@ -9,6 +9,12 @@ import { useSectionStyle } from '../../cms/useSectionStyle';
 import { heroSlideStore, useStoreValue } from '../../cms/editor-ui-store';
 import { computeValidHeroSlides } from './hero-slides';
 import { isMediaVideo } from '../../cms/media-utils';
+import { makeElementStyledId } from '../../cms/cms-style-utils';
+import {
+  buildHeroCriticalCss,
+  heroOverlayStyle,
+  readHeroOverlayConfig,
+} from '../../cms/hero-critical-styles';
 
 // Transition cinématique du Hero : fondu croisé + zoom Ken Burns continu.
 const HERO_FADE_MS = 1300; // fondu croisé (1–1,4 s)
@@ -26,6 +32,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ lang = 'FR', onOpenCon
   const cmsHero = pages['home']?.sections?.hero || {};
   const cmsData = cmsHero as Record<string, unknown>;
   const cms = useSectionStyle(cmsData);
+  const criticalCss = React.useMemo(() => buildHeroCriticalCss(cmsData), [cmsData]);
 
   const activeLang = isEditing ? currentLang : normalizeLang(lang);
 
@@ -142,11 +149,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ lang = 'FR', onOpenCon
     ),
     h1Line1: slideOrGlobal(
       'title',
-      getCmsText(cmsHero, 'title', activeLang, activeLang === 'fr' ? 'Mur et écrans LED' : 'LED Walls & Displays')
+      getCmsText(cmsHero, 'title', activeLang, activeLang === 'fr' ? 'Écrans LED sur mesure' : 'LED Walls & Displays')
     ),
     h1Line2: slideOrGlobal(
       'tagline',
-      getCmsText(cmsHero, 'tagline', activeLang, activeLang === 'fr' ? 'Donnez vie à vos espaces.' : 'Bringing your spaces to life.')
+      getCmsText(cmsHero, 'tagline', activeLang, activeLang === 'fr' ? 'Transformez vos espaces en expériences visuelles immersives.' : 'Bringing your spaces to life.')
     ),
     // Repli global recopié à l'identique : slide (description) → slide
     // (subtitle) → `description` global → `subtitle` global → défaut.
@@ -190,6 +197,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ lang = 'FR', onOpenCon
         ...cms.section,
       }}
     >
+      {/* Styles CMS critiques sérialisés dans le premier HTML : le Hero ne
+          doit jamais passer par une version non stylisée avant hydratation. */}
+      <style dangerouslySetInnerHTML={{ __html: criticalCss }} />
+
       {/* Background Slides with smooth fade & Ken Burns zoom */}
       {slides.map((s, idx) => {
         const isActive = idx === activeSlide;
@@ -197,6 +208,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ lang = 'FR', onOpenCon
         // sa course pendant le fondu (jamais de retour arrière, jamais de saut).
         const isOnScreen = isActive || idx === outgoingSlide;
         const scale = reduceMotion ? 1 : isOnScreen ? (entered ? HERO_ZOOM : 1) : 1;
+        const mediaStyledId = makeElementStyledId('hero', s.imageKey);
+        const overlayStyle = heroOverlayStyle(readHeroOverlayConfig(cmsData, s.imageKey));
         return (
           <div
             key={idx}
@@ -221,6 +234,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ lang = 'FR', onOpenCon
                 playsInline
                 className="slot-img"
                 data-image-key={s.imageKey}
+                data-cms-styled-id={mediaStyledId}
                 style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
               />
             ) : (
@@ -230,6 +244,17 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ lang = 'FR', onOpenCon
                 alt={s.alt}
                 className="slot-img"
                 data-image-key={s.imageKey}
+                data-cms-styled-id={mediaStyledId}
+              />
+            )}
+            {/* Voile CMS : présent dès la première peinture, puis repris par
+                le moteur CMS sans duplication (même `data-cms-overlay-for`). */}
+            {overlayStyle && (
+              <div
+                data-cms-overlay-for={mediaStyledId}
+                data-cms-ignore="true"
+                data-cms-ui="true"
+                style={overlayStyle}
               />
             )}
           </div>
@@ -264,7 +289,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ lang = 'FR', onOpenCon
       <div className="hero-wrap">
         <div className="hero-in">
           {/* Eyebrow */}
-          <div className="hero-eyebrow" data-text-key="badge" data-slide-field={slideFieldKey('badge')}>
+          <div
+            className="hero-eyebrow"
+            data-text-key="badge"
+            data-slide-field={slideFieldKey('badge')}
+            data-cms-styled-id={makeElementStyledId('hero', 'badge')}
+          >
             {t.eyebrow}
           </div>
 
@@ -277,12 +307,28 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ lang = 'FR', onOpenCon
               ...cms.title,
             }}
           >
-            <span style={{ display: 'block' }} data-text-key="title" data-slide-field={slideFieldKey('title')}>{t.h1Line1}</span>
-            <span style={{ display: 'block' }} data-text-key="tagline" data-slide-field={slideFieldKey('tagline')}>{t.h1Line2}</span>
+            <span
+              style={{ display: 'block' }}
+              data-text-key="title"
+              data-slide-field={slideFieldKey('title')}
+              data-cms-styled-id={makeElementStyledId('hero', 'title')}
+            >{t.h1Line1}</span>
+            <span
+              style={{ display: 'block' }}
+              data-text-key="tagline"
+              data-slide-field={slideFieldKey('tagline')}
+              data-cms-styled-id={makeElementStyledId('hero', 'tagline')}
+            >{t.h1Line2}</span>
           </h1>
 
           {/* Subtitle */}
-          <p className="pretty hero-sub" style={{ opacity: 1, transition: 'opacity .5s ease' }} data-text-key="description" data-slide-field={slideFieldKey('description')}>
+          <p
+            className="pretty hero-sub"
+            style={{ opacity: 1, transition: 'opacity .5s ease' }}
+            data-text-key="description"
+            data-slide-field={slideFieldKey('description')}
+            data-cms-styled-id={makeElementStyledId('hero', 'description')}
+          >
             {t.sub}
           </p>
 
@@ -296,6 +342,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ lang = 'FR', onOpenCon
               data-text-key="primaryCta"
               data-slide-field={slideFieldKey('primaryCta')}
               data-cms-link-key={slideFieldKey('primaryCta')}
+              data-cms-styled-id={makeElementStyledId('hero', 'primaryCta')}
             >
               {t.cta1}
             </a>
@@ -308,6 +355,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ lang = 'FR', onOpenCon
               data-text-key="secondaryCta"
               data-slide-field={slideFieldKey('secondaryCta')}
               data-cms-link-key={slideFieldKey('secondaryCta')}
+              data-cms-styled-id={makeElementStyledId('hero', 'secondaryCta')}
             >
               {t.cta2}
             </a>

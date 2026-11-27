@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RectAreaLightUniformsLib } from 'three/addons/lights/RectAreaLightUniformsLib.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
-import { ChevronDown, ChevronUp, Film, Layers, Maximize2, RotateCcw } from 'lucide-react';
+import { ChevronDown, ChevronUp, Layers, Maximize2, RotateCcw } from 'lucide-react';
 import {
   ASSEMBLY_LAYERS,
   BACKGROUND_PHASES,
@@ -185,10 +185,6 @@ export const PhotonicsCanvas3D: React.FC<PhotonicsCanvas3DProps> = ({
   onBackgroundPhaseChange,
 }) => {
   const canvasMountRef = useRef<HTMLDivElement | null>(null);
-  const videoInputRef = useRef<HTMLInputElement | null>(null);
-  const customVideoRef = useRef<HTMLVideoElement | null>(null);
-  const customVideoUrlRef = useRef<string | null>(null);
-  const [hasCustomVideo, setHasCustomVideo] = useState(false);
   const [dockCollapsed, setDockCollapsed] = useState(true);
   const [mobileExtrasOpen, setMobileExtrasOpen] = useState(false);
   const [webglError, setWebglError] = useState(false);
@@ -247,52 +243,6 @@ export const PhotonicsCanvas3D: React.FC<PhotonicsCanvas3DProps> = ({
     requestRender: null,
     triggerCameraPreset: null,
   });
-
-  const handleUploadCustomVideo = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (customVideoUrlRef.current) {
-      URL.revokeObjectURL(customVideoUrlRef.current);
-      customVideoUrlRef.current = null;
-    }
-    if (customVideoRef.current) {
-      customVideoRef.current.pause();
-      customVideoRef.current.src = '';
-    }
-
-    const url = URL.createObjectURL(file);
-    customVideoUrlRef.current = url;
-
-    const vid = document.createElement('video');
-    vid.src = url;
-    vid.loop = true;
-    vid.muted = true;
-    vid.playsInline = true;
-    vid.preload = 'auto';
-    vid.onloadeddata = () => {
-      vid.play().catch(() => {});
-      sceneRefs.current.requestRender?.();
-    };
-    vid.load();
-    customVideoRef.current = vid;
-    setHasCustomVideo(true);
-    onPatternChange('video');
-  };
-
-  useEffect(() => {
-    return () => {
-      if (customVideoRef.current) {
-        customVideoRef.current.pause();
-        customVideoRef.current.src = '';
-        customVideoRef.current = null;
-      }
-      if (customVideoUrlRef.current) {
-        URL.revokeObjectURL(customVideoUrlRef.current);
-        customVideoUrlRef.current = null;
-      }
-    };
-  }, []);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -677,15 +627,11 @@ export const PhotonicsCanvas3D: React.FC<PhotonicsCanvas3DProps> = ({
           }
         });
 
-        // Update animated holographic video sequence (or uploaded .mp4 frame)
+        // Update the procedural holographic sequence (no imported video source).
         const isVideoPlaying = stateRef.current.patternId === 'video';
         if (isVideoPlaying && (!isSoftwareGl || now - lastVideoRenderAt >= 260)) {
           lastVideoRenderAt = now;
-          assembly.updateVideoFrame(
-            (now - startTime) / 1000,
-            activeCount,
-            customVideoRef.current,
-          );
+          assembly.updateVideoFrame((now - startTime) / 1000, activeCount);
         }
 
         // Position standing A-frame brackets directly on studio floor
@@ -1224,31 +1170,12 @@ export const PhotonicsCanvas3D: React.FC<PhotonicsCanvas3DProps> = ({
                   onChange={(e) => onPatternChange(e.target.value as DisplayPatternId)}
                   className="rounded-lg border border-white/[0.12] bg-black/50 px-2 py-1.5 text-xs font-medium text-[#E5E7EB] focus:outline-none focus:ring-1 focus:ring-[#F59E0B] cursor-pointer"
                 >
-                  <option value="video" className="bg-[#0B0D12]">
-                    {hasCustomVideo ? 'Vidéo importée' : 'Vidéo Holo'}
-                  </option>
+                  <option value="video" className="bg-[#0B0D12]">Vidéo Holo</option>
                   <option value="fluid" className="bg-[#0B0D12]">Reflets noirs</option>
                   <option value="off" className="bg-[#0B0D12]">Noir absolu</option>
                   <option value="ambient" className="bg-[#0B0D12]">Halo ambré</option>
                   <option value="calibration" className="bg-[#0B0D12]">Grille optique</option>
                 </select>
-
-                <input
-                  ref={videoInputRef}
-                  type="file"
-                  accept="video/*"
-                  onChange={handleUploadCustomVideo}
-                  className="hidden"
-                />
-                <button
-                  type="button"
-                  onClick={() => videoInputRef.current?.click()}
-                  aria-label="Charger un fichier vidéo sur l’écran perforé"
-                  className="inline-flex items-center gap-1 rounded-lg border border-white/[0.12] bg-black/40 px-2 py-1.5 text-xs font-medium text-[#D1D5DB] hover:border-white/30 hover:text-white transition-colors duration-150 whitespace-nowrap shrink-0 cursor-pointer"
-                >
-                  <Film className="h-3 w-3 text-[#F59E0B]" aria-hidden="true" />
-                  <span>Vidéo .mp4</span>
-                </button>
 
                 {installationMode === 'standing' && (
                   <button

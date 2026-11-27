@@ -1,0 +1,51 @@
+/* Carte « Modèle de présentation 3D » : animation locale inspirée de la
+   maquette de référence. Aucune règle globale, aucun impact hors de cette
+   section d'administration. */
+
+@keyframes pixia-admin-wave-sweep {
+  0% {
+    transform: translateX(-115%) skewX(-16deg);
+    opacity: 0;
+  }
+  18% {
+    opacity: 1;
+  }
+  82% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateX(135%) skewX(-16deg);
+    opacity: 0;
+  }
+}
+
+@keyframes pixia-admin-row-settle {
+  0% {
+    opacity: 0.35;
+    transform: translateY(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.pixia-admin-wave-sweep {
+  animation: pixia-admin-wave-sweep 760ms cubic-bezier(0.16, 1, 0.3, 1) var(--wave-delay, 0ms) both;
+}
+
+.pixia-admin-wave-activate {
+  animation: pixia-admin-wave-sweep 480ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.pixia-admin-row-settle {
+  animation: pixia-admin-row-settle 420ms cubic-bezier(0.16, 1, 0.3, 1) var(--wave-delay, 0ms) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pixia-admin-wave-sweep,
+  .pixia-admin-wave-activate,
+  .pixia-admin-row-settle {
+    animation: none !important;
+  }
+}

@@ -1022,7 +1022,7 @@ export function PixiaGlobalAnimation({
             muted
             playsInline
             loop
-            preload="auto"
+            preload="metadata"
             aria-label={videoLabel}
             role="button"
             tabIndex={docked ? -1 : 0}
@@ -1077,7 +1077,7 @@ export function PixiaGlobalAnimation({
         muted
         playsInline
         loop
-        preload="auto"
+        preload="metadata"
         aria-label={iconLabel}
         role={docked ? 'button' : undefined}
         tabIndex={docked ? 0 : -1}

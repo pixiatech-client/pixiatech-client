@@ -27,7 +27,7 @@ interface Product3DModelPickerProps {
 }
 
 /**
- * Sélecteur réutilisable des six modules d'origine.
+ * Sélecteur réutilisable des cinq modules d'origine.
  *
  * Le clic sur la tuile change le modèle ; le crayon renomme le modèle au niveau
  * GLOBAL (document `settings/product_3d_model_names`), sans toucher à
@@ -100,7 +100,7 @@ export function Product3DModelPicker({
       role="group"
       aria-label="Choisir le modèle de présentation 3D"
       data-cms-ui={isCms ? 'true' : undefined}
-      className={`grid grid-cols-2 gap-2 sm:grid-cols-3 ${className}`}
+      className={isCms ? `grid grid-cols-2 gap-2 sm:grid-cols-3 ${className}` : `flex flex-wrap gap-2 ${className}`}
     >
       {PRODUCT_3D_MODELS.map((model) => {
         const active = value === model.id;
@@ -112,14 +112,14 @@ export function Product3DModelPicker({
           <div
             key={model.id}
             data-model-id={model.id}
-            className={`relative min-w-0 rounded-lg border transition-colors ${
-              active
-                ? isCms
-                  ? 'border-amber-300 bg-amber-300/15'
-                  : 'border-[color:var(--ui-accent)] bg-emerald-500/10 ring-2 ring-[color:rgba(var(--ui-accent-rgb),0.25)]'
-                : isCms
-                  ? 'border-white/15 bg-black/30 hover:border-white/35'
-                  : 'border-neutral-200 dark:border-white/10 hover:border-neutral-400 dark:hover:border-white/30'
+            className={`relative min-w-0 transition-colors ${
+              isCms
+                ? `rounded-lg border ${active ? 'border-amber-300 bg-amber-300/15' : 'border-white/15 bg-black/30 hover:border-white/35'}`
+                : `flex min-w-[176px] flex-1 items-stretch rounded-xl border bg-[#0B0D12] shadow-[0_10px_30px_-18px_rgba(0,0,0,0.9)] ${
+                    active
+                      ? 'border-[color:var(--ui-accent)] ring-2 ring-[color:rgba(var(--ui-accent-rgb),0.25)]'
+                      : 'border-white/10 hover:border-white/30'
+                  }`
             }`}
           >
             <button
@@ -128,42 +128,55 @@ export function Product3DModelPicker({
               data-product-3d-model={model.id}
               disabled={disabled}
               aria-pressed={active}
-              title={`${model.id} — ${model.sourceFolder} — ${model.appearance}`}
+              title={isCms ? `${model.id} — ${model.sourceFolder} — ${model.appearance}` : model.appearance}
               onClick={() => onChange(model.id)}
-              className={`block w-full min-w-0 rounded-lg px-2 pb-8 pt-2 text-left transition-opacity disabled:cursor-not-allowed disabled:opacity-50 ${
-                isCms ? 'text-white' : 'text-neutral-900 dark:text-white'
+              className={`block w-full min-w-0 rounded-lg text-left transition-opacity disabled:cursor-not-allowed disabled:opacity-50 ${
+                isCms ? 'px-2 pb-8 pt-2 text-white' : 'flex items-center gap-2 px-2.5 py-2 text-white'
               }`}
             >
-              <span
-                className={`mb-1 inline-flex rounded px-1.5 py-0.5 font-mono text-[9px] font-bold ${
-                  active
-                    ? 'bg-amber-300 text-black'
-                    : isCms
-                      ? 'bg-white/10 text-amber-200'
-                      : 'bg-neutral-200 text-neutral-700 dark:bg-white/10 dark:text-neutral-300'
-                }`}
-              >
-                {String(model.number).padStart(2, '0')}
-              </span>
-              <span
-                className={`block truncate text-[11px] font-bold ${isCms ? 'uppercase tracking-wide' : ''}`}
-              >
-                {displayName}
-              </span>
-              <span
-                className={`mt-0.5 block truncate font-mono text-[9px] leading-tight ${
-                  isCms ? 'text-white/50' : 'text-neutral-500 dark:text-neutral-400'
-                }`}
-                title={model.sourceFolder}
-              >
-                {model.sourceFolder}
+              {!isCms && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={model.thumbnail}
+                  alt=""
+                  aria-hidden
+                  className="h-8 w-8 shrink-0 rounded-md border border-white/10 object-cover"
+                />
+              )}
+              <span className="min-w-0 flex-1">
+                <span
+                  className={`mb-1 inline-flex rounded px-1.5 py-0.5 font-mono text-[9px] font-bold ${
+                    active
+                      ? 'bg-amber-300 text-black'
+                      : isCms
+                        ? 'bg-white/10 text-amber-200'
+                        : 'bg-white/10 text-amber-200'
+                  }`}
+                >
+                  {String(model.number).padStart(2, '0')}
+                </span>
+                <span
+                  className={`block truncate text-[11px] font-bold ${isCms ? 'uppercase tracking-wide' : 'tracking-tight'}`}
+                >
+                  {displayName}
+                </span>
+                {isCms && (
+                  <span
+                    className="mt-0.5 block truncate font-mono text-[9px] leading-tight text-white/50"
+                    title={model.sourceFolder}
+                  >
+                    {model.sourceFolder}
+                  </span>
+                )}
               </span>
             </button>
 
             {active && (
               <span
-                className={`pointer-events-none absolute bottom-1.5 left-2 text-[9px] font-bold uppercase tracking-wider ${
-                  isCms ? 'text-amber-300' : 'text-[color:var(--ui-accent)]'
+                className={`pointer-events-none text-[9px] font-bold uppercase tracking-wider ${
+                  isCms
+                    ? 'absolute bottom-1.5 left-2 text-amber-300'
+                    : 'absolute bottom-0.5 left-3 text-[color:var(--ui-accent)]'
                 }`}
               >
                 Actif
@@ -180,7 +193,7 @@ export function Product3DModelPicker({
                     disabled={namingDisabled || savingNameId === model.id}
                     onClick={() => void restoreName(model.id)}
                     className={`grid h-5 w-5 place-items-center rounded transition-colors disabled:opacity-40 ${
-                      isCms ? 'text-white/60 hover:bg-white/10 hover:text-white' : 'text-neutral-400 hover:bg-black/5 hover:text-neutral-800 dark:hover:bg-white/10 dark:hover:text-white'
+                      isCms ? 'text-white/60 hover:bg-white/10 hover:text-white' : 'text-white/45 hover:bg-white/10 hover:text-white'
                     }`}
                   >
                     <RotateCcw className="h-3 w-3" aria-hidden />

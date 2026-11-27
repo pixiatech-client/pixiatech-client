@@ -8,6 +8,12 @@ import {
   type DisplayPatternId,
   type WallLayoutId,
 } from './data/panelSpecs';
+import {
+  readProduct3DBoolean,
+  readProduct3DNumber,
+  readProduct3DParam,
+  useProduct3DModelConfig,
+} from '../../config-context';
 import { AmbientBackdrop } from './components/AmbientBackdrop';
 import { PhotonicsCanvas3D } from './components/PhotonicsCanvas3D';
 import {
@@ -16,18 +22,35 @@ import {
 } from './components/ArchitectureBlueprint';
 
 export default function App() {
-  const [wallLayout, setWallLayout] = useState<WallLayoutId>('1x1');
+  const params = useProduct3DModelConfig('model6-kinetic').params;
+  const [wallLayout, setWallLayout] = useState<WallLayoutId>(
+    readProduct3DParam(params, 'wallLayout', '1x1', ['1x1', '3x2', '2x3', '3x3'])
+  );
   const [explodeFactor, setExplodeFactor] = useState<number>(0);
-  const [finishId, setFinishId] = useState<ChassisFinishId>('obsidian');
-  const [patternId, setPatternId] = useState<DisplayPatternId>('fluid');
+  const [finishId, setFinishId] = useState<ChassisFinishId>(
+    readProduct3DParam(params, 'finishId', 'obsidian', ['obsidian', 'titanium', 'raw'])
+  );
+  const [patternId, setPatternId] = useState<DisplayPatternId>(
+    readProduct3DParam(params, 'patternId', 'fluid', ['fluid', 'ambient', 'calibration', 'off'])
+  );
   const [activeLayer, setActiveLayer] = useState<AssemblyLayerId | null>(null);
   const [selectedModuleIdx, setSelectedModuleIdx] = useState<number | null>(null);
-  const [showWireframe, setShowWireframe] = useState<boolean>(false);
-  const [showStand, setShowStand] = useState<boolean>(true);
-  const [cameraPreset, setCameraPreset] = useState<CameraPresetId>('perspective');
+  const [showWireframe, setShowWireframe] = useState<boolean>(
+    readProduct3DBoolean(params, 'showWireframe', false)
+  );
+  const [showStand, setShowStand] = useState<boolean>(
+    readProduct3DBoolean(params, 'showStand', true)
+  );
+  const [cameraPreset, setCameraPreset] = useState<CameraPresetId>(
+    readProduct3DParam(params, 'cameraPreset', 'perspective', ['perspective', 'front', 'profile', 'rear'])
+  );
   const [backgroundPhase, setBackgroundPhase] = useState<BackgroundPhaseId>('phase1');
-  const [curveLeftDeg, setCurveLeftDeg] = useState<number>(0);
-  const [curveRightDeg, setCurveRightDeg] = useState<number>(0);
+  const [curveLeftDeg, setCurveLeftDeg] = useState<number>(
+    readProduct3DNumber(params, 'curveLeftDeg', 0, -30, 30)
+  );
+  const [curveRightDeg, setCurveRightDeg] = useState<number>(
+    readProduct3DNumber(params, 'curveRightDeg', 0, -30, 30)
+  );
 
   const handleSelectModule = (idx: number | null) => {
     setSelectedModuleIdx(idx);
