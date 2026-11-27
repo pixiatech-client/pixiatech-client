@@ -5,7 +5,7 @@ import './styles.css';
 
 export default function Model3D() {
   return (
-    <div className="p3d-model5-simple relative h-[640px] w-full overflow-hidden rounded-xl bg-[#090A0C]">
+    <div className="p3d-model5-simple">
       <App />
     </div>
   );

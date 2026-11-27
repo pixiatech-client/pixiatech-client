@@ -1,4 +1,3 @@
-'use client';
 export type PitchTierId = 'p09' | 'p12' | 'p18';
 
 export type ChassisFinishId = 'obsidian' | 'titanium' | 'raw';
@@ -7,26 +6,53 @@ export type AssemblyLayerId = 'emitter' | 'module' | 'chassis' | 'mount';
 
 export type CameraPresetId = 'perspective' | 'front' | 'profile' | 'rear';
 
-export type DisplayPatternId = 'fluid' | 'ambient' | 'calibration' | 'off';
+export type DisplayPatternId = 'video' | 'fluid' | 'ambient' | 'calibration' | 'off';
 
-export type WallMode = 'object' | 'surface';
+export type InstallationModeId = 'standing' | 'wall' | 'suspended';
 
-export type WallLayoutId = '1x1' | '3x2' | '2x3' | '3x3';
+export type HorizontalPanelCount = 1 | 2 | 3 | 4;
 
-export interface WallLayoutSpec {
-  id: WallLayoutId;
+export interface InstallationModeSpec {
+  id: InstallationModeId;
   label: string;
-  cols: number;
-  rows: number;
-  mode: WallMode;
+  shortLabel: string;
+  subtitle: string;
+  mountSummary: string;
+  totalHeightMm: number;
+  mountWeightKg: number;
 }
 
-export const WALL_LAYOUT_SPECS: Record<WallLayoutId, WallLayoutSpec> = {
-  '1x1': { id: '1x1', label: '1×1', cols: 1, rows: 1, mode: 'object' },
-  '3x2': { id: '3x2', label: '3×2', cols: 3, rows: 2, mode: 'surface' },
-  '2x3': { id: '2x3', label: '2×3', cols: 2, rows: 3, mode: 'surface' },
-  '3x3': { id: '3x3', label: '3×3', cols: 3, rows: 3, mode: 'surface' },
+export const INSTALLATION_MODES: Record<InstallationModeId, InstallationModeSpec> = {
+  standing: {
+    id: 'standing',
+    label: 'SUR PIED',
+    shortLabel: 'Sur pied',
+    subtitle: 'Pieds en A amovibles sur roulettes',
+    mountSummary: 'Piètement en A sur roulettes verrouillables · Emprise 500 mm',
+    totalHeightMm: 2400,
+    mountWeightKg: 10.0,
+  },
+  wall: {
+    id: 'wall',
+    label: 'MURAL',
+    shortLabel: 'Mural',
+    subtitle: 'Rails & équerres de fixation murale',
+    mountSummary: 'Rails aluminium & équerres d’ancrage mural affleurant',
+    totalHeightMm: 2000,
+    mountWeightKg: 2.2,
+  },
+  suspended: {
+    id: 'suspended',
+    label: 'SUSPENDU',
+    shortLabel: 'Suspendu',
+    subtitle: 'Câbles acier & poutre d’accroche haute',
+    mountSummary: 'Élingues acier réglables & rail de suspension plafond',
+    totalHeightMm: 2550,
+    mountWeightKg: 1.4,
+  },
 };
+
+export const HORIZONTAL_PANEL_COUNTS: readonly HorizontalPanelCount[] = [1, 2, 3, 4];
 
 export type BackgroundPhaseId = 'phase1' | 'phase2' | 'phase3';
 
@@ -94,54 +120,59 @@ export interface PitchSpec {
 
 export const CABINET_DIMENSIONS = {
   widthMm: 1000,
-  heightMm: 500,
-  depthMm: 65,
+  heightMm: 2000,
+  depthMm: 55,
+  standingHeightMm: 2400,
+  standingFootprintMm: 500,
   moduleWidthMm: 500,
-  moduleHeightMm: 250,
+  moduleHeightMm: 1000,
   modulesPerCabinetX: 2,
   modulesPerCabinetY: 2,
-  weightKg: 8.5,
+  weightKg: 25.92,
+  hangingWeightKg: 15.92,
+  moduleWeightKg: 0.5,
+  filmThicknessMm: 1.8,
   seamToleranceMm: 0.0,
 } as const;
 
 export const PITCH_SPECS: Record<PitchTierId, PitchSpec> = {
   p09: {
     id: 'p09',
-    label: 'P3.9-7.8 O-Crystal Pro',
-    pitchMm: 3.9,
+    label: 'P3.91 O-Raster Holographique',
+    pitchMm: 3.91,
     cabinetResX: 256,
-    cabinetResY: 128,
-    luminanceNits: 4500,
+    cabinetResY: 512,
+    luminanceNits: 3200,
     contrastRatio: '6 000 : 1',
-    minViewingDistanceM: 4.0,
-    typicalPowerWPerSqm: 240,
-    peakPowerWPerSqm: 800,
+    minViewingDistanceM: 3.5,
+    typicalPowerWPerSqm: 640,
+    peakPowerWPerSqm: 1600,
     refreshRateHz: 3840,
   },
   p12: {
     id: 'p12',
-    label: 'P5.2-10.4 O-Crystal Pro',
-    pitchMm: 5.2,
-    cabinetResX: 192,
-    cabinetResY: 96,
-    luminanceNits: 4500,
+    label: 'P3.91 O-Raster Poster 1000×2000',
+    pitchMm: 3.91,
+    cabinetResX: 256,
+    cabinetResY: 512,
+    luminanceNits: 3200,
     contrastRatio: '6 000 : 1',
-    minViewingDistanceM: 5.0,
-    typicalPowerWPerSqm: 240,
-    peakPowerWPerSqm: 800,
+    minViewingDistanceM: 4.0,
+    typicalPowerWPerSqm: 640,
+    peakPowerWPerSqm: 1600,
     refreshRateHz: 3840,
   },
   p18: {
     id: 'p18',
-    label: 'P10.4 Transparent',
-    pitchMm: 10.4,
-    cabinetResX: 96,
-    cabinetResY: 48,
-    luminanceNits: 4500,
+    label: 'P3.91 Double-Face Suspendu',
+    pitchMm: 3.91,
+    cabinetResX: 256,
+    cabinetResY: 512,
+    luminanceNits: 3000,
     contrastRatio: '6 000 : 1',
-    minViewingDistanceM: 10.0,
-    typicalPowerWPerSqm: 240,
-    peakPowerWPerSqm: 800,
+    minViewingDistanceM: 4.0,
+    typicalPowerWPerSqm: 640,
+    peakPowerWPerSqm: 1600,
     refreshRateHz: 3840,
   },
 };
@@ -160,42 +191,42 @@ export const ASSEMBLY_LAYERS: AssemblyLayerInfo[] = [
   {
     id: 'emitter',
     index: '01',
-    name: 'Grille LED transparente IP68',
-    subtitle: 'Transparence 55–75 % · 4500 nits · 3840 Hz',
-    thicknessMm: '6,5 mm',
-    material: 'Encapsulation polymère anti-UV + lames SMD1921/2727',
+    name: 'Film LED holographique > 92 %',
+    subtitle: 'Pas 3,91 mm · 3 200 nits · Effet flottant sans verre',
+    thicknessMm: '1,8 mm',
+    material: 'Diodes & drivers intégrés à matrice perforée 3,05 mm',
     description:
-      'Lames LED haute transparence hermétiquement encapsulées dans un polymère IP68 résistant aux intempéries, UV et chocs de montage.',
+      'Matrice micro-perforée ultra-invisible à plus de 92 % de transparence visuelle : les visuels 3D et vidéos semblent flotter dans le vide tout en conservant 160° d’angle de vision.',
   },
   {
     id: 'module',
     index: '02',
-    name: 'Quatre modules ajourés 500 × 250 mm',
-    subtitle: 'Maintenance avant/arrière · Bus PCB vert émeraude',
-    thicknessMm: '16,5 mm',
-    material: 'Support polymère ajouré + pistes PCB étanches',
+    name: 'Quatre dalles film 500 × 1000 mm',
+    subtitle: 'Ultra-fin 1,8 mm · 0,50 kg / module · Assemblage sans outil',
+    thicknessMm: '1,8 mm',
+    material: 'Substrat polymère optique noir perforé + bus micro-conducteur',
     description:
-      'Quatre sous-modules 500 × 250 mm démontables par l’avant ou l’arrière sans outillage complexe pour un entretien rapide en prestation.',
+      'Quatre sections modulaires ultra-légères (0,50 kg chacune) remplaçables individuellement sans altérer le cadre ni la transparence de la vitrine.',
   },
   {
     id: 'chassis',
     index: '03',
-    name: 'Châssis aluminium moulé 1000 × 500',
-    subtitle: 'Main Lock, Edge Lock, poignée & Arc Lock rouge',
-    thicknessMm: '30,0 mm',
-    material: 'Aluminium moulé noir 8,5 kg + verrous Arc Lock rouges',
+    name: 'Cadre aluminium ultra-fin & coffret Plug-and-Play',
+    subtitle: 'Profilé 55 mm · Prise secteur haut, HDMI, RJ45 & Wi-Fi',
+    thicknessMm: '55,0 mm',
+    material: 'Aluminium extrudé noir nervuré 15,92 kg (panneau nu) + œillets acier',
     description:
-      'Cadre ultra-léger IP65 doté de plaques d’alignement argentées, bloc alim central avec témoin Signal Light vert et verrous de courbure Arc Lock à gâchette rouge.',
+      'Cadre périmétrique évidé sans montant central : bandeau supérieur nervuré intégrant alimentation, prise C13 amovible, bouton de mise sous tension et pilotage Wi-Fi/App.',
   },
   {
     id: 'mount',
     index: '04',
-    name: 'Béquille & lestage arrière',
-    subtitle: 'Tour acier profilée sur platine à roulettes',
-    thicknessMm: '12,0 mm',
-    material: 'Acier thermolaqué noir + équerres de bridage',
+    name: 'Système de pose : Sur pied, Mural ou Suspendu',
+    subtitle: 'Pieds en A 500 mm · Rails muraux · Élingues plafond',
+    thicknessMm: '3 modes',
+    material: 'Brides sur roulettes / Équerres murales / Câbles acier haute résistance',
     description:
-      'Structure portante verticale à découpes allégées assurant le maintien au sol et la reprise de charge des parois transparentes droites ou cintrées.',
+      'Trois méthodes d’installation dédiées sans empilement vertical : pose libre sur pieds en A à roulettes, fixation murale sur rails aluminium ou suspension haute par câbles acier.',
   },
 ];
 
@@ -237,7 +268,7 @@ export const CHASSIS_FINISHES: Record<ChassisFinishId, ChassisFinishSpec> = {
 
 export interface WallMetrics {
   cols: number;
-  rows: number;
+  rows: 1;
   cabinetCount: number;
   moduleCount: number;
   totalWidthMm: number;
@@ -250,32 +281,60 @@ export interface WallMetrics {
   peakPowerW: number;
 }
 
+export function clampHorizontalPanelCount(count: number): HorizontalPanelCount {
+  if (!Number.isFinite(count)) return 1;
+  const rounded = Math.round(count);
+  if (rounded <= 1) return 1;
+  if (rounded === 2) return 2;
+  if (rounded === 3) return 3;
+  return 4;
+}
+
+export function getActiveHorizontalCols(panelCount: HorizontalPanelCount): number[] {
+  if (panelCount === 1) return [0];
+  if (panelCount === 2) return [0, 1];
+  if (panelCount === 3) return [-1, 0, 1];
+  return [-1, 0, 1, 2];
+}
+
+export function getHorizontalSlotIndex(col: number, panelCount: HorizontalPanelCount): number {
+  if (panelCount === 1) return 0;
+  if (panelCount === 2) return col; // 0, 1
+  return col + 1; // [-1, 0, 1] -> 0, 1, 2 | [-1, 0, 1, 2] -> 0, 1, 2, 3
+}
+
+export function getHorizontalCenterOffset(panelCount: HorizontalPanelCount, cabinetWidth: number): number {
+  return panelCount === 2 || panelCount === 4 ? -cabinetWidth * 0.5 : 0;
+}
+
 export function computeWallMetrics(
   pitchId: PitchTierId,
-  cols: number,
-  rows: number,
+  panelCount: number,
+  installationMode: InstallationModeId = 'standing',
 ): WallMetrics {
-  const safeCols = Math.max(1, Math.floor(cols));
-  const safeRows = Math.max(1, Math.floor(rows));
+  const safeCols = clampHorizontalPanelCount(panelCount);
+  const rows = 1 as const;
   const pitch = PITCH_SPECS[pitchId];
+  const modeSpec = INSTALLATION_MODES[installationMode];
 
-  const cabinetCount = safeCols * safeRows;
+  const cabinetCount = safeCols;
   const moduleCount =
     cabinetCount *
     CABINET_DIMENSIONS.modulesPerCabinetX *
     CABINET_DIMENSIONS.modulesPerCabinetY;
   const totalWidthMm = safeCols * CABINET_DIMENSIONS.widthMm;
-  const totalHeightMm = safeRows * CABINET_DIMENSIONS.heightMm;
+  const totalHeightMm = CABINET_DIMENSIONS.heightMm;
   const areaSqm = Number(((totalWidthMm * totalHeightMm) / 1_000_000).toFixed(2));
   const totalResX = safeCols * pitch.cabinetResX;
-  const totalResY = safeRows * pitch.cabinetResY;
-  const totalWeightKg = Number((cabinetCount * CABINET_DIMENSIONS.weightKg).toFixed(1));
+  const totalResY = pitch.cabinetResY;
+  const unitWeightKg = CABINET_DIMENSIONS.hangingWeightKg + modeSpec.mountWeightKg;
+  const totalWeightKg = Number((cabinetCount * unitWeightKg).toFixed(1));
   const typicalPowerW = Math.round(areaSqm * pitch.typicalPowerWPerSqm);
   const peakPowerW = Math.round(areaSqm * pitch.peakPowerWPerSqm);
 
   return {
     cols: safeCols,
-    rows: safeRows,
+    rows,
     cabinetCount,
     moduleCount,
     totalWidthMm,
@@ -286,117 +345,5 @@ export function computeWallMetrics(
     totalWeightKg,
     typicalPowerW,
     peakPowerW,
-  };
-}
-
-export const CURVATURE_LIMIT_DEG = 30;
-export const CURVATURE_VISUAL_MULTIPLIER = 2;
-export const CURVATURE_SURFACE_MULTIPLIER = 1;
-
-export function clampCurvatureDeg(deg: number): number {
-  if (!Number.isFinite(deg)) return 0;
-  return Math.max(-CURVATURE_LIMIT_DEG, Math.min(CURVATURE_LIMIT_DEG, deg));
-}
-
-export function toInternalCurvatureDeg(
-  displayDeg: number,
-  multiplier: number = CURVATURE_VISUAL_MULTIPLIER,
-): number {
-  return clampCurvatureDeg(displayDeg) * multiplier;
-}
-
-/**
- * Evaluates normalized mechanical slide travel [-1, +1] for the rear H-yoke
- * articulation carriage & quick-lock linkage along the slotted horizontal rail.
- */
-export function evaluateCurvedRailSlide(displayDeg: number): number {
-  return clampCurvatureDeg(displayDeg) / CURVATURE_LIMIT_DEG;
-}
-
-export interface CurvedPoint {
-  x: number;
-  z: number;
-  angleY: number;
-}
-
-/**
- * Evaluates C1-continuous horizontal circular-arc bending around x = 0.
- * Display degrees in [-30, +30] map internally via multiplier (2x in 1x1 object mode, 1x in 3x2 wall mode).
- * - x < 0 uses curveLeftDeg (+ = forward toward viewer +Z, - = backward -Z)
- * - x >= 0 uses curveRightDeg (+ = forward toward viewer +Z, - = backward -Z)
- */
-export function evaluatePanelCurve(
-  x: number,
-  z: number,
-  halfWidth: number,
-  curveLeftDeg: number,
-  curveRightDeg: number,
-  multiplier: number = CURVATURE_VISUAL_MULTIPLIER,
-): CurvedPoint {
-  const safeHalf = Math.max(halfWidth, 1e-4);
-  const isLeft = x < 0;
-  const deg = toInternalCurvatureDeg(isLeft ? curveLeftDeg : curveRightDeg, multiplier);
-  const theta = (deg * Math.PI) / 180;
-
-  if (Math.abs(theta) < 1e-5) {
-    return { x, z, angleY: 0 };
-  }
-
-  const s = (isLeft ? -x : x) / safeHalf;
-  const radius = safeHalf / theta;
-  const alpha = s * theta;
-  const angleY = isLeft ? alpha : -alpha;
-
-  const cx = (isLeft ? -1 : 1) * radius * Math.sin(alpha);
-  const cz = radius * (1 - Math.cos(alpha));
-
-  const sinY = Math.sin(angleY);
-  const cosY = Math.cos(angleY);
-
-  return {
-    x: cx + z * sinY,
-    z: cz + z * cosY,
-    angleY,
-  };
-}
-
-/**
- * Evaluates circular-arc bending for a 3x2 wall side-wing cabinet in its local space,
- * hinged tangentially at its inner seam edge (+halfWidth for left wing, -halfWidth for right wing).
- */
-export function evaluateWingCurve(
-  side: 'left' | 'right',
-  x: number,
-  z: number,
-  halfWidth: number,
-  curveDeg: number,
-  multiplier: number = CURVATURE_SURFACE_MULTIPLIER,
-): CurvedPoint {
-  const safeHalf = Math.max(halfWidth, 1e-4);
-  const deg = toInternalCurvatureDeg(curveDeg, multiplier);
-  const theta = (deg * Math.PI) / 180;
-
-  if (Math.abs(theta) < 1e-5) {
-    return { x, z, angleY: 0 };
-  }
-
-  const isLeft = side === 'left';
-  const s = (isLeft ? safeHalf - x : x + safeHalf) / safeHalf;
-  const radius = safeHalf / theta;
-  const alpha = s * theta;
-  const angleY = isLeft ? alpha : -alpha;
-
-  const cx = isLeft
-    ? safeHalf - radius * Math.sin(alpha)
-    : -safeHalf + radius * Math.sin(alpha);
-  const cz = radius * (1 - Math.cos(alpha));
-
-  const sinY = Math.sin(angleY);
-  const cosY = Math.cos(angleY);
-
-  return {
-    x: cx + z * sinY,
-    z: cz + z * cosY,
-    angleY,
   };
 }

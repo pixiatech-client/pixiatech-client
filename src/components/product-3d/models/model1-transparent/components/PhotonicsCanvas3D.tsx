@@ -1,28 +1,36 @@
-'use client';
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RectAreaLightUniformsLib } from 'three/addons/lights/RectAreaLightUniformsLib.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
-import { ChevronDown, ChevronUp, Layers, Maximize2, RotateCcw } from 'lucide-react';
+import { ChevronDown, ChevronUp, Film, Layers, Maximize2, RotateCcw } from 'lucide-react';
 import {
   ASSEMBLY_LAYERS,
   BACKGROUND_PHASES,
-  CURVATURE_LIMIT_DEG,
-  CURVATURE_SURFACE_MULTIPLIER,
-  CURVATURE_VISUAL_MULTIPLIER,
-  evaluatePanelCurve,
-  evaluateWingCurve,
-  WALL_LAYOUT_SPECS,
+  CABINET_DIMENSIONS,
+  computeWallMetrics,
+  getHorizontalCenterOffset,
+  HORIZONTAL_PANEL_COUNTS,
+  INSTALLATION_MODES,
   type AssemblyLayerId,
   type BackgroundPhaseId,
   type CameraPresetId,
   type ChassisFinishId,
   type DisplayPatternId,
+  type HorizontalPanelCount,
+  type InstallationModeId,
   type PitchTierId,
-  type WallLayoutId,
 } from '../data/panelSpecs';
-import { buildCabinetAssembly, CAB_H, CAB_W, type CabinetAssembly } from '../three/cabinetBuilder';
+import {
+  BOTTOM_BEAM_H,
+  buildCabinetAssembly,
+  CAB_H,
+  CAB_W,
+  LEG_HEIGHT,
+  SUSPENDED_CLEARANCE,
+  WALL_CLEARANCE,
+  type CabinetAssembly,
+} from '../three/cabinetBuilder';
 import {
   createContactShadowTexture,
   createPolishedConcreteMaps,
@@ -31,8 +39,10 @@ import {
 } from '../three/proceduralTextures';
 
 interface PhotonicsCanvas3DProps {
-  wallLayout: WallLayoutId;
-  onWallLayoutChange: (layout: WallLayoutId) => void;
+  installationMode: InstallationModeId;
+  onInstallationModeChange: (mode: InstallationModeId) => void;
+  panelCount: HorizontalPanelCount;
+  onPanelCountChange: (count: HorizontalPanelCount) => void;
   explodeFactor: number;
   onExplodeChange: (val: number) => void;
   finishId: ChassisFinishId;
@@ -52,20 +62,16 @@ interface PhotonicsCanvas3DProps {
   onCameraPresetChange: (preset: CameraPresetId) => void;
   backgroundPhase: BackgroundPhaseId;
   onBackgroundPhaseChange: (phase: BackgroundPhaseId) => void;
-  curveLeftDeg: number;
-  onCurveLeftChange: (deg: number) => void;
-  curveRightDeg: number;
-  onCurveRightChange: (deg: number) => void;
 }
 
 const CAMERA_PRESETS: Record<
   CameraPresetId,
   { pos: [number, number, number]; target: [number, number, number]; label: string }
 > = {
-  perspective: { pos: [3.65, 0.92, 5.55], target: [0, -0.18, 0], label: '3/4' },
-  front: { pos: [0, -0.05, 5.85], target: [0, -0.12, 0], label: 'Face' },
-  profile: { pos: [5.05, 0.42, -1.65], target: [0, -0.12, -0.2], label: 'Profil' },
-  rear: { pos: [3.15, 0.62, -4.95], target: [0, -0.12, -0.05], label: 'Dos' },
+  perspective: { pos: [4.8, 0.9, 8.2], target: [0, -0.35, 0], label: '3/4' },
+  front: { pos: [0, 0.0, 8.6], target: [0, -0.25, 0], label: 'Face' },
+  profile: { pos: [7.4, 0.25, 2.4], target: [0, -0.25, 0], label: 'Profil' },
+  rear: { pos: [4.2, 0.7, -7.8], target: [0, -0.25, 0], label: 'Dos' },
 };
 
 const _camGoalPos = new THREE.Vector3();
@@ -155,8 +161,10 @@ function detectSoftwareGl(): boolean {
 }
 
 export const PhotonicsCanvas3D: React.FC<PhotonicsCanvas3DProps> = ({
-  wallLayout,
-  onWallLayoutChange,
+  installationMode,
+  onInstallationModeChange,
+  panelCount,
+  onPanelCountChange,
   explodeFactor,
   onExplodeChange,
   finishId,
@@ -175,19 +183,20 @@ export const PhotonicsCanvas3D: React.FC<PhotonicsCanvas3DProps> = ({
   onCameraPresetChange,
   backgroundPhase,
   onBackgroundPhaseChange,
-  curveLeftDeg,
-  onCurveLeftChange,
-  curveRightDeg,
-  onCurveRightChange,
 }) => {
   const canvasMountRef = useRef<HTMLDivElement | null>(null);
+  const videoInputRef = useRef<HTMLInputElement | null>(null);
+  const customVideoRef = useRef<HTMLVideoElement | null>(null);
+  const customVideoUrlRef = useRef<string | null>(null);
+  const [hasCustomVideo, setHasCustomVideo] = useState(false);
   const [dockCollapsed, setDockCollapsed] = useState(true);
   const [mobileExtrasOpen, setMobileExtrasOpen] = useState(false);
   const [webglError, setWebglError] = useState(false);
   const [hoveredModuleIdx, setHoveredModuleIdx] = useState<number | null>(null);
 
   const stateRef = useRef({
-    wallLayout,
+    installationMode,
+    panelCount,
     explodeFactor,
     finishId,
     patternId,
@@ -199,12 +208,11 @@ export const PhotonicsCanvas3D: React.FC<PhotonicsCanvas3DProps> = ({
     showStand,
     cameraPreset,
     backgroundPhase,
-    curveLeftDeg,
-    curveRightDeg,
     cameraTransitionActive: false,
   });
 
-  stateRef.current.wallLayout = wallLayout;
+  stateRef.current.installationMode = installationMode;
+  stateRef.current.panelCount = panelCount;
   stateRef.current.explodeFactor = explodeFactor;
   stateRef.current.finishId = finishId;
   stateRef.current.patternId = patternId;
@@ -216,8 +224,6 @@ export const PhotonicsCanvas3D: React.FC<PhotonicsCanvas3DProps> = ({
   stateRef.current.showStand = showStand;
   stateRef.current.cameraPreset = cameraPreset;
   stateRef.current.backgroundPhase = backgroundPhase;
-  stateRef.current.curveLeftDeg = curveLeftDeg;
-  stateRef.current.curveRightDeg = curveRightDeg;
 
   const callbacksRef = useRef({
     onSelectModule,
@@ -234,7 +240,7 @@ export const PhotonicsCanvas3D: React.FC<PhotonicsCanvas3DProps> = ({
     assembly: CabinetAssembly | null;
     floorSpot: THREE.SpotLight | null;
     requestRender: (() => void) | null;
-    triggerCameraPreset: ((preset: CameraPresetId, layout: WallLayoutId) => void) | null;
+    triggerCameraPreset: ((preset: CameraPresetId) => void) | null;
   }>({
     assembly: null,
     floorSpot: null,
@@ -242,10 +248,59 @@ export const PhotonicsCanvas3D: React.FC<PhotonicsCanvas3DProps> = ({
     triggerCameraPreset: null,
   });
 
+  const handleUploadCustomVideo = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (customVideoUrlRef.current) {
+      URL.revokeObjectURL(customVideoUrlRef.current);
+      customVideoUrlRef.current = null;
+    }
+    if (customVideoRef.current) {
+      customVideoRef.current.pause();
+      customVideoRef.current.src = '';
+    }
+
+    const url = URL.createObjectURL(file);
+    customVideoUrlRef.current = url;
+
+    const vid = document.createElement('video');
+    vid.src = url;
+    vid.loop = true;
+    vid.muted = true;
+    vid.playsInline = true;
+    vid.preload = 'auto';
+    vid.onloadeddata = () => {
+      vid.play().catch(() => {});
+      sceneRefs.current.requestRender?.();
+    };
+    vid.load();
+    customVideoRef.current = vid;
+    setHasCustomVideo(true);
+    onPatternChange('video');
+  };
+
+  useEffect(() => {
+    return () => {
+      if (customVideoRef.current) {
+        customVideoRef.current.pause();
+        customVideoRef.current.src = '';
+        customVideoRef.current = null;
+      }
+      if (customVideoUrlRef.current) {
+        URL.revokeObjectURL(customVideoUrlRef.current);
+        customVideoUrlRef.current = null;
+      }
+    };
+  }, []);
+
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
-      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT')) {
+      if (
+        target &&
+        (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT')
+      ) {
         return;
       }
       if (e.key === 'h' || e.key === 'H') {
@@ -297,33 +352,31 @@ export const PhotonicsCanvas3D: React.FC<PhotonicsCanvas3DProps> = ({
     scene.background = null;
     scene.fog = null;
 
-    // Custom studio photography softbox environment map
     const envTex = createStudioSoftboxTexture(renderer);
     scene.environment = envTex;
 
-    const camera = new THREE.PerspectiveCamera(aspect < 1.28 ? 42 : 35, aspect, 0.35, 42);
+    const camera = new THREE.PerspectiveCamera(aspect < 1.28 ? 42 : 35, aspect, 0.35, 90);
     camera.position.set(...CAMERA_PRESETS.perspective.pos);
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = !isSoftwareGl;
     controls.dampingFactor = 0.07;
     controls.minDistance = 2.0;
-    controls.maxDistance = 24.0;
+    controls.maxDistance = 42.0;
     controls.maxPolarAngle = Math.PI * 0.85;
     controls.target.set(...CAMERA_PRESETS.perspective.target);
 
-    // Studio photography 3-point lighting rig
-    const hemiLight = new THREE.HemisphereLight('#DCE8FF', '#141210', 0.68);
+    const hemiLight = new THREE.HemisphereLight('#DCE8FF', '#141210', 0.72);
     scene.add(hemiLight);
 
-    const keyLight = new THREE.DirectionalLight('#FFF6EA', 2.4);
-    keyLight.position.set(4.0, 5.2, 5.5);
+    const keyLight = new THREE.DirectionalLight('#FFF6EA', 2.45);
+    keyLight.position.set(4.5, 6.2, 6.5);
     if (!isSoftwareGl) {
       keyLight.castShadow = true;
       keyLight.shadow.mapSize.set(1024, 1024);
       keyLight.shadow.camera.near = 1;
-      keyLight.shadow.camera.far = 24;
-      const d = 6.5;
+      keyLight.shadow.camera.far = 32;
+      const d = 8.5;
       keyLight.shadow.camera.left = -d;
       keyLight.shadow.camera.right = d;
       keyLight.shadow.camera.top = d;
@@ -333,39 +386,35 @@ export const PhotonicsCanvas3D: React.FC<PhotonicsCanvas3DProps> = ({
     }
     scene.add(keyLight);
 
-    // Rear-right studio rim light to sculpt the PIXIATECH outdoor rear ribs, fins & corner brackets
-    const rearKeyLight = new THREE.DirectionalLight('#F8FAFC', 3.0);
-    rearKeyLight.position.set(3.8, 3.2, -5.2);
+    const rearKeyLight = new THREE.DirectionalLight('#F8FAFC', 2.9);
+    rearKeyLight.position.set(3.8, 3.6, -5.8);
     scene.add(rearKeyLight);
 
-    // Cool lateral rim light
     const coolRim = new THREE.DirectionalLight('#93C5FD', 1.75);
-    coolRim.position.set(-4.8, 2.2, -3.5);
+    coolRim.position.set(-4.8, 2.4, -3.5);
     scene.add(coolRim);
 
     if (!isSoftwareGl) {
       RectAreaLightUniformsLib.init();
-      const softbox = new THREE.RectAreaLight('#FFFFFF', 4.0, 6.0, 2.2);
-      softbox.position.set(0, 4.2, 3.8);
+      const softbox = new THREE.RectAreaLight('#FFFFFF', 4.0, 6.5, 2.8);
+      softbox.position.set(0, 5.2, 4.2);
       softbox.lookAt(0, 0, 0);
       scene.add(softbox);
     }
 
-    // Subtle overhead studio floor glow synced with background phase
     const initialSpotColor = BACKGROUND_PHASES[stateRef.current.backgroundPhase].spotHex;
-    const floorSpot = new THREE.SpotLight(initialSpotColor, 6.0, 20, Math.PI / 2.6, 0.96, 1.35);
-    floorSpot.position.set(0, 4.5, 2.5);
-    floorSpot.target.position.set(0, -1.39, 0.15);
+    const floorSpot = new THREE.SpotLight(initialSpotColor, 6.5, 28, Math.PI / 2.5, 0.96, 1.3);
+    floorSpot.position.set(0, 5.8, 2.8);
+    floorSpot.target.position.set(0, -2.31, 0.15);
     scene.add(floorSpot);
     scene.add(floorSpot.target);
     sceneRefs.current.floorSpot = floorSpot;
 
     const maxAniso = renderer.capabilities.getMaxAnisotropy();
 
-    // Seamless studio floor + TRUE horizontal Reflector mirror (rotated via object.rotation.x so Reflector normal = +Y!)
     const floorAlphaTex = createStudioFloorAlphaTexture();
     const concreteMaps = createPolishedConcreteMaps(maxAniso);
-    const concreteFloorGeo = new THREE.CircleGeometry(12.0, 64);
+    const concreteFloorGeo = new THREE.CircleGeometry(16.0, 64);
     concreteFloorGeo.rotateX(-Math.PI / 2);
     const concreteFloorMat = new THREE.MeshStandardMaterial({
       color: '#111620',
@@ -378,16 +427,14 @@ export const PhotonicsCanvas3D: React.FC<PhotonicsCanvas3DProps> = ({
       envMapIntensity: 0.12,
     });
     const concreteFloor = new THREE.Mesh(concreteFloorGeo, concreteFloorMat);
-    concreteFloor.position.y = -1.394;
+    concreteFloor.position.y = -2.319;
     concreteFloor.receiveShadow = !isSoftwareGl;
     scene.add(concreteFloor);
 
-    // IMPORTANT: Keep reflectorGeo in XY plane and rotate concreteReflector.rotation.x = -PI/2
-    // so Reflector.js transforms its (0,0,1) normal into true horizontal mirror normal (0,1,0)!
-    const reflectorGeo = new THREE.CircleGeometry(12.0, 64);
+    const reflectorGeo = new THREE.CircleGeometry(16.0, 64);
     const concreteReflector = new Reflector(reflectorGeo, {
-      textureWidth: isSoftwareGl ? 768 : 1024,
-      textureHeight: isSoftwareGl ? 768 : 1024,
+      textureWidth: isSoftwareGl ? 256 : 1024,
+      textureHeight: isSoftwareGl ? 256 : 1024,
       clipBias: 0.002,
       color: 0xeaf0f8,
       multisample: isSoftwareGl ? 0 : 4,
@@ -400,12 +447,12 @@ export const PhotonicsCanvas3D: React.FC<PhotonicsCanvas3DProps> = ({
     reflectorMat.uniforms['tFloorAlpha'].value = floorAlphaTex;
     reflectorMat.uniforms['uOpacity'].value = 0.44;
     reflectorMat.uniforms['uBlurRadius'].value = 0.0018;
-    concreteReflector.position.y = -1.39;
+    concreteReflector.position.y = -2.315;
     concreteReflector.renderOrder = 2;
     scene.add(concreteReflector);
 
     const shadowTex = createContactShadowTexture();
-    const contactGeo = new THREE.PlaneGeometry(5.6, 2.2);
+    const contactGeo = new THREE.PlaneGeometry(3.4, 1.8);
     contactGeo.rotateX(-Math.PI / 2);
     const contactMat = new THREE.MeshBasicMaterial({
       map: shadowTex,
@@ -414,7 +461,7 @@ export const PhotonicsCanvas3D: React.FC<PhotonicsCanvas3DProps> = ({
       opacity: 0.36,
     });
     const contactShadow = new THREE.Mesh(contactGeo, contactMat);
-    contactShadow.position.y = -1.271;
+    contactShadow.position.y = -2.314;
     contactShadow.renderOrder = 1;
     scene.add(contactShadow);
 
@@ -426,13 +473,19 @@ export const PhotonicsCanvas3D: React.FC<PhotonicsCanvas3DProps> = ({
       concreteFloor.visible = true;
       contactShadow.visible = true;
     };
+
     const assembly = buildCabinetAssembly(
       maxAniso,
       stateRef.current.finishId,
       stateRef.current.patternId,
       stateRef.current.pitchId,
-      stateRef.current.wallLayout,
+      stateRef.current.panelCount,
       () => requestRender(),
+    );
+    assembly.updateInstallationMode(
+      stateRef.current.installationMode,
+      stateRef.current.panelCount,
+      stateRef.current.showStand,
     );
     scene.add(assembly.root);
     sceneRefs.current.assembly = assembly;
@@ -444,6 +497,12 @@ export const PhotonicsCanvas3D: React.FC<PhotonicsCanvas3DProps> = ({
     controls.update();
     renderer.render(scene, camera);
 
+    const getFloorClearance = (mode: InstallationModeId, standVisible: boolean): number => {
+      if (mode === 'wall') return WALL_CLEARANCE;
+      if (mode === 'suspended') return SUSPENDED_CLEARANCE;
+      return standVisible ? LEG_HEIGHT : 0.04;
+    };
+
     let currentWidth = width;
     let currentHeight = height;
     let rafId = 0;
@@ -452,40 +511,19 @@ export const PhotonicsCanvas3D: React.FC<PhotonicsCanvas3DProps> = ({
     let renderBusy = false;
     let renderDirty = false;
     let lastTime = performance.now();
+    const startTime = lastTime;
 
     let currentExplode = stateRef.current.explodeFactor;
-    let currentSurfaceBlend = stateRef.current.wallLayout === '1x1' ? 0 : 1;
-    let currentRootX = stateRef.current.wallLayout === '2x3' ? -CAB_W * 0.5 : 0;
-    let currentRootY = stateRef.current.wallLayout === '3x2' ? -CAB_H * 0.5 : 0;
-    const initFloorClearance = stateRef.current.showStand ? 0.14 : 0.02;
-    let currentFloorWorldY =
-      stateRef.current.wallLayout === '1x1'
-        ? -CAB_H * 0.5 - initFloorClearance
-        : stateRef.current.wallLayout === '3x2'
-          ? -CAB_H - initFloorClearance
-          : -CAB_H * 1.5 - initFloorClearance;
-    let currentCurveL = stateRef.current.curveLeftDeg;
-    let currentCurveR = stateRef.current.curveRightDeg;
-    const initCurveScale = THREE.MathUtils.lerp(
-      CURVATURE_VISUAL_MULTIPLIER,
-      CURVATURE_SURFACE_MULTIPLIER,
-      currentSurfaceBlend,
+    let currentSurfaceBlend = stateRef.current.panelCount === 1 ? 0 : 1;
+    let currentRootX = getHorizontalCenterOffset(stateRef.current.panelCount, CAB_W);
+    const initClearance = getFloorClearance(
+      stateRef.current.installationMode,
+      stateRef.current.showStand,
     );
-    let renderedEffL = 0;
-    let renderedEffR = 0;
-    let renderedLayout: WallLayoutId = stateRef.current.wallLayout;
+    let currentFloorWorldY = -CAB_H * 0.5 - BOTTOM_BEAM_H - initClearance;
     const currentModuleExtract = [0, 0, 0, 0];
 
-    if (Math.abs(currentCurveL) > 0.01 || Math.abs(currentCurveR) > 0.01) {
-      assembly.updateCurvature(
-        currentCurveL,
-        currentCurveR,
-        initCurveScale,
-        stateRef.current.wallLayout,
-      );
-      renderedEffL = currentCurveL * initCurveScale;
-      renderedEffR = currentCurveR * initCurveScale;
-    }
+    let idleTimerId = 0;
 
     function afterDraw(cb: () => void) {
       const gl = renderer.getContext() as WebGL2RenderingContext;
@@ -501,93 +539,74 @@ export const PhotonicsCanvas3D: React.FC<PhotonicsCanvas3DProps> = ({
           timerId = window.setTimeout(poll, 5);
         } else {
           if (sync) gl.deleteSync(sync);
-          timerId = window.setTimeout(cb, 80);
+          cb();
         }
       };
       timerId = window.setTimeout(poll, 5);
     }
 
-    function requestRender() {
+    let lastVideoRenderAt = 0;
+
+    function requestRender(urgent = false) {
       if (disposed) return;
-      if (renderBusy) {
+      if (urgent) {
+        clearTimeout(idleTimerId);
+        renderDirty = true;
+        if (renderBusy) return;
+      } else if (renderBusy) {
         renderDirty = true;
         return;
       }
+      clearTimeout(idleTimerId);
       renderBusy = true;
       rafId = requestAnimationFrame(() => {
         if (disposed) return;
         renderDirty = false;
 
         const now = performance.now();
-        const dt = Math.min((now - lastTime) / 1000, isSoftwareGl ? 0.25 : 0.05);
+        const dt = Math.min((now - lastTime) / 1000, isSoftwareGl ? 0.5 : 0.05);
         lastTime = now;
 
-        const activeLayout = stateRef.current.wallLayout;
+        const activeMode = stateRef.current.installationMode;
+        const activeCount = stateRef.current.panelCount;
         const targetExplode = stateRef.current.explodeFactor;
-        const targetSurface = activeLayout === '1x1' ? 0 : 1;
-        const targetRootX = activeLayout === '2x3' ? -CAB_W * 0.5 : 0;
-        const targetRootY = activeLayout === '3x2' ? -CAB_H * 0.5 : 0;
-        const floorClearance = stateRef.current.showStand ? 0.14 : 0.02;
-        const targetFloorWorldY =
-          activeLayout === '1x1'
-            ? -CAB_H * 0.5 - floorClearance
-            : activeLayout === '3x2'
-              ? -CAB_H - floorClearance
-              : -CAB_H * 1.5 - floorClearance;
-        const targetCurveL = stateRef.current.curveLeftDeg;
-        const targetCurveR = stateRef.current.curveRightDeg;
+        const targetSurface = activeCount === 1 ? 0 : 1;
+        const targetRootX = getHorizontalCenterOffset(activeCount, CAB_W);
+        const floorClearance = getFloorClearance(activeMode, stateRef.current.showStand);
+        const targetFloorWorldY = -CAB_H * 0.5 - BOTTOM_BEAM_H - floorClearance;
 
-        const lambda = isSoftwareGl ? 24 : 9;
-        currentExplode = THREE.MathUtils.damp(currentExplode, targetExplode, lambda, dt);
-        currentSurfaceBlend = THREE.MathUtils.damp(currentSurfaceBlend, targetSurface, lambda, dt);
-        currentRootX = THREE.MathUtils.damp(currentRootX, targetRootX, lambda, dt);
-        currentRootY = THREE.MathUtils.damp(currentRootY, targetRootY, lambda, dt);
-        currentFloorWorldY = THREE.MathUtils.damp(currentFloorWorldY, targetFloorWorldY, lambda, dt);
-        currentCurveL = THREE.MathUtils.damp(currentCurveL, targetCurveL, lambda, dt);
-        currentCurveR = THREE.MathUtils.damp(currentCurveR, targetCurveR, lambda, dt);
+        if (isSoftwareGl) {
+          currentExplode = targetExplode;
+          currentSurfaceBlend = targetSurface;
+          currentRootX = targetRootX;
+          currentFloorWorldY = targetFloorWorldY;
+        } else {
+          const lambda = 9;
+          currentExplode = THREE.MathUtils.damp(currentExplode, targetExplode, lambda, dt);
+          currentSurfaceBlend = THREE.MathUtils.damp(currentSurfaceBlend, targetSurface, lambda, dt);
+          currentRootX = THREE.MathUtils.damp(currentRootX, targetRootX, lambda, dt);
+          currentFloorWorldY = THREE.MathUtils.damp(currentFloorWorldY, targetFloorWorldY, lambda, dt);
 
-        if (Math.abs(currentExplode - targetExplode) < 0.002) currentExplode = targetExplode;
-        if (Math.abs(currentSurfaceBlend - targetSurface) < 0.002) currentSurfaceBlend = targetSurface;
-        if (Math.abs(currentRootX - targetRootX) < 0.002) currentRootX = targetRootX;
-        if (Math.abs(currentRootY - targetRootY) < 0.002) currentRootY = targetRootY;
-        if (Math.abs(currentFloorWorldY - targetFloorWorldY) < 0.002) currentFloorWorldY = targetFloorWorldY;
-        if (Math.abs(currentCurveL - targetCurveL) < 0.05) currentCurveL = targetCurveL;
-        if (Math.abs(currentCurveR - targetCurveR) < 0.05) currentCurveR = targetCurveR;
-
-        const curveScale = THREE.MathUtils.lerp(
-          CURVATURE_VISUAL_MULTIPLIER,
-          CURVATURE_SURFACE_MULTIPLIER,
-          currentSurfaceBlend,
-        );
-        const effCurveL = currentCurveL * curveScale;
-        const effCurveR = currentCurveR * curveScale;
-
-        if (
-          Math.abs(effCurveL - renderedEffL) > 0.01 ||
-          Math.abs(effCurveR - renderedEffR) > 0.01 ||
-          renderedLayout !== activeLayout
-        ) {
-          assembly.updateCurvature(
-            currentCurveL,
-            currentCurveR,
-            curveScale,
-            activeLayout,
-          );
-          renderedEffL = effCurveL;
-          renderedEffR = effCurveR;
-          renderedLayout = activeLayout;
+          if (Math.abs(currentExplode - targetExplode) < 0.002) currentExplode = targetExplode;
+          if (Math.abs(currentSurfaceBlend - targetSurface) < 0.002) {
+            currentSurfaceBlend = targetSurface;
+          }
+          if (Math.abs(currentRootX - targetRootX) < 0.002) currentRootX = targetRootX;
+          if (Math.abs(currentFloorWorldY - targetFloorWorldY) < 0.002) {
+            currentFloorWorldY = targetFloorWorldY;
+          }
         }
 
-        assembly.root.position.set(currentRootX, currentRootY, 0);
+        assembly.root.position.set(currentRootX, 0, 0);
 
-        assembly.mountLayer.visible = stateRef.current.showStand;
+        assembly.mountLayer.visible =
+          activeMode !== 'standing' || stateRef.current.showStand;
         assembly.mountLayer.position.z = -currentExplode * 0.72;
         assembly.chassisLayer.position.z = -currentExplode * 0.14;
         assembly.modulesLayer.position.z = currentExplode * 0.36;
         assembly.emittersLayer.position.z = currentExplode * 0.82;
         assembly.wireframeOverlayGroup.position.z = assembly.chassisLayer.position.z;
 
-        // Hide internal PCB meshes when emitter and module are seated flush to prevent oblique Z-fighting
         const pcbVisible = currentExplode > 0.015;
         assembly.modulesLayer.traverse((child) => {
           if (child.name === 'internal-pcb') {
@@ -595,170 +614,90 @@ export const PhotonicsCanvas3D: React.FC<PhotonicsCanvas3DProps> = ({
           }
         });
 
-        // Per-module magnetic extraction + automatic LED power cut upon pogo-pin disconnect
         const basePatternIntensity =
           stateRef.current.patternId === 'off'
             ? 0.24
             : stateRef.current.patternId === 'calibration'
-              ? 0.88
-              : 0.82;
+              ? 1.15
+              : 1.18;
 
         let anyModuleAnimating = false;
         assembly.modules.forEach((mod, idx) => {
           const targetExt =
-            stateRef.current.selectedModuleIdx === idx && activeLayout === '1x1'
-              ? 1
-              : 0;
-          currentModuleExtract[idx] = THREE.MathUtils.damp(
-            currentModuleExtract[idx],
-            targetExt,
-            lambda,
-            dt,
-          );
-          if (Math.abs(currentModuleExtract[idx] - targetExt) < 0.002) {
+            stateRef.current.selectedModuleIdx === idx && activeCount === 1 ? 1 : 0;
+          if (isSoftwareGl) {
             currentModuleExtract[idx] = targetExt;
           } else {
-            anyModuleAnimating = true;
+            currentModuleExtract[idx] = THREE.MathUtils.damp(
+              currentModuleExtract[idx],
+              targetExt,
+              9,
+              dt,
+            );
+            if (Math.abs(currentModuleExtract[idx] - targetExt) < 0.002) {
+              currentModuleExtract[idx] = targetExt;
+            } else {
+              anyModuleAnimating = true;
+            }
           }
 
           const ext = currentModuleExtract[idx];
-          const zOffset = ext * 0.56;
-          const modCurve =
-            activeLayout === '2x3'
-              ? evaluateWingCurve('left', mod.centerX, 0.056, CAB_W / 2, currentCurveL, curveScale)
-              : evaluatePanelCurve(
-                  mod.centerX,
-                  0.056,
-                  CAB_W / 2,
-                  currentCurveL,
-                  currentCurveR,
-                  curveScale,
-                );
-          const xSlide = Math.sin(modCurve.angleY) * zOffset;
-          const zSlide = Math.cos(modCurve.angleY) * zOffset;
+          const zSlide = ext * 0.52;
 
-          mod.tileGroup.position.set(xSlide, mod.centerY, 0.026 + zSlide);
-          mod.emitterGroup.position.set(xSlide, mod.centerY, 0.056 + zSlide);
+          mod.tileGroup.position.set(0, mod.centerY, -0.004 + zSlide);
+          mod.emitterGroup.position.set(0, mod.centerY, 0.008 + zSlide);
 
-          // Pogo-pin contact breaks immediately at ~6% extraction -> LED shuts off
           const contactFactor = THREE.MathUtils.clamp(1 - (ext - 0.05) / 0.12, 0, 1);
 
           mod.emitterMat.emissiveIntensity = contactFactor * basePatternIntensity;
           mod.emitterMat.color.copy(_colorOff).lerp(_colorOn, contactFactor);
         });
 
-        const halfW = CAB_W / 2;
-        const leftEdge = evaluatePanelCurve(
-          -halfW,
-          0,
-          halfW,
-          currentCurveL,
-          currentCurveR,
-          curveScale,
-        );
-        const rightEdge = evaluatePanelCurve(
-          halfW,
-          0,
-          halfW,
-          currentCurveL,
-          currentCurveR,
-          curveScale,
-        );
-
-        const isSlotActive = (col: number, row: number): boolean => {
-          if (activeLayout === '1x1') return false;
-          if (activeLayout === '3x2') return row >= 0;
-          if (activeLayout === '2x3') return col >= 1;
-          return true; // 3x3
+        const isSlotActive = (col: number): boolean => {
+          if (col === 1) return activeCount >= 2;
+          if (col === -1) return activeCount >= 3;
+          if (col === 2) return activeCount === 4;
+          return false;
         };
 
         assembly.surroundCabinets.forEach((sc) => {
-          if (currentSurfaceBlend < 0.01 || !isSlotActive(sc.gridCol, sc.gridRow)) {
+          if (currentSurfaceBlend < 0.01 || !isSlotActive(sc.gridCol)) {
             sc.group.visible = false;
           } else {
             sc.group.visible = true;
-            const spread = 1 + (1 - currentSurfaceBlend) * 0.45;
-            const zOut = (1 - currentSurfaceBlend) * -0.5;
-            if (activeLayout === '2x3') {
-              // Center seam sits at local x = +halfW (col 1 bends as left-wing, col 2 as right-wing)
-              sc.group.position.set(sc.targetPos.x * spread, sc.targetPos.y * spread, zOut);
-              sc.group.rotation.y = 0;
-            } else if (sc.gridCol === 0) {
-              const hingeX = leftEdge.x - Math.cos(leftEdge.angleY) * halfW;
-              const hingeZ = leftEdge.z + Math.sin(leftEdge.angleY) * halfW;
-              sc.group.position.set(hingeX * spread, sc.targetPos.y * spread, hingeZ + zOut);
-              sc.group.rotation.y = leftEdge.angleY * currentSurfaceBlend;
-            } else if (sc.gridCol === 2) {
-              const hingeX = rightEdge.x + Math.cos(rightEdge.angleY) * halfW;
-              const hingeZ = rightEdge.z - Math.sin(rightEdge.angleY) * halfW;
-              sc.group.position.set(hingeX * spread, sc.targetPos.y * spread, hingeZ + zOut);
-              sc.group.rotation.y = rightEdge.angleY * currentSurfaceBlend;
-            } else {
-              sc.group.position.set(sc.targetPos.x * spread, sc.targetPos.y * spread, zOut);
-              sc.group.rotation.y = 0;
-            }
+            const spread = 1 + (1 - currentSurfaceBlend) * 0.38;
+            const zOut = (1 - currentSurfaceBlend) * -0.45;
+            sc.group.position.set(sc.targetPos.x * spread, 0, zOut);
+            sc.group.rotation.y = 0;
 
             const hasLeftNeighbor =
-              sc.gridCol === 2 || (sc.gridCol === 1 && activeLayout !== '2x3');
+              sc.gridCol === 1 || sc.gridCol === 2;
             sc.jumperGroup.visible = currentSurfaceBlend > 0.45 && hasLeftNeighbor;
-            sc.topBridgeGroup.visible =
-              currentSurfaceBlend > 0.45 && hasLeftNeighbor && sc.gridRow === 1;
+            sc.topBridgeGroup.visible = currentSurfaceBlend > 0.45 && hasLeftNeighbor;
           }
         });
 
-        // Position rear ballast truss stands directly on studio floor per active column & row count
-        const activeRows = WALL_LAYOUT_SPECS[activeLayout].rows as 1 | 2 | 3;
-        const floorLocalY = currentFloorWorldY - assembly.root.position.y;
+        // Update animated holographic video sequence (or uploaded .mp4 frame)
+        const isVideoPlaying = stateRef.current.patternId === 'video';
+        if (isVideoPlaying && (!isSoftwareGl || now - lastVideoRenderAt >= 260)) {
+          lastVideoRenderAt = now;
+          assembly.updateVideoFrame(
+            (now - startTime) / 1000,
+            activeCount,
+            customVideoRef.current,
+          );
+        }
+
+        // Position standing A-frame brackets directly on studio floor
+        const floorLocalY = currentFloorWorldY;
         assembly.trussStands.forEach((stand) => {
-          stand.rowVariants[1].visible = activeRows === 1;
-          stand.rowVariants[2].visible = activeRows === 2;
-          stand.rowVariants[3].visible = activeRows === 3;
-
-          if (activeLayout === '1x1') {
-            stand.group.visible = stand.col === 0;
-            stand.group.position.set(0, floorLocalY, 0);
-            stand.group.rotation.y = 0;
-          } else if (activeLayout === '2x3') {
-            stand.group.visible = stand.col === 0 || stand.col === 1;
-            const cPos =
-              stand.col === 0
-                ? evaluateWingCurve('left', 0, 0, halfW, currentCurveL, curveScale)
-                : evaluateWingCurve('right', 0, 0, halfW, currentCurveR, curveScale);
-            stand.group.position.set(
-              (stand.col === 1 ? CAB_W : 0) + cPos.x,
-              floorLocalY,
-              cPos.z,
-            );
-            stand.group.rotation.y = cPos.angleY;
-          } else {
-            stand.group.visible = true;
-            if (stand.col === -1) {
-              const hingeX = leftEdge.x - Math.cos(leftEdge.angleY) * halfW;
-              const hingeZ = leftEdge.z + Math.sin(leftEdge.angleY) * halfW;
-              const edgeAng = leftEdge.angleY * currentSurfaceBlend;
-              const wCenter = evaluateWingCurve('left', 0, 0, halfW, currentCurveL, curveScale);
-              const wx = hingeX + wCenter.x * Math.cos(edgeAng) + wCenter.z * Math.sin(edgeAng);
-              const wz = hingeZ - wCenter.x * Math.sin(edgeAng) + wCenter.z * Math.cos(edgeAng);
-              stand.group.position.set(wx, floorLocalY, wz);
-              stand.group.rotation.y = edgeAng + wCenter.angleY * currentSurfaceBlend;
-            } else if (stand.col === 1) {
-              const hingeX = rightEdge.x + Math.cos(rightEdge.angleY) * halfW;
-              const hingeZ = rightEdge.z - Math.sin(rightEdge.angleY) * halfW;
-              const edgeAng = rightEdge.angleY * currentSurfaceBlend;
-              const wCenter = evaluateWingCurve('right', 0, 0, halfW, currentCurveR, curveScale);
-              const wx = hingeX + wCenter.x * Math.cos(edgeAng) + wCenter.z * Math.sin(edgeAng);
-              const wz = hingeZ - wCenter.x * Math.sin(edgeAng) + wCenter.z * Math.cos(edgeAng);
-              stand.group.position.set(wx, floorLocalY, wz);
-              stand.group.rotation.y = edgeAng + wCenter.angleY * currentSurfaceBlend;
-            } else {
-              stand.group.position.set(0, floorLocalY, 0);
-              stand.group.rotation.y = 0;
-            }
-          }
+          stand.group.position.set(stand.col * CAB_W, floorLocalY, 0);
+          stand.group.rotation.y = 0;
         });
 
-        const widthScale = activeLayout === '1x1' ? 1 : activeLayout === '2x3' ? 1.85 : 2.55;
+        const widthScale = activeCount === 1 ? 1 : activeCount === 2 ? 1.65 : activeCount === 3 ? 2.35 : 2.95;
         contactShadow.scale.set(widthScale, 1, 1);
+        contactShadow.material.opacity = activeMode === 'suspended' ? 0.22 : 0.36;
         concreteFloor.position.y = currentFloorWorldY - 0.004;
         concreteReflector.position.y = currentFloorWorldY;
         contactShadow.position.y = currentFloorWorldY - 0.001;
@@ -768,89 +707,106 @@ export const PhotonicsCanvas3D: React.FC<PhotonicsCanvas3DProps> = ({
         if (stateRef.current.cameraTransitionActive) {
           const preset = CAMERA_PRESETS[stateRef.current.cameraPreset];
           const distScale =
-            activeLayout === '1x1'
-              ? 1.0
-              : activeLayout === '3x2'
-                ? 2.25
-                : activeLayout === '2x3'
-                  ? 2.55
-                  : 3.05;
+            activeCount === 1
+              ? activeMode === 'suspended'
+                ? 1.15
+                : activeMode === 'wall'
+                  ? 1.18
+                  : 1.0
+              : activeCount === 2
+                ? 1.48
+                : activeCount === 3
+                  ? 1.98
+                  : 2.48;
           const heightScale =
-            activeLayout === '1x1' ? 1.0 : activeLayout === '3x2' ? 1.35 : activeLayout === '2x3' ? 1.65 : 1.85;
+            activeCount === 1 ? 1.0 : activeCount === 2 ? 1.12 : 1.25;
+          const targetYOffset = activeMode === 'suspended' ? 0.14 : -0.25;
+
           _camGoalPos.set(
             preset.pos[0] * distScale,
-            preset.pos[1] * heightScale,
+            preset.pos[1] * heightScale + (activeMode === 'suspended' ? 0.32 : 0),
             preset.pos[2] * distScale,
           );
           _camGoalTarget.set(
             preset.target[0],
-            activeLayout === '1x1' ? preset.target[1] : -0.1,
+            activeCount === 1 && activeMode === 'standing' ? preset.target[1] : targetYOffset,
             preset.target[2],
           );
 
-          const alpha = 1 - Math.exp(-9.5 * dt);
-          controls.target.lerp(_camGoalTarget, alpha);
-
-          // Orbit around target spherically so camera never passes through the cabinet
-          _camCurOffset.copy(camera.position).sub(controls.target);
-          _camGoalOffset.copy(_camGoalPos).sub(_camGoalTarget);
-          _camCurSph.setFromVector3(_camCurOffset);
-          _camGoalSph.setFromVector3(_camGoalOffset);
-
-          let dTheta = _camGoalSph.theta - _camCurSph.theta;
-          while (dTheta > Math.PI) dTheta -= Math.PI * 2;
-          while (dTheta < -Math.PI) dTheta += Math.PI * 2;
-
-          _camCurSph.radius = THREE.MathUtils.lerp(_camCurSph.radius, _camGoalSph.radius, alpha);
-          _camCurSph.phi = THREE.MathUtils.lerp(_camCurSph.phi, _camGoalSph.phi, alpha);
-          _camCurSph.theta = _camCurSph.theta + dTheta * alpha;
-
-          _camCurOffset.setFromSpherical(_camCurSph);
-          camera.position.copy(controls.target).add(_camCurOffset);
-
-          if (
-            camera.position.distanceTo(_camGoalPos) < 0.03 &&
-            controls.target.distanceTo(_camGoalTarget) < 0.02
-          ) {
+          if (isSoftwareGl) {
             camera.position.copy(_camGoalPos);
             controls.target.copy(_camGoalTarget);
             stateRef.current.cameraTransitionActive = false;
           } else {
-            camNeedsMore = true;
+            const alpha = 1 - Math.exp(-9.5 * dt);
+            controls.target.lerp(_camGoalTarget, alpha);
+
+            _camCurOffset.copy(camera.position).sub(controls.target);
+            _camGoalOffset.copy(_camGoalPos).sub(_camGoalTarget);
+            _camCurSph.setFromVector3(_camCurOffset);
+            _camGoalSph.setFromVector3(_camGoalOffset);
+
+            let dTheta = _camGoalSph.theta - _camCurSph.theta;
+            while (dTheta > Math.PI) dTheta -= Math.PI * 2;
+            while (dTheta < -Math.PI) dTheta += Math.PI * 2;
+
+            _camCurSph.radius = THREE.MathUtils.lerp(_camCurSph.radius, _camGoalSph.radius, alpha);
+            _camCurSph.phi = THREE.MathUtils.lerp(_camCurSph.phi, _camGoalSph.phi, alpha);
+            _camCurSph.theta = _camCurSph.theta + dTheta * alpha;
+
+            _camCurOffset.setFromSpherical(_camCurSph);
+            camera.position.copy(controls.target).add(_camCurOffset);
+
+            if (
+              camera.position.distanceTo(_camGoalPos) < 0.03 &&
+              controls.target.distanceTo(_camGoalTarget) < 0.02
+            ) {
+              camera.position.copy(_camGoalPos);
+              controls.target.copy(_camGoalTarget);
+              stateRef.current.cameraTransitionActive = false;
+            } else {
+              camNeedsMore = true;
+            }
           }
         }
 
         const controlsMoved = controls.update();
         renderer.render(scene, camera);
 
-        const stillAnimating =
+        const nonVideoAnimating =
           Math.abs(currentExplode - targetExplode) > 0.002 ||
           Math.abs(currentSurfaceBlend - targetSurface) > 0.002 ||
           Math.abs(currentRootX - targetRootX) > 0.002 ||
-          Math.abs(currentRootY - targetRootY) > 0.002 ||
           Math.abs(currentFloorWorldY - targetFloorWorldY) > 0.002 ||
-          Math.abs(currentCurveL - targetCurveL) > 0.05 ||
-          Math.abs(currentCurveR - targetCurveR) > 0.05 ||
           anyModuleAnimating ||
           camNeedsMore ||
           (controls.enableDamping && controlsMoved);
 
         const done = () => {
           renderBusy = false;
-          if (renderDirty || stillAnimating) {
+          if (renderDirty || nonVideoAnimating) {
             requestRender();
+          } else if (isVideoPlaying) {
+            if (isSoftwareGl) {
+              idleTimerId = window.setTimeout(() => requestRender(), 1200);
+            } else {
+              requestRender();
+            }
           }
         };
 
-        if (isSoftwareGl) afterDraw(done);
-        else done();
+        if (isSoftwareGl) {
+          afterDraw(done);
+        } else {
+          done();
+        }
       });
     }
 
-    sceneRefs.current.requestRender = requestRender;
-    sceneRefs.current.triggerCameraPreset = (_preset, _mode) => {
+    sceneRefs.current.requestRender = () => requestRender(true);
+    sceneRefs.current.triggerCameraPreset = () => {
       stateRef.current.cameraTransitionActive = true;
-      requestRender();
+      requestRender(true);
     };
 
     const onControlsStart = () => {
@@ -948,6 +904,7 @@ export const PhotonicsCanvas3D: React.FC<PhotonicsCanvas3DProps> = ({
       disposed = true;
       cancelAnimationFrame(rafId);
       clearTimeout(timerId);
+      clearTimeout(idleTimerId);
       resizeObserver?.disconnect();
       window.removeEventListener('resize', onResize);
       controls.removeEventListener('start', onControlsStart);
@@ -983,9 +940,14 @@ export const PhotonicsCanvas3D: React.FC<PhotonicsCanvas3DProps> = ({
   }, [finishId]);
 
   useEffect(() => {
-    sceneRefs.current.assembly?.updatePattern(patternId, pitchId, wallLayout);
+    sceneRefs.current.assembly?.updatePattern(patternId, pitchId, panelCount);
     sceneRefs.current.requestRender?.();
-  }, [patternId, pitchId, wallLayout]);
+  }, [patternId, pitchId, panelCount]);
+
+  useEffect(() => {
+    sceneRefs.current.assembly?.updateInstallationMode(installationMode, panelCount, showStand);
+    sceneRefs.current.requestRender?.();
+  }, [installationMode, panelCount, showStand]);
 
   useEffect(() => {
     sceneRefs.current.assembly?.updateSelection(
@@ -999,11 +961,11 @@ export const PhotonicsCanvas3D: React.FC<PhotonicsCanvas3DProps> = ({
 
   useEffect(() => {
     sceneRefs.current.requestRender?.();
-  }, [explodeFactor, selectedModuleIdx, curveLeftDeg, curveRightDeg, wallLayout, showStand]);
+  }, [explodeFactor, selectedModuleIdx, panelCount, installationMode, showStand]);
 
   useEffect(() => {
-    sceneRefs.current.triggerCameraPreset?.(cameraPreset, wallLayout);
-  }, [cameraPreset, wallLayout]);
+    sceneRefs.current.triggerCameraPreset?.(cameraPreset);
+  }, [cameraPreset, panelCount, installationMode]);
 
   useEffect(() => {
     if (sceneRefs.current.floorSpot) {
@@ -1013,25 +975,24 @@ export const PhotonicsCanvas3D: React.FC<PhotonicsCanvas3DProps> = ({
   }, [backgroundPhase]);
 
   const activeLayerObj = ASSEMBLY_LAYERS.find((l) => l.id === activeLayer);
-  const formatDeg = (deg: number) => (deg > 0 ? `+${deg}°` : `${deg}°`);
-  const hasCurve = curveLeftDeg !== 0 || curveRightDeg !== 0;
-  const layoutSpec = WALL_LAYOUT_SPECS[wallLayout];
+  const modeSpec = INSTALLATION_MODES[installationMode];
+  const metrics = computeWallMetrics(pitchId, panelCount, installationMode);
 
   return (
     <div
       id="atelier-3d"
       data-testid="photonics-3d-stage"
-      data-wall-layout={wallLayout}
+      data-install-mode={installationMode}
+      data-panel-count={panelCount}
+      data-pattern={patternId}
       data-explode={Math.round(explodeFactor * 100)}
-      data-curve-left={curveLeftDeg}
-      data-curve-right={curveRightDeg}
       className={`relative h-full ${
         dockCollapsed
           ? 'min-h-[300px]'
           : mobileExtrasOpen
             ? 'min-h-[470px]'
             : 'min-h-[410px]'
-      } sm:min-h-[380px] lg:min-h-[580px] w-full overflow-hidden rounded-2xl border border-white/[0.12] bg-black/20`}
+      } sm:min-h-[380px] lg:min-h-[540px] w-full overflow-hidden rounded-2xl border border-white/[0.12] bg-black/20`}
     >
       {/* Dedicated Empty WebGL Mount */}
       <div ref={canvasMountRef} className="absolute inset-0 h-full w-full" />
@@ -1047,26 +1008,24 @@ export const PhotonicsCanvas3D: React.FC<PhotonicsCanvas3DProps> = ({
         </div>
       )}
 
-      {/* Top Bar: Flat Readout + Flat Circles 1, 2, 3 for Background Colors */}
+      {/* Top Bar: Flat Readout + Background Colors 1, 2, 3 */}
       <div className="pointer-events-none absolute top-3 left-3 right-3 sm:top-3.5 sm:left-3.5 sm:right-3.5 z-10 flex items-start justify-between gap-2.5">
         <div className="glass-mirror-dock rounded-lg border border-white/[0.12] px-2.5 py-1.5 sm:px-3.5 sm:py-2">
           <p className="font-mono-tech text-[10px] sm:text-[11px] uppercase tracking-[0.1em] sm:tracking-[0.12em] text-[#F59E0B]">
-            {wallLayout !== '1x1'
-              ? `Paroi déployée · ${layoutSpec.cols} × ${layoutSpec.rows}`
+            {panelCount > 1
+              ? `${modeSpec.label} · ${panelCount} panneaux (${metrics.totalWidthMm.toLocaleString('fr-FR')} × ${CABINET_DIMENSIONS.heightMm} mm)`
               : selectedModuleIdx !== null
                 ? `Module M${selectedModuleIdx + 1} extrait · LED coupée`
-                : hasCurve
-                  ? `Courbure flexible · G ${formatDeg(curveLeftDeg)} / D ${formatDeg(curveRightDeg)}`
-                  : 'O-Crystal Pro 1000×500'}
+                : `O-Raster Poster · ${modeSpec.label}`}
           </p>
           <p className="hidden sm:block mt-0.5 text-xs sm:text-sm font-medium text-[#F4F5F7]">
             {cameraPreset === 'rear'
-              ? 'Dos ajouré IP65 · Signal Light & Arc Lock'
+              ? `Dos Plug-and-Play · ${modeSpec.mountSummary}`
               : selectedModuleIdx !== null
-                ? `M${selectedModuleIdx + 1} déconnecté du bus (500 × 250 mm)`
+                ? `M${selectedModuleIdx + 1} déconnecté du bus (500 × 1000 mm · 0,50 kg)`
                 : activeLayerObj
-                  ? `${activeLayerObj.index}. ${activeLayerObj.name} (${activeLayerObj.thicknessMm})`
-                  : 'Châssis 1000 × 500 × 65 mm · 8,5 kg'}
+                  ? `${activeLayerObj.index}. ${activeLayerObj.name}`
+                  : `${metrics.totalWidthMm.toLocaleString('fr-FR')} × ${modeSpec.totalHeightMm} × 55 mm · ${metrics.totalWeightKg} kg · > 92 %`}
           </p>
         </div>
 
@@ -1102,7 +1061,7 @@ export const PhotonicsCanvas3D: React.FC<PhotonicsCanvas3DProps> = ({
         </div>
       </div>
 
-      {/* Collapsible Flat Transparent Bottom Control Dock (Hidden by default until clicked) */}
+      {/* Collapsible Bottom Control Dock */}
       <div className="pointer-events-none absolute inset-x-0 bottom-2.5 sm:bottom-3.5 z-10 flex flex-col items-center px-2.5 sm:px-3">
         <button
           type="button"
@@ -1127,28 +1086,55 @@ export const PhotonicsCanvas3D: React.FC<PhotonicsCanvas3DProps> = ({
         {!dockCollapsed && (
           <div className="glass-mirror-dock pointer-events-auto w-full rounded-xl border border-white/[0.12] p-2 sm:p-2.5">
             <div className="flex flex-wrap items-center justify-between gap-1.5 sm:gap-2">
-              {/* Array Layout Presets (1x1, 3x2, 2x3, 3x3) */}
+              {/* 3 Exclusive Installation Methods: SUR PIED | MURAL | SUSPENDU */}
               <div
-                className="flex items-center gap-0.5 rounded-lg bg-black/30 p-1 border border-white/[0.1]"
+                className="flex items-center gap-0.5 rounded-lg bg-black/40 p-1 border border-white/[0.1]"
                 role="group"
-                aria-label="Disposition des caissons"
+                aria-label="Méthode d’installation"
               >
-                {(Object.keys(WALL_LAYOUT_SPECS) as WallLayoutId[]).map((layoutKey) => {
-                  const spec = WALL_LAYOUT_SPECS[layoutKey];
-                  const active = wallLayout === layoutKey;
+                {(Object.keys(INSTALLATION_MODES) as InstallationModeId[]).map((modeKey) => {
+                  const spec = INSTALLATION_MODES[modeKey];
+                  const active = installationMode === modeKey;
                   return (
                     <button
-                      key={layoutKey}
+                      key={modeKey}
                       type="button"
-                      onClick={() => onWallLayoutChange(layoutKey)}
+                      onClick={() => onInstallationModeChange(modeKey)}
                       aria-pressed={active}
-                      className={`rounded-md px-2 py-1 text-xs font-medium transition-colors duration-150 whitespace-nowrap shrink-0 cursor-pointer ${
+                      className={`rounded-md px-2.5 py-1 text-[11px] font-semibold tracking-[0.03em] whitespace-nowrap shrink-0 cursor-pointer ${
                         active
-                          ? 'bg-[#F59E0B] text-[#050608] font-semibold'
+                          ? 'bg-[#F59E0B] text-[#050608]'
                           : 'text-[#9CA3AF] hover:text-white'
                       }`}
                     >
                       {spec.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Horizontal Assembly Count (Single Row Only: 1x1, 2x1, 3x1, 4x1) */}
+              <div
+                className="flex items-center gap-0.5 rounded-lg bg-black/40 p-1 border border-white/[0.1]"
+                role="group"
+                aria-label="Assemblage horizontal des panneaux"
+              >
+                {HORIZONTAL_PANEL_COUNTS.map((count) => {
+                  const active = panelCount === count;
+                  return (
+                    <button
+                      key={count}
+                      type="button"
+                      onClick={() => onPanelCountChange(count)}
+                      aria-pressed={active}
+                      aria-label={`${count} panneau${count > 1 ? 'x' : ''} en largeur (${count * 1000} mm)`}
+                      className={`rounded-md px-2 py-1 text-xs font-medium whitespace-nowrap shrink-0 cursor-pointer ${
+                        active
+                          ? 'bg-white/20 text-white font-semibold'
+                          : 'text-[#9CA3AF] hover:text-white'
+                      }`}
+                    >
+                      {count}×1
                     </button>
                   );
                 })}
@@ -1177,14 +1163,14 @@ export const PhotonicsCanvas3D: React.FC<PhotonicsCanvas3DProps> = ({
                 </span>
               </div>
 
-              {/* Camera Presets including Rear ("Dos") */}
-              <div className="flex items-center gap-0.5 rounded-lg bg-black/30 p-1 border border-white/[0.1]">
+              {/* Camera Presets */}
+              <div className="flex items-center gap-0.5 rounded-lg bg-black/40 p-1 border border-white/[0.1]">
                 {(Object.keys(CAMERA_PRESETS) as CameraPresetId[]).map((presetKey) => (
                   <button
                     key={presetKey}
                     type="button"
                     onClick={() => onCameraPresetChange(presetKey)}
-                    className={`rounded-md px-2 py-1 text-xs font-medium transition-colors duration-150 whitespace-nowrap shrink-0 cursor-pointer ${
+                    className={`rounded-md px-2 py-1 text-xs font-medium whitespace-nowrap shrink-0 cursor-pointer ${
                       cameraPreset === presetKey
                         ? 'bg-white/15 text-white'
                         : 'text-[#D1D5DB] hover:text-white'
@@ -1195,13 +1181,13 @@ export const PhotonicsCanvas3D: React.FC<PhotonicsCanvas3DProps> = ({
                 ))}
               </div>
 
-              {/* Secondary Options: Accordion on mobile (< sm), always visible on sm+ */}
+              {/* Mobile accordion toggle */}
               <div className="flex w-full sm:w-auto items-center justify-between gap-2 sm:hidden">
                 <button
                   type="button"
                   onClick={() => setMobileExtrasOpen((v) => !v)}
                   aria-expanded={mobileExtrasOpen}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.12] bg-black/30 px-2.5 py-1 text-[11px] font-medium text-[#D1D5DB] hover:text-white cursor-pointer"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.12] bg-black/40 px-2.5 py-1 text-[11px] font-medium text-[#D1D5DB] hover:text-white cursor-pointer"
                 >
                   <span>{mobileExtrasOpen ? 'Masquer options' : 'Plus d’options'}</span>
                   <ChevronDown
@@ -1215,15 +1201,13 @@ export const PhotonicsCanvas3D: React.FC<PhotonicsCanvas3DProps> = ({
                   type="button"
                   onClick={() => {
                     onExplodeChange(0);
-                    onWallLayoutChange('1x1');
+                    onPanelCountChange(1);
                     onCameraPresetChange('perspective');
                     onSelectModule(null);
                     onActiveLayerChange(null);
-                    onCurveLeftChange(0);
-                    onCurveRightChange(0);
                   }}
                   aria-label="Réinitialiser la vue 3D"
-                  className="rounded-lg border border-white/[0.12] bg-black/30 p-1.5 text-[#D1D5DB] hover:text-white transition-colors duration-150 cursor-pointer"
+                  className="rounded-lg border border-white/[0.12] bg-black/40 p-1.5 text-[#D1D5DB] hover:text-white transition-colors duration-150 cursor-pointer"
                 >
                   <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
                 </button>
@@ -1235,30 +1219,52 @@ export const PhotonicsCanvas3D: React.FC<PhotonicsCanvas3DProps> = ({
                 } sm:flex flex-wrap items-center gap-1.5 sm:gap-2`}
               >
                 <select
-                  aria-label="Motif lumineux de la dalle"
+                  aria-label="Contenu de l’écran LED"
                   value={patternId}
                   onChange={(e) => onPatternChange(e.target.value as DisplayPatternId)}
-                  className="rounded-lg border border-white/[0.12] bg-black/35 px-2 py-1.5 text-xs font-medium text-[#E5E7EB] focus:outline-none focus:ring-1 focus:ring-[#F59E0B] cursor-pointer"
+                  className="rounded-lg border border-white/[0.12] bg-black/50 px-2 py-1.5 text-xs font-medium text-[#E5E7EB] focus:outline-none focus:ring-1 focus:ring-[#F59E0B] cursor-pointer"
                 >
+                  <option value="video" className="bg-[#0B0D12]">
+                    {hasCustomVideo ? 'Vidéo importée' : 'Vidéo Holo'}
+                  </option>
                   <option value="fluid" className="bg-[#0B0D12]">Reflets noirs</option>
                   <option value="off" className="bg-[#0B0D12]">Noir absolu</option>
                   <option value="ambient" className="bg-[#0B0D12]">Halo ambré</option>
                   <option value="calibration" className="bg-[#0B0D12]">Grille optique</option>
                 </select>
 
+                <input
+                  ref={videoInputRef}
+                  type="file"
+                  accept="video/*"
+                  onChange={handleUploadCustomVideo}
+                  className="hidden"
+                />
                 <button
                   type="button"
-                  onClick={onToggleStand}
-                  aria-pressed={showStand}
-                  aria-label="Afficher ou masquer le support arrière"
-                  className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1.5 text-xs font-medium transition-colors duration-150 whitespace-nowrap shrink-0 cursor-pointer ${
-                    showStand
-                      ? 'border-[#F59E0B] bg-[#F59E0B]/20 text-[#FCD34D]'
-                      : 'border-white/[0.12] bg-black/30 text-[#D1D5DB] hover:text-white'
-                  }`}
+                  onClick={() => videoInputRef.current?.click()}
+                  aria-label="Charger un fichier vidéo sur l’écran perforé"
+                  className="inline-flex items-center gap-1 rounded-lg border border-white/[0.12] bg-black/40 px-2 py-1.5 text-xs font-medium text-[#D1D5DB] hover:border-white/30 hover:text-white transition-colors duration-150 whitespace-nowrap shrink-0 cursor-pointer"
                 >
-                  <span>Support</span>
+                  <Film className="h-3 w-3 text-[#F59E0B]" aria-hidden="true" />
+                  <span>Vidéo .mp4</span>
                 </button>
+
+                {installationMode === 'standing' && (
+                  <button
+                    type="button"
+                    onClick={onToggleStand}
+                    aria-pressed={showStand}
+                    aria-label="Afficher ou masquer les pieds sur roulettes"
+                    className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1.5 text-xs font-medium transition-colors duration-150 whitespace-nowrap shrink-0 cursor-pointer ${
+                      showStand
+                        ? 'border-[#F59E0B] bg-[#F59E0B]/20 text-[#FCD34D]'
+                        : 'border-white/[0.12] bg-black/40 text-[#D1D5DB] hover:text-white'
+                    }`}
+                  >
+                    <span>Pieds</span>
+                  </button>
+                )}
 
                 <button
                   type="button"
@@ -1267,7 +1273,7 @@ export const PhotonicsCanvas3D: React.FC<PhotonicsCanvas3DProps> = ({
                   className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1.5 text-xs font-medium transition-colors duration-150 whitespace-nowrap shrink-0 cursor-pointer ${
                     showWireframe
                       ? 'border-[#F59E0B] bg-[#F59E0B]/20 text-[#FCD34D]'
-                      : 'border-white/[0.12] bg-black/30 text-[#D1D5DB] hover:text-white'
+                      : 'border-white/[0.12] bg-black/40 text-[#D1D5DB] hover:text-white'
                   }`}
                 >
                   <Maximize2 className="h-3 w-3" aria-hidden="true" />
@@ -1278,73 +1284,16 @@ export const PhotonicsCanvas3D: React.FC<PhotonicsCanvas3DProps> = ({
                   type="button"
                   onClick={() => {
                     onExplodeChange(0);
-                    onWallLayoutChange('1x1');
+                    onPanelCountChange(1);
                     onCameraPresetChange('perspective');
                     onSelectModule(null);
                     onActiveLayerChange(null);
-                    onCurveLeftChange(0);
-                    onCurveRightChange(0);
                   }}
                   aria-label="Réinitialiser la vue 3D"
-                  className="hidden sm:inline-flex rounded-lg border border-white/[0.12] bg-black/30 p-1.5 text-[#D1D5DB] hover:text-white transition-colors duration-150 cursor-pointer"
+                  className="hidden sm:inline-flex rounded-lg border border-white/[0.12] bg-black/40 p-1.5 text-[#D1D5DB] hover:text-white transition-colors duration-150 cursor-pointer"
                 >
                   <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
                 </button>
-              </div>
-
-              {/* Left & Right Flexible Curvature Controls (-30° .. +30°) placed in bottom-right dock slot */}
-              <div
-                className="flex w-full sm:w-auto sm:ml-auto items-center justify-between sm:justify-start gap-2 rounded-lg border border-white/[0.1] bg-black/30 px-2 py-1.5"
-                role="group"
-                aria-label="Courbure flexible gauche et droite (-30° à +30°)"
-              >
-                <div className="flex items-center gap-1">
-                  <label
-                    htmlFor="curve-left-slider"
-                    className="font-mono-tech text-[11px] font-medium text-[#D1D5DB] whitespace-nowrap"
-                  >
-                    G
-                  </label>
-                  <input
-                    id="curve-left-slider"
-                    type="range"
-                    min={-CURVATURE_LIMIT_DEG}
-                    max={CURVATURE_LIMIT_DEG}
-                    step={1}
-                    value={curveLeftDeg}
-                    onChange={(e) => onCurveLeftChange(Number(e.target.value))}
-                    aria-label="Courbure gauche (-30° arrière à +30° avant)"
-                    className="krona-slider w-16 sm:w-14 xl:w-16"
-                  />
-                  <span className="font-mono-tech w-8 text-right text-[11px] text-[#F59E0B] tabular-nums">
-                    {formatDeg(curveLeftDeg)}
-                  </span>
-                </div>
-
-                <span className="h-3.5 w-px bg-white/15 shrink-0" aria-hidden="true" />
-
-                <div className="flex items-center gap-1">
-                  <label
-                    htmlFor="curve-right-slider"
-                    className="font-mono-tech text-[11px] font-medium text-[#D1D5DB] whitespace-nowrap"
-                  >
-                    D
-                  </label>
-                  <input
-                    id="curve-right-slider"
-                    type="range"
-                    min={-CURVATURE_LIMIT_DEG}
-                    max={CURVATURE_LIMIT_DEG}
-                    step={1}
-                    value={curveRightDeg}
-                    onChange={(e) => onCurveRightChange(Number(e.target.value))}
-                    aria-label="Courbure droite (-30° arrière à +30° avant)"
-                    className="krona-slider w-16 sm:w-14 xl:w-16"
-                  />
-                  <span className="font-mono-tech w-8 text-right text-[11px] text-[#F59E0B] tabular-nums">
-                    {formatDeg(curveRightDeg)}
-                  </span>
-                </div>
               </div>
             </div>
           </div>

@@ -1,36 +1,42 @@
-'use client';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import {
   CHASSIS_FINISHES,
-  CURVATURE_VISUAL_MULTIPLIER,
-  evaluateCurvedRailSlide,
-  evaluatePanelCurve,
-  evaluateWingCurve,
-  WALL_LAYOUT_SPECS,
+  getHorizontalSlotIndex,
   type AssemblyLayerId,
   type ChassisFinishId,
   type DisplayPatternId,
+  type HorizontalPanelCount,
+  type InstallationModeId,
   type PitchTierId,
-  type WallLayoutId,
 } from '../data/panelSpecs';
 import {
+  createArchitecturalWallMaps,
   createBeadBlastedCastMap,
   createBrushedMetalMaps,
+  createHolographicEmitterAlphaMap,
+  createHolographicMeshAlphaMap,
+  createHolographicMeshMaps,
+  createIndicatorGlowTexture,
   createMasterEmitterCanvas,
-  createPixiatechMedallionTexture,
+  createPixiatechBarLogoTexture,
+  createPosterHousingRibMaps,
   createSlicedEmitterTexture,
-  createTransparentLouverAlphaMap,
-  createTransparentModulePolymerMaps,
+  drawHolographicVideoFrame,
 } from './proceduralTextures';
 
-// Scale: 1 Three.js unit = ~277.8 mm
-// OneDisplay O-Crystal Pro Outdoor Transparent Cabinet = 1000 x 500 x 65 mm => 3.60 x 1.80 x 0.24 units
-export const CAB_W = 3.6;
-export const CAB_H = 1.8;
-export const CAB_D = 0.24;
-export const MOD_W = CAB_W / 2; // 1.80 (500 mm)
-export const MOD_H = CAB_H / 2; // 0.90 (250 mm)
+// Scale: 1 Three.js unit = ~555.5 mm
+// OneDisplay O-Raster Holographic Invisible LED Poster = 1000 x 2000 x 55 mm => 1.80 x 3.60 x 0.10 units
+export const CAB_W = 1.8;
+export const CAB_H = 3.6;
+export const CAB_D = 0.1;
+export const TOP_BEAM_H = 0.175;
+export const BOTTOM_BEAM_H = 0.155;
+export const LEG_HEIGHT = 0.36; // ~200 mm floor clearance for 2400 mm total standing height
+export const WALL_CLEARANCE = 0.52;
+export const SUSPENDED_CLEARANCE = 0.64;
+export const MOD_W = CAB_W / 2; // 0.90 (500 mm)
+export const MOD_H = CAB_H / 2; // 1.80 (1000 mm)
 
 export interface ModuleUnitRef {
   id: number; // 0..3
@@ -48,8 +54,7 @@ export interface ModuleUnitRef {
 
 export interface SurroundCabinetRef {
   group: THREE.Group;
-  gridCol: number; // 0 (left), 1 (center), 2 (right)
-  gridRow: number; // -1 (bottom), 0 (middle), +1 (top)
+  gridCol: number; // -1 (left), 1 (right-1), 2 (right-2)
   targetPos: THREE.Vector3;
   emitterMat: THREE.MeshPhysicalMaterial;
   jumperGroup: THREE.Group;
@@ -65,7 +70,17 @@ export interface CabinetAssembly {
   wireframeOverlayGroup: THREE.Group;
   surroundGroup: THREE.Group;
   surroundCabinets: SurroundCabinetRef[];
-  trussStands: { col: number; group: THREE.Group; rowVariants: Record<1 | 2 | 3, THREE.Group> }[];
+  trussStands: { col: number; group: THREE.Group }[];
+  wallMountGroup: THREE.Group;
+  wallBackdrop: THREE.Mesh;
+  wallPlinth: THREE.Mesh;
+  wallTopCap: THREE.Mesh;
+  wallColumnRigs: { col: number; group: THREE.Group; seamTie: THREE.Group }[];
+  suspendedMountGroup: THREE.Group;
+  ceilingRailMesh: THREE.Mesh;
+  ceilingEndCaps: [THREE.Mesh, THREE.Mesh];
+  ceilingDropRods: THREE.Group;
+  suspendedColumnRigs: { col: number; group: THREE.Group; seamBridge: THREE.Group }[];
   modules: ModuleUnitRef[];
   chassisMaterial: THREE.MeshPhysicalMaterial;
   trimMaterial: THREE.MeshStandardMaterial;
@@ -74,13 +89,20 @@ export interface CabinetAssembly {
   mountSteelMaterial: THREE.MeshStandardMaterial;
   cadLineMaterial: THREE.LineBasicMaterial;
   updateFinish: (finishId: ChassisFinishId) => void;
-  updatePattern: (pattern: DisplayPatternId, pitch: PitchTierId, layout: WallLayoutId) => void;
-  updateCurvature: (
-    curveLeftDeg: number,
-    curveRightDeg: number,
-    multiplier?: number,
-    layout?: WallLayoutId,
-    orientAngleRad?: number,
+  updatePattern: (
+    pattern: DisplayPatternId,
+    pitch: PitchTierId,
+    panelCount: HorizontalPanelCount,
+  ) => void;
+  updateVideoFrame: (
+    timeSec: number,
+    panelCount: HorizontalPanelCount,
+    customVideoEl?: HTMLVideoElement | null,
+  ) => void;
+  updateInstallationMode: (
+    mode: InstallationModeId,
+    panelCount: HorizontalPanelCount,
+    showStand: boolean,
   ) => void;
   updateSelection: (
     activeLayer: AssemblyLayerId | null,
@@ -91,38 +113,12 @@ export interface CabinetAssembly {
   dispose: () => void;
 }
 
-type BendScope = 'center' | 'left-wing' | 'right-wing';
-
-interface BendGeometryTarget {
-  geo: THREE.BufferGeometry;
-  basePos: Float32Array;
-  baseNorm: Float32Array | null;
-  zOffset: number;
-  recomputeBounds: boolean;
-  scope: BendScope;
-  rotateWithOrient: boolean;
-}
-
-interface RigidBendTarget {
-  obj: THREE.Object3D;
-  baseX: number;
-  baseY: number;
-  baseZ: number;
-  parentZOffset: number;
-  baseRotY: number;
-  baseRotZ: number;
-  scope: BendScope;
-  rotateWithOrient: boolean;
-  slideSide?: 'left' | 'right';
-  slideRole?: 'carriage' | 'paddle';
-}
-
 export function buildCabinetAssembly(
   maxAnisotropy: number,
   initialFinish: ChassisFinishId,
   initialPattern: DisplayPatternId,
   initialPitch: PitchTierId,
-  initialLayout: WallLayoutId,
+  initialPanelCount: HorizontalPanelCount,
   onTextureLoaded?: () => void,
 ): CabinetAssembly {
   const disposables: { dispose: () => void }[] = [];
@@ -131,180 +127,93 @@ export function buildCabinetAssembly(
     return item;
   };
 
-  const bendTargets: BendGeometryTarget[] = [];
-  const rigidTargets: RigidBendTarget[] = [];
-  const medallionMeshes: THREE.Mesh[] = [];
-
-  const registerBendGeometry = (
-    geo: THREE.BufferGeometry,
-    zOffset = 0,
-    recomputeBounds = false,
-    scope: BendScope = 'center',
-    rotateWithOrient = true,
-  ) => {
-    const posAttr = geo.getAttribute('position') as THREE.BufferAttribute;
-    const normAttr = geo.getAttribute('normal') as THREE.BufferAttribute | undefined;
-    bendTargets.push({
-      geo,
-      basePos: new Float32Array(posAttr.array as Float32Array),
-      baseNorm: normAttr ? new Float32Array(normAttr.array as Float32Array) : null,
-      zOffset,
-      recomputeBounds,
-      scope,
-      rotateWithOrient,
-    });
-  };
-
-  const registerRigidTarget = (
-    obj: THREE.Object3D,
-    baseX: number,
-    baseY: number,
-    baseZ: number,
-    parentZOffset = 0,
-    baseRotY = 0,
-    scope: BendScope = 'center',
-    rotateWithOrient = true,
-    slideSide?: 'left' | 'right',
-    slideRole?: 'carriage' | 'paddle',
-  ) => {
-    rigidTargets.push({
-      obj,
-      baseX,
-      baseY,
-      baseZ,
-      parentZOffset,
-      baseRotY,
-      baseRotZ: obj.rotation.z,
-      scope,
-      rotateWithOrient,
-      slideSide,
-      slideRole,
-    });
-  };
-
   const { bumpMap, roughnessMap } = createBrushedMetalMaps(maxAnisotropy);
   const castBumpMap = track(createBeadBlastedCastMap(maxAnisotropy));
+  const housingRibMaps = createPosterHousingRibMaps(maxAnisotropy);
+  const wallMaps = createArchitecturalWallMaps(maxAnisotropy);
   track(bumpMap);
   track(roughnessMap);
+  track(housingRibMaps.bumpMap);
+  track(housingRibMaps.roughnessMap);
+  track(wallMaps.map);
+  track(wallMaps.bumpMap);
 
-  const LOUVER_ROWS_PER_MODULE = 15;
-  const moduleLouverAlpha = track(
-    createTransparentLouverAlphaMap(LOUVER_ROWS_PER_MODULE, 1, 1, maxAnisotropy),
+  // Circular perforated holographic micro-mesh (24x24 holes per 500x500 tile -> 1x2 repeat per 500x1000 module)
+  const MESH_CELLS_PER_TILE = 24;
+  const moduleMeshAlpha = track(
+    createHolographicMeshAlphaMap(MESH_CELLS_PER_TILE, 1, 2, maxAnisotropy),
   );
-  const cabinetLouverAlpha = track(
-    createTransparentLouverAlphaMap(LOUVER_ROWS_PER_MODULE, 2, 2, maxAnisotropy),
+  const cabinetMeshAlpha = track(
+    createHolographicMeshAlphaMap(MESH_CELLS_PER_TILE, 2, 4, maxAnisotropy),
   );
-  const modulePolymerMaps = createTransparentModulePolymerMaps(
-    LOUVER_ROWS_PER_MODULE,
-    1,
-    1,
-    maxAnisotropy,
+  const moduleEmitterAlpha = track(
+    createHolographicEmitterAlphaMap(MESH_CELLS_PER_TILE, 1, 2, maxAnisotropy),
   );
-  track(modulePolymerMaps.map);
-  track(modulePolymerMaps.bumpMap);
-  track(modulePolymerMaps.roughnessMap);
+  const cabinetEmitterAlpha = track(
+    createHolographicEmitterAlphaMap(MESH_CELLS_PER_TILE, 2, 4, maxAnisotropy),
+  );
 
-  const surroundPolymerMaps = createTransparentModulePolymerMaps(
-    LOUVER_ROWS_PER_MODULE,
-    2,
-    2,
-    maxAnisotropy,
-  );
-  track(surroundPolymerMaps.map);
-  track(surroundPolymerMaps.bumpMap);
-  track(surroundPolymerMaps.roughnessMap);
+  const moduleFilmMaps = createHolographicMeshMaps(MESH_CELLS_PER_TILE, 1, 2, maxAnisotropy);
+  track(moduleFilmMaps.map);
+  track(moduleFilmMaps.bumpMap);
+  track(moduleFilmMaps.roughnessMap);
 
-  const medallionTex = track(createPixiatechMedallionTexture(maxAnisotropy, onTextureLoaded));
+  const surroundFilmMaps = createHolographicMeshMaps(MESH_CELLS_PER_TILE, 2, 4, maxAnisotropy);
+  track(surroundFilmMaps.map);
+  track(surroundFilmMaps.bumpMap);
+  track(surroundFilmMaps.roughnessMap);
 
-  // Matte-anodized die-cast aluminum chassis (O-Crystal Pro black aluminum frame)
+  const barLogoTex = track(createPixiatechBarLogoTexture(maxAnisotropy, onTextureLoaded));
+
   const chassisMaterial = track(
     new THREE.MeshPhysicalMaterial({
       color: new THREE.Color('#090A0E'),
-      roughness: 0.34,
-      metalness: 0.52,
-      bumpMap: castBumpMap,
-      bumpScale: 0.0025,
-      roughnessMap,
-      clearcoat: 0.55,
-      clearcoatRoughness: 0.24,
-      envMapIntensity: 1.7,
-    }),
-  );
-
-  // Transparent louvered module polymer & emerald-green PCB carrier (500 x 250 mm)
-  const outdoorShroudMaterial = track(
-    new THREE.MeshPhysicalMaterial({
-      color: 0xffffff,
-      map: modulePolymerMaps.map,
-      bumpMap: modulePolymerMaps.bumpMap,
-      bumpScale: 0.025,
-      roughnessMap: modulePolymerMaps.roughnessMap,
-      alphaMap: moduleLouverAlpha,
-      alphaTest: 0.45,
-      side: THREE.DoubleSide,
-      roughness: 0.36,
-      metalness: 0.24,
-      clearcoat: 0.65,
-      clearcoatRoughness: 0.22,
-      envMapIntensity: 1.75,
-    }),
-  );
-
-  // Surround transparent module polymer & emerald PCB (2x2 tiled across 1000 x 500 mm)
-  const surroundShroudMaterial = track(
-    new THREE.MeshPhysicalMaterial({
-      color: 0xffffff,
-      map: surroundPolymerMaps.map,
-      bumpMap: surroundPolymerMaps.bumpMap,
-      bumpScale: 0.025,
-      roughnessMap: surroundPolymerMaps.roughnessMap,
-      alphaMap: cabinetLouverAlpha,
-      alphaTest: 0.45,
-      side: THREE.DoubleSide,
-      roughness: 0.36,
-      metalness: 0.24,
-      clearcoat: 0.65,
-      clearcoatRoughness: 0.22,
-      envMapIntensity: 1.75,
+      roughness: 0.32,
+      metalness: 0.58,
+      bumpMap: housingRibMaps.bumpMap,
+      bumpScale: 0.016,
+      roughnessMap: housingRibMaps.roughnessMap,
+      clearcoat: 0.5,
+      clearcoatRoughness: 0.25,
+      envMapIntensity: 1.8,
     }),
   );
 
   const trimMaterial = track(
     new THREE.MeshStandardMaterial({
-      color: new THREE.Color('#14171F'),
-      roughness: 0.36,
-      metalness: 0.62,
+      color: new THREE.Color('#101218'),
+      roughness: 0.32,
+      metalness: 0.68,
       bumpMap: castBumpMap,
-      bumpScale: 0.002,
-      envMapIntensity: 1.45,
+      bumpScale: 0.0018,
+      envMapIntensity: 1.55,
     }),
   );
 
   const darkRecessMaterial = track(
     new THREE.MeshStandardMaterial({
       color: new THREE.Color('#050608'),
-      roughness: 0.52,
+      roughness: 0.54,
       metalness: 0.28,
       bumpMap: castBumpMap,
-      bumpScale: 0.002,
+      bumpScale: 0.0015,
     }),
   );
 
-  // Bright brushed aluminum corner plates, spring pins & knurled aviation collars (O-Crystal Pro photo)
   const brushedSilverMaterial = track(
     new THREE.MeshStandardMaterial({
       color: new THREE.Color('#C8CDD6'),
-      roughness: 0.24,
-      metalness: 0.88,
+      roughness: 0.22,
+      metalness: 0.9,
       bumpMap,
       bumpScale: 0.0015,
-      envMapIntensity: 1.65,
+      envMapIntensity: 1.7,
     }),
   );
 
   const machinedSteelMaterial = track(
     new THREE.MeshStandardMaterial({
-      color: new THREE.Color('#5A6270'),
+      color: new THREE.Color('#646D7C'),
       roughness: 0.26,
       metalness: 0.88,
       bumpMap,
@@ -313,35 +222,84 @@ export function buildCabinetAssembly(
     }),
   );
 
-  // Bright RED anodized Arc Lock release triggers & handle safety accents (O-Crystal Pro signature detail)
-  const arcRedAccentMaterial = track(
-    new THREE.MeshPhysicalMaterial({
-      color: new THREE.Color('#DC2626'),
-      emissive: new THREE.Color('#3B0707'),
-      emissiveIntensity: 0.45,
-      roughness: 0.28,
-      metalness: 0.48,
-      clearcoat: 0.72,
-      clearcoatRoughness: 0.16,
+  const statusCyanLedMaterial = track(
+    new THREE.MeshStandardMaterial({
+      color: new THREE.Color('#38BDF8'),
+      emissive: new THREE.Color('#22C55E'),
+      emissiveIntensity: 1.85,
+      roughness: 0.16,
+      metalness: 0.12,
     }),
   );
 
-  // Glowing green Signal Light status indicator (#5 in structural drawing)
-  const signalGreenLedMaterial = track(
+  const greenGlowTex = track(createIndicatorGlowTexture('167, 243, 208', '34, 197, 94'));
+  const redGlowTex = track(createIndicatorGlowTexture('254, 202, 202', '239, 68, 68'));
+
+  const greenLedButtonMaterial = track(
     new THREE.MeshStandardMaterial({
-      color: new THREE.Color('#22C55E'),
+      color: new THREE.Color('#4ADE80'),
       emissive: new THREE.Color('#22C55E'),
-      emissiveIntensity: 1.9,
-      roughness: 0.18,
-      metalness: 0.1,
+      emissiveIntensity: 2.8,
+      roughness: 0.14,
+      metalness: 0.05,
+      toneMapped: false,
     }),
   );
+
+  const redLedButtonMaterial = track(
+    new THREE.MeshStandardMaterial({
+      color: new THREE.Color('#F87171'),
+      emissive: new THREE.Color('#EF4444'),
+      emissiveIntensity: 2.6,
+      roughness: 0.14,
+      metalness: 0.05,
+      toneMapped: false,
+    }),
+  );
+
+  const greenLedCoreMaterial = track(
+    new THREE.MeshBasicMaterial({
+      color: new THREE.Color('#DCFCE7'),
+      transparent: true,
+      opacity: 0.72,
+      toneMapped: false,
+    }),
+  );
+
+  const redLedCoreMaterial = track(
+    new THREE.MeshBasicMaterial({
+      color: new THREE.Color('#FEE2E2'),
+      transparent: true,
+      opacity: 0.72,
+      toneMapped: false,
+    }),
+  );
+
+  const makeGlowHaloMaterial = (map: THREE.Texture, opacity: number) =>
+    track(
+      new THREE.MeshBasicMaterial({
+        map,
+        transparent: true,
+        opacity,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        toneMapped: false,
+      }),
+    );
+
+  const greenBeamGlowMat = makeGlowHaloMaterial(greenGlowTex, 0.42);
+  const greenPlateGlowMat = makeGlowHaloMaterial(greenGlowTex, 0.78);
+  const greenBloomGlowMat = makeGlowHaloMaterial(greenGlowTex, 0.68);
+
+  const redBeamGlowMat = makeGlowHaloMaterial(redGlowTex, 0.42);
+  const redPlateGlowMat = makeGlowHaloMaterial(redGlowTex, 0.78);
+  const redBloomGlowMat = makeGlowHaloMaterial(redGlowTex, 0.68);
 
   const rubberCableMaterial = track(
     new THREE.MeshStandardMaterial({
-      color: new THREE.Color('#0B0C10'),
-      roughness: 0.7,
-      metalness: 0.08,
+      color: new THREE.Color('#090A0D'),
+      roughness: 0.68,
+      metalness: 0.1,
     }),
   );
 
@@ -353,37 +311,83 @@ export function buildCabinetAssembly(
     }),
   );
 
-  // Perforated emerald-green PCB layer inside module (stays louvered & see-through at any explode %)
+  const filmBackingMaterial = track(
+    new THREE.MeshPhysicalMaterial({
+      color: 0xffffff,
+      map: moduleFilmMaps.map,
+      bumpMap: moduleFilmMaps.bumpMap,
+      bumpScale: 0.012,
+      roughnessMap: moduleFilmMaps.roughnessMap,
+      alphaMap: moduleMeshAlpha,
+      alphaTest: 0.44,
+      side: THREE.DoubleSide,
+      roughness: 0.32,
+      metalness: 0.28,
+      clearcoat: 0.72,
+      clearcoatRoughness: 0.2,
+      envMapIntensity: 1.6,
+    }),
+  );
+
+  const surroundBackingMaterial = track(
+    new THREE.MeshPhysicalMaterial({
+      color: 0xffffff,
+      map: surroundFilmMaps.map,
+      bumpMap: surroundFilmMaps.bumpMap,
+      bumpScale: 0.012,
+      roughnessMap: surroundFilmMaps.roughnessMap,
+      alphaMap: cabinetMeshAlpha,
+      alphaTest: 0.44,
+      side: THREE.DoubleSide,
+      roughness: 0.32,
+      metalness: 0.28,
+      clearcoat: 0.72,
+      clearcoatRoughness: 0.2,
+      envMapIntensity: 1.6,
+    }),
+  );
+
   const pcbMaterial = track(
     new THREE.MeshStandardMaterial({
       color: 0xffffff,
-      map: modulePolymerMaps.map,
-      alphaMap: moduleLouverAlpha,
-      alphaTest: 0.45,
+      map: moduleFilmMaps.map,
+      alphaMap: moduleMeshAlpha,
+      alphaTest: 0.44,
       side: THREE.DoubleSide,
-      roughness: 0.44,
-      metalness: 0.28,
+      roughness: 0.42,
+      metalness: 0.35,
     }),
   );
 
   const mountSteelMaterial = track(
     new THREE.MeshStandardMaterial({
-      color: new THREE.Color('#14171D'),
-      roughness: 0.48,
-      metalness: 0.68,
+      color: new THREE.Color('#13161C'),
+      roughness: 0.38,
+      metalness: 0.76,
       bumpMap: castBumpMap,
-      bumpScale: 0.003,
+      bumpScale: 0.002,
+      envMapIntensity: 1.45,
     }),
   );
 
-  const medallionMaterial = track(
-    new THREE.MeshPhysicalMaterial({
+  const architecturalWallMaterial = track(
+    new THREE.MeshStandardMaterial({
       color: 0xffffff,
-      map: medallionTex,
-      roughness: 0.22,
-      metalness: 0.45,
-      clearcoat: 0.88,
-      clearcoatRoughness: 0.1,
+      map: wallMaps.map,
+      bumpMap: wallMaps.bumpMap,
+      bumpScale: 0.008,
+      roughness: 0.86,
+      metalness: 0.06,
+      envMapIntensity: 0.45,
+    }),
+  );
+
+  const barLogoMaterial = track(
+    new THREE.MeshBasicMaterial({
+      map: barLogoTex,
+      transparent: true,
+      alphaTest: 0.08,
+      depthWrite: false,
     }),
   );
 
@@ -396,7 +400,7 @@ export function buildCabinetAssembly(
   );
 
   const root = new THREE.Group();
-  root.name = 'pixiatech-ocrystal-transparent-assembly';
+  root.name = 'pixiatech-oraster-holographic-poster';
 
   const mountLayer = new THREE.Group();
   mountLayer.name = 'layer-mount';
@@ -411,448 +415,484 @@ export function buildCabinetAssembly(
 
   root.add(mountLayer, chassisLayer, modulesLayer, emittersLayer, wireframeOverlayGroup);
 
-  // ---------------------------------------------------------------------------
-  // 1. MOUNT LAYER: Rear Ballast Ground Truss Towers (1-row, 2-row, 3-row proportional heights)
-  // ---------------------------------------------------------------------------
-  const buildTrussFinGeo = (finHeight: number, baseDepthX: number) => {
-    const shape = new THREE.Shape();
-    shape.moveTo(-baseDepthX, 0);
-    shape.lineTo(0.02, 0);
-    shape.lineTo(0.02, finHeight);
-    shape.lineTo(-0.075, finHeight);
-    shape.quadraticCurveTo(-baseDepthX * 0.62, finHeight * 0.56, -baseDepthX, 0.34);
-    shape.closePath();
+  const beamWidth = CAB_W + 0.04;
+  const beamDepth = 0.168;
+  const topBeamCenterY = CAB_H / 2 + TOP_BEAM_H / 2;
+  const bottomBeamCenterY = -CAB_H / 2 - BOTTOM_BEAM_H / 2;
+  const topBeamTopY = topBeamCenterY + TOP_BEAM_H / 2;
+  const bottomBeamBottomY = bottomBeamCenterY - BOTTOM_BEAM_H / 2;
 
-    const holeCount = finHeight > 4.4 ? 7 : finHeight > 2.8 ? 5 : 4;
-    for (let h = 0; h < holeCount; h++) {
-      const frac = 0.16 + (h / Math.max(1, holeCount - 1)) * 0.68;
-      const hy = finHeight * frac;
-      const backX = -baseDepthX * (1 - Math.pow(frac, 1.3) * 0.72);
-      const hx = (backX + 0.02) * 0.5 - 0.02;
-      const hr = Math.max(0.032, 0.068 * (1 - frac * 0.45));
-      const hole = new THREE.Path();
-      hole.absarc(hx, hy, hr, 0, Math.PI * 2, true);
-      shape.holes.push(hole);
-    }
+  const HORIZONTAL_COLS = [-1, 0, 1, 2] as const;
 
-    const geo = track(
-      new THREE.ExtrudeGeometry(shape, {
-        depth: 0.045,
-        bevelEnabled: true,
-        bevelThickness: 0.008,
-        bevelSize: 0.008,
-        bevelSegments: 2,
-      }),
+  // ---------------------------------------------------------------------------
+  // 1A. MOUNT MODE 1: SUR PIED — Twin Angled A-Frame Floor Caster Brackets (unchanged!)
+  // ---------------------------------------------------------------------------
+  const legClampUGeo = track(new THREE.BoxGeometry(0.115, 0.165, 0.215));
+  const legClampBoltGeo = track(new THREE.CylinderGeometry(0.014, 0.014, 0.228, 12));
+  legClampBoltGeo.rotateX(Math.PI / 2);
+
+  const buildDiagonalStrutGeo = (zSign: 1 | -1) => {
+    const curve = new THREE.LineCurve3(
+      new THREE.Vector3(0, LEG_HEIGHT + 0.02, zSign * 0.07),
+      new THREE.Vector3(0, 0.082, zSign * 0.42),
     );
-    geo.rotateY(-Math.PI / 2);
-    return geo;
+    return track(new THREE.TubeGeometry(curve, 4, 0.024, 8, false));
   };
-
-  const trussFinGeos: Record<1 | 2 | 3, THREE.BufferGeometry> = {
-    1: buildTrussFinGeo(1.66, 0.34),
-    2: buildTrussFinGeo(3.46, 0.44),
-    3: buildTrussFinGeo(5.26, 0.52),
-  };
-
-  const trussBasePlateGeo = track(new THREE.BoxGeometry(1.12, 0.045, 1.02));
-  const casterWheelGeo = track(new THREE.CylinderGeometry(0.055, 0.055, 0.035, 16));
+  const strutFrontGeo = buildDiagonalStrutGeo(1);
+  const strutRearGeo = buildDiagonalStrutGeo(-1);
+  const legCrossBraceGeo = track(new THREE.BoxGeometry(0.042, 0.022, 0.48));
+  const casterForkGeo = track(new THREE.BoxGeometry(0.05, 0.036, 0.068));
+  const casterWheelGeo = track(new THREE.CylinderGeometry(0.038, 0.038, 0.036, 16));
   casterWheelGeo.rotateZ(Math.PI / 2);
-  const casterHubGeo = track(new THREE.CylinderGeometry(0.028, 0.028, 0.04, 14));
-  casterHubGeo.rotateZ(Math.PI / 2);
-  const trussClampBracketGeo = track(new THREE.BoxGeometry(0.075, 0.11, 0.22));
-  const trussCrossTieGeo = track(new THREE.BoxGeometry(0.92, 0.045, 0.045));
+  const casterAxleGeo = track(new THREE.CylinderGeometry(0.015, 0.015, 0.044, 12));
+  casterAxleGeo.rotateZ(Math.PI / 2);
 
-  const trussStands: { col: number; group: THREE.Group; rowVariants: Record<1 | 2 | 3, THREE.Group> }[] = [];
-  [-1, 0, 1].forEach((col) => {
+  const trussStands: { col: number; group: THREE.Group }[] = [];
+  HORIZONTAL_COLS.forEach((col) => {
     const standGroup = new THREE.Group();
 
-    const basePlate = new THREE.Mesh(trussBasePlateGeo, mountSteelMaterial);
-    basePlate.position.set(0, 0.09, -0.62);
-    basePlate.castShadow = true;
-    basePlate.receiveShadow = true;
-    standGroup.add(basePlate);
+    for (const lx of [-0.58, 0.58]) {
+      const bracketGroup = new THREE.Group();
+      bracketGroup.position.set(lx, 0, 0);
 
-    for (const wx of [-0.46, 0.46]) {
-      for (const wz of [-0.22, -1.02]) {
+      const clampU = new THREE.Mesh(legClampUGeo, trimMaterial);
+      clampU.position.set(0, LEG_HEIGHT + BOTTOM_BEAM_H * 0.48, 0);
+      clampU.castShadow = true;
+      bracketGroup.add(clampU);
+
+      const clampBolt = new THREE.Mesh(legClampBoltGeo, brushedSilverMaterial);
+      clampBolt.position.set(0, LEG_HEIGHT + BOTTOM_BEAM_H * 0.48, 0);
+      bracketGroup.add(clampBolt);
+
+      const fStrut = new THREE.Mesh(strutFrontGeo, mountSteelMaterial);
+      fStrut.castShadow = true;
+      bracketGroup.add(fStrut);
+
+      const rStrut = new THREE.Mesh(strutRearGeo, mountSteelMaterial);
+      rStrut.castShadow = true;
+      bracketGroup.add(rStrut);
+
+      const midBrace = new THREE.Mesh(legCrossBraceGeo, mountSteelMaterial);
+      midBrace.position.set(0, 0.16, 0);
+      bracketGroup.add(midBrace);
+
+      for (const wz of [-0.42, 0.42]) {
+        const fork = new THREE.Mesh(casterForkGeo, trimMaterial);
+        fork.position.set(0, 0.068, wz);
+        bracketGroup.add(fork);
+
         const wheel = new THREE.Mesh(casterWheelGeo, darkRecessMaterial);
-        wheel.position.set(wx, 0.055, wz);
-        standGroup.add(wheel);
-        const hub = new THREE.Mesh(casterHubGeo, arcRedAccentMaterial);
-        hub.position.set(wx, 0.055, wz);
-        standGroup.add(hub);
+        wheel.position.set(0, 0.038, wz);
+        wheel.castShadow = true;
+        bracketGroup.add(wheel);
+
+        const axle = new THREE.Mesh(casterAxleGeo, brushedSilverMaterial);
+        axle.position.set(0, 0.038, wz);
+        bracketGroup.add(axle);
       }
+
+      standGroup.add(bracketGroup);
     }
-
-    const rowVariants = {} as Record<1 | 2 | 3, THREE.Group>;
-    ([1, 2, 3] as const).forEach((rowCount) => {
-      const variantGroup = new THREE.Group();
-      const finHeight = rowCount === 1 ? 1.66 : rowCount === 2 ? 3.46 : 5.26;
-
-      // Dual vertical truss fins placed wide outside the central Power Supply Box & medallion
-      for (const fx of [-0.46, 0.46]) {
-        const fin = new THREE.Mesh(trussFinGeos[rowCount], mountSteelMaterial);
-        fin.position.set(fx + 0.022, 0.11, -0.32);
-        fin.castShadow = true;
-        fin.receiveShadow = true;
-        variantGroup.add(fin);
-      }
-
-      for (let r = 0; r < rowCount; r++) {
-        const tieY = r * CAB_H + 0.34;
-        if (tieY <= finHeight - 0.14) {
-          const tie = new THREE.Mesh(trussCrossTieGeo, mountSteelMaterial);
-          tie.position.set(0, tieY, -0.6);
-          variantGroup.add(tie);
-        }
-      }
-
-      for (let r = 0; r < rowCount; r++) {
-        for (const offset of [0.32, 1.48]) {
-          const cy = r * CAB_H + offset;
-          if (cy <= finHeight - 0.04) {
-            for (const fx of [-0.46, 0.46]) {
-              const bracket = new THREE.Mesh(trussClampBracketGeo, machinedSteelMaterial);
-              bracket.position.set(fx, cy, -0.2);
-              variantGroup.add(bracket);
-            }
-          }
-        }
-      }
-
-      variantGroup.visible = rowCount === 1;
-      standGroup.add(variantGroup);
-      rowVariants[rowCount] = variantGroup;
-    });
 
     standGroup.visible = col === 0;
     mountLayer.add(standGroup);
-    trussStands.push({ col, group: standGroup, rowVariants });
+    trussStands.push({ col, group: standGroup });
   });
 
   // ---------------------------------------------------------------------------
-  // 2. CHASSIS LAYER: OneDisplay O-Crystal Pro Die-Cast Aluminum Frame (1000 x 500 x 65 mm)
+  // 1B. MOUNT MODE 2: MURAL — Architectural Wall Backdrop + Heavy-Duty Cantilever Brackets
   // ---------------------------------------------------------------------------
-  const frameOuterW = CAB_W + 0.012;
-  const frameOuterH = CAB_H + 0.012;
-  const frameRim = 0.088;
-  const frameDepth = 0.108;
-  const frameZCenter = -0.036;
-  const stileGapHalfY = 0.25;
-  const stileSegmentH = (frameOuterH - 2 * frameRim) / 2 - stileGapHalfY;
+  const wallMountGroup = new THREE.Group();
+  wallMountGroup.name = 'mount-wall-group';
+  wallMountGroup.visible = false;
+  mountLayer.add(wallMountGroup);
 
-  const buildSubdividedRailsGeo = () => {
-    const tRail = new THREE.BoxGeometry(frameOuterW - 0.18, frameRim, frameDepth, 56, 2, 2);
-    tRail.translate(0, frameOuterH / 2 - frameRim / 2, frameZCenter);
-    const bRail = new THREE.BoxGeometry(frameOuterW - 0.18, frameRim, frameDepth, 56, 2, 2);
-    bRail.translate(0, -frameOuterH / 2 + frameRim / 2, frameZCenter);
-    const merged = mergeGeometries([tRail, bRail], false);
-    tRail.dispose();
-    bRail.dispose();
+  const wallH = CAB_H + TOP_BEAM_H + BOTTOM_BEAM_H + 1.45; // 5.38 units (~2.98 m wall height)
+  const wallFloorY = bottomBeamBottomY - WALL_CLEARANCE; // -2.475 -> sits flush on floor
+  const wallCenterY = wallFloorY + wallH * 0.5;
+  const wallFrontZ = -0.22;
+  const wallDepth = 0.12;
+
+  const wallBackdropGeo = track(new THREE.BoxGeometry(1, wallH, wallDepth));
+  const wallBackdrop = new THREE.Mesh(wallBackdropGeo, architecturalWallMaterial);
+  wallBackdrop.position.set(0, wallCenterY, wallFrontZ - wallDepth * 0.5);
+  wallBackdrop.receiveShadow = true;
+  wallMountGroup.add(wallBackdrop);
+
+  const wallPlinthGeo = track(new THREE.BoxGeometry(1, 0.14, 0.035));
+  const wallPlinth = new THREE.Mesh(wallPlinthGeo, trimMaterial);
+  wallPlinth.position.set(0, wallFloorY + 0.07, wallFrontZ + 0.015);
+  wallMountGroup.add(wallPlinth);
+
+  const wallTopCapGeo = track(new THREE.BoxGeometry(1, 0.06, wallDepth + 0.03));
+  const wallTopCap = new THREE.Mesh(wallTopCapGeo, trimMaterial);
+  wallTopCap.position.set(0, wallFloorY + wallH + 0.02, wallFrontZ - wallDepth * 0.5 + 0.01);
+  wallMountGroup.add(wallTopCap);
+
+  const wallRailGeo = track(new THREE.BoxGeometry(0.068, CAB_H + TOP_BEAM_H + BOTTOM_BEAM_H + 0.14, 0.032));
+  const wallFlangeGeo = track(new THREE.BoxGeometry(0.135, 0.11, 0.018));
+  const wallBoltGeo = track(new THREE.CylinderGeometry(0.012, 0.012, 0.032, 6));
+  wallBoltGeo.rotateX(Math.PI / 2);
+  const wallArmGeo = track(new THREE.BoxGeometry(0.056, 0.095, 0.13));
+  const wallBeamClampGeo = track(new THREE.BoxGeometry(0.11, 0.135, 0.048));
+  const wallCrossCleatGeo = track(new THREE.BoxGeometry(1.24, 0.055, 0.026));
+  const wallSeamSpliceGeo = track(new THREE.BoxGeometry(0.24, 0.11, 0.032));
+
+  const wallColumnRigs: { col: number; group: THREE.Group; seamTie: THREE.Group }[] = [];
+  HORIZONTAL_COLS.forEach((col) => {
+    const colGroup = new THREE.Group();
+    colGroup.position.set(col * CAB_W, 0, 0);
+
+    // Horizontal French-cleat wall mounting bars linking twin vertical rails
+    for (const cy of [topBeamCenterY, bottomBeamCenterY]) {
+      const cleat = new THREE.Mesh(wallCrossCleatGeo, mountSteelMaterial);
+      cleat.position.set(0, cy, wallFrontZ + 0.014);
+      colGroup.add(cleat);
+    }
+
+    for (const lx of [-0.58, 0.58]) {
+      // Vertical anodized wall extrusion rail anchored flat to the wall
+      const rail = new THREE.Mesh(wallRailGeo, mountSteelMaterial);
+      rail.position.set(lx, 0.01, wallFrontZ + 0.024);
+      rail.castShadow = true;
+      colGroup.add(rail);
+
+      // Anchor flanges & hex lag bolts along the vertical wall rail
+      for (const fy of [topBeamCenterY + 0.02, 0.55, -0.55, bottomBeamCenterY - 0.02]) {
+        const flange = new THREE.Mesh(wallFlangeGeo, trimMaterial);
+        flange.position.set(lx, fy, wallFrontZ + 0.01);
+        colGroup.add(flange);
+
+        for (const bx of [-0.042, 0.042]) {
+          const bolt = new THREE.Mesh(wallBoltGeo, brushedSilverMaterial);
+          bolt.position.set(lx + bx, fy, wallFrontZ + 0.022);
+          colGroup.add(bolt);
+        }
+      }
+
+      // Cantilevered stand-off brackets gripping top & bottom controller beams
+      for (const by of [topBeamCenterY, bottomBeamCenterY]) {
+        const arm = new THREE.Mesh(wallArmGeo, trimMaterial);
+        arm.position.set(lx, by, -0.145);
+        arm.castShadow = true;
+        colGroup.add(arm);
+
+        const clamp = new THREE.Mesh(wallBeamClampGeo, machinedSteelMaterial);
+        clamp.position.set(lx, by, -0.092);
+        colGroup.add(clamp);
+
+        const lockPin = new THREE.Mesh(legClampBoltGeo, brushedSilverMaterial);
+        lockPin.position.set(lx, by, -0.095);
+        lockPin.scale.set(0.8, 0.8, 0.45);
+        colGroup.add(lockPin);
+      }
+    }
+
+    // Inter-panel horizontal rear seam alignment plates
+    const seamTie = new THREE.Group();
+    for (const sy of [topBeamCenterY, bottomBeamCenterY]) {
+      const splice = new THREE.Mesh(wallSeamSpliceGeo, brushedSilverMaterial);
+      splice.position.set(-CAB_W * 0.5, sy, -0.098);
+      seamTie.add(splice);
+    }
+    seamTie.visible = false;
+    colGroup.add(seamTie);
+
+    colGroup.visible = col === 0;
+    wallMountGroup.add(colGroup);
+    wallColumnRigs.push({ col, group: colGroup, seamTie });
+  });
+
+  // ---------------------------------------------------------------------------
+  // 1C. MOUNT MODE 3: SUSPENDU — Overhead Ceiling Rigging Rail + Braided Steel Cables
+  // ---------------------------------------------------------------------------
+  const suspendedMountGroup = new THREE.Group();
+  suspendedMountGroup.name = 'mount-suspended-group';
+  suspendedMountGroup.visible = false;
+  mountLayer.add(suspendedMountGroup);
+
+  const ceilingRailY = topBeamTopY + 1.08;
+  const cableSpanH = ceilingRailY - (topBeamTopY + 0.065);
+  const ceilingRailGeo = track(new THREE.BoxGeometry(1, 0.11, 0.14));
+  const ceilingRailMesh = new THREE.Mesh(ceilingRailGeo, trimMaterial);
+  ceilingRailMesh.position.set(0, ceilingRailY, 0);
+  ceilingRailMesh.castShadow = true;
+  suspendedMountGroup.add(ceilingRailMesh);
+
+  const ceilingEndCapGeo = track(new THREE.BoxGeometry(0.036, 0.125, 0.155));
+  const capLeft = new THREE.Mesh(ceilingEndCapGeo, machinedSteelMaterial);
+  const capRight = new THREE.Mesh(ceilingEndCapGeo, machinedSteelMaterial);
+  capLeft.position.set(-1, ceilingRailY, 0);
+  capRight.position.set(1, ceilingRailY, 0);
+  suspendedMountGroup.add(capLeft, capRight);
+  const ceilingEndCaps: [THREE.Mesh, THREE.Mesh] = [capLeft, capRight];
+
+  const ceilingDropRods = new THREE.Group();
+  const ceilingRodGeo = track(new THREE.CylinderGeometry(0.022, 0.022, 0.9, 12));
+  const ceilingFlangeGeo = track(new THREE.CylinderGeometry(0.065, 0.072, 0.035, 16));
+  [-1, 0, 1].forEach((idx) => {
+    const rod = new THREE.Mesh(ceilingRodGeo, mountSteelMaterial);
+    rod.position.set(idx * 1.4, ceilingRailY + 0.5, 0);
+    ceilingDropRods.add(rod);
+
+    const flange = new THREE.Mesh(ceilingFlangeGeo, brushedSilverMaterial);
+    flange.position.set(idx * 1.4, ceilingRailY + 0.07, 0);
+    ceilingDropRods.add(flange);
+  });
+  suspendedMountGroup.add(ceilingDropRods);
+
+  const shackleGeo = track(new THREE.TorusGeometry(0.026, 0.0085, 10, 18));
+  const turnbuckleGeo = track(new THREE.CylinderGeometry(0.018, 0.018, 0.095, 12));
+  const cableGeo = track(new THREE.CylinderGeometry(0.008, 0.008, cableSpanH, 10));
+  const topGripperGeo = track(new THREE.CylinderGeometry(0.026, 0.032, 0.075, 14));
+  const powerPodGeo = track(new THREE.BoxGeometry(0.13, 0.07, 0.1));
+  const powerDropCurve = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(0.045, topBeamTopY + 0.34, -0.065),
+    new THREE.Vector3(0.03, topBeamTopY + 0.68, -0.045),
+    new THREE.Vector3(0, ceilingRailY - 0.05, 0),
+  ]);
+  const powerDropGeo = track(new THREE.TubeGeometry(powerDropCurve, 12, 0.013, 10, false));
+  const suspSeamBarGeo = track(new THREE.BoxGeometry(0.26, 0.042, 0.09));
+
+  const suspendedColumnRigs: { col: number; group: THREE.Group; seamBridge: THREE.Group }[] = [];
+  HORIZONTAL_COLS.forEach((col) => {
+    const colGroup = new THREE.Group();
+    colGroup.position.set(col * CAB_W, 0, 0);
+
+    for (const sxSign of [-1, 1]) {
+      const pinX = sxSign * (CAB_W / 2 - 0.14);
+
+      const shackle = new THREE.Mesh(shackleGeo, brushedSilverMaterial);
+      shackle.position.set(pinX, topBeamTopY + 0.072, 0);
+      colGroup.add(shackle);
+
+      const turnbuckle = new THREE.Mesh(turnbuckleGeo, machinedSteelMaterial);
+      turnbuckle.position.set(pinX, topBeamTopY + 0.135, 0);
+      colGroup.add(turnbuckle);
+
+      const cable = new THREE.Mesh(cableGeo, brushedSilverMaterial);
+      cable.position.set(pinX, topBeamTopY + 0.065 + cableSpanH * 0.5, 0);
+      cable.castShadow = true;
+      colGroup.add(cable);
+
+      const gripper = new THREE.Mesh(topGripperGeo, trimMaterial);
+      gripper.position.set(pinX, ceilingRailY - 0.06, 0);
+      colGroup.add(gripper);
+    }
+
+    // Overhead power cable continuing from C13 cord up into ceiling junction box
+    const pPod = new THREE.Mesh(powerPodGeo, darkRecessMaterial);
+    pPod.position.set(0, ceilingRailY - 0.04, 0);
+    colGroup.add(pPod);
+
+    const pDrop = new THREE.Mesh(powerDropGeo, rubberCableMaterial);
+    colGroup.add(pDrop);
+
+    const seamBridge = new THREE.Group();
+    const topBar = new THREE.Mesh(suspSeamBarGeo, brushedSilverMaterial);
+    topBar.position.set(-CAB_W * 0.5, topBeamTopY + 0.02, 0);
+    const botBar = new THREE.Mesh(suspSeamBarGeo, brushedSilverMaterial);
+    botBar.position.set(-CAB_W * 0.5, bottomBeamBottomY - 0.02, 0);
+    seamBridge.add(topBar, botBar);
+    seamBridge.visible = false;
+    colGroup.add(seamBridge);
+
+    colGroup.visible = col === 0;
+    suspendedMountGroup.add(colGroup);
+    suspendedColumnRigs.push({ col, group: colGroup, seamBridge });
+  });
+
+  // ---------------------------------------------------------------------------
+  // 2. CHASSIS LAYER: O-Raster Hollow Ultra-Narrow Frame & Top/Bottom Power Beams
+  // ---------------------------------------------------------------------------
+  const buildSubdividedBeamsGeo = () => {
+    const tBeam = new THREE.BoxGeometry(beamWidth, TOP_BEAM_H, beamDepth, 12, 2, 2);
+    tBeam.translate(0, topBeamCenterY, 0);
+    const bBeam = new THREE.BoxGeometry(beamWidth, BOTTOM_BEAM_H, beamDepth, 12, 2, 2);
+    bBeam.translate(0, bottomBeamCenterY, 0);
+    const merged = mergeGeometries([tBeam, bBeam], false);
+    tBeam.dispose();
+    bBeam.dispose();
     if (!merged) {
-      throw new Error('Impossible de fusionner les longerons du châssis O-Crystal Pro.');
+      throw new Error('Impossible de fusionner les bandeaux aluminium du poster O-Raster.');
     }
     return track(merged);
   };
 
-  const outerFrameGeo = buildSubdividedRailsGeo();
-  registerBendGeometry(outerFrameGeo, 0, false, 'center', true);
+  const outerBeamsGeo = buildSubdividedBeamsGeo();
+  const heroBeamsMesh = new THREE.Mesh(outerBeamsGeo, chassisMaterial);
+  heroBeamsMesh.castShadow = true;
+  heroBeamsMesh.receiveShadow = true;
+  chassisLayer.add(heroBeamsMesh);
 
-  const heroRailsMesh = new THREE.Mesh(outerFrameGeo, chassisMaterial);
-  heroRailsMesh.castShadow = true;
-  heroRailsMesh.receiveShadow = true;
-  chassisLayer.add(heroRailsMesh);
+  const sideRailW = 0.038;
+  const sideRailD = 0.074;
+  const sideRailGeo = track(new THREE.BoxGeometry(sideRailW, CAB_H + 0.01, sideRailD, 2, 4, 1));
+  const sideSilverBeadGeo = track(new THREE.BoxGeometry(0.008, CAB_H, 0.052));
+  const topEndCapGeo = track(new THREE.BoxGeometry(0.042, TOP_BEAM_H + 0.008, beamDepth + 0.008));
+  const bottomEndCapGeo = track(new THREE.BoxGeometry(0.042, BOTTOM_BEAM_H + 0.008, beamDepth + 0.008));
 
-  // Shared O-Crystal Pro Hardware Geometries (Reference Items #1 through #10)
-  const sideStileSegGeo = track(new THREE.BoxGeometry(frameRim, stileSegmentH, frameDepth, 2, 2, 2));
-  const sidePocketHandleBarGeo = track(new THREE.BoxGeometry(0.044, 0.44, 0.038));
-  const sideHandleArmGeo = track(new THREE.BoxGeometry(0.055, 0.045, 0.11));
-  const sideHandleRedCapGeo = track(new THREE.BoxGeometry(0.032, 0.048, 0.028));
+  const suspPinBaseGeo = track(new THREE.CylinderGeometry(0.018, 0.022, 0.018, 14));
+  const suspPinPostGeo = track(new THREE.CylinderGeometry(0.012, 0.012, 0.075, 14));
+  const suspPinCollarGeo = track(new THREE.CylinderGeometry(0.015, 0.015, 0.016, 14));
 
-  // Corner bumper housings & signature brushed SILVER L-alignment corner plates (ref-hero.png)
-  const cornerBumperGeo = track(new THREE.BoxGeometry(0.16, 0.16, 0.12));
-  const cornerSilverVGeo = track(new THREE.BoxGeometry(0.068, 0.155, 0.018));
-  const cornerSilverHGeo = track(new THREE.BoxGeometry(0.145, 0.046, 0.018));
-  const cornerSilverPinGeo = track(new THREE.CylinderGeometry(0.016, 0.016, 0.038, 12));
-  const cornerBoltGeo = track(new THREE.CylinderGeometry(0.011, 0.011, 0.022, 10));
-  cornerBoltGeo.rotateX(Math.PI / 2);
-
-  // #1 Main Lock & #2 Mate Lock: full-height intermediate vertical mullion bars at x = +-0.90
-  const interMullionGeo = track(new THREE.BoxGeometry(0.056, CAB_H - 0.12, 0.058));
-  const lockTopBlockGeo = track(new THREE.BoxGeometry(0.11, 0.088, 0.075));
-  const lockSilverPinGeo = track(new THREE.CylinderGeometry(0.016, 0.016, 0.14, 12));
-  const hangingCylinderGripGeo = track(new THREE.CylinderGeometry(0.026, 0.026, 0.25, 14));
-  const hangingGripArmGeo = track(new THREE.BoxGeometry(0.085, 0.038, 0.038));
-
-  // #3 Edge Lock (Left -X) & #10 Arc Lock (Right +X with RED anodized trigger)
-  const edgeLockHousingGeo = track(new THREE.BoxGeometry(0.11, 0.11, 0.09));
-  const edgeLockSpringPinGeo = track(new THREE.CylinderGeometry(0.016, 0.016, 0.14, 12));
-  edgeLockSpringPinGeo.rotateZ(Math.PI / 2);
-  const edgeLockCamLeverGeo = track(new THREE.BoxGeometry(0.12, 0.055, 0.028));
-
-  const arcLockBodyGeo = track(new THREE.BoxGeometry(0.115, 0.12, 0.095));
-  const arcLockSilverPlateGeo = track(new THREE.BoxGeometry(0.095, 0.082, 0.018));
-  const arcLockRedTriggerGeo = track(new THREE.BoxGeometry(0.052, 0.044, 0.028));
-
-  // #4 Top Carry Handle
-  const topHandleCurve = new THREE.CatmullRomCurve3([
-    new THREE.Vector3(-0.23, 0, -0.025),
-    new THREE.Vector3(-0.19, 0.075, -0.05),
-    new THREE.Vector3(0.19, 0.075, -0.05),
-    new THREE.Vector3(0.23, 0, -0.025),
+  const c13SocketPlateGeo = track(new THREE.BoxGeometry(0.115, 0.022, 0.076));
+  const c13PlugBootGeo = track(new THREE.BoxGeometry(0.088, 0.078, 0.058));
+  const c13StrainReliefGeo = track(new THREE.CylinderGeometry(0.016, 0.022, 0.045, 12));
+  const powerCordCurve = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(0, 0.11, 0),
+    new THREE.Vector3(0.012, 0.22, -0.02),
+    new THREE.Vector3(0.045, 0.34, -0.065),
   ]);
-  const topHandleBarGeo = track(new THREE.TubeGeometry(topHandleCurve, 22, 0.019, 10, false));
-  const topHandleClampGeo = track(new THREE.BoxGeometry(0.072, 0.052, 0.078));
+  const powerCordGeo = track(new THREE.TubeGeometry(powerCordCurve, 12, 0.014, 10, false));
 
-  // #9 Central Power Supply Box (slim chamfered vertical heatsink column at x = 0)
-  const spineBodyGeo = track(new THREE.BoxGeometry(0.255, 1.54, 0.135));
-  const spineBevelCapGeo = track(new THREE.BoxGeometry(0.21, 1.48, 0.032));
-  const spineHeatFinGeo = track(new THREE.BoxGeometry(0.215, 0.012, 0.024));
-  const airPlugHousingGeo = track(new THREE.BoxGeometry(0.17, 0.115, 0.045)); // #6 Air-plug
-  const signalLedBezelGeo = track(new THREE.CylinderGeometry(0.026, 0.03, 0.022, 18)); // #5 Signal Light collar
-  signalLedBezelGeo.rotateX(Math.PI / 2);
-  const signalLedLensGeo = track(new THREE.CylinderGeometry(0.018, 0.018, 0.026, 16)); // #5 Green LED
-  signalLedLensGeo.rotateX(Math.PI / 2);
-  const hubCollarGeo = track(new THREE.CylinderGeometry(0.092, 0.102, 0.02, 32));
-  hubCollarGeo.rotateX(Math.PI / 2);
-  const medallionGeo = track(new THREE.CircleGeometry(0.084, 40));
-  medallionGeo.rotateY(Math.PI);
+  const switchBezelGeo = track(new THREE.CylinderGeometry(0.028, 0.032, 0.022, 18));
+  const switchCapGeo = track(new THREE.CylinderGeometry(0.021, 0.021, 0.032, 18));
+  const statusLedGeo = track(new THREE.CylinderGeometry(0.009, 0.009, 0.012, 12));
 
-  // #8 Signal and Power Input (twin stacked knurled metallic aviation connectors at bottom)
-  const aviationFlangeGeo = track(new THREE.CylinderGeometry(0.054, 0.058, 0.036, 20));
-  aviationFlangeGeo.rotateX(Math.PI / 2);
-  const aviationNutGeo = track(new THREE.CylinderGeometry(0.042, 0.042, 0.048, 16));
-  aviationNutGeo.rotateX(Math.PI / 2);
-  const aviationCoreGeo = track(new THREE.CylinderGeometry(0.026, 0.026, 0.056, 14));
-  aviationCoreGeo.rotateX(Math.PI / 2);
-  const powerTailCurve = new THREE.CatmullRomCurve3([
-    new THREE.Vector3(0.0, -0.78, -0.14),
-    new THREE.Vector3(0.03, -0.94, -0.13),
-    new THREE.Vector3(0.04, -1.08, -0.1),
-  ]);
-  const powerTailGeo = track(new THREE.TubeGeometry(powerTailCurve, 14, 0.018, 8, false));
+  const rearIoPlateGeo = track(new THREE.BoxGeometry(0.32, 0.075, 0.018));
+  const portJackGeo = track(new THREE.BoxGeometry(0.046, 0.034, 0.014));
+  const ledButtonBezelGeo = track(new THREE.BoxGeometry(0.052, 0.038, 0.008));
+  const ledButtonCapGeo = track(new THREE.BoxGeometry(0.044, 0.03, 0.016));
+  const ledCorePlaneGeo = track(new THREE.PlaneGeometry(0.032, 0.02));
+  const ledBeamGlowGeo = track(new THREE.PlaneGeometry(0.155, 0.125));
+  const ledPlateGlowGeo = track(new THREE.PlaneGeometry(0.115, 0.088));
+  const ledBloomGlowGeo = track(new THREE.PlaneGeometry(0.086, 0.068));
+  const wifiStubGeo = track(new THREE.CylinderGeometry(0.008, 0.01, 0.09, 10));
 
-  const buildCentralPowerSupplyBox = (): THREE.Group => {
-    const spineGroup = new THREE.Group();
+  const barLogoPlateGeo = track(new THREE.PlaneGeometry(0.58, 0.11));
 
-    const body = new THREE.Mesh(spineBodyGeo, chassisMaterial);
-    body.position.set(0, 0, -0.105);
-    body.castShadow = true;
-    body.receiveShadow = true;
-    spineGroup.add(body);
-
-    const frontFace = new THREE.Mesh(spineBevelCapGeo, trimMaterial);
-    frontFace.position.set(0, 0, -0.175);
-    spineGroup.add(frontFace);
-
-    // Fine horizontal heatsink ribs across upper and lower spine
-    for (let i = 0; i < 16; i++) {
-      const fy = -0.32 + i * 0.032;
-      if (Math.abs(fy - 0.06) > 0.13) {
-        const fin = new THREE.Mesh(spineHeatFinGeo, darkRecessMaterial);
-        fin.position.set(0, fy, -0.188);
-        spineGroup.add(fin);
-      }
-    }
-
-    // #6 Signal and Power Air-plug (top square push-latch housing)
-    const airPlug = new THREE.Mesh(airPlugHousingGeo, darkRecessMaterial);
-    airPlug.position.set(0, 0.61, -0.188);
-    spineGroup.add(airPlug);
-
-    // #5 Signal Light (bright green status indicator LED + brushed collar)
-    const ledBezel = new THREE.Mesh(signalLedBezelGeo, brushedSilverMaterial);
-    ledBezel.position.set(0, 0.45, -0.194);
-    spineGroup.add(ledBezel);
-    const ledLens = new THREE.Mesh(signalLedLensGeo, signalGreenLedMaterial);
-    ledLens.position.set(0, 0.45, -0.198);
-    spineGroup.add(ledLens);
-
-    // Circular PIXIATECH Medallion cleanly centered in middle of Power Supply Box
-    const collar = new THREE.Mesh(hubCollarGeo, darkRecessMaterial);
-    collar.position.set(0, 0.08, -0.194);
-    spineGroup.add(collar);
-    const medallion = new THREE.Mesh(medallionGeo, medallionMaterial);
-    medallion.position.set(0, 0.08, -0.206);
-    spineGroup.add(medallion);
-    medallionMeshes.push(medallion);
-
-    // #8 Signal and Power Input (twin vertical knurled metallic aviation connectors)
-    for (const sockY of [-0.46, -0.63]) {
-      const flange = new THREE.Mesh(aviationFlangeGeo, darkRecessMaterial);
-      flange.position.set(0, sockY, -0.188);
-      spineGroup.add(flange);
-      const nut = new THREE.Mesh(aviationNutGeo, brushedSilverMaterial);
-      nut.position.set(0, sockY, -0.202);
-      spineGroup.add(nut);
-      const core = new THREE.Mesh(aviationCoreGeo, machinedSteelMaterial);
-      core.position.set(0, sockY, -0.208);
-      spineGroup.add(core);
-    }
-
-    // Hanging braided bottom input cable tail
-    const tail = new THREE.Mesh(powerTailGeo, rubberCableMaterial);
-    spineGroup.add(tail);
-
-    return spineGroup;
-  };
-
-  const populateSculptedHardware = (
-    targetGroup: THREE.Group,
-    trackRigid: boolean,
-    rigidScope: BendScope = 'center',
-  ) => {
-    const addObj = (
-      obj: THREE.Object3D,
-      bx: number,
-      by: number,
-      bz: number,
-      rotY = 0,
-      rotZ = 0,
-      slideSide?: 'left' | 'right',
-      slideRole?: 'carriage' | 'paddle',
-    ) => {
+  const populatePosterFrameHardware = (targetGroup: THREE.Group) => {
+    const addObj = (obj: THREE.Object3D, bx: number, by: number, bz: number, rotY = 0) => {
       obj.position.set(bx, by, bz);
       obj.rotation.y = rotY;
-      obj.rotation.z = rotZ;
       targetGroup.add(obj);
-      if (trackRigid) {
-        registerRigidTarget(obj, bx, by, bz, 0, rotY, rigidScope, true, slideSide, slideRole);
-      }
     };
 
-    // Left & Right Outer Stiles + Side Carry Handles (with subtle RED lock caps)
     for (const sxSign of [-1, 1]) {
-      const stileX = sxSign * (frameOuterW / 2 - frameRim / 2);
-      const segY = stileGapHalfY + stileSegmentH / 2;
+      const railX = sxSign * (CAB_W / 2 + sideRailW / 2 - 0.002);
+      const rail = new THREE.Mesh(sideRailGeo, trimMaterial);
+      rail.castShadow = true;
+      rail.receiveShadow = true;
+      addObj(rail, railX, 0, 0);
 
-      for (const sySign of [-1, 1]) {
-        const seg = new THREE.Mesh(sideStileSegGeo, chassisMaterial);
-        seg.castShadow = true;
-        seg.receiveShadow = true;
-        addObj(seg, stileX, sySign * segY, frameZCenter);
-      }
+      const innerBead = new THREE.Mesh(sideSilverBeadGeo, brushedSilverMaterial);
+      addObj(innerBead, sxSign * (CAB_W / 2 + 0.002), 0, 0);
 
-      // Open Side Ergonomic Carry Grip + subtle RED safety cap highlight
-      const hBar = new THREE.Mesh(sidePocketHandleBarGeo, darkRecessMaterial);
-      addObj(hBar, stileX + sxSign * 0.015, 0, -0.095);
-      const hRedCap = new THREE.Mesh(sideHandleRedCapGeo, arcRedAccentMaterial);
-      addObj(hRedCap, stileX + sxSign * 0.018, 0.13, -0.102);
-      for (const aySign of [-1, 1]) {
-        const hArm = new THREE.Mesh(sideHandleArmGeo, chassisMaterial);
-        addObj(hArm, stileX + sxSign * 0.008, aySign * 0.21, -0.058);
-      }
+      const capX = sxSign * (beamWidth / 2 + 0.012);
+      const tCap = new THREE.Mesh(topEndCapGeo, trimMaterial);
+      tCap.castShadow = true;
+      addObj(tCap, capX, topBeamCenterY, 0);
 
-      // 4 Corner Housings + Crisp Brushed SILVER L-Shaped Corner Alignment Plates (ref-hero.png)
-      for (const cySign of [-1, 1]) {
-        const cornerX = sxSign * (CAB_W / 2 - 0.08);
-        const cornerY = cySign * (CAB_H / 2 - 0.08);
-        const cBumper = new THREE.Mesh(cornerBumperGeo, chassisMaterial);
-        cBumper.castShadow = true;
-        addObj(cBumper, cornerX, cornerY, -0.048);
+      const bCap = new THREE.Mesh(bottomEndCapGeo, trimMaterial);
+      bCap.castShadow = true;
+      addObj(bCap, capX, bottomBeamCenterY, 0);
 
-        const silverV = new THREE.Mesh(cornerSilverVGeo, brushedSilverMaterial);
-        addObj(silverV, sxSign * (CAB_W / 2 - 0.18), cySign * (CAB_H / 2 - 0.11), -0.088);
-
-        const silverH = new THREE.Mesh(cornerSilverHGeo, brushedSilverMaterial);
-        addObj(silverH, sxSign * (CAB_W / 2 - 0.14), cySign * (CAB_H / 2 - 0.055), -0.088);
-
-        const silverPin = new THREE.Mesh(cornerSilverPinGeo, brushedSilverMaterial);
-        addObj(silverPin, sxSign * (CAB_W / 2 - 0.18), cySign * (CAB_H / 2 - 0.025), -0.088);
-
-        const bolt = new THREE.Mesh(cornerBoltGeo, darkRecessMaterial);
-        addObj(bolt, sxSign * (CAB_W / 2 - 0.18), cySign * (CAB_H / 2 - 0.13), -0.098);
-      }
+      const pinX = sxSign * (CAB_W / 2 - 0.14);
+      const pBase = new THREE.Mesh(suspPinBaseGeo, brushedSilverMaterial);
+      addObj(pBase, pinX, topBeamTopY + 0.009, 0);
+      const pPost = new THREE.Mesh(suspPinPostGeo, brushedSilverMaterial);
+      addObj(pPost, pinX, topBeamTopY + 0.046, 0);
+      const pCollar = new THREE.Mesh(suspPinCollarGeo, darkRecessMaterial);
+      addObj(pCollar, pinX, topBeamTopY + 0.068, 0);
     }
 
-    // #1 Main Lock (+0.90) & #2 Mate Lock (-0.90): Intermediate Vertical Mullions + Top Hanging Handles
-    for (const mxSign of [-1, 1]) {
-      const mx = mxSign * (CAB_W * 0.25);
-      const sideKey: 'left' | 'right' = mxSign < 0 ? 'left' : 'right';
+    const sockPlate = new THREE.Mesh(c13SocketPlateGeo, darkRecessMaterial);
+    addObj(sockPlate, 0, topBeamTopY + 0.009, 0);
+    const plugBoot = new THREE.Mesh(c13PlugBootGeo, rubberCableMaterial);
+    addObj(plugBoot, 0, topBeamTopY + 0.056, 0);
+    const strainRelief = new THREE.Mesh(c13StrainReliefGeo, rubberCableMaterial);
+    addObj(strainRelief, 0, topBeamTopY + 0.11, 0);
+    const cordMesh = new THREE.Mesh(powerCordGeo, rubberCableMaterial);
+    addObj(cordMesh, 0, topBeamTopY + 0.01, 0);
 
-      const mullion = new THREE.Mesh(interMullionGeo, chassisMaterial);
-      mullion.castShadow = true;
-      addObj(mullion, mx, 0, -0.068, 0, 0, sideKey, 'carriage');
+    const swBezel = new THREE.Mesh(switchBezelGeo, trimMaterial);
+    addObj(swBezel, 0.16, topBeamTopY + 0.01, 0);
+    const swCap = new THREE.Mesh(switchCapGeo, darkRecessMaterial);
+    addObj(swCap, 0.16, topBeamTopY + 0.018, 0);
+    const statusLed = new THREE.Mesh(statusLedGeo, statusCyanLedMaterial);
+    addObj(statusLed, 0.24, topBeamTopY + 0.004, 0.025);
 
-      const lockBlock = new THREE.Mesh(lockTopBlockGeo, trimMaterial);
-      addObj(lockBlock, mx, CAB_H / 2 - 0.065, -0.095, 0, 0, sideKey, 'carriage');
+    const ioPlate = new THREE.Mesh(rearIoPlateGeo, darkRecessMaterial);
+    addObj(ioPlate, -0.34, topBeamCenterY, -beamDepth / 2 - 0.004);
 
-      const lockPin = new THREE.Mesh(lockSilverPinGeo, brushedSilverMaterial);
-      addObj(lockPin, mx, CAB_H / 2 - 0.02, -0.095, 0, 0, sideKey, 'carriage');
+    const addIlluminatedButton = (
+      px: number,
+      capMat: THREE.Material,
+      coreMat: THREE.Material,
+      beamGlowMat: THREE.Material,
+      plateGlowMat: THREE.Material,
+      bloomGlowMat: THREE.Material,
+    ) => {
+      const bezel = new THREE.Mesh(ledButtonBezelGeo, trimMaterial);
+      addObj(bezel, px, topBeamCenterY, -beamDepth / 2 - 0.011);
 
-      // Characteristic hanging vertical cylindrical black lock handle (ref-hero.png)
-      const hArm = new THREE.Mesh(hangingGripArmGeo, trimMaterial);
-      addObj(hArm, mx - mxSign * 0.045, CAB_H / 2 - 0.15, -0.115, 0, 0, sideKey, 'carriage');
-      const hCylinder = new THREE.Mesh(hangingCylinderGripGeo, darkRecessMaterial);
-      addObj(hCylinder, mx - mxSign * 0.08, CAB_H / 2 - 0.26, -0.125, 0, 0, sideKey, 'paddle');
-    }
+      const cap = new THREE.Mesh(ledButtonCapGeo, capMat);
+      addObj(cap, px, topBeamCenterY, -beamDepth / 2 - 0.013);
 
-    // #3 Edge Lock (Left side -X): Spring-Pin Clamps & Matte Black Cam Levers
-    for (const lySign of [-1, 1]) {
-      const ly = lySign * 0.45;
-      const eHousing = new THREE.Mesh(edgeLockHousingGeo, trimMaterial);
-      addObj(eHousing, -CAB_W / 2 - 0.02, ly, -0.085, 0, 0, 'left', 'carriage');
-      const ePin = new THREE.Mesh(edgeLockSpringPinGeo, brushedSilverMaterial);
-      addObj(ePin, -CAB_W / 2 + 0.08, ly, -0.09, 0, 0, 'left', 'carriage');
-      const eLever = new THREE.Mesh(edgeLockCamLeverGeo, darkRecessMaterial);
-      addObj(eLever, -CAB_W / 2 + 0.17, ly - lySign * 0.045, -0.125, 0, -0.32, 'left', 'paddle');
-    }
+      const core = new THREE.Mesh(ledCorePlaneGeo, coreMat);
+      addObj(core, px, topBeamCenterY, -beamDepth / 2 - 0.0214, Math.PI);
 
-    // #10 Arc Lock (Right side +X): Curved-Angle Lock Blocks + Compact Recessed RED Release Triggers
-    for (const aySign of [-1, 1]) {
-      const ay = aySign * 0.45;
-      const aBody = new THREE.Mesh(arcLockBodyGeo, chassisMaterial);
-      aBody.castShadow = true;
-      addObj(aBody, CAB_W / 2 + 0.015, ay, -0.086, 0, 0, 'right', 'carriage');
+      const beamGlow = new THREE.Mesh(ledBeamGlowGeo, beamGlowMat);
+      addObj(beamGlow, px, topBeamCenterY, -beamDepth / 2 - 0.0012, Math.PI);
 
-      const aPlate = new THREE.Mesh(arcLockSilverPlateGeo, brushedSilverMaterial);
-      addObj(aPlate, CAB_W / 2 - 0.04, ay, -0.125, 0, 0, 'right', 'carriage');
+      const plateGlow = new THREE.Mesh(ledPlateGlowGeo, plateGlowMat);
+      addObj(plateGlow, px, topBeamCenterY, -beamDepth / 2 - 0.0136, Math.PI);
 
-      // Compact inset RED anodized Arc Lock trigger (ref-product-mid.png #10 & ref-scroll-lock.png)
-      const aRedTrigger = new THREE.Mesh(arcLockRedTriggerGeo, arcRedAccentMaterial);
-      addObj(aRedTrigger, CAB_W / 2 + 0.02, ay, -0.132, 0, aySign * 0.12, 'right', 'paddle');
-    }
+      const bloomGlow = new THREE.Mesh(ledBloomGlowGeo, bloomGlowMat);
+      addObj(bloomGlow, px, topBeamCenterY, -beamDepth / 2 - 0.0222, Math.PI);
+    };
 
-    // #4 Top Folding Matte-Black Carry Bar at x = 0
-    const topBar = new THREE.Mesh(topHandleBarGeo, darkRecessMaterial);
-    addObj(topBar, 0, CAB_H / 2 - 0.015, -0.048);
-    for (const mx of [-0.23, 0.23]) {
-      const mnt = new THREE.Mesh(topHandleClampGeo, machinedSteelMaterial);
-      addObj(mnt, mx, CAB_H / 2 - 0.015, -0.072);
-    }
+    // Left button in rear view (-0.25): lit green button emitting green light
+    addIlluminatedButton(
+      -0.25,
+      greenLedButtonMaterial,
+      greenLedCoreMaterial,
+      greenBeamGlowMat,
+      greenPlateGlowMat,
+      greenBloomGlowMat,
+    );
+    // Middle button in rear view (-0.33): lit red button emitting red light
+    addIlluminatedButton(
+      -0.33,
+      redLedButtonMaterial,
+      redLedCoreMaterial,
+      redBeamGlowMat,
+      redPlateGlowMat,
+      redBloomGlowMat,
+    );
+    // Right port in rear view (-0.41, next to Wi-Fi stub): kept untouched
+    const silverPortJack = new THREE.Mesh(portJackGeo, brushedSilverMaterial);
+    addObj(silverPortJack, -0.41, topBeamCenterY, -beamDepth / 2 - 0.01);
 
-    // #9 Central Power Supply Box w/ #5 Green Signal Light, #6 Air-plug, #8 Dual Aviation Sockets & PIXIATECH Logo
-    addObj(buildCentralPowerSupplyBox(), 0, 0, 0);
+    const wifiAnt = new THREE.Mesh(wifiStubGeo, rubberCableMaterial);
+    addObj(wifiAnt, -0.46, topBeamCenterY + 0.045, -beamDepth / 2 - 0.018);
+
+    const bottomFrontLogo = new THREE.Mesh(barLogoPlateGeo, barLogoMaterial);
+    addObj(bottomFrontLogo, 0, bottomBeamCenterY, beamDepth / 2 + 0.002);
+
+    const bottomRearLogo = new THREE.Mesh(barLogoPlateGeo, barLogoMaterial);
+    addObj(bottomRearLogo, 0, bottomBeamCenterY, -beamDepth / 2 - 0.002, Math.PI);
+
+    const topFrontLogo = new THREE.Mesh(barLogoPlateGeo, barLogoMaterial);
+    addObj(topFrontLogo, 0, topBeamCenterY, beamDepth / 2 + 0.002);
   };
 
-  populateSculptedHardware(chassisLayer, true, 'center');
+  populatePosterFrameHardware(chassisLayer);
 
-  // Ultra-slim internal cross-ribs behind modules so open transparency remains unobstructed
-  const vRibGeo = track(new THREE.BoxGeometry(0.04, CAB_H - 0.16, 0.026, 2, 36, 1));
-  vRibGeo.translate(0, 0, -0.022);
-  registerBendGeometry(vRibGeo, 0, false, 'center', true);
-  const vRib = new THREE.Mesh(vRibGeo, trimMaterial);
-  chassisLayer.add(vRib);
-
-  const hRibGeo = track(new THREE.BoxGeometry(CAB_W - 0.16, 0.036, 0.026, 48, 2, 1));
-  hRibGeo.translate(0, 0, -0.022);
-  registerBendGeometry(hRibGeo, 0, false, 'center', true);
-  const hRib = new THREE.Mesh(hRibGeo, trimMaterial);
-  chassisLayer.add(hRib);
-
-  const chassisEdges = track(new THREE.EdgesGeometry(outerFrameGeo, 20));
-  registerBendGeometry(chassisEdges, 0, false, 'center', true);
+  const chassisEdges = track(new THREE.EdgesGeometry(outerBeamsGeo, 20));
   const chassisWire = new THREE.LineSegments(chassisEdges, cadLineMaterial);
   wireframeOverlayGroup.add(chassisWire);
 
   // ---------------------------------------------------------------------------
-  // 3. MODULES & EMITTERS LAYERS: 4 Louvered Transparent Modules (500 x 250 mm)
+  // 3. MODULES & EMITTERS LAYERS: 4 Ultra-Thin 1.8 mm Holographic Perforated Film Tiles
   // ---------------------------------------------------------------------------
-  const masterCanvas = createMasterEmitterCanvas(initialPattern, initialPitch);
+  let masterCanvas = createMasterEmitterCanvas(initialPattern, initialPitch, initialPanelCount);
   const modules: ModuleUnitRef[] = [];
-  const baseTrayGeo = track(new THREE.BoxGeometry(MOD_W - 0.012, MOD_H - 0.012, 0.022, 28, 2, 1));
-  const basePcbGeo = track(new THREE.BoxGeometry(MOD_W - 0.04, MOD_H - 0.04, 0.008, 24, 2, 1));
-  const baseEmitterGeo = track(new THREE.BoxGeometry(MOD_W, MOD_H, 0.01, 32, 2, 1));
-  const baseHitProxyGeo = track(new THREE.BoxGeometry(MOD_W - 0.006, MOD_H - 0.006, 0.08, 16, 2, 1));
+  const baseTrayGeo = track(new THREE.BoxGeometry(MOD_W - 0.006, MOD_H - 0.006, 0.007, 4, 2, 1));
+  const basePcbGeo = track(new THREE.BoxGeometry(MOD_W - 0.02, MOD_H - 0.02, 0.004, 4, 2, 1));
+  const baseEmitterGeo = track(new THREE.PlaneGeometry(MOD_W, MOD_H));
+  const baseHitProxyGeo = track(new THREE.BoxGeometry(MOD_W - 0.004, MOD_H - 0.004, 0.06, 2, 2, 1));
   const hitProxyMat = track(new THREE.MeshBasicMaterial({ visible: false }));
 
   const quadPositions: [number, number, number, number][] = [
@@ -862,58 +902,34 @@ export function buildCabinetAssembly(
     [MOD_W / 2, -MOD_H / 2, 1, 0], // M4 Bottom-Right
   ];
 
-  const getWallCellCoords = (gridCol: number, gridRow: number, layout: WallLayoutId) => {
-    const spec = WALL_LAYOUT_SPECS[layout];
-    if (layout === '1x1') {
-      return { colIdx: 0, rowFromBottom: 0, cols: 1, rows: 1 };
-    }
-    if (layout === '3x2') {
-      return { colIdx: gridCol, rowFromBottom: gridRow, cols: spec.cols, rows: spec.rows };
-    }
-    if (layout === '2x3') {
-      return {
-        colIdx: gridCol - 1,
-        rowFromBottom: gridRow + 1,
-        cols: spec.cols,
-        rows: spec.rows,
-      };
-    }
+  const getModuleUVRect = (
+    modCol: number,
+    modRowFromBottom: number,
+    panelCount: HorizontalPanelCount,
+  ) => {
+    const colIdx = getHorizontalSlotIndex(0, panelCount);
+    const cellSpanU = 1 / panelCount;
     return {
-      colIdx: gridCol,
-      rowFromBottom: gridRow + 1,
-      cols: spec.cols,
-      rows: spec.rows,
-    };
-  };
-
-  const getModuleUVRect = (modCol: number, modRowFromBottom: number, layout: WallLayoutId) => {
-    const cell = getWallCellCoords(1, 0, layout);
-    const cellSpanU = 1 / cell.cols;
-    const cellSpanV = 1 / cell.rows;
-    return {
-      uOffset: cell.colIdx * cellSpanU + modCol * (cellSpanU * 0.5),
-      vOffset: cell.rowFromBottom * cellSpanV + modRowFromBottom * (cellSpanV * 0.5),
+      uOffset: colIdx * cellSpanU + modCol * (cellSpanU * 0.5),
+      vOffset: modRowFromBottom * 0.5,
       uSpan: cellSpanU * 0.5,
-      vSpan: cellSpanV * 0.5,
+      vSpan: 0.5,
     };
   };
 
   quadPositions.forEach(([qx, qy, modCol, modRowFromBottom], idx) => {
     const tileGroup = new THREE.Group();
-    tileGroup.position.set(0, qy, 0.018);
+    tileGroup.position.set(0, qy, -0.004);
 
     const trayGeo = track(baseTrayGeo.clone());
-    trayGeo.translate(qx, 0, -0.008);
-    registerBendGeometry(trayGeo, 0.018, false, 'center', false);
-    const tray = new THREE.Mesh(trayGeo, outdoorShroudMaterial);
-    tray.castShadow = true;
+    trayGeo.translate(qx, 0, -0.004);
+    const tray = new THREE.Mesh(trayGeo, filmBackingMaterial);
+    tray.castShadow = false;
     tray.receiveShadow = true;
     tileGroup.add(tray);
 
-    // Internal louvered PCB trace frame (hidden when seated flush, stays louvered when exploded)
     const pcbGeo = track(basePcbGeo.clone());
-    pcbGeo.translate(qx, 0, 0.006);
-    registerBendGeometry(pcbGeo, 0.018, false, 'center', false);
+    pcbGeo.translate(qx, 0, 0.004);
     const pcb = new THREE.Mesh(pcbGeo, pcbMaterial);
     pcb.name = 'internal-pcb';
     tileGroup.add(pcb);
@@ -921,9 +937,9 @@ export function buildCabinetAssembly(
     modulesLayer.add(tileGroup);
 
     const emitterGroup = new THREE.Group();
-    emitterGroup.position.set(0, qy, 0.042);
+    emitterGroup.position.set(0, qy, 0.008);
 
-    const uv = getModuleUVRect(modCol, modRowFromBottom, initialLayout);
+    const uv = getModuleUVRect(modCol, modRowFromBottom, initialPanelCount);
     const emitterTex = track(
       createSlicedEmitterTexture(
         masterCanvas,
@@ -934,29 +950,31 @@ export function buildCabinetAssembly(
         maxAnisotropy,
       ),
     );
+    const isInitialOff = initialPattern === 'off';
     const emitterMat = track(
       new THREE.MeshPhysicalMaterial({
         color: 0xffffff,
         map: emitterTex,
         emissive: new THREE.Color('#ffffff'),
         emissiveMap: emitterTex,
-        emissiveIntensity: initialPattern === 'off' ? 0.24 : 0.82,
-        alphaMap: moduleLouverAlpha,
-        alphaTest: 0.45,
+        emissiveIntensity: isInitialOff ? 0.24 : 1.18,
+        alphaMap: isInitialOff ? moduleMeshAlpha : moduleEmitterAlpha,
+        transparent: !isInitialOff,
+        opacity: isInitialOff ? 1.0 : 0.96,
+        alphaTest: isInitialOff ? 0.44 : 0.02,
         side: THREE.DoubleSide,
         roughness: 0.22,
-        metalness: 0.06,
-        clearcoat: 0.85,
-        clearcoatRoughness: 0.12,
-        envMapIntensity: 1.85,
+        metalness: 0.04,
+        clearcoat: 0.35,
+        clearcoatRoughness: 0.18,
+        envMapIntensity: 0.45,
       }),
     );
 
     const emitterGeo = track(baseEmitterGeo.clone());
     emitterGeo.translate(qx, 0, 0);
-    registerBendGeometry(emitterGeo, 0.042, false, 'center', false);
     const emitterMesh = new THREE.Mesh(emitterGeo, emitterMat);
-    emitterMesh.castShadow = true;
+    emitterMesh.castShadow = false;
     emitterMesh.receiveShadow = true;
     emitterGroup.add(emitterMesh);
 
@@ -969,14 +987,12 @@ export function buildCabinetAssembly(
     );
     const emitterEdgesGeo = track(new THREE.EdgesGeometry(emitterGeo, 15));
     emitterEdgesGeo.scale(1.002, 1.002, 1.04);
-    registerBendGeometry(emitterEdgesGeo, 0.042, false, 'center', false);
     const highlightEdges = new THREE.LineSegments(emitterEdgesGeo, highlightMat);
     highlightEdges.visible = false;
     emitterGroup.add(highlightEdges);
 
     const hitProxyGeo = track(baseHitProxyGeo.clone());
     hitProxyGeo.translate(qx, 0, 0);
-    registerBendGeometry(hitProxyGeo, 0.042, true, 'center', false);
     const hitProxy = new THREE.Mesh(hitProxyGeo, hitProxyMat);
     hitProxy.userData = { moduleIndex: idx };
     hitProxy.layers.set(1);
@@ -986,7 +1002,7 @@ export function buildCabinetAssembly(
 
     modules.push({
       id: idx,
-      label: `Module M${idx + 1} · 500 × 250 mm`,
+      label: `Module M${idx + 1} · 500 × 1000 mm`,
       centerX: qx,
       centerY: qy,
       tileGroup,
@@ -1000,152 +1016,78 @@ export function buildCabinetAssembly(
   });
 
   // ---------------------------------------------------------------------------
-  // 4. SURFACE ARRAY MODE (3x2, 2x3, 3x3 Curved Transparent Walls + Jumpers)
+  // 4. HORIZONTAL ROW ASSEMBLY (2x1, 3x1, 4x1 — side-by-side ONLY, zero vertical stacking)
   // ---------------------------------------------------------------------------
   const surroundGroup = new THREE.Group();
-  surroundGroup.name = 'surface-array-surround';
+  surroundGroup.name = 'horizontal-array-surround';
   root.add(surroundGroup);
 
-  interface WingGeoSet {
-    railsGeo: THREE.BufferGeometry;
-    vRibGeo: THREE.BufferGeometry;
-    hRibGeo: THREE.BufferGeometry;
-    trayGeo: THREE.BufferGeometry;
-    faceGeo: THREE.BufferGeometry;
-  }
-
-  const createWingGeoSet = (scope: BendScope): WingGeoSet => {
-    const railsGeo = buildSubdividedRailsGeo();
-    registerBendGeometry(railsGeo, 0, false, scope, true);
-
-    const wingVRibGeo = track(new THREE.BoxGeometry(0.04, CAB_H - 0.16, 0.026, 2, 36, 1));
-    wingVRibGeo.translate(0, 0, -0.022);
-    registerBendGeometry(wingVRibGeo, 0, false, scope, true);
-
-    const wingHRibGeo = track(new THREE.BoxGeometry(CAB_W - 0.16, 0.036, 0.026, 48, 2, 1));
-    wingHRibGeo.translate(0, 0, -0.022);
-    registerBendGeometry(wingHRibGeo, 0, false, scope, true);
-
-    const trayGeo = track(new THREE.BoxGeometry(CAB_W - 0.012, CAB_H - 0.012, 0.022, 48, 2, 1));
-    registerBendGeometry(trayGeo, 0.018, false, scope, false);
-
-    const faceGeo = track(new THREE.BoxGeometry(CAB_W, CAB_H, 0.01, 48, 2, 1));
-    registerBendGeometry(faceGeo, 0.042, false, scope, false);
-
-    return { railsGeo, vRibGeo: wingVRibGeo, hRibGeo: wingHRibGeo, trayGeo, faceGeo };
-  };
-
-  const centerColTrayGeo = track(
-    new THREE.BoxGeometry(CAB_W - 0.012, CAB_H - 0.012, 0.022, 48, 2, 1),
-  );
-  registerBendGeometry(centerColTrayGeo, 0.018, false, 'center', false);
-
-  const centerColFaceGeo = track(new THREE.BoxGeometry(CAB_W, CAB_H, 0.01, 48, 2, 1));
-  registerBendGeometry(centerColFaceGeo, 0.042, false, 'center', false);
-
-  const centerColGeoSet: WingGeoSet = {
-    railsGeo: outerFrameGeo,
-    vRibGeo,
-    hRibGeo,
-    trayGeo: centerColTrayGeo,
-    faceGeo: centerColFaceGeo,
-  };
-
-  const leftWingGeoSet = createWingGeoSet('left-wing');
-  const rightWingGeoSet = createWingGeoSet('right-wing');
+  const neighborTrayGeo = track(new THREE.BoxGeometry(CAB_W - 0.008, CAB_H - 0.008, 0.007, 4, 2, 1));
+  const neighborFaceGeo = track(new THREE.PlaneGeometry(CAB_W, CAB_H));
 
   const jumperCableCurve = new THREE.CatmullRomCurve3([
-    new THREE.Vector3(-0.22, 0.42, -0.2),
-    new THREE.Vector3(-0.92, 0.12, -0.28),
-    new THREE.Vector3(-1.82, -0.14, -0.25),
+    new THREE.Vector3(-0.26, topBeamCenterY - 0.02, -0.1),
+    new THREE.Vector3(-0.9, topBeamCenterY + 0.04, -0.14),
+    new THREE.Vector3(-1.54, topBeamCenterY - 0.02, -0.1),
   ]);
-  const jumperCableGeo = track(new THREE.TubeGeometry(jumperCableCurve, 18, 0.02, 8, false));
-  const jumperPlugGeo = track(new THREE.CylinderGeometry(0.036, 0.036, 0.09, 12));
-  const topCurveBridgePlateGeo = track(new THREE.BoxGeometry(0.28, 0.04, 0.12));
+  const jumperCableGeo = track(new THREE.TubeGeometry(jumperCableCurve, 12, 0.015, 8, false));
+  const jumperPlugGeo = track(new THREE.BoxGeometry(0.055, 0.042, 0.042));
+  const topCurveBridgePlateGeo = track(new THREE.BoxGeometry(0.22, 0.032, 0.095));
 
-  const populateSurroundRearChassis = (
-    targetGroup: THREE.Group,
-    geoSet: WingGeoSet,
-    scope: BendScope,
-  ) => {
-    const railsMesh = new THREE.Mesh(geoSet.railsGeo, chassisMaterial);
-    railsMesh.castShadow = true;
-    railsMesh.receiveShadow = true;
-    targetGroup.add(railsMesh);
+  const neighborCols = [-1, 1, 2] as const;
 
-    const vMesh = new THREE.Mesh(geoSet.vRibGeo, trimMaterial);
-    targetGroup.add(vMesh);
-    const hMesh = new THREE.Mesh(geoSet.hRibGeo, trimMaterial);
-    targetGroup.add(hMesh);
-
-    populateSculptedHardware(targetGroup, true, scope);
-  };
-
-  const gridConfigs: [number, number, number, number][] = [
-    [-CAB_W, 0, 0, 0],
-    [CAB_W, 0, 2, 0],
-    [-CAB_W, CAB_H, 0, 1],
-    [0, CAB_H, 1, 1],
-    [CAB_W, CAB_H, 2, 1],
-    [-CAB_W, -CAB_H, 0, -1],
-    [0, -CAB_H, 1, -1],
-    [CAB_W, -CAB_H, 2, -1],
-  ];
-
-  const surroundCabinets: SurroundCabinetRef[] = gridConfigs.map(([ox, oy, gridCol, gridRow]) => {
-    const scope: BendScope =
-      gridCol === 0 ? 'left-wing' : gridCol === 2 ? 'right-wing' : 'center';
-    const geoSet =
-      scope === 'left-wing'
-        ? leftWingGeoSet
-        : scope === 'right-wing'
-          ? rightWingGeoSet
-          : centerColGeoSet;
-
+  const surroundCabinets: SurroundCabinetRef[] = neighborCols.map((gridCol) => {
+    const ox = gridCol * CAB_W;
     const g = new THREE.Group();
-    g.position.set(ox * 1.45, oy * 1.45, -0.4);
+    g.position.set(ox * 1.35, 0, -0.4);
     g.visible = false;
 
-    populateSurroundRearChassis(g, geoSet, scope);
+    const beamsMesh = new THREE.Mesh(outerBeamsGeo, chassisMaterial);
+    beamsMesh.castShadow = true;
+    beamsMesh.receiveShadow = true;
+    g.add(beamsMesh);
 
-    const trayBack = new THREE.Mesh(geoSet.trayGeo, surroundShroudMaterial);
-    trayBack.position.set(0, 0, 0.01);
-    trayBack.castShadow = true;
+    populatePosterFrameHardware(g);
+
+    const trayBack = new THREE.Mesh(neighborTrayGeo, surroundBackingMaterial);
+    trayBack.position.set(0, 0, -0.004);
     trayBack.receiveShadow = true;
     g.add(trayBack);
 
-    const cell = getWallCellCoords(gridCol, gridRow, initialLayout);
+    const slotIdx = Math.max(0, Math.min(initialPanelCount - 1, getHorizontalSlotIndex(gridCol, initialPanelCount)));
     const sEmitterTex = track(
       createSlicedEmitterTexture(
         masterCanvas,
-        Math.max(0, Math.min(1 - 1 / cell.cols, cell.colIdx / cell.cols)),
-        Math.max(0, Math.min(1 - 1 / cell.rows, cell.rowFromBottom / cell.rows)),
-        1 / cell.cols,
-        1 / cell.rows,
+        slotIdx / initialPanelCount,
+        0,
+        1 / initialPanelCount,
+        1,
         maxAnisotropy,
       ),
     );
+    const isInitialOffS = initialPattern === 'off';
     const sEmitterMat = track(
       new THREE.MeshPhysicalMaterial({
         color: 0xffffff,
         map: sEmitterTex,
         emissive: new THREE.Color('#ffffff'),
         emissiveMap: sEmitterTex,
-        emissiveIntensity: initialPattern === 'off' ? 0.24 : 0.82,
-        alphaMap: cabinetLouverAlpha,
-        alphaTest: 0.45,
+        emissiveIntensity: isInitialOffS ? 0.24 : 1.18,
+        alphaMap: isInitialOffS ? cabinetMeshAlpha : cabinetEmitterAlpha,
+        transparent: !isInitialOffS,
+        opacity: isInitialOffS ? 1.0 : 0.96,
+        alphaTest: isInitialOffS ? 0.44 : 0.02,
         side: THREE.DoubleSide,
         roughness: 0.22,
-        metalness: 0.06,
-        clearcoat: 0.85,
-        clearcoatRoughness: 0.12,
-        envMapIntensity: 1.85,
+        metalness: 0.04,
+        clearcoat: 0.35,
+        clearcoatRoughness: 0.18,
+        envMapIntensity: 0.45,
       }),
     );
 
-    const face = new THREE.Mesh(geoSet.faceGeo, sEmitterMat);
-    face.position.set(0, 0, 0.042);
-    face.castShadow = true;
+    const face = new THREE.Mesh(neighborFaceGeo, sEmitterMat);
+    face.position.set(0, 0, 0.008);
     face.receiveShadow = true;
     g.add(face);
 
@@ -1153,14 +1095,13 @@ export function buildCabinetAssembly(
     const cable = new THREE.Mesh(jumperCableGeo, rubberCableMaterial);
     jumperGroup.add(cable);
     const plug = new THREE.Mesh(jumperPlugGeo, trimMaterial);
-    plug.position.set(-0.22, 0.42, -0.2);
-    plug.rotation.z = 0.65;
+    plug.position.set(-0.26, topBeamCenterY - 0.02, -0.1);
     jumperGroup.add(plug);
     g.add(jumperGroup);
 
     const topBridgeGroup = new THREE.Group();
     const bridgePlate = new THREE.Mesh(topCurveBridgePlateGeo, brushedSilverMaterial);
-    bridgePlate.position.set(-CAB_W / 2, CAB_H / 2 - 0.02, -0.08);
+    bridgePlate.position.set(-CAB_W / 2, topBeamTopY + 0.014, 0);
     topBridgeGroup.add(bridgePlate);
     g.add(topBridgeGroup);
 
@@ -1168,128 +1109,12 @@ export function buildCabinetAssembly(
     return {
       group: g,
       gridCol,
-      gridRow,
-      targetPos: new THREE.Vector3(ox, oy, 0),
+      targetPos: new THREE.Vector3(ox, 0, 0),
       emitterMat: sEmitterMat,
       jumperGroup,
       topBridgeGroup,
     };
   });
-
-  const updateCurvature = (
-    curveLeftDeg: number,
-    curveRightDeg: number,
-    multiplier: number = CURVATURE_VISUAL_MULTIPLIER,
-    layout: WallLayoutId = '1x1',
-    orientAngleRad = 0,
-  ) => {
-    const halfW = CAB_W / 2;
-    const isTwoCol = layout === '2x3';
-    const cosO = Math.cos(orientAngleRad);
-    const sinO = Math.sin(orientAngleRad);
-
-    for (let tIdx = 0; tIdx < bendTargets.length; tIdx++) {
-      const t = bendTargets[tIdx];
-      const posAttr = t.geo.getAttribute('position') as THREE.BufferAttribute;
-      const normAttr = t.geo.getAttribute('normal') as THREE.BufferAttribute | undefined;
-      const basePos = t.basePos;
-      const baseNorm = t.baseNorm;
-      const zOff = t.zOffset;
-      const count = posAttr.count;
-      const applyOrient = t.rotateWithOrient && Math.abs(orientAngleRad) > 1e-4;
-
-      for (let i = 0; i < count; i++) {
-        const i3 = i * 3;
-        const bx0 = basePos[i3];
-        const by0 = basePos[i3 + 1];
-        const bz = basePos[i3 + 2] + zOff;
-
-        const bx = applyOrient ? bx0 * cosO - by0 * sinO : bx0;
-        const by = applyOrient ? bx0 * sinO + by0 * cosO : by0;
-
-        let curved;
-        if (isTwoCol) {
-          curved =
-            t.scope === 'right-wing'
-              ? evaluateWingCurve('right', bx, bz, halfW, curveRightDeg, multiplier)
-              : evaluateWingCurve('left', bx, bz, halfW, curveLeftDeg, multiplier);
-        } else {
-          curved =
-            t.scope === 'left-wing'
-              ? evaluateWingCurve('left', bx, bz, halfW, curveLeftDeg, multiplier)
-              : t.scope === 'right-wing'
-                ? evaluateWingCurve('right', bx, bz, halfW, curveRightDeg, multiplier)
-                : evaluatePanelCurve(bx, bz, halfW, curveLeftDeg, curveRightDeg, multiplier);
-        }
-
-        posAttr.setXYZ(i, curved.x, by, curved.z - zOff);
-
-        if (normAttr && baseNorm) {
-          const nx0 = baseNorm[i3];
-          const ny0 = baseNorm[i3 + 1];
-          const nz = baseNorm[i3 + 2];
-          const nx = applyOrient ? nx0 * cosO - ny0 * sinO : nx0;
-          const ny = applyOrient ? nx0 * sinO + ny0 * cosO : ny0;
-          const sinY = Math.sin(curved.angleY);
-          const cosY = Math.cos(curved.angleY);
-          normAttr.setXYZ(i, nx * cosY + nz * sinY, ny, -nx * sinY + nz * cosY);
-        }
-      }
-
-      posAttr.needsUpdate = true;
-      if (normAttr) normAttr.needsUpdate = true;
-      if (t.recomputeBounds) {
-        t.geo.computeBoundingBox();
-        t.geo.computeBoundingSphere();
-      }
-    }
-
-    const slideNormL = evaluateCurvedRailSlide(curveLeftDeg);
-    const slideNormR = evaluateCurvedRailSlide(curveRightDeg);
-
-    for (let rIdx = 0; rIdx < rigidTargets.length; rIdx++) {
-      const rt = rigidTargets[rIdx];
-      const bz = rt.baseZ + rt.parentZOffset;
-      let slideDeltaX = 0;
-      let paddleAngle = 0;
-      if (rt.slideSide) {
-        const slideNorm = rt.slideSide === 'left' ? slideNormL : slideNormR;
-        slideDeltaX = slideNorm * (rt.slideSide === 'left' ? 0.1 : -0.1);
-        if (rt.slideRole === 'paddle') {
-          paddleAngle = slideNorm * 0.55;
-        }
-      }
-
-      const rawX = rt.baseX + slideDeltaX;
-      const applyOrient = rt.rotateWithOrient && Math.abs(orientAngleRad) > 1e-4;
-      const bx = applyOrient ? rawX * cosO - rt.baseY * sinO : rawX;
-      const by = applyOrient ? rawX * sinO + rt.baseY * cosO : rt.baseY;
-
-      let curved;
-      if (isTwoCol) {
-        curved =
-          rt.scope === 'right-wing'
-            ? evaluateWingCurve('right', bx, bz, halfW, curveRightDeg, multiplier)
-            : evaluateWingCurve('left', bx, bz, halfW, curveLeftDeg, multiplier);
-      } else {
-        curved =
-          rt.scope === 'left-wing'
-            ? evaluateWingCurve('left', bx, bz, halfW, curveLeftDeg, multiplier)
-            : rt.scope === 'right-wing'
-              ? evaluateWingCurve('right', bx, bz, halfW, curveRightDeg, multiplier)
-              : evaluatePanelCurve(bx, bz, halfW, curveLeftDeg, curveRightDeg, multiplier);
-      }
-
-      rt.obj.rotation.order = 'YXZ';
-      rt.obj.position.set(curved.x, by, curved.z - rt.parentZOffset);
-      rt.obj.rotation.y = rt.baseRotY + curved.angleY;
-      rt.obj.rotation.z = rt.baseRotZ + paddleAngle + (rt.rotateWithOrient ? orientAngleRad : 0);
-    }
-
-    for (let mIdx = 0; mIdx < medallionMeshes.length; mIdx++) {
-      medallionMeshes[mIdx].rotation.z = -orientAngleRad;
-    }
-  };
 
   const updateFinish = (finishId: ChassisFinishId) => {
     const spec = CHASSIS_FINISHES[finishId];
@@ -1299,17 +1124,18 @@ export function buildCabinetAssembly(
     trimMaterial.color.set(spec.trimHex);
   };
 
-  const updatePattern = (pattern: DisplayPatternId, pitch: PitchTierId, layout: WallLayoutId) => {
-    const intensity = pattern === 'off' ? 0.24 : pattern === 'calibration' ? 0.88 : 0.82;
-    const nextMaster = createMasterEmitterCanvas(pattern, pitch);
-
+  const applySlicedCanvasTextures = (
+    panelCount: HorizontalPanelCount,
+    intensity: number,
+    isOff: boolean,
+  ) => {
     modules.forEach((m, idx) => {
       const [, , modCol, modRowFromBottom] = quadPositions[idx];
-      const uv = getModuleUVRect(modCol, modRowFromBottom, layout);
+      const uv = getModuleUVRect(modCol, modRowFromBottom, panelCount);
       const oldMap = m.emitterMat.map;
       const nextTex = track(
         createSlicedEmitterTexture(
-          nextMaster,
+          masterCanvas,
           uv.uOffset,
           uv.vOffset,
           uv.uSpan,
@@ -1320,29 +1146,165 @@ export function buildCabinetAssembly(
       m.emitterMat.map = nextTex;
       m.emitterMat.emissiveMap = nextTex;
       m.emitterMat.emissiveIntensity = intensity;
+      m.emitterMat.alphaMap = isOff ? moduleMeshAlpha : moduleEmitterAlpha;
+      m.emitterMat.transparent = !isOff;
+      m.emitterMat.opacity = isOff ? 1.0 : 0.96;
+      m.emitterMat.alphaTest = isOff ? 0.44 : 0.02;
       m.emitterMat.needsUpdate = true;
       if (oldMap) oldMap.dispose();
     });
 
     surroundCabinets.forEach((sc) => {
-      const cell = getWallCellCoords(sc.gridCol, sc.gridRow, layout);
+      const slotIdx = Math.max(
+        0,
+        Math.min(panelCount - 1, getHorizontalSlotIndex(sc.gridCol, panelCount)),
+      );
       const oldMap = sc.emitterMat.map;
       const nextTex = track(
         createSlicedEmitterTexture(
-          nextMaster,
-          Math.max(0, Math.min(1 - 1 / cell.cols, cell.colIdx / cell.cols)),
-          Math.max(0, Math.min(1 - 1 / cell.rows, cell.rowFromBottom / cell.rows)),
-          1 / cell.cols,
-          1 / cell.rows,
+          masterCanvas,
+          slotIdx / panelCount,
+          0,
+          1 / panelCount,
+          1,
           maxAnisotropy,
         ),
       );
       sc.emitterMat.map = nextTex;
       sc.emitterMat.emissiveMap = nextTex;
       sc.emitterMat.emissiveIntensity = intensity;
+      sc.emitterMat.alphaMap = isOff ? cabinetMeshAlpha : cabinetEmitterAlpha;
+      sc.emitterMat.transparent = !isOff;
+      sc.emitterMat.opacity = isOff ? 1.0 : 0.96;
+      sc.emitterMat.alphaTest = isOff ? 0.44 : 0.02;
       sc.emitterMat.needsUpdate = true;
       if (oldMap) oldMap.dispose();
     });
+  };
+
+  const updatePattern = (
+    pattern: DisplayPatternId,
+    pitch: PitchTierId,
+    panelCount: HorizontalPanelCount,
+  ) => {
+    const isOff = pattern === 'off';
+    const intensity = isOff ? 0.24 : pattern === 'calibration' ? 1.15 : 1.18;
+    masterCanvas = createMasterEmitterCanvas(pattern, pitch, panelCount);
+    applySlicedCanvasTextures(panelCount, intensity, isOff);
+  };
+
+  const updateVideoFrame = (
+    timeSec: number,
+    panelCount: HorizontalPanelCount,
+    customVideoEl?: HTMLVideoElement | null,
+  ) => {
+    const ctx = masterCanvas.getContext('2d');
+    if (!ctx) return;
+
+    if (
+      customVideoEl &&
+      customVideoEl.readyState >= 2 &&
+      customVideoEl.videoWidth > 0 &&
+      customVideoEl.videoHeight > 0
+    ) {
+      // Draw imported .mp4 cleanly (cover crop matching horizontal panel aspect)
+      const cw = masterCanvas.width;
+      const ch = masterCanvas.height;
+      const vw = customVideoEl.videoWidth;
+      const vh = customVideoEl.videoHeight;
+      const targetAspect = (panelCount * CAB_W) / CAB_H;
+      const videoAspect = vw / vh;
+
+      let sx = 0;
+      let sy = 0;
+      let sw = vw;
+      let sh = vh;
+      if (videoAspect > targetAspect) {
+        sw = vh * targetAspect;
+        sx = (vw - sw) * 0.5;
+      } else {
+        sh = vw / targetAspect;
+        sy = (vh - sh) * 0.5;
+      }
+      ctx.drawImage(customVideoEl, sx, sy, sw, sh, 0, 0, cw, ch);
+    } else {
+      drawHolographicVideoFrame(ctx, masterCanvas.width, masterCanvas.height, timeSec, panelCount);
+    }
+
+    modules.forEach((m) => {
+      if (m.emitterMat.map) {
+        m.emitterMat.map.needsUpdate = true;
+      }
+    });
+    surroundCabinets.forEach((sc) => {
+      if (sc.group.visible && sc.emitterMat.map) {
+        sc.emitterMat.map.needsUpdate = true;
+      }
+    });
+  };
+
+  const updateInstallationMode = (
+    mode: InstallationModeId,
+    panelCount: HorizontalPanelCount,
+    showStand: boolean,
+  ) => {
+    const isSlotActive = (col: number): boolean => {
+      if (col === 0) return true;
+      if (col === 1) return panelCount >= 2;
+      if (col === -1) return panelCount >= 3;
+      if (col === 2) return panelCount === 4;
+      return false;
+    };
+
+    const rowCenterX = panelCount === 2 || panelCount === 4 ? CAB_W * 0.5 : 0;
+    const totalRowW = panelCount * CAB_W;
+
+    // 1. SUR PIED (standing): preserved 100% intact
+    trussStands.forEach((stand) => {
+      stand.group.visible = mode === 'standing' && showStand && isSlotActive(stand.col);
+    });
+
+    // 2. MURAL (wall)
+    wallMountGroup.visible = mode === 'wall';
+    if (mode === 'wall') {
+      const wallSpanW = totalRowW + 2.5;
+      wallBackdrop.scale.set(wallSpanW, 1, 1);
+      wallBackdrop.position.x = rowCenterX;
+      wallPlinth.scale.set(wallSpanW, 1, 1);
+      wallPlinth.position.x = rowCenterX;
+      wallTopCap.scale.set(wallSpanW, 1, 1);
+      wallTopCap.position.x = rowCenterX;
+      wallMaps.map.repeat.set(Math.max(1, wallSpanW * 0.3), 1);
+      wallMaps.bumpMap.repeat.set(Math.max(1, wallSpanW * 0.3), 1);
+
+      wallColumnRigs.forEach((rig) => {
+        const active = isSlotActive(rig.col);
+        rig.group.visible = active;
+        const hasLeft =
+          rig.col === 1 || rig.col === 2 || (rig.col === 0 && panelCount >= 3);
+        rig.seamTie.visible = active && hasLeft;
+      });
+    }
+
+    // 3. SUSPENDU (suspended)
+    suspendedMountGroup.visible = mode === 'suspended';
+    if (mode === 'suspended') {
+      const railSpanW = totalRowW + 0.72;
+      ceilingRailMesh.scale.set(railSpanW, 1, 1);
+      ceilingRailMesh.position.x = rowCenterX;
+      ceilingEndCaps[0].position.x = rowCenterX - railSpanW * 0.5 - 0.018;
+      ceilingEndCaps[1].position.x = rowCenterX + railSpanW * 0.5 + 0.018;
+      ceilingDropRods.position.x = rowCenterX;
+      ceilingDropRods.scale.set(Math.max(0.85, panelCount * 0.45), 1, 1);
+
+      suspendedColumnRigs.forEach((rig) => {
+        const active = isSlotActive(rig.col);
+        rig.group.visible = active;
+        const hasLeft =
+          rig.col === 1 || rig.col === 2 || (rig.col === 0 && panelCount >= 3);
+        rig.seamBridge.visible = active && hasLeft;
+      });
+    }
   };
 
   const updateSelection = (
@@ -1386,14 +1348,13 @@ export function buildCabinetAssembly(
 
     if (activeLayer === 'mount') {
       mountSteelMaterial.emissive.set('#111827');
-      mountSteelMaterial.emissiveIntensity = 0.08;
+      mountSteelMaterial.emissiveIntensity = 0.1;
     } else {
       mountSteelMaterial.emissive.set('#000000');
       mountSteelMaterial.emissiveIntensity = 0.0;
     }
   };
 
-  // Apply initial chassis finish if specified
   updateFinish(initialFinish);
 
   const dispose = () => {
@@ -1416,6 +1377,16 @@ export function buildCabinetAssembly(
     surroundGroup,
     surroundCabinets,
     trussStands,
+    wallMountGroup,
+    wallBackdrop,
+    wallPlinth,
+    wallTopCap,
+    wallColumnRigs,
+    suspendedMountGroup,
+    ceilingRailMesh,
+    ceilingEndCaps,
+    ceilingDropRods,
+    suspendedColumnRigs,
     modules,
     chassisMaterial,
     trimMaterial,
@@ -1425,7 +1396,8 @@ export function buildCabinetAssembly(
     cadLineMaterial,
     updateFinish,
     updatePattern,
-    updateCurvature,
+    updateVideoFrame,
+    updateInstallationMode,
     updateSelection,
     dispose,
   };

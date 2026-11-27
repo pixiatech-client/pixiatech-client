@@ -1,16 +1,37 @@
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap');
+
+/* ============================================================================
+   THÈME DU MODULE TESSERA MK-250
+   Lors de l'intégration dans votre application, modifiez uniquement ces
+   variables CSS pour changer automatiquement la couleur d'accentuation
+   (boutons, faisceaux Light Beam, onglets actifs, repères et icônes).
+   ============================================================================ */
 .p3d-model6-kinetic {
   --tessera-accent: #e87a24;
   --tessera-accent-hover: #f28936;
   --tessera-accent-light: #fff3d6;
   --tessera-accent-rgb: 232, 122, 36;
-  --font-display: 'Archivo', ui-sans-serif, system-ui, sans-serif;
-  --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
-  position: relative;
-  color: #f4f4f5;
-  width: 100%;
 }
 
+.p3d-model6-kinetic .p3d-model6-kinetic {
+  --font-display: "Archivo", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+.p3d-model6-kinetic {
+    font-family: var(--font-sans);
+    background-color: #090a0c;
+    color: #f4f4f5;
+  }
+
+.p3d-model6-kinetic h1, .p3d-model6-kinetic h2, .p3d-model6-kinetic h3, .p3d-model6-kinetic h4 {
+    font-family: var(--font-display);
+  }
+
+/* ============================================================================
+   VERRE PLAT TRANSPARENT / FLAT GLASSMORPHISM (SANS BISEAUTAGE NI RELIEF)
+   ============================================================================ */
 .p3d-model6-kinetic .tessera-glass {
   background: rgba(12, 13, 17, 0.72);
   backdrop-filter: blur(22px) saturate(145%);
@@ -39,7 +60,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .p3d-model6-kinetic * {
-    scroll-behavior: auto !important;
+  .p3d-model6-kinetic {
+    scroll-behavior: auto;
   }
 }

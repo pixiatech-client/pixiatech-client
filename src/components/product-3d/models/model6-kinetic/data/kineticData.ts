@@ -1,4 +1,3 @@
-'use client';
 export interface FeaturedSpec {
   label: string;
   value: string;

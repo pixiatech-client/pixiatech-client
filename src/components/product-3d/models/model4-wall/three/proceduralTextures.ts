@@ -1,4 +1,3 @@
-'use client';
 import * as THREE from 'three';
 import type { DisplayPatternId, PitchTierId } from '../data/panelSpecs';
 

@@ -1,4 +1,3 @@
-'use client';
 import * as THREE from 'three';
 import type { DisplayPatternId, PitchTierId } from '../data/panelSpecs';
 
@@ -550,6 +549,309 @@ export function createTransparentModulePolymerMaps(
 }
 
 /**
+ * Generates the signature O-Raster perforated micro-mesh alpha cutout mask (holo-img-2.png):
+ * circular open holes (#000000) arranged on a crisp orthogonal grid through a razor-thin
+ * black micro-lattice (#FFFFFF), delivering >90% visual transparency without moiré.
+ */
+export function createHolographicMeshAlphaMap(
+  cellsPerTile: number,
+  repeatX: number,
+  repeatY: number,
+  maxAnisotropy: number,
+): THREE.CanvasTexture {
+  const size = 1024;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d')!;
+
+  // Solid micro-lattice carrier (#FFFFFF)
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillRect(0, 0, size, size);
+
+  const pitch = size / cellsPerTile;
+  const holeRadius = pitch * 0.36;
+
+  // Punched circular optical apertures (#000000 -> transparent via alphaTest)
+  ctx.fillStyle = '#000000';
+  for (let r = 0; r < cellsPerTile; r++) {
+    for (let c = 0; c < cellsPerTile; c++) {
+      const cx = (c + 0.5) * pitch;
+      const cy = (r + 0.5) * pitch;
+      ctx.beginPath();
+      ctx.arc(cx, cy, holeRadius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(repeatX, repeatY);
+  tex.anisotropy = maxAnisotropy;
+  tex.needsUpdate = true;
+  return tex;
+}
+
+/**
+ * Smooth optical-film alpha mask for lit holographic playback: keeps micro-LED
+ * lattice pixels at 100% (#FFFFFF) while preserving ~78% luminous fill (#C8C8C8)
+ * across the optical apertures so video stays crisp, vivid, and free of moire
+ * while subtly revealing background depth through the perforated film.
+ */
+export function createHolographicEmitterAlphaMap(
+  cellsPerTile: number,
+  repeatX: number,
+  repeatY: number,
+  maxAnisotropy: number,
+): THREE.CanvasTexture {
+  const size = 1024;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d')!;
+
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillRect(0, 0, size, size);
+
+  const pitch = size / cellsPerTile;
+  const holeRadius = pitch * 0.34;
+
+  ctx.fillStyle = '#C8C8C8';
+  for (let r = 0; r < cellsPerTile; r++) {
+    for (let c = 0; c < cellsPerTile; c++) {
+      const cx = (c + 0.5) * pitch;
+      const cy = (r + 0.5) * pitch;
+      ctx.beginPath();
+      ctx.arc(cx, cy, holeRadius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(repeatX, repeatY);
+  tex.anisotropy = maxAnisotropy;
+  tex.needsUpdate = true;
+  return tex;
+}
+
+/**
+ * Generates diffuse, bump, and roughness maps for the 1.8 mm O-Raster holographic
+ * film mesh module (dark anodized perforated grid + micro-diode / trace nodes at intersections).
+ */
+export function createHolographicMeshMaps(
+  cellsPerTile: number,
+  repeatX: number,
+  repeatY: number,
+  maxAnisotropy: number,
+): {
+  map: THREE.CanvasTexture;
+  bumpMap: THREE.CanvasTexture;
+  roughnessMap: THREE.CanvasTexture;
+} {
+  const size = 1024;
+
+  const mapCanvas = document.createElement('canvas');
+  mapCanvas.width = size;
+  mapCanvas.height = size;
+  const cCtx = mapCanvas.getContext('2d')!;
+
+  const bumpCanvas = document.createElement('canvas');
+  bumpCanvas.width = size;
+  bumpCanvas.height = size;
+  const bCtx = bumpCanvas.getContext('2d')!;
+
+  const roughCanvas = document.createElement('canvas');
+  roughCanvas.width = size;
+  roughCanvas.height = size;
+  const rCtx = roughCanvas.getContext('2d')!;
+
+  cCtx.fillStyle = '#101319';
+  cCtx.fillRect(0, 0, size, size);
+  bCtx.fillStyle = '#B8B8B8';
+  bCtx.fillRect(0, 0, size, size);
+  rCtx.fillStyle = '#626262';
+  rCtx.fillRect(0, 0, size, size);
+
+  const pitch = size / cellsPerTile;
+
+  // Fine conductive horizontal & vertical trace filaments between holes
+  cCtx.fillStyle = '#1D2430';
+  bCtx.fillStyle = '#E0E0E0';
+  for (let i = 0; i <= cellsPerTile; i++) {
+    const p = i * pitch;
+    cCtx.fillRect(0, p - 2, size, 4);
+    cCtx.fillRect(p - 2, 0, 4, size);
+    bCtx.fillRect(0, p - 1.5, size, 3);
+    bCtx.fillRect(p - 1.5, 0, 3, size);
+  }
+
+  // Micro LED / driver nodes at grid intersections (holo-img-2.png & holo-img-6.png)
+  for (let r = 0; r <= cellsPerTile; r++) {
+    for (let c = 0; c <= cellsPerTile; c++) {
+      const ix = c * pitch;
+      const iy = r * pitch;
+      cCtx.fillStyle = '#2B3546';
+      cCtx.fillRect(ix - 3.5, iy - 3.5, 7, 7);
+      cCtx.fillStyle = '#9E8550';
+      cCtx.fillRect(ix - 1.5, iy - 1.5, 3, 3);
+      rCtx.fillStyle = '#363636';
+      rCtx.fillRect(ix - 3, iy - 3, 6, 6);
+    }
+  }
+
+  const setup = (canvas: HTMLCanvasElement, isColor: boolean) => {
+    const tex = new THREE.CanvasTexture(canvas);
+    if (isColor) tex.colorSpace = THREE.SRGBColorSpace;
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(repeatX, repeatY);
+    tex.anisotropy = maxAnisotropy;
+    tex.needsUpdate = true;
+    return tex;
+  };
+
+  return {
+    map: setup(mapCanvas, true),
+    bumpMap: setup(bumpCanvas, false),
+    roughnessMap: setup(roughCanvas, false),
+  };
+}
+
+/**
+ * Generates crisp horizontal extruded aluminum groove bump & roughness maps
+ * for the matte-black top & bottom O-Raster power/controller beams (holo-mid1.png).
+ */
+export function createPosterHousingRibMaps(maxAnisotropy: number): {
+  bumpMap: THREE.CanvasTexture;
+  roughnessMap: THREE.CanvasTexture;
+} {
+  const w = 512;
+  const h = 256;
+
+  const bumpCanvas = document.createElement('canvas');
+  bumpCanvas.width = w;
+  bumpCanvas.height = h;
+  const bCtx = bumpCanvas.getContext('2d')!;
+
+  const roughCanvas = document.createElement('canvas');
+  roughCanvas.width = w;
+  roughCanvas.height = h;
+  const rCtx = roughCanvas.getContext('2d')!;
+
+  bCtx.fillStyle = '#707070';
+  bCtx.fillRect(0, 0, w, h);
+  rCtx.fillStyle = '#525252';
+  rCtx.fillRect(0, 0, w, h);
+
+  // Fine crisp horizontal ribbed grooves across the extruded beam face (holo-mid1.png)
+  for (let y = 18; y < h - 18; y += 6) {
+    bCtx.fillStyle = '#D8D8D8';
+    bCtx.fillRect(0, y, w, 2);
+    bCtx.fillStyle = '#323232';
+    bCtx.fillRect(0, y + 2, w, 2);
+
+    rCtx.fillStyle = '#404040';
+    rCtx.fillRect(0, y, w, 2);
+    rCtx.fillStyle = '#888888';
+    rCtx.fillRect(0, y + 2, w, 2);
+  }
+
+  const setup = (canvas: HTMLCanvasElement) => {
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.ClampToEdgeWrapping;
+    tex.repeat.set(2, 1);
+    tex.anisotropy = maxAnisotropy;
+    tex.needsUpdate = true;
+    return tex;
+  };
+
+  return {
+    bumpMap: setup(bumpCanvas),
+    roughnessMap: setup(roughCanvas),
+  };
+}
+
+/**
+ * Crisp horizontal official PIXIATECH circular emblem (/product-3d/assets/aistudio/favicon_f9979c15.png)
+ * paired with the brushed-silver PIXIATECH wordmark for the O-Raster controller beams.
+ */
+export function createPixiatechBarLogoTexture(
+  maxAnisotropy: number,
+  onLoad?: () => void,
+): THREE.CanvasTexture {
+  const w = 768;
+  const h = 144;
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d')!;
+
+  const badgeR = 52;
+  const cx = 172;
+  const cy = h / 2;
+  const textX = cx + badgeR + 24;
+
+  const drawWordmark = () => {
+    ctx.fillStyle = '#E2E8F0';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.font = '600 50px "Plus Jakarta Sans", system-ui, sans-serif';
+    ctx.fillText('PIXIATECH', textX, cy + 2);
+  };
+
+  const drawFallbackBadge = () => {
+    ctx.clearRect(0, 0, w, h);
+    const ring = ctx.createLinearGradient(cx - badgeR, cy, cx + badgeR, cy);
+    ring.addColorStop(0, '#A855F7');
+    ring.addColorStop(1, '#38BDF8');
+    ctx.fillStyle = '#090B11';
+    ctx.beginPath();
+    ctx.arc(cx, cy, badgeR, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = ring;
+    ctx.lineWidth = 10;
+    ctx.beginPath();
+    ctx.arc(cx, cy, badgeR - 7, 0, Math.PI * 2);
+    ctx.stroke();
+    drawWordmark();
+  };
+
+  drawFallbackBadge();
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = maxAnisotropy;
+  tex.needsUpdate = true;
+
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = () => {
+    ctx.clearRect(0, 0, w, h);
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, badgeR, 0, Math.PI * 2);
+    ctx.clip();
+
+    // Scale 1.09x to crop the outer white drop-shadow margin cleanly
+    const drawSize = badgeR * 2 * 1.09;
+    ctx.drawImage(img, cx - drawSize / 2, cy - drawSize / 2, drawSize, drawSize);
+    ctx.restore();
+
+    drawWordmark();
+    tex.needsUpdate = true;
+    onLoad?.();
+  };
+  img.src = '/product-3d/assets/aistudio/favicon_f9979c15.png';
+
+  return tex;
+}
+
+/**
  * Loads the authentic PIXIATECH circular logo (/product-3d/assets/aistudio/favicon_f9979c15.png)
  * cropped cleanly inside its dark outer bezel to remove corner white padding.
  */
@@ -691,42 +993,398 @@ export function createPcbBackplaneTexture(maxAnisotropy: number): THREE.CanvasTe
 }
 
 /**
- * High-resolution 16:9 master optical canvas (1280x720) with silky photographic
- * gradients & sculptural 3D ribbon folds inspired by Image 1.
+ * Renders an animated frame of the holographic showcase sequence (matching the
+ * floating figure, swirling neon-green energy vortex, and orbiting gaming/audio
+ * devices from the reference video) into a 2D canvas. Scales cleanly across 1..4
+ * horizontal panels without stretching while preserving crisp LED subpixel contrast
+ * across the perforated circular holes.
  */
+export function drawHolographicVideoFrame(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  timeSec: number,
+  panelCount: number = 1,
+): void {
+  const t = timeSec;
+  const cx = w * 0.5;
+  const cy = h * 0.53;
+  // Keep vertical subject proportions crisp across 1..4 wide panels
+  const unit = Math.min(h * 0.5, w * 0.94);
+
+  // 1. High-contrast electric-cyan holographic stage backdrop
+  const bg = ctx.createRadialGradient(cx, cy * 0.88, unit * 0.06, cx, cy, Math.max(w, h) * 0.72);
+  bg.addColorStop(0, '#1BE7FF');
+  bg.addColorStop(0.28, '#00A3FF');
+  bg.addColorStop(0.62, '#0051A8');
+  bg.addColorStop(1, '#021229');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, w, h);
+
+  // Volumetric cyan light rays radiating behind the floating subject
+  ctx.save();
+  for (let i = 0; i < 4; i++) {
+    const sx = w * (0.14 + i * 0.24) + Math.sin(t * 0.7 + i * 1.9) * unit * 0.12;
+    const shaft = ctx.createLinearGradient(sx - unit * 0.24, 0, sx + unit * 0.24, h);
+    shaft.addColorStop(0, 'rgba(165, 243, 252, 0)');
+    shaft.addColorStop(0.45, 'rgba(103, 232, 249, 0.22)');
+    shaft.addColorStop(1, 'rgba(6, 182, 212, 0)');
+    ctx.fillStyle = shaft;
+    ctx.fillRect(0, 0, w, h);
+  }
+  ctx.restore();
+
+  // Luminous holographic horizon floor ring beneath floating character
+  const stageGlow = ctx.createRadialGradient(
+    cx,
+    h * 0.86,
+    unit * 0.04,
+    cx,
+    h * 0.86,
+    unit * (0.58 + (panelCount - 1) * 0.28),
+  );
+  stageGlow.addColorStop(0, 'rgba(132, 255, 46, 0.34)');
+  stageGlow.addColorStop(0.5, 'rgba(34, 211, 238, 0.18)');
+  stageGlow.addColorStop(1, 'rgba(2, 18, 41, 0)');
+  ctx.fillStyle = stageGlow;
+  ctx.fillRect(0, h * 0.68, w, h * 0.32);
+
+  // Helper to draw multi-pass neon-green energy swirl ribbon
+  const drawRibbonArc = (isFrontPass: boolean) => {
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    const spreadX = panelCount > 1 ? unit * (0.68 + (panelCount - 1) * 0.34) : unit * 0.62;
+    const steps = 48;
+    ctx.beginPath();
+    let started = false;
+    for (let i = 0; i <= steps; i++) {
+      const p = i / steps;
+      const angle = p * Math.PI * 3.1 - t * 1.45;
+      const depth = Math.sin(angle);
+      const wantFront = depth >= 0;
+      if (wantFront !== isFrontPass) {
+        started = false;
+        continue;
+      }
+      const rx = cx + Math.cos(angle) * spreadX * (0.58 + 0.32 * Math.sin(p * Math.PI));
+      const ry = h * 0.12 + p * h * 0.78 + Math.cos(angle * 2) * unit * 0.04;
+      if (!started) {
+        ctx.moveTo(rx, ry);
+        started = true;
+      } else {
+        ctx.lineTo(rx, ry);
+      }
+    }
+    ctx.strokeStyle = 'rgba(132, 255, 46, 0.32)';
+    ctx.lineWidth = unit * 0.18;
+    ctx.stroke();
+
+    ctx.strokeStyle = '#32E815';
+    ctx.lineWidth = unit * 0.105;
+    ctx.stroke();
+
+    ctx.strokeStyle = '#D9FF80';
+    ctx.lineWidth = unit * 0.038;
+    ctx.stroke();
+    ctx.restore();
+  };
+
+  drawRibbonArc(false);
+
+  // 2. Floating curly-haired character with richer 3D shading & contrast
+  const bobY = Math.sin(t * 2.1) * unit * 0.03;
+  const tilt = Math.sin(t * 1.25) * 0.055;
+  const armWaveL = Math.sin(t * 2.4) * 0.32;
+  const armWaveR = Math.cos(t * 2.1) * 0.36;
+
+  ctx.save();
+  ctx.translate(cx, cy + bobY);
+  ctx.rotate(tilt);
+
+  // Bright radiant cyan halo behind character silhouette
+  const aura = ctx.createRadialGradient(0, -unit * 0.12, unit * 0.04, 0, -unit * 0.08, unit * 0.62);
+  aura.addColorStop(0, 'rgba(125, 249, 255, 0.28)');
+  aura.addColorStop(0.5, 'rgba(14, 165, 233, 0.16)');
+  aura.addColorStop(1, 'rgba(0, 142, 230, 0)');
+  ctx.fillStyle = aura;
+  ctx.beginPath();
+  ctx.arc(0, -unit * 0.08, unit * 0.62, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Legs (ripped denim jeans + coral-orange & white sneakers)
+  const drawLeg = (side: -1 | 1, kneeBendY: number, legSwingX: number) => {
+    ctx.save();
+    const legGrad = ctx.createLinearGradient(-unit * 0.18, 0, unit * 0.18, unit * 0.56);
+    legGrad.addColorStop(0, '#6EB4E8');
+    legGrad.addColorStop(0.55, '#3B82C4');
+    legGrad.addColorStop(1, '#1E4E8C');
+    ctx.strokeStyle = legGrad;
+    ctx.lineWidth = unit * 0.12;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(side * unit * 0.085, unit * 0.06);
+    ctx.lineTo(side * unit * 0.13 + legSwingX * 0.5, unit * 0.29 + kneeBendY);
+    ctx.lineTo(side * unit * 0.09 + legSwingX, unit * 0.51 + kneeBendY * 0.5);
+    ctx.stroke();
+
+    // Distressed rip patch
+    ctx.fillStyle = '#E8F3FC';
+    ctx.fillRect(
+      side * unit * 0.08 + legSwingX * 0.35,
+      unit * 0.25 + kneeBendY * 0.7,
+      unit * 0.06,
+      unit * 0.026,
+    );
+
+    const sx = side * unit * 0.09 + legSwingX;
+    const sy = unit * 0.54 + kneeBendY * 0.5;
+    ctx.fillStyle = '#FFFFFF';
+    ctx.beginPath();
+    ctx.ellipse(sx + side * unit * 0.02, sy + unit * 0.025, unit * 0.072, unit * 0.028, side * 0.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#FB7119';
+    ctx.beginPath();
+    ctx.ellipse(sx + side * unit * 0.012, sy, unit * 0.062, unit * 0.034, side * 0.15, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  };
+  drawLeg(-1, Math.sin(t * 2.1) * unit * 0.03, -unit * 0.02);
+  drawLeg(1, Math.cos(t * 2.1) * unit * 0.03, unit * 0.025);
+
+  // Arms in olive-green knit sweater sleeves
+  const drawArm = (side: -1 | 1, wave: number) => {
+    ctx.save();
+    ctx.translate(side * unit * 0.16, -unit * 0.18);
+    ctx.rotate(side * (-0.55 + wave));
+    ctx.strokeStyle = '#7C9424';
+    ctx.lineWidth = unit * 0.094;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.quadraticCurveTo(side * unit * 0.14, -unit * 0.04, side * unit * 0.28, -unit * 0.16);
+    ctx.stroke();
+    ctx.fillStyle = '#E3A57C';
+    ctx.beginPath();
+    ctx.arc(side * unit * 0.3, -unit * 0.18, unit * 0.044, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  };
+  drawArm(-1, armWaveL);
+  drawArm(1, armWaveR);
+
+  // Olive-green textured knit sweater torso
+  const torsoGrad = ctx.createLinearGradient(-unit * 0.17, -unit * 0.24, unit * 0.17, unit * 0.12);
+  torsoGrad.addColorStop(0, '#9EB82E');
+  torsoGrad.addColorStop(0.5, '#738A1F');
+  torsoGrad.addColorStop(1, '#4C5E12');
+  ctx.fillStyle = torsoGrad;
+  ctx.beginPath();
+  ctx.roundRect(-unit * 0.175, -unit * 0.23, unit * 0.35, unit * 0.33, unit * 0.09);
+  ctx.fill();
+
+  // Curly hair volume halo
+  ctx.fillStyle = '#331B0E';
+  for (let i = 0; i < 16; i++) {
+    const a = (i / 16) * Math.PI * 2;
+    const hr = unit * (0.148 + (i % 2) * 0.025);
+    ctx.beginPath();
+    ctx.arc(Math.cos(a) * hr, -unit * 0.38 + Math.sin(a) * hr * 0.92, unit * 0.07, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Face with warm skin highlight
+  const faceGrad = ctx.createRadialGradient(-unit * 0.02, -unit * 0.38, unit * 0.01, 0, -unit * 0.36, unit * 0.11);
+  faceGrad.addColorStop(0, '#F0B68F');
+  faceGrad.addColorStop(1, '#CC8B62');
+  ctx.fillStyle = faceGrad;
+  ctx.beginPath();
+  ctx.ellipse(0, -unit * 0.36, unit * 0.098, unit * 0.112, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Glasses + joyful smile
+  ctx.strokeStyle = '#0F172A';
+  ctx.lineWidth = unit * 0.012;
+  ctx.beginPath();
+  ctx.arc(-unit * 0.036, -unit * 0.365, unit * 0.029, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(unit * 0.036, -unit * 0.365, unit * 0.029, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.strokeStyle = '#FFFFFF';
+  ctx.lineWidth = unit * 0.013;
+  ctx.beginPath();
+  ctx.arc(0, -unit * 0.325, unit * 0.032, 0.15, Math.PI - 0.15);
+  ctx.stroke();
+
+  // Glowing turquoise over-ear headphones
+  ctx.strokeStyle = '#22D3EE';
+  ctx.lineWidth = unit * 0.032;
+  ctx.beginPath();
+  ctx.arc(0, -unit * 0.38, unit * 0.148, Math.PI * 1.08, Math.PI * -0.08);
+  ctx.stroke();
+  ctx.fillStyle = '#67E8F9';
+  ctx.beginPath();
+  ctx.ellipse(-unit * 0.142, -unit * 0.36, unit * 0.035, unit * 0.058, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(unit * 0.142, -unit * 0.36, unit * 0.035, unit * 0.058, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
+
+  // Front pass of neon-green energy swirl
+  drawRibbonArc(true);
+
+  // 3. Orbiting floating gaming & audio gear
+  const drawGamepad = (gx: number, gy: number, rot: number, bodyHex: string, scale = 1) => {
+    ctx.save();
+    ctx.translate(gx, gy);
+    ctx.rotate(rot);
+    ctx.scale(scale, scale);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.18)';
+    ctx.beginPath();
+    ctx.roundRect(-unit * 0.118, -unit * 0.062, unit * 0.236, unit * 0.124, unit * 0.052);
+    ctx.fill();
+    ctx.fillStyle = bodyHex;
+    ctx.beginPath();
+    ctx.roundRect(-unit * 0.11, -unit * 0.055, unit * 0.22, unit * 0.11, unit * 0.048);
+    ctx.fill();
+    ctx.fillStyle = '#0F172A';
+    ctx.beginPath();
+    ctx.arc(-unit * 0.05, 0, unit * 0.023, 0, Math.PI * 2);
+    ctx.arc(unit * 0.05, 0, unit * 0.023, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#B8FF59';
+    ctx.beginPath();
+    ctx.arc(unit * 0.065, -unit * 0.015, unit * 0.011, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  };
+
+  const drawSpeaker = (sx: number, sy: number, rot: number) => {
+    ctx.save();
+    ctx.translate(sx, sy);
+    ctx.rotate(rot);
+    ctx.fillStyle = '#CBD5E1';
+    ctx.beginPath();
+    ctx.roundRect(-unit * 0.1, -unit * 0.06, unit * 0.2, unit * 0.12, unit * 0.028);
+    ctx.fill();
+    ctx.fillStyle = '#0F172A';
+    ctx.beginPath();
+    ctx.arc(-unit * 0.042, 0, unit * 0.035, 0, Math.PI * 2);
+    ctx.arc(unit * 0.042, 0, unit * 0.035, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#38BDF8';
+    ctx.beginPath();
+    ctx.arc(-unit * 0.042, 0, unit * 0.014, 0, Math.PI * 2);
+    ctx.arc(unit * 0.042, 0, unit * 0.014, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  };
+
+  const spreadFactor = 1 + (panelCount - 1) * 0.45;
+  drawGamepad(
+    cx + Math.cos(t * 1.4) * unit * 0.34 * spreadFactor,
+    cy + unit * 0.14 + Math.sin(t * 1.8) * unit * 0.07,
+    Math.sin(t * 1.1) * 0.25,
+    '#7DFF1F',
+    1.02,
+  );
+  drawGamepad(
+    cx - Math.cos(t * 1.2 + 0.8) * unit * 0.36 * spreadFactor,
+    cy - unit * 0.06 + Math.sin(t * 1.5 + 1.2) * unit * 0.09,
+    -0.2 + Math.cos(t) * 0.2,
+    '#2563EB',
+    0.94,
+  );
+  drawSpeaker(
+    cx - unit * 0.26 * spreadFactor + Math.sin(t * 0.9) * unit * 0.06,
+    cy - unit * 0.48 + Math.cos(t * 1.3) * unit * 0.05,
+    -0.18 + Math.sin(t * 0.8) * 0.12,
+  );
+
+  // Floating glowing neon energy orbs & light particles
+  const drawDisc = (dx: number, dy: number, r: number, col: string) => {
+    ctx.save();
+    ctx.fillStyle = 'rgba(132, 255, 46, 0.32)';
+    ctx.beginPath();
+    ctx.arc(dx, dy, r * 1.65, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = col;
+    ctx.beginPath();
+    ctx.arc(dx, dy, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  };
+  drawDisc(
+    cx + unit * 0.32 * spreadFactor,
+    cy - unit * 0.42 + Math.sin(t * 2.0) * unit * 0.05,
+    unit * 0.048,
+    '#9EFF3E',
+  );
+  drawDisc(
+    cx - unit * 0.34 * spreadFactor,
+    cy + unit * 0.36 + Math.cos(t * 1.7) * unit * 0.04,
+    unit * 0.026,
+    '#67E8F9',
+  );
+  if (panelCount >= 2) {
+    drawSpeaker(
+      cx + unit * 0.62 * spreadFactor,
+      cy + unit * 0.22 + Math.sin(t * 1.6) * unit * 0.06,
+      0.22,
+    );
+    drawGamepad(
+      cx - unit * 0.64 * spreadFactor,
+      cy + unit * 0.26 + Math.cos(t * 1.4) * unit * 0.07,
+      0.18,
+      '#84FF2E',
+      0.95,
+    );
+  }
+}
+
 export function createMasterEmitterCanvas(
   pattern: DisplayPatternId,
   pitch: PitchTierId,
+  panelCount: number = 1,
 ): HTMLCanvasElement {
-  const w = 1024;
-  const h = 1024;
+  const w = pattern === 'video' ? Math.min(1280, Math.max(512, panelCount * 448)) : 1024;
+  const h = pattern === 'video' ? 768 : 1024;
   const canvas = document.createElement('canvas');
   canvas.width = w;
   canvas.height = h;
   const ctx = canvas.getContext('2d')!;
 
-  ctx.fillStyle = '#050608';
+  if (pattern === 'video') {
+    drawHolographicVideoFrame(ctx, w, h, 0.4, panelCount);
+    return canvas;
+  }
+
+  ctx.fillStyle = '#06080B';
   ctx.fillRect(0, 0, w, h);
 
   if (pattern === 'fluid') {
-    // Deep Noir & Dark Specular Ribbon Waves (no bright sky-blue)
+    // Reflets noirs — luminous noir/silver & warm gold-ice holographic wave folds
     const base = ctx.createLinearGradient(0, 0, w, h);
-    base.addColorStop(0, '#040507');
-    base.addColorStop(0.45, '#0B0F16');
-    base.addColorStop(0.85, '#131A24');
-    base.addColorStop(1, '#06080C');
+    base.addColorStop(0, '#090C12');
+    base.addColorStop(0.45, '#131A26');
+    base.addColorStop(0.82, '#1C2433');
+    base.addColorStop(1, '#080B10');
     ctx.fillStyle = base;
     ctx.fillRect(0, 0, w, h);
 
     ctx.save();
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.75)';
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.72)';
     ctx.shadowBlur = 46;
     ctx.shadowOffsetY = 16;
     const rib1 = ctx.createLinearGradient(w * 0.08, h * 0.1, w * 0.78, h * 0.9);
-    rib1.addColorStop(0, '#070A0F');
-    rib1.addColorStop(0.38, '#171E29');
-    rib1.addColorStop(0.64, '#2A3342');
-    rib1.addColorStop(1, '#080B10');
+    rib1.addColorStop(0, '#0D131D');
+    rib1.addColorStop(0.36, '#2A384D');
+    rib1.addColorStop(0.62, '#5C6F8C');
+    rib1.addColorStop(1, '#0B1018');
     ctx.fillStyle = rib1;
     ctx.beginPath();
     ctx.moveTo(-60, h * 0.72);
@@ -742,11 +1400,11 @@ export function createMasterEmitterCanvas(
     ctx.shadowBlur = 34;
     ctx.shadowOffsetY = 10;
     const rib2 = ctx.createLinearGradient(w * 0.2, h * 0.85, w * 0.9, h * 0.15);
-    rib2.addColorStop(0, '#090C11');
-    rib2.addColorStop(0.42, '#222A36');
-    rib2.addColorStop(0.66, '#7C5A34');
-    rib2.addColorStop(0.84, '#181E27');
-    rib2.addColorStop(1, '#06080B');
+    rib2.addColorStop(0, '#0D1119');
+    rib2.addColorStop(0.38, '#323E52');
+    rib2.addColorStop(0.62, '#C8914B');
+    rib2.addColorStop(0.82, '#2B3547');
+    rib2.addColorStop(1, '#090C11');
     ctx.fillStyle = rib2;
     ctx.beginPath();
     ctx.moveTo(w * 0.16, h * 1.05);
@@ -757,33 +1415,33 @@ export function createMasterEmitterCanvas(
     ctx.fill();
     ctx.restore();
 
-    const rib3 = ctx.createRadialGradient(w * 0.52, h * 0.45, 16, w * 0.52, h * 0.45, w * 0.48);
-    rib3.addColorStop(0, 'rgba(226, 232, 240, 0.16)');
-    rib3.addColorStop(0.5, 'rgba(148, 163, 184, 0.06)');
+    const rib3 = ctx.createRadialGradient(w * 0.52, h * 0.46, 16, w * 0.52, h * 0.46, w * 0.48);
+    rib3.addColorStop(0, 'rgba(241, 245, 249, 0.32)');
+    rib3.addColorStop(0.5, 'rgba(148, 163, 184, 0.12)');
     rib3.addColorStop(1, 'rgba(4, 6, 10, 0.0)');
     ctx.fillStyle = rib3;
     ctx.fillRect(0, 0, w, h);
   } else if (pattern === 'ambient') {
     const grad = ctx.createLinearGradient(0, h * 0.92, w, h * 0.08);
-    grad.addColorStop(0, '#040507');
-    grad.addColorStop(0.38, '#10151D');
-    grad.addColorStop(0.68, '#5E3D1C');
-    grad.addColorStop(1, '#06080B');
+    grad.addColorStop(0, '#07090D');
+    grad.addColorStop(0.36, '#1E2736');
+    grad.addColorStop(0.68, '#B8762E');
+    grad.addColorStop(1, '#080B10');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, w, h);
 
-    const glow = ctx.createRadialGradient(w * 0.62, h * 0.44, 24, w * 0.62, h * 0.44, w * 0.45);
-    glow.addColorStop(0, 'rgba(245, 196, 130, 0.22)');
-    glow.addColorStop(0.55, 'rgba(100, 116, 139, 0.08)');
+    const glow = ctx.createRadialGradient(w * 0.54, h * 0.48, 24, w * 0.54, h * 0.48, w * 0.46);
+    glow.addColorStop(0, 'rgba(251, 211, 141, 0.42)');
+    glow.addColorStop(0.55, 'rgba(148, 163, 184, 0.14)');
     glow.addColorStop(1, 'rgba(5, 6, 8, 0)');
     ctx.fillStyle = glow;
     ctx.fillRect(0, 0, w, h);
   } else if (pattern === 'calibration') {
-    ctx.fillStyle = '#06070A';
+    ctx.fillStyle = '#07090D';
     ctx.fillRect(0, 0, w, h);
     const step = pitch === 'p09' ? 32 : pitch === 'p12' ? 40 : 56;
-    ctx.strokeStyle = 'rgba(245, 158, 11, 0.24)';
-    ctx.lineWidth = 1;
+    ctx.strokeStyle = 'rgba(245, 158, 11, 0.38)';
+    ctx.lineWidth = 1.5;
     for (let x = 0; x <= w; x += step) {
       ctx.beginPath();
       ctx.moveTo(x, 0);
@@ -796,31 +1454,124 @@ export function createMasterEmitterCanvas(
       ctx.lineTo(w, y);
       ctx.stroke();
     }
-    ctx.strokeStyle = 'rgba(226, 232, 240, 0.42)';
-    ctx.lineWidth = 2;
+    ctx.strokeStyle = 'rgba(226, 232, 240, 0.65)';
+    ctx.lineWidth = 3;
     ctx.strokeRect(24, 24, w - 48, h - 48);
     ctx.beginPath();
-    ctx.arc(w / 2, h / 2, 150, 0, Math.PI * 2);
+    ctx.arc(w / 2, h / 2, 160, 0, Math.PI * 2);
     ctx.stroke();
   } else {
     // Noir absolu with subtle glossy studio diagonal sheen
     const grad = ctx.createLinearGradient(0, 0, w, h);
-    grad.addColorStop(0, '#040507');
-    grad.addColorStop(0.42, '#0A0D12');
-    grad.addColorStop(0.56, '#141922');
-    grad.addColorStop(1, '#040507');
+    grad.addColorStop(0, '#07090D');
+    grad.addColorStop(0.42, '#10151E');
+    grad.addColorStop(0.56, '#1E2634');
+    grad.addColorStop(1, '#07090D');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, w, h);
   }
 
   // Ultra-subtle micro-LED subpixel sheen
   const diodeStep = pitch === 'p09' ? 4 : pitch === 'p12' ? 6 : 8;
-  ctx.fillStyle = pattern === 'off' ? 'rgba(255,255,255,0.025)' : 'rgba(0,0,0,0.12)';
+  ctx.fillStyle = pattern === 'off' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.1)';
   for (let x = 0; x < w; x += diodeStep) {
     ctx.fillRect(x, 0, 1, h);
   }
 
   return canvas;
+}
+
+/**
+ * Generates architectural slate concrete wall diffuse & bump maps for MURAL mode
+ * so the transparent perforated holographic screen shows realistic wall texture
+ * directly behind its circular apertures.
+ */
+export function createArchitecturalWallMaps(maxAnisotropy: number): {
+  map: THREE.CanvasTexture;
+  bumpMap: THREE.CanvasTexture;
+} {
+  const w = 1024;
+  const h = 1024;
+
+  const colorCanvas = document.createElement('canvas');
+  colorCanvas.width = w;
+  colorCanvas.height = h;
+  const cCtx = colorCanvas.getContext('2d')!;
+
+  const bumpCanvas = document.createElement('canvas');
+  bumpCanvas.width = w;
+  bumpCanvas.height = h;
+  const bCtx = bumpCanvas.getContext('2d')!;
+
+  const grad = cCtx.createLinearGradient(0, 0, 0, h);
+  grad.addColorStop(0, '#282E3A');
+  grad.addColorStop(0.45, '#1D222C');
+  grad.addColorStop(1, '#12151C');
+  cCtx.fillStyle = grad;
+  cCtx.fillRect(0, 0, w, h);
+
+  bCtx.fillStyle = '#808080';
+  bCtx.fillRect(0, 0, w, h);
+
+  // Architectural concrete panel reveal joints
+  cCtx.strokeStyle = 'rgba(8, 10, 14, 0.55)';
+  cCtx.lineWidth = 3;
+  bCtx.strokeStyle = '#383838';
+  bCtx.lineWidth = 4;
+  for (const frac of [0.25, 0.5, 0.75]) {
+    const x = Math.round(w * frac);
+    cCtx.beginPath();
+    cCtx.moveTo(x, 0);
+    cCtx.lineTo(x, h);
+    cCtx.stroke();
+    bCtx.beginPath();
+    bCtx.moveTo(x, 0);
+    bCtx.lineTo(x, h);
+    bCtx.stroke();
+  }
+  for (const frac of [0.33, 0.66]) {
+    const y = Math.round(h * frac);
+    cCtx.beginPath();
+    cCtx.moveTo(0, y);
+    cCtx.lineTo(w, y);
+    cCtx.stroke();
+    bCtx.beginPath();
+    bCtx.moveTo(0, y);
+    bCtx.lineTo(w, y);
+    bCtx.stroke();
+  }
+
+  // Subtle tactile concrete mineral grain
+  let seed = 9187;
+  const cImg = cCtx.getImageData(0, 0, w, h);
+  const bImg = bCtx.getImageData(0, 0, w, h);
+  const cd = cImg.data;
+  const bd = bImg.data;
+  for (let i = 0; i < cd.length; i += 4) {
+    seed = (seed * 16807) % 2147483647;
+    const n = (seed % 9) - 4;
+    cd[i] = Math.max(0, Math.min(255, cd[i] + n));
+    cd[i + 1] = Math.max(0, Math.min(255, cd[i + 1] + n));
+    cd[i + 2] = Math.max(0, Math.min(255, cd[i + 2] + n));
+    bd[i] = Math.max(0, Math.min(255, bd[i] + n * 2));
+    bd[i + 1] = bd[i];
+    bd[i + 2] = bd[i];
+  }
+  cCtx.putImageData(cImg, 0, 0);
+  bCtx.putImageData(bImg, 0, 0);
+
+  const map = new THREE.CanvasTexture(colorCanvas);
+  map.colorSpace = THREE.SRGBColorSpace;
+  map.wrapS = THREE.RepeatWrapping;
+  map.wrapT = THREE.ClampToEdgeWrapping;
+  map.anisotropy = maxAnisotropy;
+
+  const bumpMap = new THREE.CanvasTexture(bumpCanvas);
+  bumpMap.wrapS = THREE.RepeatWrapping;
+  bumpMap.wrapT = THREE.ClampToEdgeWrapping;
+  bumpMap.anisotropy = maxAnisotropy;
+
+  return { map, bumpMap };
 }
 
 export function createSlicedEmitterTexture(
@@ -976,3 +1727,36 @@ export function createPolishedConcreteMaps(maxAnisotropy: number): {
     roughnessMap: setup(roughCanvas, false),
   };
 }
+
+/**
+ * Generates a soft radial additive-blending glow texture for illuminated LED
+ * indicator buttons and their emitted light spill on adjacent surfaces.
+ */
+export function createIndicatorGlowTexture(
+  rgbCore: string,
+  rgbHalo: string,
+): THREE.CanvasTexture {
+  const size = 128;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d')!;
+
+  ctx.clearRect(0, 0, size, size);
+
+  const half = size * 0.5;
+  const grad = ctx.createRadialGradient(half, half, 0, half, half, half);
+  grad.addColorStop(0.0, `rgba(${rgbCore}, 1.0)`);
+  grad.addColorStop(0.18, `rgba(${rgbCore}, 0.86)`);
+  grad.addColorStop(0.4, `rgba(${rgbHalo}, 0.44)`);
+  grad.addColorStop(0.7, `rgba(${rgbHalo}, 0.13)`);
+  grad.addColorStop(1.0, `rgba(${rgbHalo}, 0.0)`);
+
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, size, size);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
+

@@ -1,4 +1,3 @@
-'use client';
 export type PitchTierId = 'p09' | 'p12' | 'p18';
 
 export type ChassisFinishId = 'obsidian' | 'titanium' | 'raw';

@@ -1,4 +1,3 @@
-'use client';
 import React from 'react';
 import { ChevronDown } from 'lucide-react';
 import { ASSEMBLY_LAYERS, type AssemblyLayerId } from '../data/panelSpecs';

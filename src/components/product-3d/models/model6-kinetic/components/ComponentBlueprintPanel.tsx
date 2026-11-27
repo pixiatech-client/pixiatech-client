@@ -1,4 +1,3 @@
-'use client';
 import { RefObject, useRef, useState } from 'react';
 import { motion, useDragControls, useMotionValue } from 'motion/react';
 import { GripHorizontal, Layers, Minimize2, RotateCcw } from 'lucide-react';
