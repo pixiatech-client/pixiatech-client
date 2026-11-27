@@ -46,6 +46,12 @@ interface HeroSectionProps {
   onDownloadPdf?: () => void;
   /** Indique si l'export PDF est en cours (affichage du spinner). */
   pdfExporting?: boolean;
+  /**
+   * Page CMS à lire pour ce Hero. Fourni par la fiche produit uniquement :
+   * évite le premier rendu avec `currentPageId='home'`. Les autres pages ne
+   * le passent pas et conservent leur comportement historique.
+   */
+  cmsPageId?: string;
 }
 
 export const HeroSection: React.FC<HeroSectionProps> = ({
@@ -60,9 +66,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   productPhotosInOverview = false,
   onDownloadPdf,
   pdfExporting = false,
+  cmsPageId,
 }) => {
   const { pages, currentPageId } = useCms();
-  const cmsHero = (pages[currentPageId]?.sections?.hero as Record<string, unknown>) || {};
+  const heroPageId = cmsPageId ?? currentPageId;
+  const cmsHero = (pages[heroPageId]?.sections?.hero as Record<string, unknown>) || {};
   const activeLang = normalizeLang(lang);
 
   const breadcrumbAll = lang === 'FR' ? 'TOUS LES PRODUITS' : 'ALL PRODUCTS';

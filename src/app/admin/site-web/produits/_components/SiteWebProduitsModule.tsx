@@ -61,12 +61,13 @@ import {
 } from '@/lib/products/products-service';
 import { slugify, groupDisplayName, productCategoryIds, MAX_PRODUCT_NAME_LENGTH, isValidShopUrl, normalizeShopUrl, sanitizeShopLinks, normalizeShopLinkTypes, sanitizeShopLinkTypes, shopLinkTypeForVariant, type ProductSpecModel, type ProductSpecGroup, type ProductSpecs } from '@/lib/products/types';
 import { SpecsMatrixEditor } from './SpecsMatrixEditor';
-import Product3DModule from '@/components/product-3d/Product3DModule';
+import Product3DPreview from '@/components/product-3d/Product3DPreview';
+import { Product3DModelPicker } from '@/components/product-3d/Product3DModelPicker';
 import {
-  PRODUCT_3D_MODELS,
-  getProduct3DDefinition,
-  isProduct3DModelId,
-} from '@/components/product-3d/catalog';
+  getProduct3DModelId,
+  product3DModelPatch,
+} from '@/components/product-3d/model-field';
+import { product3DModelDisplayName, useProduct3DModelNames } from '@/components/product-3d/model-names';
 import {
   SYSTEM_TEMPLATE_LABEL,
   SYSTEM_TEMPLATE_PROTECTED_MESSAGE,
@@ -1883,9 +1884,8 @@ function ProductForm({
   const [pdfAnalysis, setPdfAnalysis] = useState<Partial<Product> | null>(existing ?? null);
   const [pdfReanalysis, setPdfReanalysis] = useState<Partial<Product> | null>(null);
   const [pdfName, setPdfName] = useState<string | null>(null);
-  const [model3dId, setModel3dId] = useState<string>(
-    getProduct3DDefinition(existing?.['3dModelId']).id
-  );
+  const [model3dId, setModel3dId] = useState<string>(getProduct3DModelId(existing));
+  const model3dCustomNames = useProduct3DModelNames();
   const [analyzing, setAnalyzing] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | undefined>(
@@ -1972,8 +1972,7 @@ function ProductForm({
     | 'fieldwork'
     | 'buttons'
     | 'description'
-    | 'seo'
-    | 'model3d';
+    | 'seo';
 
   const [activeSummarySection, setActiveSummarySection] = useState<SummarySectionKey | null>(null);
 
@@ -2504,11 +2503,6 @@ function ProductForm({
       label: 'RÉFÉRENCEMENT',
       value: seo?.description || seo?.title ? 'Description prête' : 'Non configuré',
     },
-    {
-      key: 'model3d',
-      label: 'PRÉSENTATION 3D',
-      value: getProduct3DDefinition(model3dId).label,
-    },
   ];
 
   // Avertissements d'import + visuels à joindre, pour l'analyse courante
@@ -2735,7 +2729,7 @@ function ProductForm({
         buttons,
         description,
         seo,
-        '3dModelId': isProduct3DModelId(model3dId) ? model3dId : undefined,
+        ...product3DModelPatch(model3dId),
         '3dConfig': existing?.['3dConfig'],
       });
 
@@ -2830,7 +2824,7 @@ function ProductForm({
         buttons,
         description,
         seo,
-        '3dModelId': isProduct3DModelId(model3dId) ? model3dId : undefined,
+        ...product3DModelPatch(model3dId),
         '3dConfig': existing?.['3dConfig'],
       };
       if (pdfReanalysis) {
@@ -3483,6 +3477,47 @@ function ProductForm({
                       {s === 'published' ? 'Publié' : 'Brouillon'}
                     </button>
                   ))}
+                </div>
+              </section>
+
+              <section data-testid="admin-3d-model-section">
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                  <h2 className="text-sm font-bold uppercase tracking-wide text-neutral-900 dark:text-white">
+                    MODÈLE DE PRÉSENTATION 3D
+                  </h2>
+                  <span className="text-[10px] font-semibold text-neutral-500 dark:text-neutral-400">
+                    Le nom personnalisé est global ; l’identifiant technique reste inchangé.
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:items-start">
+                  <div className="min-w-0">
+                    <Product3DModelPicker
+                      variant="admin"
+                      value={model3dId}
+                      onChange={(id) => setModel3dId(id)}
+                    />
+                    <p className="mt-2 text-[11px] leading-relaxed text-neutral-500 dark:text-neutral-400">
+                      Le modèle sélectionné est enregistré avec le produit et apparaîtra dans la section
+                      « Conception &amp; Dimensions ». Utilisez le crayon pour renommer un modèle, la flèche
+                      pour restaurer son nom par défaut.
+                    </p>
+                  </div>
+
+                  <div className="min-w-0">
+                    <div className="mb-1.5 flex items-center justify-between gap-2">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                        Prévisualisation 3D
+                      </span>
+                      <span className="truncate text-[11px] font-bold text-neutral-800 dark:text-white">
+                        {product3DModelDisplayName(model3dId, model3dCustomNames)}
+                      </span>
+                    </div>
+                    <Product3DPreview
+                      modelId={model3dId}
+                      className="h-[360px] lg:h-[460px]"
+                    />
+                  </div>
                 </div>
               </section>
 
@@ -4286,55 +4321,6 @@ function ProductForm({
                                 placeholder="Description pour les moteurs de recherche..."
                                 className="w-full px-3 py-2 rounded-xl text-xs bg-neutral-50 dark:bg-zinc-800 border border-neutral-300 dark:border-white/10 text-neutral-900 dark:text-white"
                               />
-                            </div>
-                          </div>
-                        )}
-
-                        {activeSummarySection === 'model3d' && (
-                          <div className="space-y-4">
-                            <div>
-                              <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-2">
-                                Présentation du produit — Modèle 3D
-                              </label>
-                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                                {PRODUCT_3D_MODELS.map((model) => {
-                                  const active = getProduct3DDefinition(model3dId).id === model.id;
-                                  return (
-                                    <button
-                                      key={model.id}
-                                      type="button"
-                                      onClick={() => setModel3dId(model.id)}
-                                      aria-pressed={active}
-                                      className={`text-left rounded-xl border p-2 transition-all ${
-                                        active
-                                          ? 'border-[color:var(--ui-accent)] ring-2 ring-[color:rgba(var(--ui-accent-rgb),0.3)] bg-emerald-500/10'
-                                          : 'border-neutral-200 dark:border-white/10 hover:border-neutral-300 dark:hover:border-white/30'
-                                      }`}
-                                    >
-                                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                                      <img
-                                        src={model.thumbnail}
-                                        alt={model.label}
-                                        className="h-20 w-full rounded-md object-cover bg-black"
-                                      />
-                                      <div className="mt-2 text-[11px] font-bold text-neutral-800 dark:text-white">
-                                        {model.number} — {model.label}
-                                      </div>
-                                      <p className="mt-0.5 text-[10px] leading-snug text-neutral-500 dark:text-neutral-400">
-                                        {model.appearance}
-                                      </p>
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                            <div>
-                              <div className="mb-2 text-[11px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-                                Prévisualisation réelle — modèle {getProduct3DDefinition(model3dId).number}
-                              </div>
-                              <div className="rounded-xl border border-neutral-200 dark:border-white/10 bg-black p-1">
-                                <Product3DModule modelId={model3dId} />
-                              </div>
                             </div>
                           </div>
                         )}

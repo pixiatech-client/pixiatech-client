@@ -476,7 +476,14 @@ export interface Product {
   hero?: ProductHero;
   overview?: ProductOverview;
   design?: ProductDesign;
-  /** Identifiant stable du module 3D affiché sur la fiche produit. */
+  /**
+   * Identifiant stable du module 3D affiché sur la fiche produit.
+   *
+   * `model3dId` est la clé canonique utilisée par le CMS et l'admin ; la clé
+   * historique `'3dModelId'` reste écrite en miroir pour les documents déjà
+   * enregistrés.
+   */
+  model3dId?: string;
   '3dModelId'?: string;
   /** Paramètres propres au module 3D sélectionné (jamais de code source). */
   '3dConfig'?: {

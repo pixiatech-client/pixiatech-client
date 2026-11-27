@@ -9,7 +9,7 @@ const MODELS = [
   { id: 'model3-curved', source: null },
   { id: 'model4-wall', source: '0dallemural' },
   { id: 'model5-simple', source: '0dallesemple' },
-  { id: 'model6-kinetic', source: '0led3d' },
+  { id: 'model6-kinetic', source: '0dalleTransparent2026' },
 ] as const;
 
 let assertions = 0;
@@ -123,6 +123,10 @@ function main() {
   const catalog = source('src/components/product-3d/catalog.ts');
   for (let n = 1; n <= 6; n += 1) check(catalog.includes(`number: ${n},`), `modèle ${n} répertorié`);
   check(catalog.includes('DEFAULT_PRODUCT_3D_MODEL'), 'repli défini pour les produits anciens');
+  for (const folder of ['0dalleTransparent', '0dalleblack', '0dalleencurvé', '0dallemural', '0dallesemple', '0dalleTransparent2026']) {
+    check(catalog.includes(`sourceFolder: '${folder}'`), `catalogue : vrai dossier source ${folder}`);
+  }
+  check(!catalog.includes('0dalleincurvé'), 'catalogue : faute de frappe « 0dalleincurvé » absente');
   const central = source('src/components/product-3d/Product3DModule.tsx');
   check(central.includes('dynamic(') && central.includes('ssr: false'), 'chargement client unique');
   check((central.match(/'model\d-[a-z]+': \(\) => import/g) ?? []).length === 6, 'six imports dynamiques');
@@ -142,18 +146,32 @@ function main() {
   }
   const template = source('src/web/ProductPageTemplate.tsx');
   const webpage = source('src/web/WebPage.tsx');
-  check(template.includes("modelId={product?.['3dModelId']}"), 'template : identifiant issu du produit');
-  check(webpage.includes("modelId={product?.['3dModelId']}"), 'WebPage : identifiant issu du produit');
+  check(template.includes('getProduct3DModelId(product)') && template.includes('modelId={model3dId}'), 'template : modèle enregistré + prévisualisation du CMS');
+  check(webpage.includes('getProduct3DModelId(product)') && webpage.includes('modelId={model3dId}'), 'WebPage : modèle enregistré + prévisualisation du CMS');
+  const heroSection = source('src/web/components/HeroSection.tsx');
+  check(template.includes('cmsPageId={`product__${slug}`}') && heroSection.includes('cmsPageId'), 'hero produit : page CMS correcte dès le premier rendu');
+  check(webCss.includes('[data-product-main]') && webCss.includes('--product-main-top'), 'hero produit : fond noir ciblé uniquement sur la fiche produit');
 
-  console.log('--- 6. CMS : six modèles, sauvegarde et fond de section ---');
+  console.log('--- 6. CMS : six modèles, prévisualisation temporaire, sauvegarde et fond de section ---');
   const cms = source('src/web/cms/Product3DCmsControls.tsx');
-  check(cms.includes('`Modèle ${model.number}`'), 'les six boutons portent un libellé explicite « Modèle N »');
-  check(cms.includes('data-testid={`model-button-${model.id}`}'), 'chaque bouton expose son identifiant de modèle');
-  check(cms.includes("await updateProduct(product.slug, { '3dModelId': modelId })"), 'sélection enregistrée dans le produit');
-  check(cms.includes('await refresh()'), 'produit rafraîchi après enregistrement');
-  check(cms.includes('setPreviewModelId(modelId)'), 'changement de modèle immédiat');
+  const picker = source('src/components/product-3d/Product3DModelPicker.tsx');
+  const previewStore = source('src/components/product-3d/preview-store.ts');
+  check(cms.includes('CHOISIR LE MODÈLE DE PRÉSENTATION 3D'), 'titre exact du panneau de sélection');
+  check(picker.includes('PRODUCT_3D_MODELS.map') && picker.includes('data-testid={`model-button-${model.id}`}'), 'six boutons distincts exposant leur identifiant');
+  check(picker.includes('{model.sourceFolder}') && picker.includes('title={model.sourceFolder}'), 'sélecteur : vrais noms de dossiers affichés');
+  const namesSource = source('src/components/product-3d/model-names.ts');
+  check(picker.includes('defaultProduct3DModelName') && namesSource.includes('return `Modèle ${definition.number}`'), 'libellés par défaut « Modèle N »');
+  check(picker.includes('aria-pressed={active}') && picker.includes('Actif'), 'modèle actif clairement identifiable');
+  check(picker.includes('aria-label={`Renommer ${displayName}`}') && picker.includes('resetProduct3DModelName'), 'crayon et restauration du nom par défaut');
+  check(previewStore.includes('setProduct3DPreviewModelId') && previewStore.includes('clearProduct3DPreviewModelId'), 'sélection temporaire partagée avec la section');
+  check(cms.includes('setProduct3DPreviewModelId(product.slug, modelId)'), 'changement de modèle immédiat dans la page');
+  check(cms.includes('data-testid="cms-3d-save"') && cms.includes('Enregistrer'), 'bouton Enregistrer présent');
+  check(cms.includes('data-testid="cms-3d-cancel"') && cms.includes('Annuler'), 'annulation et restauration du modèle enregistré');
+  check(cms.includes('persistProduct3DModel(product.slug, previewModelId)') && cms.includes('product3DModelPatch'), 'sauvegarde du modèle dans le document produit');
+  check(cms.includes('refresh(),') && cms.includes('getProductBySlug(product.slug)'), 'produit rafraîchi après enregistrement');
   const bar = source('src/web/cms/CmsSectionBar.tsx');
-  check(bar.includes("activeKey === 'design' && <Product3DCmsControls"), 'panneau limité à la section design');
+  check(!bar.includes('Product3DCmsControls'), 'panneau 3D retiré du CMS public');
+  check(!bar.includes("activeKey === 'design' && <Product3DCmsControls"), 'aucun montage du panneau 3D dans la barre CMS');
   const editable = source('src/web/cms/EditableWrapper.tsx');
   const bgControl = source('src/web/cms/SectionBackgroundControl.tsx');
   const sectionStyle = source('src/web/cms/useSectionStyle.ts');
@@ -167,10 +185,27 @@ function main() {
 
   console.log('--- 7. Données produit et ressources ---');
   const types = source('src/lib/products/types.ts');
-  check(types.includes("'3dModelId'?: string;") && types.includes("'3dConfig'?: {"), 'champs stables dans le document produit');
+  check(types.includes('model3dId?: string;') && types.includes("'3dModelId'?: string;") && types.includes("'3dConfig'?: {"), 'champs canonique, historique et configuration stables');
+  const modelField = source('src/components/product-3d/model-field.ts');
+  check(modelField.includes("model3dId: id") && modelField.includes("'3dModelId': id"), 'un seul patch écrit les deux identifiants cohérents');
+  const names = source('src/components/product-3d/model-names.ts');
+  check(names.includes("doc(firestore, 'settings', PRODUCT_3D_NAMES_SETTING_ID)") && names.includes('setDoc('), 'noms globaux persistés dans Firestore');
+  check(names.includes('delete next[modelId]') && names.includes('resetProduct3DModelName'), 'restauration du nom par défaut');
+  const preview = source('src/components/product-3d/Product3DPreview.tsx');
+  const previewCss = source('src/components/product-3d/product-3d-preview.css');
+  check(preview.includes('<Product3DModule modelId={modelId} />'), 'prévisualisation : vrai composant original');
+  check(preview.includes("startsWith('three.js')") && previewCss.includes("[data-p3d-preview-hidden='true']"), 'seul le canvas WebGL est conservé, sans panneau de contrôle');
+  check(!preview.includes('PRODUCT_3D_MODELS.map'), 'un seul moteur 3D chargé à la fois');
+  check(previewCss.includes('.p3d-admin-preview'), 'masquage local au conteneur de prévisualisation');
+  check(preview.includes('data-p3d-preview-root="true"'), 'prévisualisation : racine marquée sans conteneur supplémentaire');
+  check(previewCss.includes(':has(canvas)') && previewCss.includes('height: 100% !important;') && previewCss.includes('min-height: 0 !important;'), 'prévisualisation : ancêtres du canvas alignés sur le conteneur');
+  check(previewCss.includes('.p3d-model6-kinetic .fixed'), 'prévisualisation : dock fixe du modèle 6 neutralisé');
+  check(!existsSync(join(ROOT, 'src/app/pxt-admin-preview/page.tsx')), 'route temporaire /pxt-admin-preview supprimée');
   const admin = source('src/app/admin/site-web/produits/_components/SiteWebProduitsModule.tsx');
-  check((admin.match(/'3dModelId': isProduct3DModelId\(model3dId\) \? model3dId : undefined/g) ?? []).length === 2, 'admin : création et mise à jour du modèle');
-  check(admin.includes('Prévisualisation réelle'), 'admin : prévisualisation du vrai module');
+  check(admin.includes('MODÈLE DE PRÉSENTATION 3D'), 'admin : section au libellé exact');
+  check((admin.match(/\.\.\.product3DModelPatch\(model3dId\),/g) ?? []).length === 2, 'admin : création et mise à jour du modèle');
+  check(admin.includes('<Product3DModelPicker') && admin.includes('<Product3DPreview'), 'admin : sélecteur et prévisualisation réelle');
+  check(admin.includes('lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]'), 'admin : formulation à gauche, prévisualisation à droite sur desktop');
   check(existsSync(join(ROOT, 'public/product-3d/assets/aistudio/favicon_f9979c15.png')), 'logo PixiaTech servi localement');
   for (const model of MODELS) {
     const dir = join(ROOT, 'public/product-3d', model.id);
@@ -190,6 +225,13 @@ function main() {
   const childrenStart = shell.indexOf('{children}');
   check(providerOpen >= 0 && bridgeOpen > providerOpen && providerClose > bridgeOpen, 'WebCmsBridge monté dans ProductsProvider');
   check(childrenStart > providerClose, 'children laissés hors du provider ajouté');
+
+  console.log('--- 9. Matrice LED : cause technique du runtime ---');
+  const dot = source('src/web/components/DotMatrixSignButton.tsx');
+  check(dot.includes('let OFF = hex(DEFAULT_OFF, DEFAULT_OFF)') && dot.includes('readColours();'), 'matrice LED : couleurs initialisées avant le ticker');
+  check(dot.includes('if (!ready) return;') && dot.includes('ready = true;'), 'matrice LED : dessin différé après dimensionnement du canvas');
+  check(!dot.includes('let OFF: number[];') && !dot.includes('rgb(fill) === undefined'), 'matrice LED : aucune couleur RGB indéfinie');
+  check(dot.includes('gsap.ticker.add(draw)') && dot.includes('gsap.timeline('), 'matrice LED : animations d’origine conservées');
 
   console.log(`\nRésultat : ${assertions - failures}/${assertions} assertions réussies.`);
   if (failures > 0) {

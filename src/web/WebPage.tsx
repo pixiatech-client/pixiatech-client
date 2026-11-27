@@ -31,6 +31,8 @@ import {
   text,
 } from '@/lib/products/display';
 import type { Product } from '@/lib/products/types';
+import { getProduct3DModelId } from '@/components/product-3d/model-field';
+import { useProduct3DPreviewModelId } from '@/components/product-3d/preview-store';
 
 const PRODUCT_PAGE_ID = 'product_wp';
 /** Cette page CMS est la fiche produit dont elle porte l'identifiant. */
@@ -73,6 +75,8 @@ function WebPageView({ seedProduct }: { seedProduct?: Product } = {}) {
   const liveProduct = getBySlug(PRODUCT_SLUG);
   const product: Product | undefined =
     liveProduct?.status === 'published' ? liveProduct : seedProduct;
+  const saved3dModelId = getProduct3DModelId(product);
+  const model3dId = useProduct3DPreviewModelId(PRODUCT_SLUG, saved3dModelId);
   const productTitle = text(product?.name);
   const brandName = text(product?.company) ?? companyName;
   const anchors = [
@@ -143,7 +147,7 @@ function WebPageView({ seedProduct }: { seedProduct?: Product } = {}) {
             data={product?.design}
             lang={lang}
             hasSpecsTable={hasSpecs(product?.specs)}
-            modelId={product?.['3dModelId']}
+            modelId={model3dId}
             installationMode={product?.['3dConfig']?.installationMode}
           />
         </EditableWrapper>

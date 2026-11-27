@@ -1,0 +1,59 @@
+/* Prévisualisation d'administration : on garde LE canvas original, mais aucun
+   panneau de commande. Aucune feuille des six modules n'est modifiée : ce
+   cadrage est local au conteneur de prévisualisation. */
+
+.p3d-admin-preview {
+  position: relative;
+  overflow: hidden;
+  border-radius: 0.75rem;
+  background: #090a0c;
+  isolation: isolate;
+}
+
+.p3d-admin-preview canvas[data-engine^='three.js'],
+.p3d-admin-preview canvas[data-p3d-preview-canvas='true'] {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.p3d-admin-preview [data-p3d-preview-hidden='true'] {
+  display: none !important;
+}
+
+/* Le conteneur d'administration porte une hauteur explicite (360/460 px).
+   Seuls les ANCÊTRES DOM du canvas sont alignés dessus : le renderer Three.js
+   relit la taille du mount via ResizeObserver, sans modifier OrbitControls,
+   la scène, les matériaux ni les animations. */
+.p3d-admin-preview[data-p3d-preview-root] > div,
+.p3d-admin-preview[data-p3d-preview-root] > div > div,
+.p3d-admin-preview[data-p3d-preview-root] main,
+.p3d-admin-preview[data-p3d-preview-root] :is(div, main, section):has(canvas) {
+  height: 100% !important;
+  min-height: 0 !important;
+}
+
+/* Le cadre du module d'origine devient redondant dans la prévisualisation :
+   neutralisation visuelle uniquement, le DOM et les événements restent. */
+.p3d-admin-preview #atelier-3d {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+/* Premiers enfants : mount WebGL, puis fallback d'erreur, puis commandes. */
+.p3d-admin-preview #atelier-3d > :not(:first-child):not(.glass-mirror) {
+  display: none !important;
+}
+
+/* Modèle 6 : pas de `#atelier-3d`, mais une section plein écran et un dock
+   fixe. Même principe : cadrage et commandes neutralisés, canvas intact. */
+.p3d-admin-preview .p3d-model6-kinetic section {
+  background: transparent !important;
+}
+
+.p3d-admin-preview .p3d-model6-kinetic .fixed,
+.p3d-admin-preview .p3d-model6-kinetic [role='tablist'],
+.p3d-admin-preview .p3d-model6-kinetic button {
+  display: none !important;
+}

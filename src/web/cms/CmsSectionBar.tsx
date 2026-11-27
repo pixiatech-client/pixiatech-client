@@ -1,14 +1,15 @@
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { usePathname } from 'next/navigation';
 import { Eye, EyeOff, GripVertical, Layers, Lock, Menu, Sliders } from 'lucide-react';
 import { useCms } from '@/lib/site-web/cms-context';
+import { useRawProduct3DPreviewModelId } from '@/components/product-3d/preview-store';
 import { getRegisteredSections, subscribeSections, getSectionLabel } from './section-registry';
 import { getSectionDragController } from './SectionDragDropManager';
 import { heroSlideStore, megaMenuLockedStore, useStoreValue } from './editor-ui-store';
 import { computeValidHeroSlides } from '@/web/pixiatech/sections/hero-slides';
 import { SectionReorderDrawer } from './SectionReorderDrawer';
-import { Product3DCmsControls } from './Product3DCmsControls';
 
 /** Libellés pour les blocs qui ne passent pas par `EditableWrapper`. */
 const STATIC_LABELS: Record<string, string> = {
@@ -90,13 +91,19 @@ function useVisibleSection(barRef: React.RefObject<HTMLElement>, enabled: boolea
 
     const unsubscribe = subscribeSections(build);
     window.addEventListener('resize', build);
+    // L'observateur et `requestAnimationFrame` peuvent être suspendus quand
+    // l'onglet n'est pas au premier plan. Le défilement reste un événement
+    // fiable : on lit directement la section sous la ligne de détection.
+    window.addEventListener('scroll', pick, { passive: true });
     build();
+    pick();
 
     return () => {
       if (observer) observer.disconnect();
       if (raf) cancelAnimationFrame(raf);
       unsubscribe();
       window.removeEventListener('resize', build);
+      window.removeEventListener('scroll', pick);
     };
   }, [enabled, barRef]);
 
@@ -120,10 +127,20 @@ export const CmsSectionBar: React.FC = () => {
     setSelectedBlockId,
     toggleSectionVisibility,
     saveCurrentPage,
+    currentPageId,
   } = useCms();
 
   const barRef = useRef<HTMLDivElement>(null);
   const visibleKey = useVisibleSection(barRef, isEditing);
+  const pathname = usePathname();
+  // Tant qu'une prévisualisation 3D est en attente, la barre reste sur la
+  // section « design » : changer de module change la hauteur de la section, ce
+  // qui ne doit pas faire disparaître le panneau sous prétexte que la ligne de
+  // détection tombe dans la section suivante.
+  const productSlug = currentPageId?.startsWith('product__')
+    ? currentPageId.slice('product__'.length)
+    : pathname?.match(/^\/web\/product\/([^/]+)\/?$/)?.[1] ?? null;
+  const pending3dModel = useRawProduct3DPreviewModelId(productSlug);
   const heroSlide = useStoreValue(heroSlideStore);
   const megaMenuLocked = useStoreValue(megaMenuLockedStore);
 
@@ -166,6 +183,7 @@ export const CmsSectionBar: React.FC = () => {
   const sections = getRegisteredSections();
   const keys = sections.map((s) => s.sectionKey);
   const activeKey =
+    (pending3dModel && keys.includes('design') ? 'design' : null) ??
     (visibleKey && keys.includes(visibleKey) ? visibleKey : null) ??
     (selectedBlockId && keys.includes(selectedBlockId) ? selectedBlockId : null) ??
     keys[0] ??
@@ -332,7 +350,6 @@ export const CmsSectionBar: React.FC = () => {
         )}
       </div>
     </div>
-    {activeKey === 'design' && <Product3DCmsControls />}
     <SectionReorderDrawer open={reorderDrawerOpen} onClose={() => setReorderDrawerOpen(false)} />
     </>
   );

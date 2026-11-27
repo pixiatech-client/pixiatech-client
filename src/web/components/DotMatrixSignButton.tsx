@@ -134,25 +134,44 @@ export const DotMatrixSignButton: React.FC<DotMatrixSignButtonProps> = ({
     let hovered = false;
     let cell = 8;
     let dpr = 1;
+    /* Le ticker ne dessine qu'une fois le canvas dimensionné ET les couleurs lues. */
+    let ready = false;
 
     const css = getComputedStyle(root);
     const colour = (name: string) => css.getPropertyValue(name).trim();
-    const hex = (h: string) => {
-      const v = h.replace('#', '');
-      return [0, 2, 4].map((i) => parseInt(v.slice(i, i + 2), 16));
+    /* Valeurs par défaut cohérentes avec la feuille de style : le ticker GSAP
+       est enregistré avant le premier fit, donc draw() peut être appelé alors
+       que les variables CSS n'ont pas encore été lues. */
+    const DEFAULT_OFF = '#161616';
+    const DEFAULT_DIM = '#3a3732';
+    const DEFAULT_LIT = '#ffb13d';
+    const DEFAULT_HI = '#ffd78f';
+    const hex = (value: string, fallback: string) => {
+      const clean = String(value || '').trim().replace(/^#/, '');
+      const normalised = /^[0-9a-f]{3}$/i.test(clean)
+        ? clean
+            .split('')
+            .map((ch) => ch + ch)
+            .join('')
+        : clean;
+      const source = /^[0-9a-f]{6}$/i.test(normalised) ? normalised : fallback.replace(/^#/, '');
+      return [0, 2, 4].map((i) => parseInt(source.slice(i, i + 2), 16));
     };
     const mix = (p: number[], q: number[], t: number) => p.map((c, i) => Math.round(c + (q[i] - c) * t));
     const rgb = (c: number[]) => 'rgb(' + c[0] + ',' + c[1] + ',' + c[2] + ')';
-    let OFF: number[];
-    let DIM: number[];
-    let LIT: number[];
-    let HI: number[];
+    let OFF = hex(DEFAULT_OFF, DEFAULT_OFF);
+    let DIM = hex(DEFAULT_DIM, DEFAULT_DIM);
+    let LIT = hex(DEFAULT_LIT, DEFAULT_LIT);
+    let HI = hex(DEFAULT_HI, DEFAULT_HI);
+    /* Lecture indépendante du dimensionnement : même si le canvas n'a pas
+       encore de largeur, les couleurs restent définies. */
     const readColours = () => {
-      OFF = hex(colour('--cella-spenta') || '#161616');
-      DIM = hex(colour('--cella-lettera') || '#3a3732');
-      LIT = hex(colour('--accento') || '#ffb13d');
-      HI = hex(colour('--accento-chiaro') || '#ffd78f');
+      OFF = hex(colour('--cella-spenta'), DEFAULT_OFF);
+      DIM = hex(colour('--cella-lettera'), DEFAULT_DIM);
+      LIT = hex(colour('--accento'), DEFAULT_LIT);
+      HI = hex(colour('--accento-chiaro'), DEFAULT_HI);
     };
+    readColours();
 
     const fit = () => {
       const w = canvas.clientWidth || canvas.parentElement?.clientWidth || 0;
@@ -164,6 +183,7 @@ export const DotMatrixSignButton: React.FC<DotMatrixSignButtonProps> = ({
       canvas.height = Math.round(h * dpr);
       canvas.style.height = h + 'px';
       readColours();
+      ready = true;
       draw();
     };
 
@@ -182,6 +202,7 @@ export const DotMatrixSignButton: React.FC<DotMatrixSignButtonProps> = ({
     };
 
     function draw() {
+      if (!ready) return;
       const c = cell * dpr;
       const gap = Math.max(1, Math.round(c * 0.2));
       const size = c - gap;

@@ -4,7 +4,7 @@
       "id": "home",
       "name": "home",
       "slug": "/home",
-      "updatedAt": "2026-11-25T15:57:53.606Z",
+      "updatedAt": "2026-11-25T17:30:46.807Z",
       "sections": {
         "pixia-web": {
           "text_1790257213042": "sdsdsdsdÉDITEUR DIRECT : CLIQUEZ SUR UN TEXTE OU UNE IMAGE",
@@ -553,12 +553,12 @@
               "text_fr": "Built for every environment. "
             },
             "badge": {
-              "offsetX": 189,
-              "offsetY": -6
+              "offsetX": 196,
+              "offsetY": 27
             },
             "title": {
-              "offsetX": 178,
-              "offsetY": -22,
+              "offsetX": 184,
+              "offsetY": 24,
               "color": "var(--accent, var(--ui-accent))",
               "fontSize": "47.792px",
               "width": "960px"
@@ -796,7 +796,8 @@
           "overlayOpacity": 0,
           "overlayColor": "#212121",
           "badge": "03 / PAS DE PIXEL",
-          "bgColor": "#ffffff"
+          "bgColor": "#ffffff",
+          "bgParallax": false
         },
         "projects": {
           "minHeight": 797,
@@ -3123,9 +3124,9 @@
     },
     "product__ecrans-led-interieurs": {
       "id": "product__ecrans-led-interieurs",
-      "name": "ÉCRANS 2",
+      "name": "Nouveau produit 2",
       "slug": "/web/product/ecrans-led-interieurs",
-      "updatedAt": "2026-11-24T17:16:16.259Z",
+      "updatedAt": "2026-11-27T09:00:04.414Z",
       "sections": {
         "next": {
           "_elements": {
@@ -3166,10 +3167,17 @@
               "color": "#f2f2f2"
             },
             "section:1/div:1/div:4/div:1/div:1": {
-              "text_fr": "1,25 à 3,9 mm"
+              "text_fr": "1,25 À 4 mm"
             },
             "section:1/div:1/div:4/div:2/div:1": {
               "text_fr": "600 à 1 000 "
+            },
+            "section:1/div:1/div:4/div:3/div:1": {
+              "text_fr": "320 × 160 mm"
+            },
+            "section:1/div:1/div:4/div:3/div:2": {
+              "text_fr": "FORMAT DU MODULE",
+              "fontSize": "10px"
             }
           },
           "_i18n": {
@@ -3183,10 +3191,10 @@
             },
             "subtitle": {
               "fr": {
-                "value": "Des écrans LED intérieurs sur mesure pour valoriser vos contenus et vos espaces professionnels.",
+                "value": "",
                 "status": "source",
-                "updatedAt": "2026-11-24T10:56:57.209Z",
-                "sourceText": "Des écrans LED intérieurs sur mesure pour valoriser vos contenus et vos espaces professionnels."
+                "updatedAt": "2026-11-25T12:09:51.012Z",
+                "sourceText": ""
               }
             },
             "primaryCta": {
@@ -3199,8 +3207,476 @@
             }
           },
           "title": "QJKSBFJbePXT Fine (template maitre)",
-          "subtitle": "Des écrans LED intérieurs sur mesure pour valoriser vos contenus et vos espaces professionnels.",
-          "primaryCta": "CONFIGURER MON PROJET"
+          "subtitle": "",
+          "primaryCta": "CONFIGURER MON PROJET",
+          "minHeight": 833,
+          "paddingBottom": 184
+        },
+        "overview": {
+          "_elements": {
+            "description": {
+              "width": "642px",
+              "offsetX": -70
+            },
+            "title": {
+              "offsetX": -3,
+              "offsetY": 14,
+              "fontSize": "58px",
+              "width": "733px"
+            },
+            "section:1/div:1/div:4/div:1/div:1": {
+              "text_fr": "7 680 Hz"
+            },
+            "section:1/div:1/div:4/div:1/div:2": {
+              "text_fr": "Un rafraîchissement élevé pour limiter le scintillement."
+            },
+            "section:1/div:1/div:4/div:2/div:1": {
+              "text_fr": "40 mm"
+            },
+            "section:1/div:1/div:4/div:2/div:2": {
+              "text_fr": "Une faible épaisseur pour une intégration discrète."
+            },
+            "section:1/div:1/div:4/div:3/div:1": {
+              "text_fr": "20 kg/m²"
+            },
+            "section:1/div:1/div:4/div:3/div:2": {
+              "height": "20px",
+              "text_fr": "Un poids maîtrisé pour les installations fixes."
+            },
+            "section:1/div:1/div:5/div:2/div:2/div:3": {
+              "text_fr": "Les LED sont recouvertes d’une couche protectrice transparente qui renforce leur résistance aux chocs et aux manipulations."
+            },
+            "section:1/div:1/div:5/div:2/div:1/div:2": {
+              "text_fr": "LED SMD"
+            },
+            "section:1/div:1/div:5/div:2/div:2/div:2": {
+              "text_fr": "PROTECTION GOB"
+            },
+            "section:1/div:1/div:5/div:2/div:2/div:3/p:1": {
+              "text_fr": "Les LED sont recouvertes d’une couche protectrice transparente qui renforce leur résistance aux chocs et aux manipulations."
+            },
+            "section:1/div:1/div:5/div:2/div:1/div:3": {
+              "text_fr": "La technologie SMD intègre les LED directement à la surface du module pour une restitution précise des couleurs et des détails."
+            }
+          },
+          "_i18n": {
+            "description": {
+              "fr": {
+                "value": "PXT FLEX associe la technologie LED haute définition à une conception modulaire adaptée aux projets d'intégration intérieure. Selon le module choisi, la gamme permet de réaliser des surfaces d'affichage planes ou courbes, pour des installations professionnelles, commerciales, architecturales et immersives.",
+                "status": "source",
+                "updatedAt": "2026-11-26T09:33:15.108Z",
+                "sourceText": "PXT FLEX associe la technologie LED haute définition à une conception modulaire adaptée aux projets d'intégration intérieure. Selon le module choisi, la gamme permet de réaliser des surfaces d'affichage planes ou courbes, pour des installations professionnelles, commerciales, architecturales et immersives."
+              }
+            },
+            "title": {
+              "fr": {
+                "value": "L'affichage LED flexible au service de l'architecture intérieure",
+                "status": "source",
+                "updatedAt": "2026-11-25T11:14:17.508Z",
+                "sourceText": "L'affichage LED flexible au service de l'architecture intérieure"
+              }
+            }
+          },
+          "description": "PXT FLEX associe la technologie LED haute définition à une conception modulaire adaptée aux projets d'intégration intérieure. Selon le module choisi, la gamme permet de réaliser des surfaces d'affichage planes ou courbes, pour des installations professionnelles, commerciales, architecturales et immersives.",
+          "title": "L'affichage LED flexible au service de l'architecture intérieure"
+        },
+        "design": {
+          "_elements": {
+            "section:1/div:1/div:2/div:1/div:1/div:1/span:1": {
+              "text_fr": "CONCEPTION"
+            },
+            "section:1/div:1/div:2/div:1/div:1/div:1/span:2": {
+              "offsetY": 0,
+              "height": "23px",
+              "text_fr": "Modulaire"
+            },
+            "section:1/div:1/div:2/div:1/div:1/div:2/span:1": {
+              "offsetY": 0,
+              "height": "20px",
+              "text_fr": "FORMAT"
+            },
+            "section:1/div:1/div:2/div:1/div:1/div:3/span:1": {
+              "text_fr": "DIMENSIONS"
+            },
+            "section:1/div:1/div:2/div:1/div:1/div:4/span:1": {
+              "text_fr": "INTÉGRATION"
+            },
+            "section:1/div:1/div:2/div:1/div:1/div:2/span:2": {
+              "text_fr": "Sur mesure"
+            },
+            "section:1/div:1/div:2/div:1/div:1/div:3/span:2": {
+              "text_fr": "Selon votre projet"
+            },
+            "section:1/div:1/div:2/div:1/div:1/div:4/span:2": {
+              "text_fr": "Selon les contraintes du lieu"
+            },
+            "section:1/div:1/div:3/div:2/div:1/div:3": {
+              "text_fr": "Intégrez PXT FLEX à votre espace avec une installation fixée au mur. Une configuration pour mettre vos contenus en valeur sans occuper la surface au sol."
+            },
+            "section:1/div:1/div:3/div:2/div:2/div:3": {
+              "text_fr": "Présentez vos contenus sur un écran vertical monté sur une structure mobile. Une configuration pour repositionner votre affichage selon l’agencement de vos espaces."
+            },
+            "section:1/div:1/div:3/div:2/div:3/div:3": {
+              "text_fr": "Imaginez une composition en angle pour accompagner les lignes de votre aménagement. Une configuration sur mesure pour prolonger vos contenus sur plusieurs faces."
+            },
+            "section:1/div:1/div:2/div:1/div:2/img:1": {
+              "src": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2F9386c1bd-817e-4631-bdfa-dd26eaffe799_chanz.png?alt=media",
+              "mediaType": "image",
+              "overlay": {
+                "enabled": true,
+                "color": "#000000",
+                "opacity": 45,
+                "gradientEnabled": true,
+                "gradientStartColor": "#000000",
+                "gradientStartOpacity": 43,
+                "gradientEndColor": "#000000",
+                "gradientEndOpacity": 42,
+                "gradientDirection": "to right"
+              }
+            },
+            "section:1/div:1/div:3/div:2/div:2/div:2": {
+              "text_fr": "Installations courbes"
+            },
+            "section:1/div:1/div:3/div:2/div:3/div:2": {
+              "text_fr": " Intégration sur mesure"
+            }
+          },
+          "bgParallax": false
+        },
+        "features": {
+          "_i18n": {
+            "eyebrow": {
+              "fr": {
+                "value": "03 / ENVIRONNEMENTS D’APPLICATION",
+                "status": "source",
+                "updatedAt": "2026-11-24T19:52:12.319Z",
+                "sourceText": "03 / ENVIRONNEMENTS D’APPLICATION"
+              }
+            },
+            "title": {
+              "fr": {
+                "value": "Des solutions LED pour chaque environnement professionnel.",
+                "status": "source",
+                "updatedAt": "2026-11-25T11:07:17.493Z",
+                "sourceText": "Des solutions LED pour chaque environnement professionnel."
+              }
+            },
+            "feature_0_title": {
+              "fr": {
+                "value": "Architecture & design intérieur",
+                "status": "source",
+                "updatedAt": "2026-11-25T11:10:55.264Z",
+                "sourceText": "Architecture & design intérieur"
+              }
+            },
+            "feature_0_desc": {
+              "fr": {
+                "value": "Intégration visuelle dans les espaces architecturaux et les aménagements contemporains.",
+                "status": "source",
+                "updatedAt": "2026-11-25T11:11:02.159Z",
+                "sourceText": "Intégration visuelle dans les espaces architecturaux et les aménagements contemporains."
+              }
+            },
+            "feature_1_title": {
+              "fr": {
+                "value": "Halls d'accueil & sièges sociaux",
+                "status": "source",
+                "updatedAt": "2026-11-25T11:11:10.502Z",
+                "sourceText": "Halls d'accueil & sièges sociaux"
+              }
+            },
+            "feature_1_desc": {
+              "fr": {
+                "value": "Valorisation de l'image de marque et diffusion de contenus immersifs.",
+                "status": "source",
+                "updatedAt": "2026-11-25T11:11:17.608Z",
+                "sourceText": "Valorisation de l'image de marque et diffusion de contenus immersifs."
+              }
+            },
+            "feature_2_title": {
+              "fr": {
+                "value": "Retail & showrooms",
+                "status": "source",
+                "updatedAt": "2026-11-25T11:11:25.722Z",
+                "sourceText": "Retail & showrooms"
+              }
+            },
+            "feature_2_desc": {
+              "fr": {
+                "value": "Mise en scène des produits, campagnes visuelles et expérience client.",
+                "status": "source",
+                "updatedAt": "2026-11-25T11:11:31.488Z",
+                "sourceText": "Mise en scène des produits, campagnes visuelles et expérience client."
+              }
+            },
+            "feature_3_title": {
+              "fr": {
+                "value": "Salles de réunion & conférences",
+                "status": "source",
+                "updatedAt": "2026-11-25T11:11:38.624Z",
+                "sourceText": "Salles de réunion & conférences"
+              }
+            },
+            "feature_3_desc": {
+              "fr": {
+                "value": "Affichage de contenus professionnels, présentations et communication.",
+                "status": "source",
+                "updatedAt": "2026-11-25T11:11:51.889Z",
+                "sourceText": "Affichage de contenus professionnels, présentations et communication."
+              }
+            },
+            "feature_4_title": {
+              "fr": {
+                "value": "Musées & espaces culturels",
+                "status": "source",
+                "updatedAt": "2026-11-25T11:11:59.757Z",
+                "sourceText": "Musées & espaces culturels"
+              }
+            },
+            "feature_4_desc": {
+              "fr": {
+                "value": "Scénographie numérique, contenus immersifs et installations créatives.",
+                "status": "source",
+                "updatedAt": "2026-11-25T11:12:14.334Z",
+                "sourceText": "Scénographie numérique, contenus immersifs et installations créatives."
+              }
+            },
+            "feature_5_title": {
+              "fr": {
+                "value": "Centres de contrôle",
+                "status": "source",
+                "updatedAt": "2026-11-25T11:12:20.727Z",
+                "sourceText": "Centres de contrôle"
+              }
+            },
+            "feature_5_desc": {
+              "fr": {
+                "value": "Visualisation des données, supervision et affichage opérationnel.",
+                "status": "source",
+                "updatedAt": "2026-11-25T11:12:26.713Z",
+                "sourceText": "Visualisation des données, supervision et affichage opérationnel."
+              }
+            },
+            "feature_6_title": {
+              "fr": {
+                "value": "Espaces événementiels permanents",
+                "status": "source",
+                "updatedAt": "2026-11-25T11:12:31.888Z",
+                "sourceText": "Espaces événementiels permanents"
+              }
+            },
+            "feature_6_desc": {
+              "fr": {
+                "value": "Décors numériques et installations visuelles intégrées.",
+                "status": "source",
+                "updatedAt": "2026-11-25T11:12:38.855Z",
+                "sourceText": "Décors numériques et installations visuelles intégrées."
+              }
+            }
+          },
+          "eyebrow": "03 / ENVIRONNEMENTS D’APPLICATION",
+          "_elements": {
+            "section:1/div:1/div:2/div:1/div:1/div:1/img:1": {
+              "src": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FImage_ChatGPT_7_oct._2026__10_19_44_pgs43.png?alt=media",
+              "mediaType": "image",
+              "overlay": {
+                "enabled": false,
+                "color": "#000000",
+                "opacity": 45,
+                "gradientEnabled": false,
+                "gradientStartColor": "#000000",
+                "gradientStartOpacity": 45,
+                "gradientEndColor": "#000000",
+                "gradientEndOpacity": 85,
+                "gradientDirection": "to bottom"
+              }
+            },
+            "section:1/div:1/div:2/div:1/div:1/div:2/img:1": {
+              "src": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FImage_ChatGPT_7_oct._2026__09_21_08_2589d.png?alt=media",
+              "mediaType": "image",
+              "overlay": {
+                "enabled": false,
+                "color": "#000000",
+                "opacity": 45,
+                "gradientEnabled": false,
+                "gradientStartColor": "#000000",
+                "gradientStartOpacity": 45,
+                "gradientEndColor": "#000000",
+                "gradientEndOpacity": 85,
+                "gradientDirection": "to bottom"
+              }
+            },
+            "section:1/div:1/div:2/div:1/div:1/div:3/img:1": {
+              "src": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2F622558f1-6708-48f7-83de-09f33db2a3ea_p6maw.webp?alt=media",
+              "mediaType": "image",
+              "overlay": {
+                "enabled": false,
+                "color": "#000000",
+                "opacity": 45,
+                "gradientEnabled": false,
+                "gradientStartColor": "#000000",
+                "gradientStartOpacity": 45,
+                "gradientEndColor": "#000000",
+                "gradientEndOpacity": 85,
+                "gradientDirection": "to bottom"
+              }
+            },
+            "section:1/div:1/div:2/div:1/div:1/div:4/img:1": {
+              "src": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FImage_ChatGPT_7_oct._2026__09_37_58_5nmw8.png?alt=media",
+              "mediaType": "image",
+              "overlay": {
+                "enabled": false,
+                "color": "#000000",
+                "opacity": 45,
+                "gradientEnabled": false,
+                "gradientStartColor": "#000000",
+                "gradientStartOpacity": 45,
+                "gradientEndColor": "#000000",
+                "gradientEndOpacity": 85,
+                "gradientDirection": "to bottom"
+              }
+            },
+            "section:1/div:1/div:2/div:1/div:1/div:5/img:1": {
+              "src": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2F0eb9c5bf-5b24-49e3-b7a4-83f25e9782b0_7z5cs.png?alt=media",
+              "mediaType": "image",
+              "overlay": {
+                "enabled": false,
+                "color": "#000000",
+                "opacity": 45,
+                "gradientEnabled": false,
+                "gradientStartColor": "#000000",
+                "gradientStartOpacity": 45,
+                "gradientEndColor": "#000000",
+                "gradientEndOpacity": 85,
+                "gradientDirection": "to bottom"
+              }
+            },
+            "section:1/div:1/div:2/div:1/div:1/div:6/img:1": {
+              "src": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2F58814e3e-9854-49cb-991e-5057556a17ae_ctozi.png?alt=media",
+              "mediaType": "image",
+              "overlay": {
+                "enabled": false,
+                "color": "#000000",
+                "opacity": 45,
+                "gradientEnabled": false,
+                "gradientStartColor": "#000000",
+                "gradientStartOpacity": 45,
+                "gradientEndColor": "#000000",
+                "gradientEndOpacity": 85,
+                "gradientDirection": "to bottom"
+              }
+            },
+            "section:1/div:1/div:2/div:1/div:1/div:7/img:1": {
+              "src": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2Fd9f7ae8c-10f9-467a-b289-dda5dcc9f452_ouwjz.png?alt=media",
+              "mediaType": "image",
+              "overlay": {
+                "enabled": false,
+                "color": "#000000",
+                "opacity": 45,
+                "gradientEnabled": false,
+                "gradientStartColor": "#000000",
+                "gradientStartOpacity": 45,
+                "gradientEndColor": "#000000",
+                "gradientEndOpacity": 85,
+                "gradientDirection": "to bottom"
+              }
+            },
+            "title": {
+              "fontSize": "43.546px"
+            }
+          },
+          "title": "Des solutions LED pour chaque environnement professionnel.",
+          "feature_0_title": "Architecture & design intérieur",
+          "feature_0_desc": "Intégration visuelle dans les espaces architecturaux et les aménagements contemporains.",
+          "feature_1_title": "Halls d'accueil & sièges sociaux",
+          "feature_1_desc": "Valorisation de l'image de marque et diffusion de contenus immersifs.",
+          "feature_2_title": "Retail & showrooms",
+          "feature_2_desc": "Mise en scène des produits, campagnes visuelles et expérience client.",
+          "feature_3_title": "Salles de réunion & conférences",
+          "feature_3_desc": "Affichage de contenus professionnels, présentations et communication.",
+          "feature_4_title": "Musées & espaces culturels",
+          "feature_4_desc": "Scénographie numérique, contenus immersifs et installations créatives.",
+          "feature_5_title": "Centres de contrôle",
+          "feature_5_desc": "Visualisation des données, supervision et affichage opérationnel.",
+          "feature_6_title": "Espaces événementiels permanents",
+          "feature_6_desc": "Décors numériques et installations visuelles intégrées."
+        },
+        "header": {
+          "_elements": {
+            "nav:1/div:1/a:4": {
+              "text_fr": "APPLICATIONS"
+            },
+            "div:1/div:1/div:2/div:1/div:3": {
+              "text_fr": "PXT FLEX"
+            },
+            "div:1/div:1/div:1/div:1/div:2/div:1/div:1/span:1": {
+              "href": "https://pixiatech.com/product/ecrans-led-interieurs"
+            }
+          }
+        },
+        "fieldwork": {
+          "_elements": {
+            "section:1/div:1/div:3/div:1/div:1/img:1": {
+              "src": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2F_crans_LED_publicitaires_pour_galerie_commerciale_et_commerce_de_d_tail_tysyn.webp?alt=media",
+              "mediaType": "image",
+              "overlay": {
+                "enabled": false,
+                "color": "#000000",
+                "opacity": 45,
+                "gradientEnabled": false,
+                "gradientStartColor": "#000000",
+                "gradientStartOpacity": 45,
+                "gradientEndColor": "#000000",
+                "gradientEndOpacity": 85,
+                "gradientDirection": "to bottom"
+              }
+            },
+            "section:1/div:1/div:3/div:2/div:1/img:1": {
+              "src": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FInstallation_LED_immersive_dans_un_espace_commercial_haut_de_gamme_p0pol.webp?alt=media",
+              "mediaType": "image",
+              "overlay": {
+                "enabled": false,
+                "color": "#000000",
+                "opacity": 45,
+                "gradientEnabled": false,
+                "gradientStartColor": "#000000",
+                "gradientStartOpacity": 45,
+                "gradientEndColor": "#000000",
+                "gradientEndOpacity": 85,
+                "gradientDirection": "to bottom"
+              }
+            },
+            "fieldwork-img-1": {
+              "src": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FChatGPT_Image_2_sept._2026__01_52_57_lbgi2.png?alt=media",
+              "mediaType": "image",
+              "overlay": {
+                "enabled": false,
+                "color": "#000000",
+                "opacity": 45,
+                "gradientEnabled": false,
+                "gradientStartColor": "#000000",
+                "gradientStartOpacity": 45,
+                "gradientEndColor": "#000000",
+                "gradientEndOpacity": 85,
+                "gradientDirection": "to bottom"
+              }
+            },
+            "fieldwork-img-0": {
+              "src": "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/site%2Fcms%2FImage_2026-09-09_152541_229_zfd7n.jpg?alt=media",
+              "mediaType": "image",
+              "overlay": {
+                "enabled": false,
+                "color": "#000000",
+                "opacity": 45,
+                "gradientEnabled": false,
+                "gradientStartColor": "#000000",
+                "gradientStartOpacity": 45,
+                "gradientEndColor": "#000000",
+                "gradientEndOpacity": 85,
+                "gradientDirection": "to bottom"
+              }
+            }
+          }
         }
       }
     },
@@ -3354,6 +3830,46 @@
           }
         }
       }
+    },
+    "product__nouveau-produit": {
+      "id": "product__nouveau-produit",
+      "name": "Nouveau produit",
+      "slug": "/web/product/nouveau-produit",
+      "updatedAt": "2026-11-27T09:33:07.290Z",
+      "sections": {
+        "next": {
+          "_elements": {
+            "div:2/section:1/div:1/div:2/h2:1": {
+              "text": "Donnons vie à\nvotre affichage. Ça c'est bien je peux je vais prendre ça ça ça marche parfaitement c'est intuitif c'est correct on va prendre cette logique là et la mélanger avec cette ce style là attends voir je vais je vais faire un truc"
+            }
+          }
+        },
+        "specs": {
+          "visible": true,
+          "layout": {
+            "visible": true
+          }
+        },
+        "hero": {
+          "_elements": {
+            "section:1/div:1/div:3/div:2/a:1": {
+              "backgroundColor": "transparent",
+              "color": "#f2f2f2"
+            }
+          },
+          "_i18n": {
+            "title": {
+              "fr": {
+                "value": "QJKSBFJbePXT Fine (template maitre)",
+                "status": "source",
+                "updatedAt": "2026-11-14T15:55:42.400Z",
+                "sourceText": "QJKSBFJbePXT Fine (template maitre)"
+              }
+            }
+          },
+          "title": "QJKSBFJbePXT Fine (template maitre)"
+        }
+      }
     }
   },
   "settings": {
@@ -3368,5 +3884,5 @@
     "backendApiUrl": "/api/site-web",
     "cmsEditorAutoSave": false
   },
-  "updatedAt": "2026-11-25T15:57:54.650Z"
+  "updatedAt": "2026-11-27T09:37:59.053Z"
 }

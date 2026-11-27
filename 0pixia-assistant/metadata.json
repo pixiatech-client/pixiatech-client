@@ -1,0 +1,6 @@
+{
+  "name": "PIXIA — Configurateur & Assistant Devis LED",
+  "description": "Assistant conversationnel déterministe pour la configuration d'écrans LED, recommandation produits, signature électronique, OTP et génération de devis PDF.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

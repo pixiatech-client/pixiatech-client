@@ -150,13 +150,13 @@ function rootRem(): number {
 /**
  * Taille du robot complet sur le site ET l'application.
  *
- * Fixée à 110 × 110 px sur tous les écrans, comme demandé, pour rester
+ * Fixée à 118 × 118 px sur tous les écrans, comme demandé, pour rester
  * identique à la mascotte flottante du chat (`PixiaFloatingMascot`).
  * Les paramètres `vw`/`rem` sont conservés pour ne pas casser les appels
  * existants (window resizing, orientation).
  */
 function boxSizeFor(_vw: number, _rem: number): number {
-  return 110;
+  return 118;
 }
 
 function iconSizeFor(vw: number): number {

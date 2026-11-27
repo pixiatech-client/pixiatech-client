@@ -408,6 +408,24 @@ header a, header button {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
+   HERO FICHE PRODUIT — fond noir continu sous le header fixe.
+   Ciblé uniquement sur `<main data-product-main>` : le header global, les
+   autres pages et les arrière-plans des sections suivantes sont intactes.
+   La bande s'arrête exactement au début du Hero ; le header reste au-dessus
+   (z-index 200) et le contenu du Hero garde ses propres couleurs.
+   ───────────────────────────────────────────────────────────────────────────── */
+[data-product-main] {
+  position: relative;
+  background: linear-gradient(
+      to bottom,
+      #080808 0,
+      #080808 var(--product-main-top, calc(var(--nav-h, 88px) + clamp(50px, 7vh, 90px))),
+      transparent var(--product-main-top, calc(var(--nav-h, 88px) + clamp(50px, 7vh, 90px)))
+    )
+    top / 100% 100% no-repeat;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
    MOBILE MASTER POLISH (UI/UX PRO MAX + BETTER-LAYOUT + BETTER-TYPOGRAPHY)
    Zero cut-off titles, zero overlapping buttons, safe touch targets & fluid wrap.
    ───────────────────────────────────────────────────────────────────────────── */

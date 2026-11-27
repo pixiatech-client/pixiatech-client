@@ -1,0 +1,8 @@
+{
+  "name": "KRONA — Architecture Photonique",
+  "description": "Système modulaire micro-LED architectural : conçu comme un instrument de précision, déployé comme une paroi lumineuse sans joint.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

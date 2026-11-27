@@ -84,6 +84,7 @@ dump-*.js
 .claude/settings.local.json
 
 # QA / tooling scratch (non commité)
+.aistudio/
 /.opencode-tmp/
 /.playwright-cli/
 /qa-home.yaml

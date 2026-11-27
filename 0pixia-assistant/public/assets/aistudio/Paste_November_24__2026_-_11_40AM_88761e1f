@@ -1,0 +1,979 @@
+"use client";
+
+import * as React from "react";
+import { AnimatePresence, motion, type Transition } from "motion/react";
+import { cn } from "cn";
+import {
+  IconAirdrop,
+  IconBackward,
+  IconBell,
+  IconPhone,
+  IconClose,
+  IconFastForward,
+  IconPause,
+  IconPlay,
+} from "@devigner-ui/icons";
+import {
+  EASE_IN_OUT,
+  EASE_OUT,
+  EASE_OUT_CSS,
+  SPRING_ISLAND_OPEN,
+  SPRING_ISLAND_REST,
+  SPRING_ISLAND_SWITCH,
+  SPRING_SWAP,
+  TWEEN_SWAP_ENTER,
+  TWEEN_SWAP_LEAVE,
+} from "devignerui/motion";
+import { useReducedMotionPreference } from "devignerui/hooks";
+
+/** Corners never round past this, so a tall view reads as a rounded slab
+ *  rather than a stretched pill. The 28px pill is fully round under it. */
+const RADIUS = 32;
+/** How long a view-to-view change rests as the pill, ms, before it opens
+ *  again, so the island reads as one live activity handing over to the
+ *  next instead of morphing sideways. */
+const HOP_MS = 500;
+/** Content starts a beat after the shape, s, so it never shows squeezed. */
+const CONTENT_DELAY = 0.05;
+
+export interface DynamicIslandView {
+  id: string;
+  /** Announced to screen readers when this view opens, such as
+   *  "Incoming call from Mira Kahn". */
+  label: string;
+  /** The view's content. It owns its padding and size; the island grows
+   *  to fit it. */
+  content: React.ReactNode;
+  /** Fixed width in px. The content's own width when left out. */
+  width?: number;
+  /** Fixed height in px. The content's own height when left out. */
+  height?: number;
+  /** The spring the island opens into this view on. SPRING_ISLAND_OPEN by
+   *  default; SPRING_ISLAND_POP for a view that should land harder. */
+  transition?: Transition;
+}
+
+export interface DynamicIslandClassNames {
+  /** The black shape that changes size. */
+  island?: string;
+  /** The box around each view's content. */
+  content?: string;
+}
+
+export interface DynamicIslandProps extends React.HTMLAttributes<HTMLDivElement> {
+  /** Every view the island can grow into. */
+  views: DynamicIslandView[];
+  /** The view showing, by id. null or an unknown id rests as the small
+   *  pill. */
+  view?: string | null;
+  /** Going from one view straight to another, rest as the pill for a
+   *  moment first. */
+  hop?: boolean;
+  /** Pins the island to the top center of the viewport. Off by default: the
+   *  parent owns the position. */
+  floating?: boolean;
+  /** Accessible name of the island's region. */
+  label?: string;
+  classNames?: DynamicIslandClassNames;
+}
+
+export const DynamicIsland = React.forwardRef<
+  HTMLDivElement,
+  DynamicIslandProps
+>(function DynamicIsland(
+  {
+    views,
+    view = null,
+    hop = true,
+    floating = false,
+    label = "Live activity",
+    classNames,
+    className,
+    style,
+    ...rest
+  },
+  ref,
+) {
+  const reduced = useReducedMotionPreference();
+
+  // What the island shows, which trails `view` by HOP_MS on a view-to-view
+  // change. `hopping` marks the rest leg of such a change, which lands on
+  // the gentle open spring rather than the rest spring's snap.
+  const known = (id: string | null) =>
+    id !== null && views.some((v) => v.id === id);
+  const [state, setState] = React.useState(() => ({
+    shown: known(view) ? view : null,
+    hopping: false,
+  }));
+  // Read by the effect below without re-running it: `views` is often a new
+  // array every render, and a re-run mid-hop would cut the rest short.
+  const shownRef = React.useRef(state.shown);
+  const knownRef = React.useRef(known);
+  React.useLayoutEffect(() => {
+    shownRef.current = state.shown;
+    knownRef.current = known;
+  });
+  React.useEffect(() => {
+    const target = knownRef.current(view) ? view : null;
+    const from = shownRef.current;
+    if (target === from) return;
+    if (hop && from !== null && target !== null) {
+      setState({ shown: null, hopping: true });
+      const t = setTimeout(
+        () => setState({ shown: target, hopping: false }),
+        HOP_MS,
+      );
+      return () => clearTimeout(t);
+    }
+    setState({ shown: target, hopping: false });
+  }, [view, hop]);
+
+  const current = views.find((v) => v.id === state.shown) ?? null;
+  const spring: Transition = reduced
+    ? { duration: 0 }
+    : current
+      ? (current.transition ?? SPRING_ISLAND_OPEN)
+      : state.hopping
+        ? SPRING_ISLAND_OPEN
+        : SPRING_ISLAND_REST;
+
+  return (
+    <div
+      ref={ref}
+      role="region"
+      aria-label={label}
+      className={cn(
+        "flex justify-center",
+        floating &&
+          "fixed inset-x-0 top-3 z-50 pointer-events-none *:pointer-events-auto",
+        className,
+      )}
+      style={style}
+      {...rest}
+    >
+      {/* The island takes its size from its content and moves between sizes
+          as a layout animation: one transform for the whole shape, which
+          the compositor runs. Animating width, height and radius as three
+          springs relaid the page out every frame and let the corners fall
+          out of step with the edges, which read as a shudder. The radius
+          sits in style so Motion keeps it round while the box scales. */}
+      <motion.div
+        layout
+        transition={spring}
+        style={{ borderRadius: RADIUS }}
+        className={cn(
+          // Black in both themes, like the cutout it grows from.
+          "relative w-fit max-w-[calc(100vw-2rem)] min-w-25 overflow-hidden bg-black text-white",
+          classNames?.island,
+        )}
+      >
+        <AnimatePresence initial={false} mode="popLayout">
+          <motion.div
+            key={current?.id ?? "__rest"}
+            initial={
+              reduced
+                ? { opacity: 0 }
+                : { opacity: 0, scale: 0.9, filter: "blur(5px)" }
+            }
+            animate={{
+              opacity: 1,
+              scale: 1,
+              filter: "blur(0px)",
+              transition: reduced
+                ? { duration: 0.12 }
+                : {
+                    ...spring,
+                    delay: CONTENT_DELAY,
+                    // A spring overshoots below 0, which blur() rejects.
+                    filter: { ...TWEEN_SWAP_ENTER, delay: CONTENT_DELAY },
+                  },
+            }}
+            exit={{
+              opacity: 0,
+              ...(reduced ? {} : { scale: 0.9, filter: "blur(5px)" }),
+              transition: reduced ? { duration: 0.12 } : TWEEN_SWAP_LEAVE,
+            }}
+            className={cn("whitespace-nowrap", classNames?.content)}
+            style={
+              current
+                ? { width: current.width, height: current.height }
+                : undefined
+            }
+          >
+            {current ? current.content : <div className="h-7 w-25" />}
+          </motion.div>
+        </AnimatePresence>
+      </motion.div>
+      <span aria-live="polite" className="sr-only">
+        {current?.label ?? ""}
+      </span>
+    </div>
+  );
+});
+
+DynamicIsland.displayName = "DynamicIsland";
+
+/* ─── Presets ─── */
+// Ready-made views, each a content component sized like its iOS
+// counterpart. Pass one as a view's content:
+//   { id: "timer", label: "Timer, 1 minute", content: <IslandTimer />, transition: SPRING_ISLAND_POP }
+// The island is black in every theme, so the presets use fixed accent
+// colors rather than theme tokens.
+
+const RED = "#FD4F30";
+const AMBER = "#F7A815";
+const BLUE = "#159BF4";
+const GREEN = "#2FD057";
+const REC = "#FB2C36";
+/** iOS system blue in dark mode, for filled buttons. */
+const IOS_BLUE = "#0A84FF";
+
+/** Seconds since mount (or from `from`, counting down), ticking once a
+ *  second while `running`. */
+function useSeconds({ from = 0, down = false, running = true } = {}) {
+  const [s, setS] = React.useState(from);
+  React.useEffect(() => {
+    if (!running) return;
+    const t = setInterval(
+      () => setS((v) => (down ? Math.max(0, v - 1) : v + 1)),
+      1000,
+    );
+    return () => clearInterval(t);
+  }, [down, running]);
+  return [s, setS] as const;
+}
+
+const pad = (n: number) => String(n).padStart(2, "0");
+/** 00:00, minutes padded. */
+const clock = (s: number) => `${pad(Math.floor(s / 60))}:${pad(s % 60)}`;
+
+/** A pseudo-random 0 to 1 for bar `i` on tick `t`, the same on the server
+ *  and the client. */
+const noise = (i: number, t: number) => {
+  const x = Math.sin(i * 12.9898 + t * 78.233) * 43758.5453;
+  return x - Math.floor(x);
+};
+
+/** A row of bars jumping like live audio, re-rolled every 150ms. */
+function Waveform({
+  bars,
+  color,
+  barWidth = 3,
+  max = 13,
+  className,
+}: {
+  bars: number;
+  color: string;
+  barWidth?: number;
+  max?: number;
+  className?: string;
+}) {
+  const reduced = useReducedMotionPreference();
+  const [tick, setTick] = React.useState(0);
+  React.useEffect(() => {
+    if (reduced) return;
+    const t = setInterval(() => setTick((n) => n + 1), 150);
+    return () => clearInterval(t);
+  }, [reduced]);
+  return (
+    <span
+      aria-hidden
+      className={cn("flex h-4.5 items-center gap-0.5", className)}
+    >
+      {Array.from({ length: bars }, (_, i) => (
+        <span
+          key={i}
+          className="block rounded-full"
+          style={{
+            width: barWidth,
+            height: Math.max(1, noise(i, tick) * max),
+            backgroundColor: color,
+            transition: `height 150ms ${EASE_OUT_CSS}`,
+          }}
+        />
+      ))}
+    </span>
+  );
+}
+
+/** One digit slot that rolls over when it changes: the old digit rises and
+ *  blurs away as the new one comes up from below. */
+function RollingDigit({ digit }: { digit: string }) {
+  const reduced = useReducedMotionPreference();
+  return (
+    <span className="relative inline-block w-4 tabular-nums">
+      <AnimatePresence initial={false} mode="popLayout">
+        <motion.span
+          key={digit}
+          className="inline-block"
+          initial={reduced ? false : { y: 12, opacity: 0, filter: "blur(4px)" }}
+          animate={{ y: 0, opacity: 1, filter: "blur(0px)" }}
+          exit={
+            reduced
+              ? { opacity: 0 }
+              : { y: -12, opacity: 0, filter: "blur(4px)" }
+          }
+          transition={reduced ? { duration: 0 } : SPRING_SWAP}
+        >
+          {digit}
+        </motion.span>
+      </AnimatePresence>
+    </span>
+  );
+}
+
+/** A small avatar for presets that show a person: the photo when given,
+ *  otherwise initials on a gradient. */
+function Avatar({
+  name,
+  src,
+  className,
+}: {
+  name: string;
+  src?: string;
+  className?: string;
+}) {
+  const initials = name
+    .split(/\s+/)
+    .map((p) => p[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+  return (
+    <span
+      aria-hidden
+      className={cn(
+        "grid place-items-center rounded-full bg-linear-to-br from-[#FFB86B] to-[#FF5E8A] text-[10px] font-semibold text-white ring-2 ring-black",
+        className,
+      )}
+    >
+      {src ? (
+        <img
+          src={src}
+          alt=""
+          className="size-full rounded-full object-cover"
+          draggable={false}
+        />
+      ) : (
+        initials
+      )}
+    </span>
+  );
+}
+
+/** The AirDrop rings with the sender's avatar tucked into the corner. */
+function AirdropMark({ from, avatar }: { from: string; avatar?: string }) {
+  return (
+    <span className="relative flex size-10 shrink-0 items-center justify-center">
+      <IconAirdrop
+        aria-hidden
+        className="size-10"
+        style={{ color: BLUE }}
+        strokeWidth={2}
+      />
+      <Avatar
+        name={from}
+        src={avatar}
+        className="absolute -right-1 bottom-0 size-6"
+      />
+    </span>
+  );
+}
+
+/** A ring drawn to a fraction of its circumference, 0 to 1. */
+function Ring({
+  value,
+  width,
+  r,
+  track,
+  style,
+}: {
+  value: number;
+  width: number;
+  r: number;
+  track?: boolean;
+  style?: React.CSSProperties;
+}) {
+  return (
+    <svg aria-hidden viewBox="0 0 50 50" className="size-10" style={style}>
+      {track && (
+        <circle
+          cx={25}
+          cy={25}
+          r={r}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={width}
+          opacity={0.4}
+        />
+      )}
+      <circle
+        cx={25}
+        cy={25}
+        r={r}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={width}
+        strokeLinecap="round"
+        pathLength={1}
+        strokeDasharray={`${Math.min(1, Math.max(0, value))} 1`}
+        transform="rotate(-90 25 25)"
+        style={{ transition: `stroke-dasharray 0.5s ${EASE_OUT_CSS}` }}
+      />
+    </svg>
+  );
+}
+
+const ROUND_BUTTON =
+  "flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-full outline-none transition-[filter,scale] duration-150 ease-out hover:brightness-125 active:scale-95 focus-visible:ring-2 focus-visible:ring-white";
+
+export interface IslandRingProps {
+  /** Silent mode: the bell slides into a red pill and the label turns red.
+   *  Left out, the preset flips between Ring and Silent every 2s, like the
+   *  switch being toggled. */
+  silent?: boolean;
+}
+
+/** The ring / silent switch. 128 by 28 on Ring, 148 by 28 on Silent. */
+export function IslandRing({ silent }: IslandRingProps) {
+  const reduced = useReducedMotionPreference();
+  const [flip, setFlip] = React.useState(false);
+  React.useEffect(() => {
+    if (silent !== undefined) return;
+    const t = setInterval(() => setFlip((f) => !f), 2000);
+    return () => clearInterval(t);
+  }, [silent]);
+  const on = silent ?? flip;
+  const move: Transition = reduced ? { duration: 0 } : SPRING_ISLAND_SWITCH;
+  return (
+    // The row's width springs between Ring and Silent itself, and the
+    // island, sized by its content, follows it frame by frame. A width that
+    // snapped in one render made the island jump to it.
+    <motion.div
+      className="relative flex h-7 items-center justify-between px-2.5"
+      initial={false}
+      animate={{ width: on ? 148 : 128 }}
+      transition={move}
+    >
+      {/* Grows out of a dot under the bell as it fades in, rather than
+          popping in at full color. */}
+      <motion.span
+        aria-hidden
+        className="absolute left-1.25 h-4.5 rounded-full"
+        style={{ backgroundColor: RED }}
+        initial={false}
+        animate={{ width: on ? 40 : 18, opacity: on ? 1 : 0 }}
+        transition={{
+          ...move,
+          opacity: reduced ? { duration: 0 } : TWEEN_SWAP_ENTER,
+        }}
+      />
+      <motion.span
+        aria-hidden
+        className="relative flex"
+        initial={false}
+        animate={{ x: on ? 9 : 0 }}
+        transition={move}
+      >
+        {/* Keyed on the state, so every flip rings the bell once. */}
+        <motion.span
+          key={on ? "silent" : "ring"}
+          className="relative flex"
+          style={{ originY: 0 }}
+          initial={reduced ? false : { rotate: 0 }}
+          animate={reduced ? {} : { rotate: [0, -18, 12, -7, 3, 0] }}
+          transition={{ duration: 0.6, ease: EASE_IN_OUT }}
+        >
+          <IconBell variant="Bold" className="size-3.25 text-white" />
+        </motion.span>
+        <motion.span
+          className="absolute top-1/2 left-1/2 -mt-2.5 -ml-0.5 flex h-5 w-0.75 rotate-[-40deg] justify-center rounded-full"
+          style={{ backgroundColor: RED }}
+          initial={false}
+          animate={{ scaleY: on ? 1 : 0 }}
+          transition={move}
+        >
+          <span className="h-full w-[0.75px] rounded-full bg-white" />
+        </motion.span>
+      </motion.span>
+      {/* The label crossfades rather than swapping text and color in one
+          frame. */}
+      <span className="relative ml-auto grid justify-items-end text-xs font-medium">
+        <AnimatePresence initial={false} mode="popLayout">
+          <motion.span
+            key={on ? "silent" : "ring"}
+            className="col-start-1 row-start-1"
+            style={{ color: on ? RED : "white" }}
+            initial={reduced ? false : { opacity: 0, filter: "blur(3px)" }}
+            animate={{
+              opacity: 1,
+              filter: "blur(0px)",
+              transition: reduced ? { duration: 0 } : TWEEN_SWAP_ENTER,
+            }}
+            exit={
+              reduced
+                ? { opacity: 0 }
+                : {
+                    opacity: 0,
+                    filter: "blur(3px)",
+                    transition: TWEEN_SWAP_LEAVE,
+                  }
+            }
+          >
+            {on ? "Silent" : "Ring"}
+          </motion.span>
+        </AnimatePresence>
+      </span>
+    </motion.div>
+  );
+}
+
+export interface IslandTimerProps {
+  /** Where the countdown starts, s. */
+  seconds?: number;
+  /** The word beside the digits. */
+  label?: string;
+  /** Called by the close button. */
+  onClose?: () => void;
+}
+
+/** A countdown with pause and close, its digits rolling over. 284 by 64. */
+export function IslandTimer({
+  seconds = 60,
+  label = "Timer",
+  onClose,
+}: IslandTimerProps) {
+  const [running, setRunning] = React.useState(true);
+  const [left] = useSeconds({ from: seconds, down: true, running });
+  // Minutes count from the top of each minute down, so a minute timer opens
+  // on 0:60 and ticks to 0:59.
+  const m = left > 0 ? Math.floor((left - 1) / 60) : 0;
+  const ss = pad(left - m * 60);
+  return (
+    <div className="flex h-16 w-71 items-center gap-2 py-3 pr-5 pl-3.5">
+      <button
+        type="button"
+        aria-label={running ? "Pause timer" : "Resume timer"}
+        onClick={() => setRunning((r) => !r)}
+        className={cn(ROUND_BUTTON, "bg-[#5A3C07] text-[#FDB000]")}
+      >
+        {running ? (
+          <IconPause variant="Bold" className="size-4" />
+        ) : (
+          <IconPlay variant="Bold" className="size-4" />
+        )}
+      </button>
+      <button
+        type="button"
+        aria-label="Cancel timer"
+        onClick={onClose}
+        className={cn(ROUND_BUTTON, "bg-white/15 text-white")}
+      >
+        <IconClose className="size-6" strokeWidth={2} />
+      </button>
+      <span
+        className="ml-auto flex items-baseline gap-1.5 pr-0.5"
+        style={{ color: AMBER }}
+      >
+        <span className="text-sm leading-none font-medium">{label}</span>
+        <span className="relative w-16 overflow-hidden text-3xl font-normal whitespace-nowrap">
+          {m}:
+          <RollingDigit digit={ss[0]} />
+          <RollingDigit digit={ss[1]} />
+        </span>
+      </span>
+    </div>
+  );
+}
+
+/** A voice memo recording: a live red waveform and its running time. 200
+ *  by 28. */
+export function IslandRecord() {
+  const [s] = useSeconds();
+  return (
+    <div className="relative flex h-7 w-50 items-center justify-between px-2.5">
+      <Waveform bars={16} color={RED} />
+      <span
+        className="ml-auto text-xs font-medium tabular-nums"
+        style={{ color: RED }}
+      >
+        {clock(s)}
+      </span>
+    </div>
+  );
+}
+
+export interface IslandMusicProps {
+  title?: string;
+  artist?: string;
+  /** The cover: an image URL. A warm gradient when left out. */
+  art?: string;
+  /** Track length, s. */
+  duration?: number;
+}
+
+/** Now playing: cover, title, a scrubber and the transport. 284 by 172. */
+export function IslandMusic({
+  title = "Night Drive",
+  artist = "Lumen",
+  art,
+  duration = 120,
+}: IslandMusicProps) {
+  const [playing, setPlaying] = React.useState(true);
+  const [raw, setAt] = useSeconds({ running: playing });
+  const at = Math.min(duration, raw);
+  const transport =
+    "flex cursor-pointer items-center justify-center rounded-full text-[#D4D4D4] outline-none transition-[color,scale] duration-150 ease-out hover:text-white active:scale-90 focus-visible:ring-2 focus-visible:ring-white";
+  return (
+    <div className="w-71 p-5">
+      <div className="relative flex items-center gap-2">
+        <span
+          aria-hidden
+          className="size-14 shrink-0 rounded-2xl bg-linear-to-b from-[#E9480F] via-[#EE98D2] to-[#A3C4FA] bg-cover bg-center"
+          style={art ? { backgroundImage: `url(${art})` } : undefined}
+        />
+        <span className="grid min-w-0 flex-1 pr-14 text-[15px]/5 font-medium">
+          <span className="truncate">{title}</span>
+          <span className="truncate">{artist}</span>
+        </span>
+        <Waveform bars={6} color="#60A5FA" className="absolute right-7" />
+      </div>
+      <div className="mt-4 flex items-center justify-center gap-2 text-sm tabular-nums">
+        <span>{clock(at)}</span>
+        <span className="flex h-4 w-full items-center px-1">
+          <span className="h-1.5 w-full overflow-hidden rounded-full bg-[#404040]">
+            <span
+              className="block h-full bg-[#D4D4D4]"
+              style={{
+                width: `${(at / duration) * 100}%`,
+                transition: "width 1s linear",
+              }}
+            />
+          </span>
+        </span>
+        <span>-{clock(duration - at)}</span>
+      </div>
+      <div className="mt-4 flex justify-center gap-8">
+        <button
+          type="button"
+          aria-label="Back to the start"
+          onClick={() => setAt(0)}
+          className={cn(transport, "size-6")}
+        >
+          <IconBackward variant="Bold" className="size-6" />
+        </button>
+        <button
+          type="button"
+          aria-label={playing ? "Pause" : "Play"}
+          onClick={() => setPlaying((p) => !p)}
+          className={cn(transport, "h-6 w-5")}
+        >
+          {playing ? (
+            <IconPause variant="Bold" className="size-5" />
+          ) : (
+            <IconPlay variant="Bold" className="size-5" />
+          )}
+        </button>
+        <button
+          type="button"
+          aria-label="Next track"
+          onClick={() => setAt(0)}
+          className={cn(transport, "size-6")}
+        >
+          <IconFastForward variant="Bold" className="size-6" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export interface IslandAirdropProps {
+  /** Who is sharing. */
+  from?: string;
+  /** The sender's photo URL. Their initials when left out. */
+  avatar?: string;
+  /** How many items. */
+  count?: number;
+  /** What is shared, singular; an s is added past one. */
+  noun?: string;
+  /** A preview image URL. A soft gradient when left out. */
+  preview?: string;
+  onDecline?: () => void;
+  onAccept?: () => void;
+}
+
+const PILL_BUTTON =
+  "w-1/2 cursor-pointer rounded-full py-1.5 outline-none transition-[filter,scale] duration-150 ease-out hover:brightness-125 active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-white";
+
+/** An AirDrop request with its preview and Decline / Accept. 284 by 180. */
+export function IslandAirdrop({
+  from = "Mira",
+  avatar,
+  count = 3,
+  noun = "file",
+  preview,
+  onDecline,
+  onAccept,
+}: IslandAirdropProps) {
+  return (
+    <div className="flex w-71 flex-col gap-4 p-4">
+      <div className="flex h-24 justify-between">
+        <div className="w-2/3 pr-3">
+          <AirdropMark from={from} avatar={avatar} />
+          <span className="mt-1 block text-[15px]/[1.2] font-semibold tracking-[-0.01em]">
+            AirDrop
+          </span>
+          <span className="block text-[13px]/[1.3] whitespace-normal text-pretty text-white/60 tabular-nums">
+            {from} would like to share {count} {count === 1 ? noun : `${noun}s`}
+          </span>
+        </div>
+        <span
+          aria-hidden
+          className="size-24 shrink-0 rounded-2xl bg-linear-to-br from-[#5B8DEF] via-[#7FD3C3] to-[#F3C987] bg-cover bg-center"
+          style={preview ? { backgroundImage: `url(${preview})` } : undefined}
+        />
+      </div>
+      <div className="flex gap-2 text-sm/5 font-medium">
+        <button
+          type="button"
+          onClick={onDecline}
+          className={cn(
+            PILL_BUTTON,
+            "bg-white/12 text-white shadow-[inset_0_0_0_1px_rgb(255_255_255/0.06),inset_0_1px_0_rgb(255_255_255/0.08)]",
+          )}
+        >
+          Decline
+        </button>
+        <button
+          type="button"
+          onClick={onAccept}
+          // iOS's filled blue button: system blue, white label.
+          className={cn(PILL_BUTTON, "text-white")}
+          style={{ backgroundColor: IOS_BLUE }}
+        >
+          Accept
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export interface IslandAirdropMiniProps {
+  from?: string;
+  /** The sender's photo URL. Their initials when left out. */
+  avatar?: string;
+  count?: number;
+  /** What is sent, singular; an s is added past one. */
+  noun?: string;
+  /** Transfer progress, 0 to 1. Runs on its own over about 3.5s when left
+   *  out. */
+  progress?: number;
+  /** Called when the transfer it runs on its own completes. */
+  onDone?: () => void;
+  /** Called by the stop button. */
+  onStop?: () => void;
+}
+
+/** The steps a transfer runs through on its own: a pause while it
+ *  connects, then bursts to done. */
+const TRANSFER = [0, 0, 0, 0.24, 0.25, 0.46, 0.8, 1];
+
+/** An AirDrop in flight: who, how many, and a progress ring to stop it. 284
+ *  by 72. */
+export function IslandAirdropMini({
+  from = "Mira",
+  avatar,
+  count = 3,
+  noun = "file",
+  progress,
+  onDone,
+  onStop,
+}: IslandAirdropMiniProps) {
+  const own = progress === undefined;
+  const [step, setStep] = React.useState(0);
+  React.useEffect(() => {
+    if (!own) return;
+    const t = setInterval(() => setStep((n) => n + 1), 500);
+    return () => clearInterval(t);
+  }, [own]);
+  const value = own ? TRANSFER[Math.min(step, TRANSFER.length - 1)] : progress;
+  // Done a beat after the ring closes, so the full ring is seen.
+  const done = own && step >= TRANSFER.length + 1;
+  const onDoneRef = React.useRef(onDone);
+  React.useLayoutEffect(() => {
+    onDoneRef.current = onDone;
+  });
+  React.useEffect(() => {
+    if (done) onDoneRef.current?.();
+  }, [done]);
+  return (
+    <div className="flex h-18 w-71 items-center gap-2 p-4">
+      <AirdropMark from={from} avatar={avatar} />
+      <span className="mt-4 flex w-full items-center gap-1 font-medium">
+        <span className="text-sm">AirDrop</span>
+        <span className="text-xs">
+          {count} {count === 1 ? noun : `${noun}s`}
+        </span>
+      </span>
+      <button
+        type="button"
+        aria-label="Stop AirDrop"
+        onClick={onStop}
+        className="relative flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-full outline-none transition-[scale] duration-150 ease-out active:scale-95 focus-visible:ring-2 focus-visible:ring-white"
+        style={{ color: BLUE }}
+      >
+        <Ring value={value} width={6} r={22} track />
+        <span
+          className="absolute size-3.5 rounded-sm"
+          style={{ backgroundColor: BLUE }}
+        />
+      </button>
+    </div>
+  );
+}
+
+export interface IslandLowBatteryProps {
+  /** Charge left, percent. */
+  level?: number;
+}
+
+/** The low battery warning. 220 by 28. */
+export function IslandLowBattery({ level = 20 }: IslandLowBatteryProps) {
+  return (
+    <div className="relative flex h-7 w-55 items-center justify-between px-2.5">
+      <span className="text-xs font-semibold">Low Battery</span>
+      <span className="flex h-4.5 items-center gap-0.5 text-[#E65B4F]">
+        <span className="text-xs font-semibold tabular-nums">{level}%</span>
+        <span
+          aria-hidden
+          className="relative ml-1 h-2.5 w-5 overflow-hidden rounded-[3px] bg-[#E2857C]/50"
+        >
+          <span
+            className="block h-full bg-current"
+            style={{ width: `${Math.min(100, level * 1.5)}%` }}
+          />
+        </span>
+        <span
+          aria-hidden
+          className="h-1.25 w-0.5 rounded-[3px] bg-[#E2857C]/50"
+        />
+      </span>
+    </div>
+  );
+}
+
+/** A call in progress: its running time and the other side's voice. 220 by
+ *  28. */
+export function IslandCall() {
+  const [s] = useSeconds();
+  return (
+    <div
+      className="relative flex h-7 w-55 items-center justify-between px-2.5"
+      style={{ color: GREEN }}
+    >
+      <span className="flex items-center gap-1 font-medium">
+        <IconPhone variant="Bold" className="size-4" />
+        <span className="text-xs font-semibold tabular-nums">{clock(s)}</span>
+      </span>
+      <Waveform
+        bars={18}
+        color={GREEN}
+        barWidth={1}
+        max={12}
+        className="absolute right-4"
+      />
+    </div>
+  );
+}
+
+export interface IslandFindMyProps {
+  /** The device being located. */
+  device?: string;
+}
+
+/** Find My locating a device: a glowing dot sending out ripples. 284 by 64. */
+export function IslandFindMy({ device = "Remi's iPhone" }: IslandFindMyProps) {
+  const reduced = useReducedMotionPreference();
+  return (
+    <div className="flex h-16 w-71 items-center gap-2 py-3 pr-5 pl-3.5">
+      <span
+        aria-hidden
+        className="relative flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#1A5B3D]"
+      >
+        <motion.span
+          className="absolute size-3 rounded-full bg-[#87FCDC] shadow-[0_0_45px_10px_rgb(135_252_220/0.6)]"
+          animate={reduced ? {} : { scale: [1, 1.3, 1] }}
+          transition={{ duration: 1.2, ease: EASE_IN_OUT, repeat: Infinity }}
+        />
+        <motion.span
+          className="absolute size-3.5 rounded-full border-[0.5px] border-[#87FCDC]"
+          initial={{ scale: 0, opacity: 1 }}
+          animate={
+            reduced ? { scale: 1 } : { scale: [0, 3.1], opacity: [1, 0.4] }
+          }
+          transition={{ duration: 1.2, ease: EASE_OUT, repeat: Infinity }}
+        />
+        <span className="absolute size-3.5 rounded-full border-[0.5px] border-[#87FCDC]" />
+      </span>
+      <span className="ml-2 truncate font-medium">Find My {device}</span>
+    </div>
+  );
+}
+
+/** Screen recording: a red dot, its running time, and a stop button inside
+ *  a ring that dims once recording settles. 288 by 80. */
+export function IslandScreenRecord({ onStop }: { onStop?: () => void }) {
+  const [s] = useSeconds();
+  const [settled, setSettled] = React.useState(false);
+  React.useEffect(() => {
+    const t = setTimeout(() => setSettled(true), 900);
+    return () => clearTimeout(t);
+  }, []);
+  return (
+    <div className="flex w-72 items-center justify-between gap-2 p-4">
+      <span className="flex flex-col gap-1">
+        <span className="flex items-center gap-1" style={{ color: REC }}>
+          <span
+            aria-hidden
+            className="size-3 rounded-full"
+            style={{ backgroundColor: REC }}
+          />
+          <span className="text-base/6 tabular-nums">
+            {Math.floor(s / 60)}:{pad(s % 60)}
+          </span>
+        </span>
+        <span className="text-sm/5">Screen Recording</span>
+      </span>
+      <button
+        type="button"
+        aria-label="Stop recording"
+        onClick={onStop}
+        className="relative flex size-10 cursor-pointer items-center justify-center rounded-full text-white outline-none transition-[scale] duration-150 ease-out active:scale-95 focus-visible:ring-2 focus-visible:ring-white"
+      >
+        {/* Once settled the ring turns slowly, its gap going round, while
+            the recording runs. */}
+        <span
+          aria-hidden
+          className={cn(
+            "grid place-items-center [animation-duration:2.4s] motion-reduce:animate-none",
+            settled && "animate-spin",
+          )}
+        >
+          <Ring
+            value={settled ? 0.93 : 1}
+            width={3}
+            r={23.5}
+            style={{
+              opacity: settled ? 0.5 : 1,
+              transition: `opacity 0.5s ${EASE_OUT_CSS}`,
+            }}
+          />
+        </span>
+        <span
+          className="absolute size-3.5 rounded-sm"
+          style={{ backgroundColor: REC }}
+        />
+      </button>
+    </div>
+  );
+}

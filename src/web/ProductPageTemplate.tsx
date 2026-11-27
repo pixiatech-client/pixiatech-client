@@ -30,6 +30,8 @@ import {
 } from '@/lib/products/display';
 import type { Product, ProductNext } from '@/lib/products/types';
 import { attachSectionMedia } from '@/lib/products/master-template';
+import { getProduct3DModelId } from '@/components/product-3d/model-field';
+import { useProduct3DPreviewModelId } from '@/components/product-3d/preview-store';
 
 import { EditableWrapper } from './cms/EditableWrapper';
 import { SectionDragDropProvider } from './cms/SectionDragDropManager';
@@ -96,6 +98,8 @@ function ProductView({ slug, fallbackProduct, isPreview = false }: ProductPageTe
   // même slug en développement. Aucun autre produit ne peut alimenter cette
   // page : une section absente reste absente.
   const product: Product = getBySlug(slug) ?? fallbackProduct;
+  const saved3dModelId = getProduct3DModelId(product);
+  const model3dId = useProduct3DPreviewModelId(slug, saved3dModelId);
   const companyName = text(product.company) ?? brandName;
   const productTitle = text(product.name) ?? text(product.hero?.title);
 
@@ -222,6 +226,9 @@ function ProductView({ slug, fallbackProduct, isPreview = false }: ProductPageTe
           lang={effectiveLang}
           series={text(product.series)}
           rangeName={text(product.rangeName)}
+          // Évite le premier rendu avec `currentPageId='home'`, qui affichait
+          // le Hero CMS de l'accueil avant l'effet de changement de page.
+          cmsPageId={`product__${slug}`}
           // Source de vérité : le nom enregistré sur le produit courant
           // (Firestore/CMS), jamais un titre de page CMS hérité d'un clone.
           authoritativeTitle={productTitle ?? slug}
@@ -247,7 +254,7 @@ function ProductView({ slug, fallbackProduct, isPreview = false }: ProductPageTe
               data={sectionsProduct?.design}
               lang={effectiveLang}
               hasSpecsTable={hasSpecs(product?.specs)}
-              modelId={product?.['3dModelId']}
+              modelId={model3dId}
               installationMode={product?.['3dConfig']?.installationMode}
             />
           ),
@@ -322,6 +329,9 @@ function ProductView({ slug, fallbackProduct, isPreview = false }: ProductPageTe
         data-product-main
         style={{
           paddingTop: PRODUCT_MAIN_TOP,
+          // Même valeur que le padding, exposée au CSS pour prolonger le fond
+          // noir du Hero sous le header fixe, uniquement sur les fiches produit.
+          ['--product-main-top' as string]: PRODUCT_MAIN_TOP,
           // Le hero ne rejoue pas l'offset du header : il est porté par <main>.
           // Sa valeur par défaut (utilisée par les autres pages) reste intacte.
           ['--product-hero-top' as string]: '0px',

@@ -1,0 +1,204 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+@layer base {
+  :root {
+    --ui-accent: #38BDF8;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: #0D0D10;
+    color: #F4F4F5;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    text-wrap: balance;
+  }
+}
+
+/* Custom sleek dark scrollbar matching Pixia dark UI */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Remove ugly browser native up/down spin buttons on all numeric inputs */
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@property --pixia-beam-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes pixiaBeamSpin {
+  from {
+    --pixia-beam-angle: 0deg;
+  }
+  to {
+    --pixia-beam-angle: 360deg;
+  }
+}
+
+/* Animorio-inspired frosted glass button with rotating violet/cyan/white contour on hover & click */
+.pixia-glass-btn {
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(180deg, rgba(36, 36, 44, 0.88) 0%, rgba(25, 25, 31, 0.92) 100%);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition:
+    background 0.22s ease,
+    border-color 0.22s ease,
+    transform 0.16s ease,
+    box-shadow 0.24s ease;
+}
+
+.pixia-glass-btn::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1.5px;
+  pointer-events: none;
+  background: conic-gradient(
+    from var(--pixia-beam-angle),
+    transparent 0deg,
+    rgba(192, 132, 252, 0.9) 55deg,
+    rgba(56, 189, 248, 0.95) 115deg,
+    rgba(255, 255, 255, 0.95) 145deg,
+    transparent 205deg
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.pixia-glass-btn:hover:not(:disabled),
+.pixia-glass-btn:focus-visible:not(:disabled) {
+  border-color: transparent;
+  background: linear-gradient(180deg, rgba(42, 43, 56, 0.94) 0%, rgba(28, 29, 38, 0.96) 100%);
+  box-shadow: 0 8px 24px rgba(56, 189, 248, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.pixia-glass-btn:hover:not(:disabled)::before,
+.pixia-glass-btn:focus-visible:not(:disabled)::before,
+.pixia-glass-btn.is-clicked::before {
+  opacity: 1;
+  animation: pixiaBeamSpin 2s linear infinite;
+}
+
+.pixia-glass-btn.is-clicked {
+  border-color: transparent;
+  transform: scale(0.988);
+  background: linear-gradient(180deg, rgba(48, 52, 70, 0.96) 0%, rgba(30, 34, 48, 0.98) 100%);
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.25), 0 0 10px rgba(192, 132, 252, 0.22);
+}
+
+/* Full perimeter rotating light contour when assistant is thinking / generating */
+.pixia-thinking-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.75px;
+  pointer-events: none;
+  background: conic-gradient(
+    from var(--pixia-beam-angle),
+    transparent 0deg,
+    rgba(192, 132, 252, 0.95) 60deg,
+    rgba(56, 189, 248, 1) 125deg,
+    rgba(255, 255, 255, 0.95) 160deg,
+    rgba(56, 189, 248, 0.5) 205deg,
+    transparent 265deg
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: pixiaBeamSpin 2.2s linear infinite;
+}
+
+@keyframes otpEdgeSweep {
+  0% {
+    stroke-dashoffset: 100;
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: -100;
+    opacity: 0;
+  }
+}
+
+@keyframes otpCaretBlink {
+  0%, 49% {
+    opacity: 1;
+  }
+  50%, 100% {
+    opacity: 0;
+  }
+}
+
+
